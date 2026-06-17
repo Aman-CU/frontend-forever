@@ -6,10 +6,10 @@ Update this file after every completed feature. Any AI agent reading this should
 
 ## Current Status
 
-**Phase:** Not started
-**Last completed:** —
+**Phase:** Phase 0 — Foundation
+**Last completed:** 00 Project Setup
 **Currently building:** —
-**Next:** Phase 0 — Project Setup (Feature 00)
+**Next:** Phase 0 — Design System + Global Styles (Feature 01)
 
 ---
 
@@ -17,7 +17,7 @@ Update this file after every completed feature. Any AI agent reading this should
 
 ### Phase 0 — Foundation
 
-- [ ] 00 Project Setup
+- [x] 00 Project Setup
 - [ ] 01 Design System + Global Styles
 - [ ] 02 Navbar + Footer
 
@@ -89,7 +89,11 @@ Update this file after every completed feature. Any AI agent reading this should
 
 ## Decisions Made During Build
 
-_Add decisions here as they are made during implementation._
+- **00 Project Setup:** `create-next-app@latest` installed **Next.js 16.2.9** (React 19.2), not Next 15 as named in `architecture.md`. Followed the build-plan's literal `@latest` instruction rather than pinning to 15. Stack decision in `architecture.md` should be read as "Next.js 16" going forward.
+  - Breaking change to plan for in **Feature 14 (Supabase Setup)**: Next 16 renames `middleware.ts`/`middleware()` to `proxy.ts`/`proxy()`. The `edge` runtime is not supported in `proxy` (runtime is fixed to `nodejs`). `architecture.md` and `build-plan.md` still say `middleware.ts` — use `proxy.ts` instead when implementing session validation.
+  - Breaking change to plan for across all dynamic routes: `params`/`searchParams` (and `cookies()`/`headers()`) are async-only in Next 16 — always `await` them, no synchronous fallback.
+  - Turbopack is on by default in 16; `next.config.ts` sets `turbopack.root` explicitly because a stray `package-lock.json` exists at `C:\Users\DEEPSHIKHA\` (outside this repo) which Next's workspace-root inference was picking up.
+- **00 Project Setup:** The project folder name `Frontend-Forever` has capital letters, which `create-next-app` rejects as an invalid npm package name for the target directory. Worked around by scaffolding into a throwaway temp directory (lowercase name), moving the generated files into this root, and deleting the temp directory. `package.json` name is set to `frontend-forever`. No separate folder was kept — final project lives directly in this root as intended.
 
 ---
 
