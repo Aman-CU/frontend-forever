@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import {
   Check,
   Cpu,
@@ -9,7 +11,6 @@ import {
   Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,22 @@ type ExecutionStep = {
   step: number;
   code: string;
   theme: ColumnTheme;
+};
+
+type SimulatorColumnProps = {
+  title: string;
+  icon: LucideIcon;
+  theme: ColumnTheme;
+  items: SimulatorItem[];
+};
+
+type CodeLineProps = {
+  indent?: number;
+  children?: ReactNode;
+};
+
+type ExecutionOrderBarProps = {
+  items: ExecutionStep[];
 };
 
 const THEME_CLASSES: Record<
@@ -147,17 +164,7 @@ function PanelHeader() {
   );
 }
 
-function SimulatorColumn({
-  title,
-  icon: Icon,
-  theme,
-  items,
-}: {
-  title: string;
-  icon: LucideIcon;
-  theme: ColumnTheme;
-  items: SimulatorItem[];
-}) {
+function SimulatorColumn({ title, icon: Icon, theme, items }: SimulatorColumnProps) {
   const themeClasses = THEME_CLASSES[theme];
 
   return (
@@ -203,18 +210,10 @@ function SimulatorColumn({
   );
 }
 
-function CodeLine({
-  indent = 0,
-  children,
-}: {
-  indent?: number;
-  children?: ReactNode;
-}) {
+function CodeLine({ indent = 0, children }: CodeLineProps) {
   return (
     <div className="flex">
-      {indent > 0 && (
-        <span className="shrink-0" style={{ width: `${indent * 16}px` }} />
-      )}
+      {indent > 0 && <span className="w-4 shrink-0" />}
       <span>{children}</span>
     </div>
   );
@@ -272,7 +271,7 @@ function CodePanel() {
   );
 }
 
-function ExecutionOrderBar({ items }: { items: ExecutionStep[] }) {
+function ExecutionOrderBar({ items }: ExecutionOrderBarProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-secondary px-4 py-3">
       <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
