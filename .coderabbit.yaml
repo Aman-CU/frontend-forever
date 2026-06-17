@@ -1,0 +1,79 @@
+language: en-US
+
+tone_instructions: >
+  Be concise and direct. Flag real issues — security risks, logic bugs,
+  accessibility problems, and violations of project conventions. Skip
+  stylistic nitpicks that don't affect correctness or maintainability.
+
+early_access: false
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+
+  path_instructions:
+    - path: "src/features/simulators/**"
+      instructions: >
+        This is the simulator engine. Each simulator is fully self-contained —
+        flag any imports from other simulators or shared state between them.
+        Verify step scripts are pre-scripted data arrays, not runtime-computed logic.
+        Check that Framer Motion uses the `layout` prop on items inside simulator panels.
+        Ensure AnimatePresence wraps conditionally rendered elements.
+
+    - path: "src/app/api/**"
+      instructions: >
+        API routes must follow this exact order: auth check → rate limit → input validation → business logic.
+        Flag any route missing getUser() auth check.
+        Flag any write route missing the Upstash rate limiter.
+        Flag any input used in a DB write that hasn't been validated against an allowlist.
+        Flag use of getSession() instead of getUser() — getSession() does not verify server-side.
+        Error responses must always be { error: string } — never expose stack traces or internal details.
+
+    - path: "src/lib/supabase/**"
+      instructions: >
+        Verify browser client is only used in client components.
+        Verify server client is only used in server components, API routes, and Server Actions.
+        Flag any cross-usage.
+
+    - path: "src/**/*.tsx"
+      instructions: >
+        Flag any hardcoded hex values (e.g. #0D9488, #111827) — all colors must use
+        CSS variable tokens via Tailwind classes (text-accent, bg-surface, etc.).
+        Flag raw Tailwind palette classes like bg-teal-600 or text-gray-700.
+        Flag dangerouslySetInnerHTML used with any user-supplied content.
+        Flag missing aria-label on icon-only buttons.
+        Flag 'use client' added to components that don't actually need browser APIs,
+        event handlers, or state — RSC should be the default.
+
+    - path: "src/features/practice/**"
+      instructions: >
+        Code execution sandbox must use iframe with sandbox="allow-scripts" only.
+        Flag if allow-same-origin is present in the sandbox attribute — this is a security risk.
+        Flag any use of eval() or new Function() outside the sandboxed iframe.
+        Verify postMessage communication validates event.data.type before acting.
+
+    - path: "context/**"
+      instructions: >
+        Context files are documentation — skip code review. Only flag broken markdown
+        or obvious factual errors in technical specifications.
+
+    - path: "**.md"
+      instructions: >
+        Documentation only — skip code review.
+
+  abort_on_close: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - develop
+      - main
+
+chat:
+  auto_reply: true
