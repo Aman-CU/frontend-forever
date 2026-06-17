@@ -40,13 +40,18 @@ Installed via `npx shadcn@latest add` in Feature 00. Located in `src/components/
 
 `src/lib/utils.ts` — `cn()` helper (clsx + tailwind-merge), added by shadcn init.
 
+## Providers
+
+- **`ThemeProvider`** — `src/components/providers/ThemeProvider.tsx`. Client component wrapping the app in root layout. Reads/writes the `dark` class on `<html>` and the `theme` localStorage key. Built on `useSyncExternalStore` (not `useState` + `useEffect`) so the client snapshot can differ from the server snapshot (always `"light"`) without a hydration mismatch — the anti-FOUC inline script in `layout.tsx` (via `next/script`, `strategy="beforeInteractive"`) applies the real class before hydration, and a `MutationObserver` in the provider's `subscribe` picks up both that and system-preference changes. Exposes `{ theme, setTheme, toggleTheme }` via context.
+- Public hook: `src/hooks/useTheme.ts` — re-exports the provider's context hook as `useTheme()`. Use this from components; don't import `ThemeProvider`'s internals directly.
+
 ## Layout Components
 
 _Will be populated as components are built._
 
 ## Shared UI Components
 
-_Will be populated as components are built._
+- **`ThemeToggle`** — `src/components/shared/ThemeToggle.tsx`. Icon-only button (`Sun`/`Moon` from `lucide-react`) calling `useTheme().toggleTheme()`. Styled with `bg-surface border-border` + hover `bg-surface-secondary`, 36px (`size-9`) square, `rounded-lg`. Has `aria-label` describing the action it performs (not the current state).
 
 ## Homepage Components
 

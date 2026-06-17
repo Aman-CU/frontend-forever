@@ -7,9 +7,9 @@ Update this file after every completed feature. Any AI agent reading this should
 ## Current Status
 
 **Phase:** Phase 0 — Foundation
-**Last completed:** 00 Project Setup
+**Last completed:** 01 Design System + Global Styles
 **Currently building:** —
-**Next:** Phase 0 — Design System + Global Styles (Feature 01)
+**Next:** Phase 0 — Navbar + Footer (Feature 02)
 
 ---
 
@@ -18,7 +18,7 @@ Update this file after every completed feature. Any AI agent reading this should
 ### Phase 0 — Foundation
 
 - [x] 00 Project Setup
-- [ ] 01 Design System + Global Styles
+- [x] 01 Design System + Global Styles
 - [ ] 02 Navbar + Footer
 
 ### Phase 1 — Homepage
@@ -94,6 +94,9 @@ Update this file after every completed feature. Any AI agent reading this should
   - Breaking change to plan for across all dynamic routes: `params`/`searchParams` (and `cookies()`/`headers()`) are async-only in Next 16 — always `await` them, no synchronous fallback.
   - Turbopack is on by default in 16; `next.config.ts` sets `turbopack.root` explicitly because a stray `package-lock.json` exists at `C:\Users\DEEPSHIKHA\` (outside this repo) which Next's workspace-root inference was picking up.
 - **00 Project Setup:** The project folder name `Frontend-Forever` has capital letters, which `create-next-app` rejects as an invalid npm package name for the target directory. Worked around by scaffolding into a throwaway temp directory (lowercase name), moving the generated files into this root, and deleting the temp directory. `package.json` name is set to `frontend-forever`. No separate folder was kept — final project lives directly in this root as intended.
+- **01 Design System:** `globals.css` defines the full `ui-tokens.md` token set verbatim in `@theme`, plus a small block of shadcn/ui primitive aliases (`--color-primary`, `--color-card`, `--color-muted`, `--color-ring`, etc., and `--radius-4xl` for `badge.tsx`'s pill shape) that point at our semantic tokens instead of shadcn's default oklch palette. This keeps installed primitives on-brand without ever editing files in `components/ui/`. If a newly-added shadcn component references a semantic class not yet aliased, add the alias in `globals.css` rather than hardcoding a color in the component.
+- **01 Design System:** Theme persistence uses `useSyncExternalStore` in `ThemeProvider`, not `useState` + `useEffect`. An effect that calls `setState` synchronously to "correct" SSR state trips the `react-hooks/set-state-in-effect` ESLint rule and is the wrong tool for syncing with an external mutable source (DOM class / localStorage) that can legitimately differ between server and client snapshots. `useSyncExternalStore`'s `getServerSnapshot` (`"light"`) vs `getSnapshot` (real DOM class) split avoids both the lint error and any hydration mismatch — the anti-FOUC script in `layout.tsx` (via `next/script`, not a raw `<script>` tag — raw tags inside a Server Component log a console error) sets the real class before hydration, and a `MutationObserver` notifies React of the change.
+- **01 Design System:** Hit a stale Turbopack dev cache during verification — `globals.css` was fully rewritten but the served CSS still reflected the old shadcn token mapping (`.text-accent { color: var(--accent) }` instead of `var(--color-accent)`). Fixed by killing the dev server and deleting `.next` before restarting. Worth trying first if styles look wrong after an unusually large `globals.css` change and the file content looks correct on disk.
 
 ---
 
