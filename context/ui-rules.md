@@ -53,12 +53,15 @@ Apply the font variable to the `<html>` tag. The `--font-sans` variable is decla
 ## Navbar
 
 ### Logged-Out
-- Logo left, nav links center, actions right
-- Active nav item: `text-accent font-medium` with `border-b-2 border-accent` (2px teal underline)
-- Inactive nav items: `text-text-secondary font-medium hover:text-text-primary`
-- No background blur — always solid `bg-surface`
-- Sticky at top (`sticky top-0 z-50`)
-- Bottom border: `border-b border-border`
+- Logo left (plain bold black wordmark, no colored box): `FF` is much larger than the wordmark next to it — `text-3xl font-extrabold tracking-tight text-text-primary` for `FF`, `text-sm font-semibold tracking-tight text-text-primary` for "Frontend Forever", `gap-2` between them. Confirmed by pixel-measuring the design PNG: `FF`'s cap-height is roughly 3x the wordmark's — a flat `text-2xl`/`text-lg` pairing reads far too close in size.
+- Nav links live inside an **elevated white pill**: `rounded-2xl border border-border-light bg-surface px-1.5 py-2.5 shadow-xl` (a softer rounded-rectangle, NOT a full `rounded-full` stadium). Generous vertical padding (`py-2.5` on the container, not just on each link) and the lighter/softer `border-border-light` + larger-blur `shadow-xl` are both deliberate — the design's pill has visible Y breathing room and a diffused, low-contrast shadow/border, not a tight `border-border`/`shadow-md` pairing.
+- Each nav link has an icon (14px) + label, `gap-1.5`, `px-3.5 py-1.5`, `rounded-xl`
+- Active nav item: subtle filled segment inside the pill — `bg-accent-muted text-accent` (the white pill means a white floating segment wouldn't read; a pale-teal fill does)
+- Inactive nav items: transparent, `text-text-primary font-medium hover:bg-surface-secondary` — verified by pixel-sampling the source design PNG (darkest text pixel is pure black, not `text-text-secondary`'s `#6B7280`); an earlier version of this doc claimed muted gray, which was wrong
+- The header bar itself has **no border of its own** — no `border-b`. Confirmed by scanning the design pixel-by-pixel along the header's bottom edge: no detectable border line or color step anywhere outside the pill. In light mode the header (and `body`, and the page's own root container) is `bg-surface` (pure white) — pixel-sampling the full reference PNG showed the *entire* canvas is `#FFFFFF`, identical to the pill, not the off-white `--color-background` token. In dark mode, header/body/page use `dark:bg-background` instead, deliberately diverging from the pill's `bg-surface` — dark themes need a darker backdrop than their elevated surfaces for the pill/cards/buttons to read as distinct, since box-shadow (which carries that job in light mode) barely renders on a dark background.
+- Sticky, offset from the very top of the viewport: `sticky top-5 z-50` (not flush `top-0`) — the navbar floats with a gap above it, page background visible around it
+- Right side: "Follow on X" text pill (`rounded-lg border border-border`, text/icon `text-text-primary` — also near-black in the design, not muted), theme toggle, "Log In" button (`variant="outline"`, `rounded-lg`). The teal/filled `default` button variant is reserved for primary CTAs (e.g. the hero's "Start Learning") — the navbar Log In stays neutral/outlined so it doesn't compete.
+- Collapses to hamburger below `lg:` (1024px) — the icon-pill nav needs more room than a plain text-link row would
 
 ### Logged-In (additional elements)
 - Search bar in center: placeholder "Search labs, topics, questions..." with ⌘K shortcut chip

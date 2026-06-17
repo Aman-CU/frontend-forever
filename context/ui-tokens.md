@@ -128,15 +128,15 @@ Both light and dark theme tokens are defined. The `.dark` class on `<html>` trig
 
 /* ─── Dark Mode Overrides ─── */
 .dark {
-  --color-background: #111111;
+  --color-background: #0A0A0A;
   --color-surface: #1A1A1A;
   --color-surface-secondary: #222222;
   --color-surface-tertiary: #2A2A2A;
   --color-surface-elevated: #242424;
 
-  --color-border: #2A2A2A;
-  --color-border-light: #222222;
-  --color-border-muted: #333333;
+  --color-border: #333333;
+  --color-border-light: #292929;
+  --color-border-muted: #404040;
 
   --color-text-primary: #F9FAFB;
   --color-text-secondary: #D1D5DB;
