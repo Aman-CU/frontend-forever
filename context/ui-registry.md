@@ -22,6 +22,24 @@ This prevents duplicate components and keeps the UI consistent as the codebase g
 
 ---
 
+## Base UI Primitives (shadcn/ui)
+
+Installed via `npx shadcn@latest add` in Feature 00. Located in `src/components/ui/`. These are unmodified shadcn primitives — compose them in feature/shared components rather than editing directly.
+
+- `button.tsx`
+- `dialog.tsx`
+- `tabs.tsx`
+- `dropdown-menu.tsx`
+- `tooltip.tsx` — app must be wrapped in `TooltipProvider` (not yet wired; do this in Feature 01/02 root layout work)
+- `badge.tsx`
+- `avatar.tsx`
+- `switch.tsx`
+- `input.tsx`
+- `textarea.tsx`
+- `separator.tsx`
+
+`src/lib/utils.ts` — `cn()` helper (clsx + tailwind-merge), added by shadcn init.
+
 ## Layout Components
 
 _Will be populated as components are built._
