@@ -7,9 +7,9 @@ Update this file after every completed feature. Any AI agent reading this should
 ## Current Status
 
 **Phase:** Phase 0 — Foundation
-**Last completed:** 02 Navbar + Footer — UI built and verified (typecheck + lint clean, pixel-checked against design reference in both light and dark mode across 5 rounds of fixes, see Notes below) on `feature/01-design-system`, uncommitted.
+**Last completed:** 02 Navbar + Footer — UI built and verified (typecheck + lint clean, pixel-checked against design reference in both light and dark mode across 5 rounds of fixes, see Notes below). Committed, branch renamed from `feature/01-design-system` to `feature/02-navbar-footer` (Feature 01 merged into `develop` via PR #2, so the old name no longer fit), and pushed to `origin/feature/02-navbar-footer`.
 **Currently building:** Nothing in progress.
-**Next:** Decide branch strategy for Feature 01 + 02 → develop (neither is merged yet) before starting 03 Hero Section (Static)
+**Next:** Open + merge the PR for `feature/02-navbar-footer` → `develop` on GitHub (no `gh` CLI in this environment, so this is a manual step), then start 03 Hero Section (Static)
 
 ---
 
