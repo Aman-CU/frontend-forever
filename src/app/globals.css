@@ -119,15 +119,15 @@
 
 /* ─── Dark Mode Overrides ─── */
 .dark {
-  --color-background: #111111;
+  --color-background: #0A0A0A;
   --color-surface: #1A1A1A;
   --color-surface-secondary: #222222;
   --color-surface-tertiary: #2A2A2A;
   --color-surface-elevated: #242424;
 
-  --color-border: #2A2A2A;
-  --color-border-light: #222222;
-  --color-border-muted: #333333;
+  --color-border: #333333;
+  --color-border-light: #292929;
+  --color-border-muted: #404040;
 
   --color-text-primary: #F9FAFB;
   --color-text-secondary: #D1D5DB;
@@ -174,7 +174,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-text-primary;
+    @apply bg-surface text-text-primary dark:bg-background;
   }
   html {
     @apply font-sans;

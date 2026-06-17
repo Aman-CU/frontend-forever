@@ -4,7 +4,7 @@ import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
 export default function Home() {
   return (
-    <div className="flex flex-1 items-center justify-center bg-background px-6 py-16">
+    <div className="flex flex-1 items-center justify-center bg-surface px-6 py-16 dark:bg-background">
       <div className="w-full max-w-2xl rounded-xl border border-border bg-surface p-8 shadow-md">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold leading-tight text-text-primary">
