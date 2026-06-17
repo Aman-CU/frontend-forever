@@ -139,7 +139,7 @@ Never stack more than 2 levels of `border-radius` inside each other.
 The hero section is the product's first impression. Rules:
 
 - The concept switcher tabs and simulator are the focal point — not the headline
-- Headline font: 56px–72px (responsive), weight 700, tight line-height (1.1)
+- Headline font: `text-4xl sm:text-5xl lg:text-5xl` (36px–48px, not the originally planned 56–72px — pixel-measuring `designs/hero-section-1-event-loop.png` against the navbar/CTA proportions showed 56px+ wraps "Frontend Interview-Ready Concepts" onto 2 lines, which the design does not do; confirmed by rendering candidate sizes and comparing screenshots), weight 700, tight line-height (1.1), container `max-w-6xl` to give the full string room on one line
 - The accent line ("You Can Play With.") uses `text-accent` to create visual split
 - Both CTAs visible: primary filled ("Start Learning →"), secondary outlined ("Explore Roadmaps")
 - The simulator panel has a card-style container with `rounded-2xl` and `shadow-xl`
@@ -152,11 +152,13 @@ The hero section is the product's first impression. Rules:
 
 4 tabs: Event Loop | React Rendering | Browser Pipeline | CSS Specificity
 
-- Tabs sit above the simulator panel in a pill-group container
-- Active tab: `bg-surface border border-border shadow-md rounded-lg px-4 py-2 font-medium text-text-primary`
-- Inactive tab: `transparent text-text-secondary hover:bg-surface-secondary rounded-lg px-4 py-2`
-- Each tab has an icon: loop icon, React atom, globe, braces
-- Transition between simulators: AnimatePresence with cross-fade
+Deliberate deviation from `designs/hero-section-1-event-loop.png`: pixel-inspecting the design at full resolution shows the tabs as one continuous bordered bar split into 4 equal segments by vertical dividers (active = `text-accent` + bottom-border indicator, inactive = near-black `text-text-primary`, no pill fill). Feature 03 first implemented that literal match, but the user explicitly preferred the original pill-group concept over the design-accurate bar — kept the pill-group below per that direction. If a future design pass revisits this section, re-check against the source PNG rather than assuming this doc is pixel-accurate to it.
+
+- Tabs sit above the simulator panel in a pill-group container: `inline-flex items-center gap-1 rounded-xl border border-border-light bg-surface-secondary p-1.5`
+- Active tab: `border border-border bg-surface text-text-primary shadow-md rounded-lg px-4 py-2 font-medium`
+- Inactive tab: `border border-transparent text-text-secondary hover:bg-surface rounded-lg px-4 py-2`
+- Each tab has an icon: loop icon (`RotateCw`), React atom (`Atom`), globe (`Globe`), braces (`Braces`)
+- Transition between simulators: AnimatePresence with cross-fade (wired in Feature 13 — Feature 03 renders all 4 tabs statically with Event Loop active and no `onClick`, since only Event Loop has simulator content until Features 09–12 build the rest)
 
 ---
 
