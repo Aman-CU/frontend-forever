@@ -101,7 +101,7 @@ Uses the identical `bg-surface dark:bg-background` split as the Navbar header (s
 File: `src/components/homepage/Hero.tsx`
 Last updated: 2026-06-18
 
-Client component (Framer Motion entrance animations). Renders the full static hero: announcement pill, two-line headline, subheadline, two CTAs, `ConceptSwitcherTabs`, `HeroSimulatorPreview`, and a bouncing "Scroll to explore" indicator. No interactive simulator logic yet — that's Features 09–13. Mounted directly from `src/app/page.tsx` (`export default function Home() { return <Hero />; }`).
+Client component (Framer Motion entrance animations). Renders the full static hero: announcement pill, two-line headline, subheadline, two CTAs, `CompanyLogosStrip`, `ConceptSwitcherTabs`, `HeroSimulatorPreview`, and a bouncing "Scroll to explore" indicator. No interactive simulator logic yet — that's Features 09–13. Mounted directly from `src/app/page.tsx` (`export default function Home() { return <Hero />; }`).
 
 | Property | Class / detail |
 | --- | --- |
@@ -110,7 +110,7 @@ Client component (Framer Motion entrance animations). Renders the full static he
 | Headline | One `<h1>`, two `motion.span` lines (stagger), `text-4xl sm:text-5xl lg:text-5xl leading-[1.1] font-bold`, `max-w-6xl` — see `ui-rules.md` note on why this is smaller than the originally-planned 56–72px |
 | Headline line 2 | `text-accent` — "You Can Play With." |
 | CTAs | `buttonVariants()` / `buttonVariants({ variant: "outline" })` overridden with `h-auto px-6 py-3 text-base font-semibold`, same override pattern as Navbar's Log In link |
-| Motion stagger | Pill (0s) → headline line 1 (0.15s) → line 2 (0.25s) → subheadline (0.35s) → CTAs (0.45s) → tabs (0.55s) → simulator panel floats up (0.65s) → scroll indicator fades in + bounces (1s), all `ease: [0.25, 0.46, 0.45, 0.94]` per `ui-rules.md` |
+| Motion stagger | Pill (0s) → headline line 1 (0.15s) → line 2 (0.25s) → subheadline (0.35s) → CTAs (0.45s) → company logos strip label + 6 logos staggered (0.5s–0.85s, owned internally by `CompanyLogosStrip`) → tabs (0.95s) → simulator panel floats up (1.05s) → scroll indicator fades in + bounces (1.4s), all `ease: [0.25, 0.46, 0.45, 0.94]` per `ui-rules.md` |
 
 **Pattern notes:**
 Headline size was originally implemented at the planned 56–72px and wrapped "Frontend Interview-Ready Concepts" onto 2 lines — wrong against the design, which renders it on one line. Fixed by pixel-measuring the design (resizing the full-res PNG to the screenshot's 1440px viewport width and comparing crops) and iterating candidate Tailwind sizes directly against Playwright screenshots until the wrap disappeared and proportions matched — same iterative screenshot-compare method as the Navbar fixes in Feature 02, not a one-shot pixel-to-font-size formula.
@@ -140,6 +140,40 @@ Static (non-interactive) full replica of the Event Loop simulator panel from `de
 | Code panel | Hand-colored spans (not a syntax highlighter library) using the `Code Syntax Colors` token table in `ui-tokens.md`: `text-accent` for function/method calls, `text-success` for strings, `text-warning` for numbers, `text-text-primary` for punctuation/braces |
 | Execution Order bar | Each step's code text is colored by its origin column's theme (`premium`/`info`/`streak`), connected by `MoveRight` icons |
 | Insight callout | `Lightbulb` icon + text, with `Promise`/`setTimeout` colored `text-info`/`text-streak` to match their queue's theme |
+
+### CompanyLogosStrip
+
+File: `src/components/homepage/CompanyLogosStrip.tsx`
+Last updated: 2026-06-18
+
+Renders inside `Hero.tsx` between the CTAs and `ConceptSwitcherTabs` — not as a separate page-level section below the whole hero — matching the actual layout in `designs/hero-section-1-event-loop.png` (pixel-inspection showed the strip sits above the simulator panel, not below it, despite build-plan listing it as a separate numbered feature). "Practice concepts commonly discussed in interviews at" label (`text-text-muted`) above a row of 7 logo components from `shared/logos/`: Google, Meta, Amazon, Microsoft, Stripe, Anthropic, Cursor — 6 from the build-plan (Airbnb swapped for Anthropic) plus Cursor added on top, by user request. Client component — each logo fades in with a left-to-right stagger (`delay: 0.55 + index * 0.06`), label fades first at `delay: 0.5`, per build-plan's "Logos fade in staggered left-to-right" note.
+
+| Property | Detail |
+| --- | --- |
+| Desktop (`sm:` and up) | Row is `justify-center`, `overflow-visible`, no mask — all 7 logos fit on one line within the hero's container width |
+| Mobile (below `sm:`) | Row is `overflow-x-auto` with `scrollbarWidth: none` and a `mask-image` linear-gradient edge fade (transparent → black 5%/95% → transparent), since 7 logos don't fit a narrow viewport — matches build-plan's "Subtle horizontal scroll fade on edges (CSS mask)" |
+| Color | Label `text-text-muted`, logos `text-text-primary` (parent sets this once; logos use `currentColor`) — both pixel-sampled from the design as monochrome, not the companies' real brand colors |
+| Accessibility | Every logo's visual markup is fully `aria-hidden` (the pure-SVG ones directly, the icon+text combos via `aria-hidden` on their wrapping `<span>`); each `motion.div` in the row also renders a `<span className="sr-only">{name}</span>` immediately before `<Logo />`, so every brand name has exactly one accessible name regardless of how that logo is built internally. Verified by checking each wrapper's DOM structure (`sr-only` span present + not hidden, logo root `aria-hidden="true"`) in the live page, not just visually. |
+
+**Pattern notes:**
+The wrapping `<div>` in `Hero.tsx` around this component, and this component's own root `<div>`, both need explicit `w-full` — Hero's section is `flex flex-col items-center`, and without `w-full` a flex item's cross-axis size shrinks to its content's intrinsic width (here, the logo row's full unscrolled width) instead of the viewport, which silently breaks the mobile scroll/mask (the element never actually overflows its own box, so nothing scrolls — the *page* overflows instead). Any new full-width child added to `Hero.tsx` must follow the same `w-full` pattern already used by `HeroSimulatorPreview`'s wrapper.
+
+### Company logo components
+
+Folder: `src/components/shared/logos/` — one file per component (`GoogleLogo.tsx`, `MetaLogo.tsx`, `AmazonLogo.tsx`, `MicrosoftLogo.tsx`, `StripeLogo.tsx`, `AnthropicLogo.tsx`, `CursorLogo.tsx`), each a single named export.
+Last updated: 2026-06-18
+
+Originally built as one `CompanyLogos.tsx` file with all 7 exports — split into this folder during `/review` because `code-standards.md` reserves multi-export files for "small sub-components used only by the parent," not 7 independent siblings, and the project's own `XLogo.tsx` precedent already puts one shared icon per file. Each file defines its own local `type Props = { className?: string }` (matching `XLogo.tsx`'s pattern — not worth a shared type module for something this small).
+
+`fill`/`stroke="currentColor"` throughout so each logo inherits `text-text-primary` like a lucide icon does — same rationale as `XLogo` above. Plain inline-SVG/text components, not static files in `public/logos/` (deviates from build-plan's literal "SVG logos in `public/logos/`" wording, intentionally, so they can inherit theme color in both light/dark mode rather than being locked to one static color).
+
+`GoogleLogo` (`viewBox 0 0 272 92`), `MetaLogo`'s icon glyph (`viewBox 0 0 24 24`), `AmazonLogo` (`viewBox 0 0 603 182`), `StripeLogo` (`viewBox 0 0 512 214`), `AnthropicLogo` (`viewBox 0 0 182 24`, `fillRule="evenodd"` — required for the letterforms' counters to render correctly), and `CursorLogo` (icon `viewBox 0 0 466.73 532.09` + wordmark `viewBox 0 0 1655.29 278.83`, two separate `<svg>`s in a flex row) use the real brand path data — user-supplied SVGs, recolored from their actual fills (Google's `#EA4335`/`#FBBC05`/`#4285F4`/`#34A853`, Meta's solid black, Amazon's `#221f1f` wordmark + `#f90` swoosh, Stripe's `#635BFF`, Anthropic's `#000`) to a single `currentColor` to match this strip's monochrome treatment. `AnthropicLogo` replaces the build-plan's original `AirbnbLogo` (removed entirely, by user request — not present anywhere in the codebase anymore). `CursorLogo` is a 7th logo added on top of the build-plan's original list, also by user request. `MicrosoftLogo` remains a simplified monochrome icon recreation, not sourced from the real brand assets — swap it for real path data the same way if/when supplied, and render any newly-supplied SVG standalone first to confirm it actually depicts the intended brand before wiring it in (caught a mismatched/garbled SVG passed off as Meta's wordmark this way — it actually rendered as unrelated text "heton" with a generic two-circle icon).
+
+`AmazonLogo`'s repeated "a" reuses `<use href={"#" + aGlyphId}>` where `aGlyphId` comes from React's `useId()`, rather than a literal hardcoded `id="amazon-logo-a"` (the source SVG's original approach). `useId()` guarantees a unique id per render, so if `AmazonLogo` is ever mounted more than once on the same page, the two instances won't collide on DOM id — a literal string id would silently break the second instance's `<use>` reference (resolves to the first instance's path) with no error. `useId()` works in this component without `"use client"`, since it's deterministic and doesn't require browser APIs.
+
+`MetaLogo`, `MicrosoftLogo`, and `CursorLogo` wrap their icon+text combo in a `<span aria-hidden="true">` (previously only the inner `<svg>` was `aria-hidden`, leaving the visible text leak into the accessibility tree inconsistently) — now every logo's own markup is fully decorative, and the accessible name comes solely from the `sr-only` span added in `CompanyLogosStrip.tsx`. An earlier version of this caused `getBoundingClientRect()`-measured heights to diverge (16px–28px) across the row before sizing was normalized — see `progress-tracker.md` Feature 04 notes for that history.
+
+**Sizing** (verified via `getBoundingClientRect()` in the live DOM, not just by eye): `GoogleLogo`, `AmazonLogo`, `StripeLogo` use `h-5` (20px). `MetaLogo` and `MicrosoftLogo` are icon+text combos — both text `<span>`s have `leading-none` added (Tailwind's default `text-xl` line-height is 28px, which made these two render visibly larger/chunkier than the rest of the row before this was added; `leading-none` collapses the line box down to ~20px, which is what now sets each wrapper's overall height even where the icon itself is smaller, e.g. `MicrosoftLogo`'s `size-4` icon centers inside its taller 20px text box). `AnthropicLogo` (`h-4`) and `CursorLogo` (icon `h-4`, wordmark `h-3`) render at 16px, visibly smaller than the other 5 — a deliberate final-pass choice, not an oversight; if a future pass wants every logo at a uniform height, bump these two to `h-5`/`h-3.75` (preserving `CursorLogo`'s 4:3 icon:wordmark ratio) and re-verify with `getBoundingClientRect()`, the same way this was checked here.
 
 ## Simulator Components
 
