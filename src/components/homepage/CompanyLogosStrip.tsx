@@ -2,15 +2,13 @@
 
 import { motion } from "framer-motion";
 
-import {
-  AmazonLogo,
-  AnthropicLogo,
-  CursorLogo,
-  GoogleLogo,
-  MetaLogo,
-  MicrosoftLogo,
-  StripeLogo,
-} from "@/components/shared/CompanyLogos";
+import { AmazonLogo } from "@/components/shared/logos/AmazonLogo";
+import { AnthropicLogo } from "@/components/shared/logos/AnthropicLogo";
+import { CursorLogo } from "@/components/shared/logos/CursorLogo";
+import { GoogleLogo } from "@/components/shared/logos/GoogleLogo";
+import { MetaLogo } from "@/components/shared/logos/MetaLogo";
+import { MicrosoftLogo } from "@/components/shared/logos/MicrosoftLogo";
+import { StripeLogo } from "@/components/shared/logos/StripeLogo";
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 
@@ -47,6 +45,7 @@ export function CompanyLogosStrip() {
             transition={{ duration: 0.4, ease: EASE, delay: 0.55 + index * 0.06 }}
             className="shrink-0"
           >
+            <span className="sr-only">{name}</span>
             <Logo />
           </motion.div>
         ))}
