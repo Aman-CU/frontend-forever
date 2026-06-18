@@ -7,9 +7,9 @@ Update this file after every completed feature. Any AI agent reading this should
 ## Current Status
 
 **Phase:** Phase 1 — Homepage, in progress
-**Last completed:** 04 Company Logos Strip — UI built and verified (typecheck + lint clean, pixel-checked against `designs/hero-section-1-event-loop.png` in light, dark, and mobile, see Notes below). Built on `feature/04-company-logos-strip` off `feature/03-hero-section` (develop doesn't have Feature 03 merged yet). Not yet committed/pushed/PR'd.
+**Last completed:** 04 Company Logos Strip — UI built and verified (typecheck + lint clean, pixel-checked against `designs/hero-section-1-event-loop.png` in light, dark, and mobile, see Notes below). Built on `feature/04-company-logos-strip` off `feature/03-hero-section`. Feature 03 has since merged into `develop` (PR #4); 04 is committed locally, not yet pushed/PR'd.
 **Currently building:** Nothing in progress.
-**Next:** Commit + PR `feature/03-hero-section` → `develop` and `feature/04-company-logos-strip` → `develop` (in that order, since 04 depends on 03's `Hero.tsx`), then start 05 How It Works Section
+**Next:** Push `feature/04-company-logos-strip` and PR it → `develop`, then start 05 How It Works Section
 
 ---
 
