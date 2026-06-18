@@ -6,6 +6,7 @@ import { ChevronDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { CompanyLogosStrip } from "@/components/homepage/CompanyLogosStrip";
 import { ConceptSwitcherTabs } from "@/components/homepage/ConceptSwitcherTabs";
 import { HeroSimulatorPreview } from "@/components/homepage/HeroSimulatorPreview";
 
@@ -80,11 +81,15 @@ export function Hero() {
         </Link>
       </motion.div>
 
+      <div className="mt-10 w-full">
+        <CompanyLogosStrip />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: EASE, delay: 0.55 }}
-        className="mt-12"
+        transition={{ duration: 0.5, ease: EASE, delay: 0.95 }}
+        className="mt-10"
       >
         <ConceptSwitcherTabs />
       </motion.div>
@@ -92,7 +97,7 @@ export function Hero() {
       <motion.div
         initial={{ opacity: 0, y: 32 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: EASE, delay: 0.65 }}
+        transition={{ duration: 0.6, ease: EASE, delay: 1.05 }}
         className="mt-6 w-full"
       >
         <HeroSimulatorPreview />
@@ -102,8 +107,8 @@ export function Hero() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1, y: [0, 6, 0] }}
         transition={{
-          opacity: { duration: 0.5, delay: 1 },
-          y: { duration: 1.6, repeat: Infinity, ease: "easeInOut", delay: 1 },
+          opacity: { duration: 0.5, delay: 1.4 },
+          y: { duration: 1.6, repeat: Infinity, ease: "easeInOut", delay: 1.4 },
         }}
         className="mt-12 flex flex-col items-center gap-1 text-xs text-text-muted"
       >

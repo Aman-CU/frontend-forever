@@ -145,6 +145,7 @@ The hero section is the product's first impression. Rules:
 - The simulator panel has a card-style container with `rounded-2xl` and `shadow-xl`
 - The "LIVE CONCEPT ENGINE" indicator: green dot + uppercase label, positioned top-left of simulator panel
 - "Running" badge: `bg-success-muted text-success text-xs font-medium rounded-full`
+- Company logos strip (Feature 04) renders *inside* the hero, between the CTAs and the concept switcher tabs — pixel-inspecting `designs/hero-section-1-event-loop.png` shows it there, not as a separate section below the whole hero block, despite build-plan listing "04 Company Logos Strip" as its own numbered feature. Monochrome logos (`text-text-primary`), label in `text-text-muted`. Any full-width child added inside `Hero.tsx`'s `flex flex-col items-center` section needs an explicit `w-full` wrapper, or its cross-axis size shrinks to content instead of the viewport (hit this exact bug with the mobile horizontal-scroll-with-mask treatment on this component — see `ui-registry.md`/`progress-tracker.md`).
 
 ---
 
