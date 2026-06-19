@@ -3,17 +3,15 @@
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 
+import { CardBorderGlow } from "@/components/homepage/feature-highlights/CardBorderGlow";
 import { CollectionsCard } from "@/components/homepage/feature-highlights/CollectionsCard";
+import { GraphLine } from "@/components/homepage/feature-highlights/GraphLine";
 import {
   LEFT_TOPICS,
   RIGHT_TOPICS,
   VIEWBOX_HEIGHT,
   VIEWBOX_WIDTH,
   Y_SLOTS,
-  cardEntryY,
-  linkPath,
-  sampleLink,
-  toSvgY,
 } from "@/components/homepage/feature-highlights/graphData";
 import { useGraphMeasurements } from "@/components/homepage/feature-highlights/useGraphMeasurements";
 
@@ -24,27 +22,9 @@ const fadeInVariants = {
   visible: { opacity: 1 },
 };
 
-const pathVariants = {
-  hidden: { pathLength: 0 },
-  visible: { pathLength: 1 },
-};
-
 export function PlatformGraph() {
   const { containerRef, cardRef, leftPillRefs, rightPillRefs, leftPoints, rightPoints, card } =
     useGraphMeasurements();
-
-  const leftHighlight = sampleLink(
-    leftPoints[0].x,
-    toSvgY(leftPoints[0].y),
-    card.left,
-    toSvgY(cardEntryY(card, 0)),
-  );
-  const rightHighlight = sampleLink(
-    rightPoints[0].x,
-    toSvgY(rightPoints[0].y),
-    card.right,
-    toSvgY(cardEntryY(card, 0)),
-  );
 
   return (
     <motion.div
@@ -59,7 +39,7 @@ export function PlatformGraph() {
         <svg
           viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
           preserveAspectRatio="none"
-          className="absolute inset-0 size-full overflow-visible"
+          className="absolute inset-0 size-full"
         >
           <defs>
             <linearGradient id="ff-graph-highlight" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -68,49 +48,25 @@ export function PlatformGraph() {
             </linearGradient>
           </defs>
           {leftPoints.map((point, index) => (
-            <motion.path
+            <GraphLine
               key={LEFT_TOPICS[index]}
-              variants={pathVariants}
-              transition={{ duration: 1, ease: EASE, delay: index * 0.1 }}
-              d={linkPath(point.x, toSvgY(point.y), card.left, toSvgY(cardEntryY(card, index)))}
-              fill="none"
-              vectorEffect="non-scaling-stroke"
-              strokeLinecap="round"
-              strokeWidth={index === 0 ? 2 : 1.25}
-              className={index === 0 ? undefined : "stroke-border-muted"}
-              stroke={index === 0 ? "url(#ff-graph-highlight)" : undefined}
+              point={point}
+              index={index}
+              cardEdgeX={card.left}
+              card={card}
+              dotDelay={index * 0.4}
             />
           ))}
           {rightPoints.map((point, index) => (
-            <motion.path
+            <GraphLine
               key={RIGHT_TOPICS[index]}
-              variants={pathVariants}
-              transition={{ duration: 1, ease: EASE, delay: index * 0.1 }}
-              d={linkPath(point.x, toSvgY(point.y), card.right, toSvgY(cardEntryY(card, index)))}
-              fill="none"
-              vectorEffect="non-scaling-stroke"
-              strokeLinecap="round"
-              strokeWidth={index === 0 ? 2 : 1.25}
-              className={index === 0 ? undefined : "stroke-border-muted"}
-              stroke={index === 0 ? "url(#ff-graph-highlight)" : undefined}
+              point={point}
+              index={index}
+              cardEdgeX={card.right}
+              card={card}
+              dotDelay={index * 0.4 + 0.25}
             />
           ))}
-          <motion.circle
-            r={1.6}
-            className="fill-xp"
-            vectorEffect="non-scaling-stroke"
-            initial={{ opacity: 0 }}
-            animate={{ cx: leftHighlight.cx, cy: leftHighlight.cy, opacity: [0, 1, 1, 0] }}
-            transition={{ duration: 2.6, repeat: Infinity, ease: "linear", delay: 0.6 }}
-          />
-          <motion.circle
-            r={1.6}
-            className="fill-xp"
-            vectorEffect="non-scaling-stroke"
-            initial={{ opacity: 0 }}
-            animate={{ cx: rightHighlight.cx, cy: rightHighlight.cy, opacity: [0, 1, 1, 0] }}
-            transition={{ duration: 2.6, repeat: Infinity, ease: "linear", delay: 1.1 }}
-          />
         </svg>
 
         {LEFT_TOPICS.map((topic, index) => (
@@ -162,6 +118,7 @@ export function PlatformGraph() {
           ref={cardRef}
           className="absolute top-1/2 left-1/2 w-64 -translate-x-1/2 -translate-y-1/2"
         >
+          <CardBorderGlow />
           <CollectionsCard />
         </div>
       </div>

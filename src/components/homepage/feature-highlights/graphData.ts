@@ -4,6 +4,10 @@ export const RIGHT_TOPICS = ["React", "Accessibility", "Performance", "System De
 
 export const Y_SLOTS = [12, 38, 64, 90];
 
+// One color per row, reused purely for hue (ui-rules.md's Multi-Item Hue Theming) —
+// gives each traveling dot a distinct, deliberately out-of-sync identity.
+export const DOT_FILL_CLASSES = ["fill-xp", "fill-accent", "fill-info", "fill-premium"];
+
 // The graph container is forced to aspect-video (16/9) via CSS. The SVG viewBox
 // must share that exact ratio too — a square viewBox stretched non-uniformly onto
 // a 16:9 box scales x and y by different factors, which visibly distorts stroke
