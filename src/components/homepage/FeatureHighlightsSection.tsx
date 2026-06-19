@@ -36,7 +36,7 @@ const FEATURES: FeatureHighlight[] = [
     title: "Interview-Ready Questions",
     shortLabel: "Interview Prep",
     description:
-      "Practice from FF 75, FF JavaScript Pro, and FF React Special — premium questions documented from real interviews at top companies, not generic multiple choice.",
+      "Practice from FF 75, FF JavaScript, FF React, and FF System Design — premium questions documented from real interviews at top companies, not generic multiple choice.",
     icon: MessageCircleQuestion,
     color: "premium",
     Visual: InterviewPrepMiniVisual,
@@ -80,7 +80,7 @@ export function FeatureHighlightsSection() {
         companies, and projects you can ship — all in one platform.
       </motion.p>
 
-      <PlatformGraph features={FEATURES} />
+      <PlatformGraph />
 
       <div className="mt-16 flex w-full flex-col gap-6 md:mt-20">
         <FeatureCard feature={hero} hero />

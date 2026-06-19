@@ -1,6 +1,6 @@
 import { Lock } from "lucide-react";
 
-const COLLECTIONS = ["FF 75", "FF JavaScript Pro", "FF React Special"];
+const COLLECTIONS = ["FF 75", "FF JavaScript", "FF React", "FF System Design"];
 
 export function InterviewPrepMiniVisual() {
   return (
