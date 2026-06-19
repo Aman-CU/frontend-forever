@@ -11,6 +11,7 @@ export type FeatureThemeColor = "accent" | "info" | "premium" | "success";
 export type FeatureHighlight = {
   id: string;
   title: string;
+  shortLabel: string;
   description: string;
   icon: LucideIcon;
   color: FeatureThemeColor;

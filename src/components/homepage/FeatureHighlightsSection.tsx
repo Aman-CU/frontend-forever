@@ -3,48 +3,53 @@
 import { motion } from "framer-motion";
 import { Code2, Eye, Hammer, MessageCircleQuestion } from "lucide-react";
 
-import { CodeSnippetMiniVisual } from "@/components/homepage/feature-highlights/CodeSnippetMiniVisual";
-import { EditorMiniVisual } from "@/components/homepage/feature-highlights/EditorMiniVisual";
+import { ChallengeEditorMiniVisual } from "@/components/homepage/feature-highlights/ChallengeEditorMiniVisual";
 import { FeatureCard, type FeatureHighlight } from "@/components/homepage/feature-highlights/FeatureCard";
-import { QAMiniVisual } from "@/components/homepage/feature-highlights/QAMiniVisual";
-import { SimulatorMiniVisual } from "@/components/homepage/feature-highlights/SimulatorMiniVisual";
+import { InterviewPrepMiniVisual } from "@/components/homepage/feature-highlights/InterviewPrepMiniVisual";
+import { PlatformGraph } from "@/components/homepage/feature-highlights/PlatformGraph";
+import { ProjectEditorMiniVisual } from "@/components/homepage/feature-highlights/ProjectEditorMiniVisual";
+import { SpecificityMiniVisual } from "@/components/homepage/feature-highlights/SpecificityMiniVisual";
 
 const FEATURES: FeatureHighlight[] = [
   {
     id: "see",
     title: "Concepts You Can See",
+    shortLabel: "Simulators",
     description:
-      "Every concept runs in a live simulator you can watch and control — not a static diagram you have to imagine.",
+      "Four interactive simulators — Event Loop, React Rendering, Browser Pipeline, CSS Specificity — turn abstract rules into something you can watch run, step by step.",
     icon: Eye,
     color: "accent",
-    Visual: SimulatorMiniVisual,
+    Visual: SpecificityMiniVisual,
   },
   {
     id: "challenges",
     title: "Real Engineering Challenges",
+    shortLabel: "Challenges",
     description:
-      "Code, test, and ship inside the browser. Get instant feedback the moment your tests pass or fail.",
+      "Solve the problems real frontend system design interviews ask — virtualized lists, rate-limited search, infinite scroll — in a real code editor with instant feedback.",
     icon: Code2,
     color: "info",
-    Visual: CodeSnippetMiniVisual,
+    Visual: ChallengeEditorMiniVisual,
   },
   {
     id: "interview",
     title: "Interview-Ready Questions",
+    shortLabel: "Interview Prep",
     description:
-      "Practice the exact questions companies ask, with spaced repetition that keeps the answers fresh.",
+      "Practice from FF 75, FF JavaScript Pro, and FF React Special — premium questions documented from real interviews at top companies, not generic multiple choice.",
     icon: MessageCircleQuestion,
     color: "premium",
-    Visual: QAMiniVisual,
+    Visual: InterviewPrepMiniVisual,
   },
   {
     id: "build",
     title: "Build Real Things",
+    shortLabel: "Projects",
     description:
-      "Turn what you learned into a finished project you can point to — not just a checkbox you ticked.",
+      "Ship a finished project — a Kanban board, a component library, a mini dashboard — not just a function that happens to pass a unit test.",
     icon: Hammer,
     color: "success",
-    Visual: EditorMiniVisual,
+    Visual: ProjectEditorMiniVisual,
   },
 ];
 
@@ -71,9 +76,11 @@ export function FeatureHighlightsSection() {
         transition={{ duration: 0.5, ease: EASE, delay: 0.1 }}
         className="mt-3 max-w-xl text-base text-text-secondary"
       >
-        Live simulators, real engineering challenges, and interview-ready practice — built to
-        stick, not just to read.
+        Simulators you can run, challenges you can solve, premium interview questions from real
+        companies, and projects you can ship — all in one platform.
       </motion.p>
+
+      <PlatformGraph features={FEATURES} />
 
       <div className="mt-16 flex w-full flex-col gap-6 md:mt-20">
         <FeatureCard feature={hero} hero />
