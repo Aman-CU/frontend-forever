@@ -11,12 +11,14 @@ Frontend Forever should feel like:
 - **Linear** — precise, minimal, professional
 - **Stripe** — premium, trustworthy, high craft
 
-Avoid:
+Avoid, **for app UI** (navbar, Learn experience, simulators, dashboards, anything the user works inside):
 - Dark hacker aesthetics
 - Purple gradients or neon effects
 - Gaming / crypto visuals
 - Heavy marketing copy patterns
 - Anything that feels like a typical SaaS dashboard
+
+**Exception — homepage marketing sections** (Hero and below: How It Works, Feature Highlights, Testimonials, CTA, etc.): these are allowed to be more vivid than the rule above — colorful per-section glow/blur accents, continuous ambient motion, hand-drawn illustration — closer to notion.com's actual landing page than Notion-the-*app*'s restraint. This was an explicit, repeated user direction during Feature 05 (How It Works), confirmed as the standing default for upcoming homepage sections, not a one-off. See `Motion → Continuous/Ambient Motion` and `Color → Multi-Item Hue Theming` below, and `HowItWorksSection` in `ui-registry.md` for the reference implementation. The "avoid neon/gradients" rule still fully applies once a user is *inside* the product (Learn, Practice, dashboards) — this exception is homepage-only.
 
 ---
 
@@ -105,11 +107,66 @@ transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
 - Tab switching: sliding underline indicator with `layoutId` for shared layout animation
 - Concept switcher: cross-fade between simulators with `AnimatePresence mode="wait"`
 
+### Continuous / Ambient Motion (homepage marketing sections only)
+
+Added for Feature 05 (How It Works) per explicit user request — confirmed as the standing pattern for homepage sections going forward, not a one-off. Distinct from every other motion rule on this page, which is one-shot (`whileInView`, fires once and stops): this is `animate` with `repeat: Infinity`, runs forever once mounted, used to make a section feel "alive" rather than just revealed.
+
+```typescript
+// Continuous ambient loop — small accent elements only
+animate={{ scale: [1, 1.12, 1], rotate: [0, -6, 0] }}
+transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+```
+
+Rules:
+- Keep it to 1–3 small looping elements per section (an icon, a couple of floating decorative shapes, one signature touch inside a card) — transform/opacity only, never layout-affecting properties. This is what keeps "ambient motion everywhere" from becoming "the page never settles down" or hurting performance — these loops never pause once started, including after the user scrolls away, so the count must stay small.
+- Don't put a continuous loop and a `whileInView` entrance on the *same* element if that element is small/short — see the gotcha below.
+
+**Gotcha — `viewport={{ margin: "-80px" }}` can permanently strand a small/short element's `whileInView` on mobile.** This codebase's standard one-shot entrance uses `margin: "-80px"`. One element in `HowItWorksSection` (a small icon, not the nested continuous loop inside it) got permanently stuck invisible on mobile viewports only with that margin — fixed by dropping the margin for that element (`viewport={{ once: true }}`, no `margin`). Root cause inside Framer Motion/the browser's IntersectionObserver wasn't confirmed, but the fix was verified across all instances. If a small or short element's entrance animation silently never plays on mobile, try removing its `margin` before assuming the bug is elsewhere. Full diagnostic writeup: `ui-registry.md` → `HowItWorksSection` → "Real bug."
+
+### Kinetic Typography (homepage marketing sections only)
+
+Per-letter animated headings, built for Feature 05's `AnimatedHeading` component (`src/components/homepage/how-it-works/AnimatedHeading.tsx`) — reusable for other homepage sections that want a heading to feel hand-crafted rather than just fading in as a block.
+
+- Split the heading text into one `motion.span` per letter, animate the group via Framer Motion `variants` + `transition: { staggerChildren }` on the **parent** — never give each individual letter its own independent `whileInView`/`viewport` trigger. A tiny letter-sized element can collapse to a zero-area bounding box mid-animation (e.g. `rotateX(-90deg)` with no `perspective` set fully foreshortens it) and a zero-area element can permanently fail to register as "intersecting," silently stranding that one letter while its siblings animate fine. Observe the parent only, propagate down via variants.
+- A nice default flourish: if the word has a repeated letter, the two occurrences can swap positions via a measured `x`/`y` arc (see `findSwapPair` in `AnimatedHeading.tsx`) while the rest of the letters do a simple flip/rotate-in. Not required for every heading — use judgment per word.
+
+---
+
+## Icons & Illustration
+
+**Default everywhere: `lucide-react`.** This remains the standard icon source for nav, buttons, tabs, badges, simulators, app UI — everything outside homepage marketing sections.
+
+**Homepage marketing sections may use custom hand-drawn/doodle-style icon SVGs instead** — thick uneven outline, flat single-color fill, no gradients/shading (see `public/icons/how-it-works/`, built for Feature 05). This is not something to generate automatically — there's no image-generation tool available in this environment, so these come from either the user supplying files directly or a licensed icon pack (IconScout/Flaticon "hand drawn doodle" collections were the source used for Feature 05). Don't block a feature on sourcing these — fall back to lucide icons with the same wrapper treatment (below) and swap in custom icons later if/when supplied.
+
+Whichever icon source is used, the wrapper convention for a "hero icon" in a homepage section is: **no boxed badge** — a soft theme-colored blurred glow (`absolute size-28 rounded-full opacity-40 blur-2xl bg-{color}`) behind a bare, fairly large icon (`h-20`+, not a 16–24px utility-icon size), not inside a `rounded-2xl` card. See `StepSection` in `ui-registry.md` for the reference implementation. If a custom SVG icon arrives oversized (hand-drawn/traced SVGs can come back 100KB+ from excessive path precision), run it through `npx svgo --precision 2` before committing — verify nothing visibly changed at display size first.
+
+---
+
+## Color
+
+### Multi-Item Hue Theming (homepage marketing sections)
+
+When a homepage section needs N visually distinct colors for N different items (steps, feature cards, pricing tiers, etc.) and there's no literal semantic mapping, reuse these 5 existing tokens purely for hue rather than inventing new color tokens — same pattern used in `HeroSimulatorPreview` (Feature 03) and `HowItWorksSection` (Feature 05):
+
+| Order | Token | Hue |
+| --- | --- | --- |
+| 1 | `accent` | teal |
+| 2 | `info` | blue |
+| 3 | `premium` | purple |
+| 4 | `success` | green |
+| 5 | `streak` | orange |
+
+This is a deliberate reuse **outside** these tokens' literal meaning (premium ≠ "this is a premium feature," streak ≠ "this is a streak counter") — scope it to the one component doing the theming, and don't let it leak into assuming `text-premium` always means "premium" elsewhere in the codebase. If a 6th color is ever needed, don't reach for a 6th semantic token by default — ask whether the section actually needs 6 distinct hues or should be redesigned around 5.
+
+Build one `Record<ThemeColor, {...}>` lookup (not several parallel same-shaped maps) for whatever combination of classes each themed instance needs (badge background, text color, blob/glow color, etc.) — see `THEME_CLASSES` in `StepSection.tsx` for the reference shape.
+
 ---
 
 ## Cards
 
 Every content section lives in a card. Cards are always white (`bg-surface`) — color goes inside via badges and text, never on the card surface.
+
+**Exception — homepage marketing sections:** a card's own surface may use a soft theme-tinted background (`bg-{color}-light` / `bg-{color}-muted`, no border) instead of flat white, per the same homepage exception as Design Philosophy above. App-UI cards (Learn, Practice, dashboards) keep the white-surface rule unchanged. See the 5 `*Preview` cards in `ui-registry.md` → `HowItWorksSection` for the reference implementation — note that *semantic* status colors inside a themed card (pass/fail green/red, success checkmarks) stay semantic regardless of the card's own theme color; only the card shell and a couple of accent touches take the theme.
 
 ```
 Standard card:
