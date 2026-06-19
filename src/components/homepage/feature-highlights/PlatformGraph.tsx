@@ -1,33 +1,27 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 
-const COLLECTIONS = ["FF 75", "FF JavaScript", "FF React", "FF System Design"];
-const LEFT_TOPICS = ["JavaScript Runtime", "Browser Internals", "CSS", "TypeScript"];
-const RIGHT_TOPICS = ["React", "Accessibility", "Performance", "System Design"];
-
-const Y_SLOTS = [12, 38, 64, 90];
-
-const FALLBACK_LEFT = LEFT_TOPICS.map((_, index) => ({ x: 24, y: Y_SLOTS[index] }));
-const FALLBACK_RIGHT = RIGHT_TOPICS.map((_, index) => ({ x: 76, y: Y_SLOTS[index] }));
-const FALLBACK_CARD = { left: 36, right: 64, top: 30, bottom: 70 };
-
-function linkPath(startX: number, startY: number, endX: number, endY: number) {
-  const midX = (startX + endX) / 2;
-  return `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
-}
-
-function cardEntryY(card: typeof FALLBACK_CARD, index: number) {
-  const t = index / (Y_SLOTS.length - 1);
-  return card.top + t * (card.bottom - card.top);
-}
+import { CollectionsCard } from "@/components/homepage/feature-highlights/CollectionsCard";
+import {
+  LEFT_TOPICS,
+  RIGHT_TOPICS,
+  VIEWBOX_HEIGHT,
+  VIEWBOX_WIDTH,
+  Y_SLOTS,
+  cardEntryY,
+  linkPath,
+  sampleLink,
+  toSvgY,
+} from "@/components/homepage/feature-highlights/graphData";
+import { useGraphMeasurements } from "@/components/homepage/feature-highlights/useGraphMeasurements";
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 
 const fadeInVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
 };
 
 const pathVariants = {
@@ -35,69 +29,22 @@ const pathVariants = {
   visible: { pathLength: 1 },
 };
 
-function CollectionsCard() {
-  return (
-    <div className="flex w-full flex-col gap-1.5 rounded-2xl border border-border bg-surface p-3 shadow-xl">
-      {COLLECTIONS.map((collection, index) => (
-        <div key={collection} className="flex items-center gap-3 px-2 py-2">
-          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-xs font-semibold text-text-secondary">
-            {index + 1}
-          </span>
-          <span className="text-sm font-semibold text-text-primary">{collection}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function PlatformGraph() {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const leftPillRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const rightPillRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const { containerRef, cardRef, leftPillRefs, rightPillRefs, leftPoints, rightPoints, card } =
+    useGraphMeasurements();
 
-  const [leftPoints, setLeftPoints] = useState(FALLBACK_LEFT);
-  const [rightPoints, setRightPoints] = useState(FALLBACK_RIGHT);
-  const [card, setCard] = useState(FALLBACK_CARD);
-
-  useLayoutEffect(() => {
-    function measure() {
-      const container = containerRef.current;
-      const cardEl = cardRef.current;
-      if (!container || !cardEl) return;
-      const containerRect = container.getBoundingClientRect();
-      if (containerRect.width === 0 || containerRect.height === 0) return;
-
-      const toX = (px: number) => ((px - containerRect.left) / containerRect.width) * 100;
-      const toY = (px: number) => ((px - containerRect.top) / containerRect.height) * 100;
-
-      setLeftPoints(
-        leftPillRefs.current.map((el, index) => {
-          if (!el) return FALLBACK_LEFT[index];
-          const r = el.getBoundingClientRect();
-          return { x: toX(r.right), y: toY(r.top + r.height / 2) };
-        }),
-      );
-      setRightPoints(
-        rightPillRefs.current.map((el, index) => {
-          if (!el) return FALLBACK_RIGHT[index];
-          const r = el.getBoundingClientRect();
-          return { x: toX(r.left), y: toY(r.top + r.height / 2) };
-        }),
-      );
-      const cardRect = cardEl.getBoundingClientRect();
-      setCard({
-        left: toX(cardRect.left),
-        right: toX(cardRect.right),
-        top: toY(cardRect.top),
-        bottom: toY(cardRect.bottom),
-      });
-    }
-
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, []);
+  const leftHighlight = sampleLink(
+    leftPoints[0].x,
+    toSvgY(leftPoints[0].y),
+    card.left,
+    toSvgY(cardEntryY(card, 0)),
+  );
+  const rightHighlight = sampleLink(
+    rightPoints[0].x,
+    toSvgY(rightPoints[0].y),
+    card.right,
+    toSvgY(cardEntryY(card, 0)),
+  );
 
   return (
     <motion.div
@@ -110,9 +57,9 @@ export function PlatformGraph() {
     >
       <div ref={containerRef} className="relative hidden aspect-video md:block">
         <svg
-          viewBox="0 0 100 100"
+          viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
           preserveAspectRatio="none"
-          className="absolute inset-0 size-full"
+          className="absolute inset-0 size-full overflow-visible"
         >
           <defs>
             <linearGradient id="ff-graph-highlight" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -125,9 +72,11 @@ export function PlatformGraph() {
               key={LEFT_TOPICS[index]}
               variants={pathVariants}
               transition={{ duration: 1, ease: EASE, delay: index * 0.1 }}
-              d={linkPath(point.x, point.y, card.left, cardEntryY(card, index))}
+              d={linkPath(point.x, toSvgY(point.y), card.left, toSvgY(cardEntryY(card, index)))}
               fill="none"
-              strokeWidth={index === 0 ? 0.7 : 0.4}
+              vectorEffect="non-scaling-stroke"
+              strokeLinecap="round"
+              strokeWidth={index === 0 ? 2 : 1.25}
               className={index === 0 ? undefined : "stroke-border-muted"}
               stroke={index === 0 ? "url(#ff-graph-highlight)" : undefined}
             />
@@ -137,13 +86,31 @@ export function PlatformGraph() {
               key={RIGHT_TOPICS[index]}
               variants={pathVariants}
               transition={{ duration: 1, ease: EASE, delay: index * 0.1 }}
-              d={linkPath(point.x, point.y, card.right, cardEntryY(card, index))}
+              d={linkPath(point.x, toSvgY(point.y), card.right, toSvgY(cardEntryY(card, index)))}
               fill="none"
-              strokeWidth={index === 0 ? 0.7 : 0.4}
+              vectorEffect="non-scaling-stroke"
+              strokeLinecap="round"
+              strokeWidth={index === 0 ? 2 : 1.25}
               className={index === 0 ? undefined : "stroke-border-muted"}
               stroke={index === 0 ? "url(#ff-graph-highlight)" : undefined}
             />
           ))}
+          <motion.circle
+            r={1.6}
+            className="fill-xp"
+            vectorEffect="non-scaling-stroke"
+            initial={{ opacity: 0 }}
+            animate={{ cx: leftHighlight.cx, cy: leftHighlight.cy, opacity: [0, 1, 1, 0] }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "linear", delay: 0.6 }}
+          />
+          <motion.circle
+            r={1.6}
+            className="fill-xp"
+            vectorEffect="non-scaling-stroke"
+            initial={{ opacity: 0 }}
+            animate={{ cx: rightHighlight.cx, cy: rightHighlight.cy, opacity: [0, 1, 1, 0] }}
+            transition={{ duration: 2.6, repeat: Infinity, ease: "linear", delay: 1.1 }}
+          />
         </svg>
 
         {LEFT_TOPICS.map((topic, index) => (
@@ -175,7 +142,26 @@ export function PlatformGraph() {
           </motion.span>
         ))}
 
-        <div ref={cardRef} className="absolute top-1/2 left-1/2 w-64 -translate-x-1/2 -translate-y-1/2">
+        <motion.div
+          aria-hidden="true"
+          animate={{ opacity: [0.08, 0.2, 0.08], scale: [1, 1.1, 1] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/2 left-1/2 size-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent blur-3xl"
+        />
+        <motion.span
+          aria-hidden="true"
+          animate={{ y: [0, -8, 0], rotate: [0, 10, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          style={{ top: "26%" }}
+          className="absolute left-1/2 flex size-7 -translate-x-1/2 items-center justify-center rounded-full bg-xp-light text-xp"
+        >
+          <Sparkles className="size-4" aria-hidden="true" />
+        </motion.span>
+
+        <div
+          ref={cardRef}
+          className="absolute top-1/2 left-1/2 w-64 -translate-x-1/2 -translate-y-1/2"
+        >
           <CollectionsCard />
         </div>
       </div>
