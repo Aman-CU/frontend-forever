@@ -1,6 +1,6 @@
 import { Lock } from "lucide-react";
 
-const COLLECTIONS = ["FF 75", "FF JavaScript", "FF React", "FF System Design"];
+import { COLLECTIONS } from "@/components/homepage/feature-highlights/graphData";
 
 export function InterviewPrepMiniVisual() {
   return (

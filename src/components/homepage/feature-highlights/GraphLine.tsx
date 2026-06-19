@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 import {
   DOT_FILL_CLASSES,
@@ -28,9 +28,11 @@ type GraphLineProps = {
 };
 
 export function GraphLine({ point, index, cardEdgeX, card, dotDelay }: GraphLineProps) {
+  const prefersReducedMotion = useReducedMotion();
   const startY = toSvgY(point.y);
   const endY = toSvgY(cardEntryY(card, index));
   const sample = sampleLink(point.x, startY, cardEdgeX, endY);
+  const dotFill = DOT_FILL_CLASSES[index % DOT_FILL_CLASSES.length];
 
   return (
     <>
@@ -47,16 +49,19 @@ export function GraphLine({ point, index, cardEdgeX, card, dotDelay }: GraphLine
       />
       <motion.circle
         r={1.4}
-        className={DOT_FILL_CLASSES[index]}
+        className={dotFill}
         vectorEffect="non-scaling-stroke"
-        initial={{ opacity: 0 }}
-        animate={{ cx: sample.cx, cy: sample.cy, opacity: [0, 1, 1, 0] }}
-        transition={{
-          duration: 2.2 + index * 0.35,
-          repeat: Infinity,
-          ease: "linear",
-          delay: dotDelay,
-        }}
+        initial={{ cx: sample.cx[0], cy: sample.cy[0], opacity: 0 }}
+        animate={
+          prefersReducedMotion
+            ? { cx: sample.cx[0], cy: sample.cy[0], opacity: 0.8 }
+            : { cx: sample.cx, cy: sample.cy, opacity: [0, 1, 1, 0] }
+        }
+        transition={
+          prefersReducedMotion
+            ? { duration: 0.4, delay: dotDelay }
+            : { duration: 2.2 + index * 0.35, repeat: Infinity, ease: "linear", delay: dotDelay }
+        }
       />
     </>
   );

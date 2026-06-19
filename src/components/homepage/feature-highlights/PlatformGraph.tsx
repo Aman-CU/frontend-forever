@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 
 import { CardBorderGlow } from "@/components/homepage/feature-highlights/CardBorderGlow";
@@ -23,6 +23,7 @@ const fadeInVariants = {
 };
 
 export function PlatformGraph() {
+  const prefersReducedMotion = useReducedMotion();
   const { containerRef, cardRef, leftPillRefs, rightPillRefs, leftPoints, rightPoints, card } =
     useGraphMeasurements();
 
@@ -37,6 +38,7 @@ export function PlatformGraph() {
     >
       <div ref={containerRef} className="relative hidden aspect-video md:block">
         <svg
+          aria-hidden="true"
           viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
           preserveAspectRatio="none"
           className="absolute inset-0 size-full"
@@ -100,14 +102,26 @@ export function PlatformGraph() {
 
         <motion.div
           aria-hidden="true"
-          animate={{ opacity: [0.08, 0.2, 0.08], scale: [1, 1.1, 1] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          animate={
+            prefersReducedMotion
+              ? { opacity: 0.14, scale: 1 }
+              : { opacity: [0.08, 0.2, 0.08], scale: [1, 1.1, 1] }
+          }
+          transition={
+            prefersReducedMotion
+              ? { duration: 0 }
+              : { duration: 3, repeat: Infinity, ease: "easeInOut" }
+          }
           className="absolute top-1/2 left-1/2 size-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent blur-3xl"
         />
         <motion.span
           aria-hidden="true"
-          animate={{ y: [0, -8, 0], rotate: [0, 10, 0] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          animate={prefersReducedMotion ? { y: 0, rotate: 0 } : { y: [0, -8, 0], rotate: [0, 10, 0] }}
+          transition={
+            prefersReducedMotion
+              ? { duration: 0 }
+              : { duration: 2.4, repeat: Infinity, ease: "easeInOut" }
+          }
           style={{ top: "26%" }}
           className="absolute left-1/2 flex size-7 -translate-x-1/2 items-center justify-center rounded-full bg-xp-light text-xp"
         >
