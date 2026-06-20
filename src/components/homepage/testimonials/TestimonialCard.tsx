@@ -53,6 +53,7 @@ export function TestimonialCard({ testimonial, delay = 0 }: TestimonialCardProps
 
       <div className="flex items-center gap-3 border-t border-border-light pt-4">
         <Avatar size="lg">
+          {/* Requires a matching public/avatars/testimonials/{id}.jpg, or falls back to initials below */}
           <AvatarImage src={`/avatars/testimonials/${id}.jpg`} alt={name} />
           <AvatarFallback className={cn("font-semibold", AVATAR_CLASSES[avatarColor])}>
             {getInitials(name)}
