@@ -8,5 +8,13 @@ type TaskQueueProps = {
 };
 
 export function TaskQueue({ items }: TaskQueueProps) {
-  return <SimulatorPanel title="Task Queue" icon={ListOrdered} theme="streak" items={items} />;
+  return (
+    <SimulatorPanel
+      title="Task Queue"
+      icon={ListOrdered}
+      theme="streak"
+      items={items}
+      emptyLabel="Queue is empty"
+    />
+  );
 }

@@ -1,6 +1,10 @@
+"use client";
+
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
+
+import { useSafeReducedMotion } from "../hooks/useSafeReducedMotion";
 
 type CodePanelProps = {
   activeLines: number[];
@@ -9,11 +13,18 @@ type CodePanelProps = {
 type CodeLineProps = {
   lineNumber: number;
   activeLines: number[];
+  prefersReducedMotion: boolean;
   indent?: number;
   children?: ReactNode;
 };
 
-function CodeLine({ lineNumber, activeLines, indent = 0, children }: CodeLineProps) {
+function CodeLine({
+  lineNumber,
+  activeLines,
+  prefersReducedMotion,
+  indent = 0,
+  children,
+}: CodeLineProps) {
   const isActive = activeLines.includes(lineNumber);
 
   return (
@@ -23,10 +34,12 @@ function CodeLine({ lineNumber, activeLines, indent = 0, children }: CodeLinePro
         isActive && "border-l-2 border-accent bg-accent/10",
       )}
     >
-      <span className="flex size-3 shrink-0 items-center justify-center">
+      <span className="flex size-3 shrink-0 items-center justify-center" aria-hidden="true">
         {isActive && (
           <span className="relative flex size-1.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-75" />
+            {!prefersReducedMotion && (
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-75" />
+            )}
             <span className="relative inline-flex size-1.5 rounded-full bg-accent" />
           </span>
         )}
@@ -38,48 +51,96 @@ function CodeLine({ lineNumber, activeLines, indent = 0, children }: CodeLinePro
 }
 
 export function CodePanel({ activeLines }: CodePanelProps) {
+  const prefersReducedMotion = useSafeReducedMotion();
+
   return (
     <div className="h-full overflow-x-auto rounded-lg border border-border bg-surface-secondary p-4 font-mono text-[13px] leading-6">
-      <CodeLine lineNumber={1} activeLines={activeLines}>
+      <CodeLine
+        lineNumber={1}
+        activeLines={activeLines}
+        prefersReducedMotion={prefersReducedMotion}
+      >
         <span className="text-accent">console.log</span>
         <span className="text-text-primary">(</span>
         <span className="text-success">&apos;start&apos;</span>
         <span className="text-text-primary">);</span>
       </CodeLine>
-      <CodeLine lineNumber={2} activeLines={activeLines} />
-      <CodeLine lineNumber={3} activeLines={activeLines}>
+      <CodeLine
+        lineNumber={2}
+        activeLines={activeLines}
+        prefersReducedMotion={prefersReducedMotion}
+      />
+      <CodeLine
+        lineNumber={3}
+        activeLines={activeLines}
+        prefersReducedMotion={prefersReducedMotion}
+      >
         <span className="text-accent">setTimeout</span>
         <span className="text-text-primary">(() =&gt; {"{"}</span>
       </CodeLine>
-      <CodeLine lineNumber={4} activeLines={activeLines} indent={1}>
+      <CodeLine
+        lineNumber={4}
+        activeLines={activeLines}
+        prefersReducedMotion={prefersReducedMotion}
+        indent={1}
+      >
         <span className="text-accent">console.log</span>
         <span className="text-text-primary">(</span>
         <span className="text-success">&apos;timeout&apos;</span>
         <span className="text-text-primary">);</span>
       </CodeLine>
-      <CodeLine lineNumber={5} activeLines={activeLines}>
+      <CodeLine
+        lineNumber={5}
+        activeLines={activeLines}
+        prefersReducedMotion={prefersReducedMotion}
+      >
         <span className="text-text-primary">{"}, "}</span>
         <span className="text-warning">0</span>
         <span className="text-text-primary">);</span>
       </CodeLine>
-      <CodeLine lineNumber={6} activeLines={activeLines} />
-      <CodeLine lineNumber={7} activeLines={activeLines}>
+      <CodeLine
+        lineNumber={6}
+        activeLines={activeLines}
+        prefersReducedMotion={prefersReducedMotion}
+      />
+      <CodeLine
+        lineNumber={7}
+        activeLines={activeLines}
+        prefersReducedMotion={prefersReducedMotion}
+      >
         <span className="text-accent">Promise.resolve</span>
         <span className="text-text-primary">().</span>
         <span className="text-accent">then</span>
         <span className="text-text-primary">(() =&gt; {"{"}</span>
       </CodeLine>
-      <CodeLine lineNumber={8} activeLines={activeLines} indent={1}>
+      <CodeLine
+        lineNumber={8}
+        activeLines={activeLines}
+        prefersReducedMotion={prefersReducedMotion}
+        indent={1}
+      >
         <span className="text-accent">console.log</span>
         <span className="text-text-primary">(</span>
         <span className="text-success">&apos;promise&apos;</span>
         <span className="text-text-primary">);</span>
       </CodeLine>
-      <CodeLine lineNumber={9} activeLines={activeLines}>
+      <CodeLine
+        lineNumber={9}
+        activeLines={activeLines}
+        prefersReducedMotion={prefersReducedMotion}
+      >
         <span className="text-text-primary">{"});"}</span>
       </CodeLine>
-      <CodeLine lineNumber={10} activeLines={activeLines} />
-      <CodeLine lineNumber={11} activeLines={activeLines}>
+      <CodeLine
+        lineNumber={10}
+        activeLines={activeLines}
+        prefersReducedMotion={prefersReducedMotion}
+      />
+      <CodeLine
+        lineNumber={11}
+        activeLines={activeLines}
+        prefersReducedMotion={prefersReducedMotion}
+      >
         <span className="text-accent">console.log</span>
         <span className="text-text-primary">(</span>
         <span className="text-success">&apos;end&apos;</span>

@@ -8,5 +8,13 @@ type MicrotaskQueueProps = {
 };
 
 export function MicrotaskQueue({ items }: MicrotaskQueueProps) {
-  return <SimulatorPanel title="Microtask Queue" icon={Zap} theme="info" items={items} />;
+  return (
+    <SimulatorPanel
+      title="Microtask Queue"
+      icon={Zap}
+      theme="info"
+      items={items}
+      emptyLabel="Queue is empty"
+    />
+  );
 }

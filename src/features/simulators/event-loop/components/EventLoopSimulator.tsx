@@ -33,6 +33,10 @@ export function EventLoopSimulator() {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface text-left shadow-xl">
+      <span className="sr-only" role="status" aria-live="polite">
+        {`Step ${currentStep} of ${totalSteps}: ${frame.description}`}
+      </span>
+
       <BrowserChromeBar />
       <PanelHeader currentStep={currentStep} totalSteps={totalSteps} />
 

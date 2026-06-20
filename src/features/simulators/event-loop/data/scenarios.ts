@@ -29,6 +29,7 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [],
     consoleOutput: [],
     activeCodeLines: [1],
+    description: "console.log('start') is executing on the call stack.",
   },
   {
     step: 2,
@@ -38,6 +39,7 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [],
     consoleOutput: ["start"],
     activeCodeLines: [1],
+    description: "'start' was printed to the console. The call stack is now empty.",
   },
   {
     step: 3,
@@ -47,6 +49,7 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [],
     consoleOutput: ["start"],
     activeCodeLines: [3, 5],
+    description: "setTimeout registers its timer with the Web APIs.",
   },
   {
     // The 0ms timer fires instantly — the callback moves into the Task
@@ -58,6 +61,8 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [{ code: "setTimeout(() => {...}, 0)", status: "Waiting..." }],
     consoleOutput: ["start"],
     activeCodeLines: [3, 5],
+    description:
+      "The timer fires immediately. The timeout callback moves into the task queue and waits.",
   },
   {
     // Promise.resolve().then(...) stands in for an async Web API call
@@ -70,6 +75,8 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [{ code: "setTimeout(() => {...}, 0)", status: "Waiting..." }],
     consoleOutput: ["start"],
     activeCodeLines: [7, 9],
+    description:
+      "The promise call registers with the Web APIs, standing in for an async request like fetch.",
   },
   {
     step: 6,
@@ -79,6 +86,7 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [{ code: "setTimeout(() => {...}, 0)", status: "Waiting..." }],
     consoleOutput: ["start"],
     activeCodeLines: [7, 9],
+    description: "The promise resolves. Its callback moves into the microtask queue and waits.",
   },
   {
     step: 7,
@@ -88,6 +96,7 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [{ code: "setTimeout(() => {...}, 0)", status: "Waiting..." }],
     consoleOutput: ["start"],
     activeCodeLines: [11],
+    description: "console.log('end') is executing on the call stack.",
   },
   {
     step: 8,
@@ -97,6 +106,8 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [{ code: "setTimeout(() => {...}, 0)", status: "Waiting..." }],
     consoleOutput: ["start", "end"],
     activeCodeLines: [11],
+    description:
+      "'end' was printed to the console. The call stack is empty, but both queues are still waiting.",
   },
   {
     // The Call Stack is empty — the event loop drains the entire Microtask
@@ -108,6 +119,8 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [{ code: "setTimeout(() => {...}, 0)", status: "Waiting..." }],
     consoleOutput: ["start", "end"],
     activeCodeLines: [8],
+    description:
+      "The event loop drains the microtask queue first. The promise callback moves to the call stack and executes.",
   },
   {
     step: 10,
@@ -117,6 +130,7 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [{ code: "setTimeout(() => {...}, 0)", status: "Waiting..." }],
     consoleOutput: ["start", "end", "promise"],
     activeCodeLines: [8],
+    description: "'promise' was printed to the console. The microtask queue is now empty.",
   },
   {
     // Microtask Queue is empty now — only then does the event loop check
@@ -128,6 +142,8 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [],
     consoleOutput: ["start", "end", "promise"],
     activeCodeLines: [4],
+    description:
+      "With the microtask queue empty, the event loop checks the task queue. The timeout callback moves to the call stack and executes.",
   },
   {
     step: 12,
@@ -137,12 +153,14 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     taskQueue: [],
     consoleOutput: ["start", "end", "promise", "timeout"],
     activeCodeLines: [4],
+    description:
+      "'timeout' was printed to the console. The task queue is empty and this run is complete.",
   },
 ];
 
 export const EXECUTION_ORDER_BY_OUTPUT: Record<string, ExecutionOrderEntry> = {
   start: { code: "console.log('start')", theme: "premium" },
   end: { code: "console.log('end')", theme: "premium" },
-  promise: { code: "Promise.then(...)", theme: "info" },
-  timeout: { code: "setTimeout(...)", theme: "streak" },
+  promise: { code: "console.log('promise')", theme: "info" },
+  timeout: { code: "console.log('timeout')", theme: "streak" },
 };

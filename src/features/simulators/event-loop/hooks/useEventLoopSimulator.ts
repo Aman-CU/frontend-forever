@@ -1,12 +1,28 @@
 import { useEffect, useState } from "react";
 
 import { EVENT_LOOP_FRAMES } from "../data/scenarios";
-import type { SimulatorSpeed } from "../types";
+import type { SimulatorFrame, SimulatorSpeed } from "../types";
 
 const TOTAL_STEPS = EVENT_LOOP_FRAMES.length;
 const BASE_INTERVAL_MS = 1800;
 
-export function useEventLoopSimulator() {
+type UseEventLoopSimulatorResult = {
+  currentStep: number;
+  totalSteps: number;
+  isPlaying: boolean;
+  autoplay: boolean;
+  speed: SimulatorSpeed;
+  setSpeed: (speed: SimulatorSpeed) => void;
+  frame: SimulatorFrame;
+  play: () => void;
+  pause: () => void;
+  step: () => void;
+  stepBack: () => void;
+  restart: () => void;
+  toggleAutoplay: () => void;
+};
+
+export function useEventLoopSimulator(): UseEventLoopSimulatorResult {
   const [currentStep, setCurrentStep] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [autoplay, setAutoplay] = useState(false);

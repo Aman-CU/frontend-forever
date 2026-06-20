@@ -8,5 +8,14 @@ type CallStackProps = {
 };
 
 export function CallStack({ items }: CallStackProps) {
-  return <SimulatorPanel title="Call Stack" icon={Layers} theme="premium" items={items} />;
+  return (
+    <SimulatorPanel
+      title="Call Stack"
+      icon={Layers}
+      theme="premium"
+      items={items}
+      emptyLabel="Stack is empty"
+      pulse
+    />
+  );
 }

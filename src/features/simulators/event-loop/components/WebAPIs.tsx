@@ -8,5 +8,13 @@ type WebAPIsProps = {
 };
 
 export function WebAPIs({ items }: WebAPIsProps) {
-  return <SimulatorPanel title="Web APIs" icon={Cpu} theme="success" items={items} />;
+  return (
+    <SimulatorPanel
+      title="Web APIs"
+      icon={Cpu}
+      theme="success"
+      items={items}
+      emptyLabel="No active requests"
+    />
+  );
 }

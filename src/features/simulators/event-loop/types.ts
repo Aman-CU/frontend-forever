@@ -13,6 +13,7 @@ export type SimulatorFrame = {
   taskQueue: PanelItem[];
   consoleOutput: string[];
   activeCodeLines: number[];
+  description: string;
 };
 
 export type ExecutionOrderEntry = {
