@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { CompanyLogosStrip } from "@/components/homepage/CompanyLogosStrip";
 import { ConceptSwitcherTabs } from "@/components/homepage/ConceptSwitcherTabs";
-import { HeroSimulatorPreview } from "@/components/homepage/HeroSimulatorPreview";
+import { EventLoopSimulator } from "@/features/simulators/event-loop/components/EventLoopSimulator";
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 
@@ -100,7 +100,7 @@ export function Hero() {
         transition={{ duration: 0.6, ease: EASE, delay: 1.05 }}
         className="mt-6 w-full"
       >
-        <HeroSimulatorPreview />
+        <EventLoopSimulator />
       </motion.div>
 
       <motion.div
