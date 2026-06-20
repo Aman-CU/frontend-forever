@@ -61,22 +61,20 @@ export function EventLoopSimulator() {
         <InsightCallout />
       </div>
 
-      <div className="hidden md:block">
-        <SimulatorControls
-          currentStep={currentStep}
-          totalSteps={totalSteps}
-          isPlaying={isPlaying}
-          autoplay={autoplay}
-          speed={speed}
-          onPlay={play}
-          onPause={pause}
-          onStep={step}
-          onStepBack={stepBack}
-          onRestart={restart}
-          onToggleAutoplay={toggleAutoplay}
-          onSpeedChange={setSpeed}
-        />
-      </div>
+      <SimulatorControls
+        currentStep={currentStep}
+        totalSteps={totalSteps}
+        isPlaying={isPlaying}
+        autoplay={autoplay}
+        speed={speed}
+        onPlay={play}
+        onPause={pause}
+        onStep={step}
+        onStepBack={stepBack}
+        onRestart={restart}
+        onToggleAutoplay={toggleAutoplay}
+        onSpeedChange={setSpeed}
+      />
     </div>
   );
 }
