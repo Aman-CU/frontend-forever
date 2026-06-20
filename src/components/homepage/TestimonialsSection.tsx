@@ -28,8 +28,8 @@ export function TestimonialsSection() {
         transition={{ duration: 0.5, ease: EASE }}
         className="text-3xl font-bold leading-tight text-text-primary sm:text-4xl md:text-5xl"
       >
-        <span className="block">500+ developers</span>
-        <span className="block text-text-secondary">who get it now.</span>
+        <span className="block">1M+ developers trust us</span>
+        <span className="block text-text-secondary">with their job interviews.</span>
       </motion.h2>
 
       <div className="mt-12 grid grid-cols-1 gap-6 md:mt-16 md:grid-cols-3">

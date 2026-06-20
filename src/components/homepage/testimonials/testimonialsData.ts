@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 
 import { AmazonLogo } from "@/components/shared/logos/AmazonLogo";
 import { AnthropicLogo } from "@/components/shared/logos/AnthropicLogo";
+import { CursorLogo } from "@/components/shared/logos/CursorLogo";
 import { GoogleLogo } from "@/components/shared/logos/GoogleLogo";
 import { MetaLogo } from "@/components/shared/logos/MetaLogo";
 import { MicrosoftLogo } from "@/components/shared/logos/MicrosoftLogo";
@@ -96,5 +97,78 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "Frontend Engineer",
     location: "San Francisco, USA",
     avatarColor: "accent",
+  },
+  {
+    id: "aisha-mohammed",
+    Logo: CursorLogo,
+    company: "Cursor",
+    date: "Oct 2025",
+    quote:
+      "FF JavaScript is what closed the gaps in my fundamentals. Closures and hoisting had always felt like syntax I'd memorized rather than understood — the question explanations finally gave me the 'why' I could actually defend live.",
+    name: "Aisha Mohammed",
+    role: "Frontend Engineer",
+    location: "Cairo, Egypt",
+    avatarColor: "info",
+  },
+  {
+    id: "tom-becker",
+    Logo: GoogleLogo,
+    company: "Google",
+    date: "Dec 2025",
+    quote:
+      "The CSS Specificity simulator made selector weight calculation click in a way years of trial-and-error in DevTools never did. It came up almost immediately in my live coding round.",
+    name: "Tom Becker",
+    role: "Frontend Engineer",
+    location: "Berlin, Germany",
+    avatarColor: "premium",
+  },
+  {
+    id: "hana-kim",
+    Logo: StripeLogo,
+    company: "Stripe",
+    date: "May 2025",
+    quote:
+      "I solved the debounce and throttle challenges in Practice weeks before my take-home — when the assignment turned out to be nearly the same problem, I already had the edge cases memorized.",
+    name: "Hana Kim",
+    role: "Software Engineer",
+    location: "Seoul, South Korea",
+    avatarColor: "success",
+    otherOffer: "Coupang",
+  },
+  {
+    id: "lucas-rocha",
+    Logo: AmazonLogo,
+    company: "Amazon",
+    date: "Apr 2026",
+    quote:
+      "FF React's deep dive into reconciliation is what carried my system design round. They asked how I'd minimize re-renders in a large component tree, and I'd already simulated exactly that scenario.",
+    name: "Lucas Rocha",
+    role: "Senior Frontend Engineer",
+    location: "Lisbon, Portugal",
+    avatarColor: "streak",
+  },
+  {
+    id: "grace-adeyemi",
+    Logo: MetaLogo,
+    company: "Meta",
+    date: "Sep 2025",
+    quote:
+      "Building a component library in the Build tab gave me something real to walk through in interviews, instead of describing a project from memory. It was the single most-discussed thing in every onsite.",
+    name: "Grace Adeyemi",
+    role: "Frontend Engineer",
+    location: "Accra, Ghana",
+    avatarColor: "accent",
+  },
+  {
+    id: "noah-fischer",
+    Logo: MicrosoftLogo,
+    company: "Microsoft",
+    date: "Jul 2025",
+    quote:
+      "The streak system is the only reason I stuck with prep for four straight months instead of burning out after two weeks. By the time interviews actually started, I'd been through every FF 75 question more than once.",
+    name: "Noah Fischer",
+    role: "Software Engineer II",
+    location: "Austin, USA",
+    avatarColor: "info",
   },
 ];
