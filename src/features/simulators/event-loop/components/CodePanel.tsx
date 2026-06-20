@@ -1,0 +1,82 @@
+import type { ReactNode } from "react";
+
+import { cn } from "@/lib/utils";
+
+type CodePanelProps = {
+  activeLines: number[];
+};
+
+type CodeLineProps = {
+  lineNumber: number;
+  activeLines: number[];
+  indent?: number;
+  children?: ReactNode;
+};
+
+function CodeLine({ lineNumber, activeLines, indent = 0, children }: CodeLineProps) {
+  const isActive = activeLines.includes(lineNumber);
+
+  return (
+    <div
+      className={cn(
+        "-mx-2 flex rounded px-2 transition-colors duration-300",
+        isActive && "bg-accent-muted",
+      )}
+    >
+      {indent > 0 && <span className="w-4 shrink-0" />}
+      <span>{children}</span>
+    </div>
+  );
+}
+
+export function CodePanel({ activeLines }: CodePanelProps) {
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border bg-surface-secondary p-4 font-mono text-[13px] leading-6">
+      <CodeLine lineNumber={1} activeLines={activeLines}>
+        <span className="text-accent">console.log</span>
+        <span className="text-text-primary">(</span>
+        <span className="text-success">&apos;start&apos;</span>
+        <span className="text-text-primary">);</span>
+      </CodeLine>
+      <CodeLine lineNumber={2} activeLines={activeLines} />
+      <CodeLine lineNumber={3} activeLines={activeLines}>
+        <span className="text-accent">setTimeout</span>
+        <span className="text-text-primary">(() =&gt; {"{"}</span>
+      </CodeLine>
+      <CodeLine lineNumber={4} activeLines={activeLines} indent={1}>
+        <span className="text-accent">console.log</span>
+        <span className="text-text-primary">(</span>
+        <span className="text-success">&apos;timeout&apos;</span>
+        <span className="text-text-primary">);</span>
+      </CodeLine>
+      <CodeLine lineNumber={5} activeLines={activeLines}>
+        <span className="text-text-primary">{"}, "}</span>
+        <span className="text-warning">0</span>
+        <span className="text-text-primary">);</span>
+      </CodeLine>
+      <CodeLine lineNumber={6} activeLines={activeLines} />
+      <CodeLine lineNumber={7} activeLines={activeLines}>
+        <span className="text-accent">Promise.resolve</span>
+        <span className="text-text-primary">().</span>
+        <span className="text-accent">then</span>
+        <span className="text-text-primary">(() =&gt; {"{"}</span>
+      </CodeLine>
+      <CodeLine lineNumber={8} activeLines={activeLines} indent={1}>
+        <span className="text-accent">console.log</span>
+        <span className="text-text-primary">(</span>
+        <span className="text-success">&apos;promise&apos;</span>
+        <span className="text-text-primary">);</span>
+      </CodeLine>
+      <CodeLine lineNumber={9} activeLines={activeLines}>
+        <span className="text-text-primary">{"});"}</span>
+      </CodeLine>
+      <CodeLine lineNumber={10} activeLines={activeLines} />
+      <CodeLine lineNumber={11} activeLines={activeLines}>
+        <span className="text-accent">console.log</span>
+        <span className="text-text-primary">(</span>
+        <span className="text-success">&apos;end&apos;</span>
+        <span className="text-text-primary">);</span>
+      </CodeLine>
+    </div>
+  );
+}
