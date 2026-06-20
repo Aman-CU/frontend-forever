@@ -16,15 +16,19 @@ export function CTASection() {
       whileInView={{ opacity: 1, scale: 1 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.6, ease: EASE }}
-      className="relative isolate w-full overflow-hidden bg-accent-darker"
+      className="relative isolate w-full overflow-hidden bg-cta-dark"
     >
       <div
         aria-hidden="true"
-        className="absolute -top-24 -left-16 size-72 rounded-full bg-accent opacity-20 blur-3xl"
+        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent opacity-60"
       />
       <div
         aria-hidden="true"
-        className="absolute -bottom-24 -right-16 size-80 rounded-full bg-accent-light opacity-10 blur-3xl"
+        className="absolute -top-24 -left-16 size-72 rounded-full bg-accent opacity-25 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -bottom-24 -right-16 size-80 rounded-full bg-accent opacity-15 blur-3xl"
       />
 
       <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center px-6 py-20 text-center md:px-8 md:py-28">

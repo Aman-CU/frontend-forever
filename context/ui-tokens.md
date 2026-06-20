@@ -110,6 +110,9 @@ Both light and dark theme tokens are defined. The `.dark` class on `<html>` trig
   --color-advanced: #DC2626;
   --color-advanced-bg: #FEE2E2;
 
+  /* ─── Theme-Invariant Surfaces ─── */
+  --color-cta-dark: #0A0A0A;
+
   /* ─── Border Radius ─── */
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -454,6 +457,19 @@ inactive tab:
   text:        text-text-secondary
   hover:       bg-surface-secondary
 ```
+
+---
+
+## Theme-Invariant Surfaces
+
+A small set of tokens are deliberately **not** redefined inside `.dark {}` — they stay the same value regardless of which site theme is active, rather than flipping polarity the way `--color-background`/`--color-surface`/`--color-text-inverse` do.
+
+| Token | Value | Used for |
+|---|---|---|
+| `--color-accent-foreground` | `#FFFFFF` | Text/icons on top of an accent-colored or fixed-dark surface — stays white in both themes since it's "foreground on a colored background," not "foreground on the page" |
+| `--color-cta-dark` | `#0A0A0A` | Full-bleed "always dark" marketing bands (e.g. `CTASection`) that should look identical in light and dark mode, not lighten/darken with the page |
+
+**Never pair a *theme-following* token (`text-inverse`, `bg-surface`, `bg-background`) with a fixed/theme-invariant background** — `text-inverse` flips white→near-black to track the page theme, so on a background that *doesn't* flip (like `bg-cta-dark` or `bg-accent-darker`) it can go invisible in one theme. Caught this exact mistake once already in Feature 06 (`ProjectEditorMiniVisual`) and again in Feature 08 (`CTASection`'s first draft) — see `ui-registry.md` for both. If a component's background is meant to stay constant across themes, every text/foreground color on top of it must come from this theme-invariant set, not the page-tracking one.
 
 ---
 
