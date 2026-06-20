@@ -394,6 +394,7 @@ Never show raw empty arrays or null states to users.
 - Never use `dark:bg-[#hex]` hardcoded — all dark colors come from `.dark {}` token overrides in globals.css
 - Framer Motion animations work in both themes automatically (they animate numeric/token values)
 - Monaco editor always uses its own dark theme (#1E1E1E) regardless of site theme — this is intentional
+- Full-bleed "always dark" marketing bands (e.g. `CTASection`) that should look identical in both themes use `bg-cta-dark` (`#0A0A0A`, a theme-invariant token — not redefined in `.dark {}`) rather than `bg-background`/`bg-surface`. Any text on top of a theme-invariant background must also use a theme-invariant foreground (`text-accent-foreground`), never `text-inverse`/`bg-surface` — those track the page theme and can go invisible against a background that doesn't. See `ui-tokens.md` → "Theme-Invariant Surfaces" and `ui-registry.md` → `CTASection`.
 
 ---
 

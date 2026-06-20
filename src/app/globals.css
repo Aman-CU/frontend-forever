@@ -78,6 +78,16 @@
   --color-advanced: #DC2626;
   --color-advanced-bg: #FEE2E2;
 
+  /*
+   * ─── Theme-Invariant Surfaces ───
+   * Deliberately NOT redefined inside .dark {} below, same precedent as
+   * --color-accent-foreground — stays the same value regardless of site
+   * theme. For full-bleed "always dark" marketing bands (e.g. CTASection)
+   * that should read identically in light and dark mode, not flip polarity
+   * with the page like --color-background/--color-surface do.
+   */
+  --color-cta-dark: #0A0A0A;
+
   /* ─── Border Radius ─── */
   --radius-xs: 4px;
   --radius-sm: 6px;
