@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { AvatarColor, Testimonial } from "@/components/homepage/testimonials/testimonialsData";
 
 const AVATAR_CLASSES: Record<AvatarColor, string> = {
@@ -30,7 +30,7 @@ type TestimonialCardProps = {
 };
 
 export function TestimonialCard({ testimonial, delay = 0 }: TestimonialCardProps) {
-  const { Logo, company, date, quote, name, role, location, avatarColor, otherOffer } =
+  const { id, Logo, company, date, quote, name, role, location, avatarColor, otherOffer } =
     testimonial;
 
   return (
@@ -53,6 +53,7 @@ export function TestimonialCard({ testimonial, delay = 0 }: TestimonialCardProps
 
       <div className="flex items-center gap-3 border-t border-border-light pt-4">
         <Avatar size="lg">
+          <AvatarImage src={`/avatars/testimonials/${id}.jpg`} alt={name} />
           <AvatarFallback className={cn("font-semibold", AVATAR_CLASSES[avatarColor])}>
             {getInitials(name)}
           </AvatarFallback>
