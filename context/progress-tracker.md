@@ -42,8 +42,9 @@ Update this file after every completed feature. Any AI agent reading this should
     5. **Minor:** `DOT_FILL_CLASSES[index]` would have silently returned `undefined` (no fill class, falling back to SVG's default black fill) if a 5th topic were ever added to `LEFT_TOPICS`/`RIGHT_TOPICS` without also extending `DOT_FILL_CLASSES`/`Y_SLOTS`. Fixed with modulo indexing (`DOT_FILL_CLASSES[index % DOT_FILL_CLASSES.length]`) so the 3 independently-sized arrays can never produce an out-of-bounds lookup, even though they're not type-linked.
     6. **Minor, flagged as pre-existing/systemic but fixed in scope for this feature anyway:** no `prefers-reduced-motion` handling existed anywhere in the codebase, and this feature meaningfully raised how much continuous motion runs on the homepage. Rather than building a global solution (out of scope for one feature's review), added `useReducedMotion()` (from `framer-motion`) to every component in this feature that runs a continuous loop — `GraphLine`, `CardBorderGlow`, and `PlatformGraph`'s pulse/sparkle — so each collapses to a single static frame (still visible, just not animating) when the OS-level reduced-motion preference is on, instead of looping regardless. Verified via a Playwright context with `reducedMotion: 'reduce'`: screenshot confirms the dots render as static (non-moving) accents, and the only console output is Framer Motion's own informational notice that it detected the preference — not an error.
     - Re-verified after all 6 fixes: typecheck/lint clean; full console check clean in both normal and reduced-motion modes; Playwright screenshots desktop/mobile × light/dark unchanged from the last known-good state (no visual regression from the fixes); no new overflow.
+  - Pushed `feature/06-feature-highlights-section` to origin and opened the PR → `develop`; merged via PR #9. Local `develop` fast-forwarded to the merge commit (`15a34f5`).
 **Currently building:** Nothing in progress.
-**Next:** Push `feature/06-feature-highlights-section` and PR it → `develop`, then start 07 Testimonials Section
+**Next:** Start 07 Testimonials Section
 
 ---
 
