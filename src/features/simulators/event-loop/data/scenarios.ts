@@ -69,20 +69,23 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
     activeCodeLines: [11],
   },
   {
+    // The microtask queue only ever holds the callback while it waits — the
+    // event loop dequeues it onto the Call Stack before it actually runs,
+    // same as every other "Executing..." frame in this scenario.
     step: 7,
-    callStack: [],
+    callStack: [{ code: "console.log('promise')", status: "Executing..." }],
     webAPIs: [{ code: "setTimeout(() => {...}, 0)", status: "Timer started" }],
-    microtaskQueue: [{ code: "Promise.resolve().then(...)", status: "Executing..." }],
+    microtaskQueue: [],
     taskQueue: [],
     consoleOutput: ["start", "end", "promise"],
     activeCodeLines: [8],
   },
   {
     step: 8,
-    callStack: [],
+    callStack: [{ code: "console.log('timeout')", status: "Executing..." }],
     webAPIs: [],
     microtaskQueue: [],
-    taskQueue: [{ code: "setTimeout(() => {...}, 0)", status: "Executing..." }],
+    taskQueue: [],
     consoleOutput: ["start", "end", "promise", "timeout"],
     activeCodeLines: [4],
   },
