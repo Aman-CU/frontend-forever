@@ -1,13 +1,16 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 import { useSafeReducedMotion } from "../hooks/useSafeReducedMotion";
 
 type PanelHeaderProps = {
   currentStep: number;
   totalSteps: number;
+  isPlaying: boolean;
 };
 
-export function PanelHeader({ currentStep, totalSteps }: PanelHeaderProps) {
+export function PanelHeader({ currentStep, totalSteps, isPlaying }: PanelHeaderProps) {
   const prefersReducedMotion = useSafeReducedMotion();
 
   return (
@@ -27,9 +30,14 @@ export function PanelHeader({ currentStep, totalSteps }: PanelHeaderProps) {
         <span className="text-xs font-medium text-text-secondary">
           Step {currentStep} of {totalSteps}
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-success-muted px-3 py-1 text-xs font-medium text-success">
-          <span className="size-1.5 rounded-full bg-success" />
-          Running
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium",
+            isPlaying ? "bg-success-muted text-success" : "bg-surface-secondary text-text-secondary",
+          )}
+        >
+          <span className={cn("size-1.5 rounded-full", isPlaying ? "bg-success" : "bg-text-muted")} />
+          {isPlaying ? "Running" : "Paused"}
         </span>
       </div>
     </div>

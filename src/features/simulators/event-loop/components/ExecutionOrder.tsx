@@ -4,10 +4,10 @@ import { MoveRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { EXECUTION_ORDER_BY_OUTPUT } from "../data/scenarios";
-import type { PanelTheme } from "../types";
+import type { ConsoleOutputToken, PanelTheme } from "../types";
 
 type ExecutionOrderProps = {
-  consoleOutput: string[];
+  consoleOutput: ConsoleOutputToken[];
 };
 
 const THEME_TEXT: Record<PanelTheme, string> = {

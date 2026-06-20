@@ -1,4 +1,4 @@
-import type { ExecutionOrderEntry, SimulatorFrame } from "../types";
+import type { ConsoleOutputToken, ExecutionOrderEntry, SimulatorFrame } from "../types";
 
 // Pre-scripted, not real JS execution — see architecture.md "Simulator
 // Architecture". Each frame is the full resultant panel state after that
@@ -158,7 +158,7 @@ export const EVENT_LOOP_FRAMES: SimulatorFrame[] = [
   },
 ];
 
-export const EXECUTION_ORDER_BY_OUTPUT: Record<string, ExecutionOrderEntry> = {
+export const EXECUTION_ORDER_BY_OUTPUT: Record<ConsoleOutputToken, ExecutionOrderEntry> = {
   start: { code: "console.log('start')", theme: "premium" },
   end: { code: "console.log('end')", theme: "premium" },
   promise: { code: "console.log('promise')", theme: "info" },
