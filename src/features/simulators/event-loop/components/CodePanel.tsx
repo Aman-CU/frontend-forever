@@ -19,10 +19,18 @@ function CodeLine({ lineNumber, activeLines, indent = 0, children }: CodeLinePro
   return (
     <div
       className={cn(
-        "-mx-2 flex rounded px-2 transition-colors duration-300",
-        isActive && "bg-accent-muted",
+        "-mx-2 flex items-center gap-1.5 rounded-r px-2 transition-colors duration-300",
+        isActive && "border-l-2 border-accent bg-accent/10",
       )}
     >
+      <span className="flex size-3 shrink-0 items-center justify-center">
+        {isActive && (
+          <span className="relative flex size-1.5">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-75" />
+            <span className="relative inline-flex size-1.5 rounded-full bg-accent" />
+          </span>
+        )}
+      </span>
       {indent > 0 && <span className="w-4 shrink-0" />}
       <span>{children}</span>
     </div>
@@ -31,7 +39,7 @@ function CodeLine({ lineNumber, activeLines, indent = 0, children }: CodeLinePro
 
 export function CodePanel({ activeLines }: CodePanelProps) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-surface-secondary p-4 font-mono text-[13px] leading-6">
+    <div className="h-full overflow-x-auto rounded-lg border border-border bg-surface-secondary p-4 font-mono text-[13px] leading-6">
       <CodeLine lineNumber={1} activeLines={activeLines}>
         <span className="text-accent">console.log</span>
         <span className="text-text-primary">(</span>

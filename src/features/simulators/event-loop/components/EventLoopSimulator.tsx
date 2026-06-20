@@ -8,6 +8,7 @@ import { CallStack } from "./CallStack";
 import { CodePanel } from "./CodePanel";
 import { ExecutionOrder } from "./ExecutionOrder";
 import { MicrotaskQueue } from "./MicrotaskQueue";
+import { OutputPanel } from "./OutputPanel";
 import { PanelHeader } from "./PanelHeader";
 import { SimulatorControls } from "./SimulatorControls";
 import { TaskQueue } from "./TaskQueue";
@@ -43,7 +44,15 @@ export function EventLoopSimulator() {
           <TaskQueue items={frame.taskQueue} />
         </div>
 
-        <CodePanel activeLines={frame.activeCodeLines} />
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+          <div className="lg:col-span-3">
+            <CodePanel activeLines={frame.activeCodeLines} />
+          </div>
+          <div className="lg:col-span-1">
+            <OutputPanel consoleOutput={frame.consoleOutput} />
+          </div>
+        </div>
+
         <ExecutionOrder consoleOutput={frame.consoleOutput} />
         <InsightCallout />
       </div>
