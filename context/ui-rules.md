@@ -378,11 +378,12 @@ Never show raw empty arrays or null states to users.
 ## Responsive Design
 
 - Mobile-first utility classes
-- Navbar collapses to hamburger on mobile (`< 768px`)
+- Navbar collapses to hamburger below `xl: 1280px` (raised from the original `lg: 1024px` after a Feature 09 responsive audit found the full desktop nav genuinely didn't fit in the 768–1279px tablet range — measure before picking a breakpoint, don't assume `lg:` is automatically "desktop enough")
 - Learn sidebar hides on mobile, accessible via sheet/drawer
-- Hero simulator is simplified (no interactive controls) on mobile
+- Hero simulator controls are simplified (no interactive controls) on mobile **by default** — **Confirmed exception:** the Event Loop simulator (Feature 09) shows full, functional controls on mobile too, per explicit user request (a CodeRabbit PR review flagged the hidden controls; the user asked to apply that suggestion, overriding this rule for that one feature). Default to hiding controls on mobile for new simulators (10–12) unless asked otherwise.
 - Homepage sections stack vertically on mobile
 - Breakpoints: `sm: 640px`, `md: 768px`, `lg: 1024px`, `xl: 1280px`
+- **Standing rule from Feature 09's responsive audit: every feature must be checked at every standard screen size before being considered done** — not just one desktop width and one mobile width. At minimum: a laptop viewport (e.g. 1366×768 — note the *height*, not just width, matters for tall interactive content), tablet portrait (768×1024) and landscape (1024×768), and mobile (390×844). When checking for horizontal overflow, measure `document.documentElement.scrollWidth` vs `clientWidth` directly — don't assume a similar-looking number is the same "known baseline" as last time without re-confirming which element is actually responsible (a real instance of this was misattributed for several past features)
 
 ---
 

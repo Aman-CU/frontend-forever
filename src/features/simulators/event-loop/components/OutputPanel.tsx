@@ -19,13 +19,13 @@ const THEME_TEXT: Record<PanelTheme, string> = {
 
 export function OutputPanel({ consoleOutput }: OutputPanelProps) {
   return (
-    <div className="flex h-full min-h-[120px] flex-col gap-2 rounded-lg border border-border bg-surface-secondary p-4">
+    <div className="flex h-full min-h-[100px] flex-col gap-2 rounded-lg border border-border bg-surface-secondary p-3">
       <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-text-secondary">
         <Terminal className="size-3.5" />
         Output
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5 font-mono text-[13px] leading-6">
+      <div className="flex flex-1 flex-col gap-1.5 font-mono text-[13px] leading-5">
         {consoleOutput.length === 0 ? (
           <span className="text-text-muted">Nothing logged yet</span>
         ) : (

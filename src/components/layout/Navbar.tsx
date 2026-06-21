@@ -56,13 +56,13 @@ export function Navbar() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-0.5 rounded-xl border border-border-light bg-surface px-1.5 py-3.5 shadow-xl lg:flex">
+        <nav className="hidden items-center gap-0.5 rounded-xl border border-border-light bg-surface px-1.5 py-3.5 shadow-xl xl:flex">
           {NAV_LINKS.map((link) => (
             <NavbarPillLink key={link.href} link={link} pathname={pathname} />
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 lg:flex">
+        <div className="hidden items-center gap-3 xl:flex">
           <a
             href="#"
             className="flex items-center gap-1.5 rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface-secondary"
@@ -87,14 +87,14 @@ export function Navbar() {
           type="button"
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
           onClick={() => setIsMenuOpen((open) => !open)}
-          className="flex size-9 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary lg:hidden"
+          className="flex size-9 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary xl:hidden"
         >
           {isMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
       </div>
 
       {isMenuOpen && (
-        <nav className="flex flex-col gap-1 border-t border-border bg-surface px-6 py-4 lg:hidden">
+        <nav className="flex flex-col gap-1 border-t border-border bg-surface px-6 py-4 xl:hidden">
           {NAV_LINKS.map((link) => (
             <NavbarMobileLink
               key={link.href}

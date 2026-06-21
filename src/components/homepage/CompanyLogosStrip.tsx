@@ -34,7 +34,7 @@ export function CompanyLogosStrip() {
         Practice concepts commonly discussed in interviews at
       </motion.p>
       <div
-        className="flex w-full items-center justify-start gap-8 overflow-x-auto px-6 text-text-primary [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)] sm:justify-center sm:gap-10 sm:overflow-visible sm:px-0 sm:[mask-image:none]"
+        className="flex w-full items-center justify-start gap-8 overflow-x-auto px-6 text-text-primary [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)] lg:justify-center lg:gap-10 lg:overflow-visible lg:px-0 lg:[mask-image:none]"
         style={{ scrollbarWidth: "none" }}
       >
         {LOGOS.map(({ name, Logo }, index) => (

@@ -40,7 +40,7 @@ export function EventLoopSimulator() {
       <BrowserChromeBar />
       <PanelHeader currentStep={currentStep} totalSteps={totalSteps} isPlaying={isPlaying} />
 
-      <div className="flex flex-col gap-4 p-5">
+      <div className="flex flex-col gap-3 p-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <CallStack items={frame.callStack} />
           <WebAPIs items={frame.webAPIs} />

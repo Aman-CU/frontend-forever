@@ -21,7 +21,7 @@ const ACTIVE_TAB = "Event Loop";
 
 export function ConceptSwitcherTabs() {
   return (
-    <div className="inline-flex items-center gap-1 rounded-xl border border-border-light bg-surface-secondary p-1.5">
+    <div className="flex max-w-full flex-wrap items-center justify-center gap-1 rounded-xl border border-border-light bg-surface-secondary p-1.5">
       {CONCEPT_TABS.map((tab) => {
         const Icon = tab.icon;
         const isActive = tab.label === ACTIVE_TAB;
@@ -30,13 +30,13 @@ export function ConceptSwitcherTabs() {
           <div
             key={tab.label}
             className={cn(
-              "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
+              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-colors sm:gap-2 sm:px-4 sm:py-2 sm:text-sm",
               isActive
                 ? "border border-border bg-surface text-text-primary shadow-md"
                 : "border border-transparent text-text-secondary hover:bg-surface",
             )}
           >
-            <Icon className="size-4" />
+            <Icon className="size-3.5 sm:size-4" />
             {tab.label}
           </div>
         );

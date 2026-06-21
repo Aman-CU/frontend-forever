@@ -37,7 +37,7 @@ export function SimulatorPanel({
   const prefersReducedMotion = useSafeReducedMotion();
 
   return (
-    <div className="flex min-h-[180px] flex-col gap-2 rounded-lg border border-border bg-surface p-4">
+    <div className="flex min-h-[130px] flex-col gap-2 rounded-lg border border-border bg-surface p-3">
       <div
         className={cn(
           "flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide",
