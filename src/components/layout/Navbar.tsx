@@ -41,33 +41,33 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-surface dark:bg-background sm:top-5">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-6 md:px-8 xl:gap-4">
+    <header className="sticky top-5 z-50 bg-surface dark:bg-background">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-6 md:px-8">
         <Link
           href="/"
           className="flex items-center gap-2"
           onClick={() => setIsMenuOpen(false)}
         >
-          <span className="text-4xl font-extrabold tracking-tight text-text-primary xl:text-5xl">
+          <span className="text-5xl font-extrabold tracking-tight text-text-primary">
             FF
           </span>
-          <span className="hidden text-sm font-semibold tracking-tight text-text-primary min-[1100px]:inline">
+          <span className="text-sm font-semibold tracking-tight text-text-primary">
             Frontend Forever
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-0 rounded-xl border border-border-light bg-surface px-1 py-2.5 shadow-xl lg:flex xl:gap-0.5 xl:px-1.5 xl:py-3.5">
+        <nav className="hidden items-center gap-0.5 rounded-xl border border-border-light bg-surface px-1.5 py-3.5 shadow-xl xl:flex">
           {NAV_LINKS.map((link) => (
             <NavbarPillLink key={link.href} link={link} pathname={pathname} />
           ))}
         </nav>
 
-        <div className="hidden items-center gap-1.5 lg:flex xl:gap-3">
+        <div className="hidden items-center gap-3 xl:flex">
           <a
             href="#"
-            className="flex items-center gap-1.5 rounded-lg border border-border px-2 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface-secondary xl:px-3.5"
+            className="flex items-center gap-1.5 rounded-lg border border-border px-3.5 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-surface-secondary"
           >
-            <span className="hidden xl:inline">Follow on</span>
+            Follow on
             <XLogo className="size-3.5" />
           </a>
           <ThemeToggle />
@@ -75,7 +75,8 @@ export function Navbar() {
             href="/login"
             className={cn(
               buttonVariants({ variant: "outline" }),
-              "px-3 py-2 text-sm xl:px-5 xl:py-4",
+              "px-5",
+              "py-4",
             )}
           >
             Log In
@@ -86,14 +87,14 @@ export function Navbar() {
           type="button"
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
           onClick={() => setIsMenuOpen((open) => !open)}
-          className="flex size-9 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary lg:hidden"
+          className="flex size-9 items-center justify-center rounded-lg text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary xl:hidden"
         >
           {isMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
       </div>
 
       {isMenuOpen && (
-        <nav className="flex flex-col gap-1 border-t border-border bg-surface px-6 py-4 lg:hidden">
+        <nav className="flex flex-col gap-1 border-t border-border bg-surface px-6 py-4 xl:hidden">
           {NAV_LINKS.map((link) => (
             <NavbarMobileLink
               key={link.href}
@@ -143,13 +144,13 @@ function NavbarPillLink({ link, pathname }: NavbarPillLinkProps) {
     <Link
       href={link.href}
       className={cn(
-        "flex items-center gap-1 rounded-xl px-2 py-1.5 text-xs font-medium transition-colors xl:gap-1.5 xl:px-3.5 xl:text-sm",
+        "flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-sm font-medium transition-colors",
         isActive
           ? "bg-accent-muted text-accent"
           : "text-text-primary hover:bg-surface-secondary",
       )}
     >
-      <Icon className="size-3 xl:size-3.5" />
+      <Icon className="size-3.5" />
       {link.label}
     </Link>
   );
