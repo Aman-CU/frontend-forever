@@ -378,7 +378,7 @@ Never show raw empty arrays or null states to users.
 ## Responsive Design
 
 - Mobile-first utility classes
-- Navbar collapses to hamburger below `xl: 1280px` (raised from the original `lg: 1024px` after a Feature 09 responsive audit found the full desktop nav genuinely didn't fit in the 768–1279px tablet range — measure before picking a breakpoint, don't assume `lg:` is automatically "desktop enough")
+- Navbar collapses to hamburger below `lg: 1024px`. Tablet landscape (1024px+) shows the **same full nav as desktop, compacted to fit** — not a separate hamburger tier. The full nav (pill links, "Follow on X", Log In) is sized down by default at `lg:` and restored to roomier desktop sizing at `xl:` (1280px): pill links `px-2 py-1.5 text-xs gap-1` (icon `size-3`), "Follow on X" icon-only with `aria-label` (text in `hidden xl:inline`), Log In `px-3 py-2 text-sm`, logo `text-4xl`, wordmark hidden only in the 1024–1099px band via two arbitrary breakpoints (`min-[1024px]:hidden min-[1100px]:inline` — mixing a named breakpoint here breaks the cascade, see Navbar.tsx comment). Verified via screenshots at 1024/1100/1279/1280px: full nav fits with zero overflow at every width.
 - Learn sidebar hides on mobile, accessible via sheet/drawer
 - Hero simulator controls are simplified (no interactive controls) on mobile **by default** — **Confirmed exception:** the Event Loop simulator (Feature 09) shows full, functional controls on mobile too, per explicit user request (a CodeRabbit PR review flagged the hidden controls; the user asked to apply that suggestion, overriding this rule for that one feature). Default to hiding controls on mobile for new simulators (10–12) unless asked otherwise.
 - Homepage sections stack vertically on mobile
