@@ -41,7 +41,7 @@ export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-5 z-50 bg-surface dark:bg-background">
+    <header className="sticky top-0 z-50 bg-surface dark:bg-background lg:top-5">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-6 md:px-8">
         <Link
           href="/"
