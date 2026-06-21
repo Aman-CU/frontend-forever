@@ -18,7 +18,10 @@ type SimulatorPanelProps = {
   pulse?: boolean;
 };
 
-const THEME_CLASSES: Record<PanelTheme, { text: string; bg: string; dot: string }> = {
+const THEME_CLASSES: Record<
+  PanelTheme,
+  { text: string; bg: string; dot: string }
+> = {
   premium: { text: "text-premium", bg: "bg-premium-light", dot: "bg-premium" },
   success: { text: "text-success", bg: "bg-success-light", dot: "bg-success" },
   info: { text: "text-info", bg: "bg-info-light", dot: "bg-info" },
@@ -37,7 +40,7 @@ export function SimulatorPanel({
   const prefersReducedMotion = useSafeReducedMotion();
 
   return (
-    <div className="flex min-h-[180px] flex-col gap-2 rounded-lg border border-border bg-surface p-4">
+    <div className="flex min-h-[170px] flex-col gap-2 rounded-lg border border-border bg-surface p-3">
       <div
         className={cn(
           "flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide",
@@ -65,22 +68,38 @@ export function SimulatorPanel({
                 className={cn("rounded-md px-3 py-2", themeClasses.bg)}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <p className={cn("truncate font-mono text-xs", themeClasses.text)}>
+                  <p
+                    className={cn(
+                      "truncate font-mono text-xs",
+                      themeClasses.text,
+                    )}
+                  >
                     {item.code}
                   </p>
                   {pulse && !prefersReducedMotion ? (
-                    <span className="relative flex size-1.5 shrink-0" aria-hidden="true">
+                    <span
+                      className="relative flex size-1.5 shrink-0"
+                      aria-hidden="true"
+                    >
                       <span
                         className={cn(
                           "absolute inline-flex size-full animate-ping rounded-full opacity-75",
                           themeClasses.dot,
                         )}
                       />
-                      <span className={cn("relative inline-flex size-1.5 rounded-full", themeClasses.dot)} />
+                      <span
+                        className={cn(
+                          "relative inline-flex size-1.5 rounded-full",
+                          themeClasses.dot,
+                        )}
+                      />
                     </span>
                   ) : (
                     <span
-                      className={cn("size-1.5 shrink-0 rounded-full", themeClasses.dot)}
+                      className={cn(
+                        "size-1.5 shrink-0 rounded-full",
+                        themeClasses.dot,
+                      )}
                       aria-hidden="true"
                     />
                   )}

@@ -48,7 +48,7 @@ export function SimulatorControls({
   const isAtEnd = currentStep === totalSteps;
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-t border-border bg-surface-secondary px-6 py-4">
+    <div className="flex flex-wrap items-center gap-2 border-t border-border bg-surface-secondary px-4 py-3">
       <button
         type="button"
         onClick={isPlaying ? onPause : onPlay}

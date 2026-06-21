@@ -54,7 +54,7 @@ export function CodePanel({ activeLines }: CodePanelProps) {
   const prefersReducedMotion = useSafeReducedMotion();
 
   return (
-    <div className="h-full overflow-x-auto rounded-lg border border-border bg-surface-secondary p-4 font-mono text-[13px] leading-6">
+    <div className="h-full overflow-x-auto rounded-lg border border-border bg-surface-secondary p-3 font-mono text-[13px] leading-5">
       <CodeLine
         lineNumber={1}
         activeLines={activeLines}

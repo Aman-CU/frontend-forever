@@ -28,7 +28,7 @@ export function Hero() {
         <span>Interview Ready</span>
       </motion.span>
 
-      <h1 className="mt-6 max-w-6xl text-4xl leading-[1.1] font-bold sm:text-5xl lg:text-5xl">
+      <h1 className="mt-6 max-w-6xl text-3xl leading-[1.15] font-bold sm:text-4xl lg:text-5xl">
         <motion.span
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
