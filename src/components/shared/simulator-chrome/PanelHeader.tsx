@@ -1,8 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-
-import { useSafeReducedMotion } from "../hooks/useSafeReducedMotion";
+import { useSafeReducedMotion } from "@/hooks/useSafeReducedMotion";
 
 type PanelHeaderProps = {
   currentStep: number;

@@ -6,16 +6,11 @@ import { BrowserChromeBar } from "@/components/shared/simulator-chrome/BrowserCh
 import { PanelHeader } from "@/components/shared/simulator-chrome/PanelHeader";
 import { SimulatorControls } from "@/components/shared/simulator-chrome/SimulatorControls";
 
-import { useEventLoopSimulator } from "../hooks/useEventLoopSimulator";
-import { CallStack } from "./CallStack";
-import { CodePanel } from "./CodePanel";
-import { ExecutionOrder } from "./ExecutionOrder";
-import { MicrotaskQueue } from "./MicrotaskQueue";
-import { OutputPanel } from "./OutputPanel";
-import { TaskQueue } from "./TaskQueue";
-import { WebAPIs } from "./WebAPIs";
+import { useReactRenderingSimulator } from "../hooks/useReactRenderingSimulator";
+import { ExecutionFlowBar } from "./ExecutionFlowBar";
+import { StageCardsRow } from "./StageCardsRow";
 
-export function EventLoopSimulator() {
+export function ReactRenderingSimulator() {
   const {
     currentStep,
     totalSteps,
@@ -30,7 +25,7 @@ export function EventLoopSimulator() {
     stepBack,
     restart,
     toggleAutoplay,
-  } = useEventLoopSimulator();
+  } = useReactRenderingSimulator();
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface text-left shadow-xl">
@@ -42,24 +37,15 @@ export function EventLoopSimulator() {
       <PanelHeader currentStep={currentStep} totalSteps={totalSteps} isPlaying={isPlaying} />
 
       <div className="flex flex-col gap-3 p-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <CallStack items={frame.callStack} />
-          <WebAPIs items={frame.webAPIs} />
-          <MicrotaskQueue items={frame.microtaskQueue} />
-          <TaskQueue items={frame.taskQueue} />
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
-          <div className="lg:col-span-3">
-            <CodePanel activeLines={frame.activeCodeLines} />
-          </div>
-          <div className="lg:col-span-1">
-            <OutputPanel consoleOutput={frame.consoleOutput} />
-          </div>
-        </div>
-
-        <ExecutionOrder consoleOutput={frame.consoleOutput} />
+        <StageCardsRow
+          cardStatuses={frame.cardStatuses}
+          componentStateCount={frame.componentStateCount}
+          realDomCount={frame.realDomCount}
+          isPlaying={isPlaying}
+          onIncrement={play}
+        />
         <InsightCallout />
+        <ExecutionFlowBar currentStep={currentStep} />
       </div>
 
       <SimulatorControls
@@ -82,15 +68,14 @@ export function EventLoopSimulator() {
 
 function InsightCallout() {
   return (
-    <div className="flex items-start gap-2.5 rounded-lg border border-border-light bg-surface-secondary p-3">
+    <div className="flex items-start gap-2.5 rounded-lg border border-border-light bg-accent-light p-3">
       <Lightbulb className="mt-0.5 size-4 shrink-0 text-accent" />
       <p className="text-sm text-text-secondary">
         <span className="font-medium text-text-primary">
-          Microtasks are executed before tasks.
+          React does not update the entire page.
         </span>{" "}
-        That&apos;s why <span className="font-mono text-info">Promise</span>{" "}
-        callbacks run before{" "}
-        <span className="font-mono text-streak">setTimeout</span>.
+        React <span className="font-semibold text-accent">compares changes first</span>, then
+        updates <span className="font-semibold text-accent">only what changed</span>.
       </p>
     </div>
   );

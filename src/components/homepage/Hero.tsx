@@ -1,18 +1,24 @@
 "use client";
 
+import { useState } from "react";
+
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { CompanyLogosStrip } from "@/components/homepage/CompanyLogosStrip";
 import { ConceptSwitcherTabs } from "@/components/homepage/ConceptSwitcherTabs";
+import type { ConceptSimulatorId } from "@/components/homepage/ConceptSwitcherTabs";
 import { EventLoopSimulator } from "@/features/simulators/event-loop/components/EventLoopSimulator";
+import { ReactRenderingSimulator } from "@/features/simulators/react-rendering/components/ReactRenderingSimulator";
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 
 export function Hero() {
+  const [activeTab, setActiveTab] = useState<ConceptSimulatorId>("event-loop");
+
   return (
     <section className="relative mx-auto flex w-full max-w-7xl flex-col items-center px-6 pt-16 pb-12 text-center md:px-8 md:pt-24">
       <motion.span
@@ -91,7 +97,7 @@ export function Hero() {
         transition={{ duration: 0.5, ease: EASE, delay: 0.95 }}
         className="mt-10"
       >
-        <ConceptSwitcherTabs />
+        <ConceptSwitcherTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </motion.div>
 
       <motion.div
@@ -100,7 +106,30 @@ export function Hero() {
         transition={{ duration: 0.6, ease: EASE, delay: 1.05 }}
         className="mt-6 w-full"
       >
-        <EventLoopSimulator />
+        <AnimatePresence mode="wait">
+          {activeTab === "event-loop" && (
+            <motion.div
+              key="event-loop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <EventLoopSimulator />
+            </motion.div>
+          )}
+          {activeTab === "react-rendering" && (
+            <motion.div
+              key="react-rendering"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ReactRenderingSimulator />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       <motion.div
