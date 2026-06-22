@@ -4,8 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useSafeReducedMotion } from "@/hooks/useSafeReducedMotion";
 
-import { useSafeReducedMotion } from "../hooks/useSafeReducedMotion";
 import type { PanelItem, PanelTheme } from "../types";
 
 type SimulatorPanelProps = {

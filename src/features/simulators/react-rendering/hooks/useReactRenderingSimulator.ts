@@ -2,20 +2,20 @@ import { useEffect, useState } from "react";
 
 import type { SimulatorSpeed } from "@/components/shared/simulator-chrome/types";
 
-import { EVENT_LOOP_FRAMES } from "../data/scenarios";
-import type { SimulatorFrame } from "../types";
+import { RENDER_FRAMES } from "../data/scenarios";
+import type { RenderFrame } from "../types";
 
-const TOTAL_STEPS = EVENT_LOOP_FRAMES.length;
+const TOTAL_STEPS = RENDER_FRAMES.length;
 const BASE_INTERVAL_MS = 1800;
 
-type UseEventLoopSimulatorResult = {
+type UseReactRenderingSimulatorResult = {
   currentStep: number;
   totalSteps: number;
   isPlaying: boolean;
   autoplay: boolean;
   speed: SimulatorSpeed;
   setSpeed: (speed: SimulatorSpeed) => void;
-  frame: SimulatorFrame;
+  frame: RenderFrame;
   play: () => void;
   pause: () => void;
   step: () => void;
@@ -24,7 +24,7 @@ type UseEventLoopSimulatorResult = {
   toggleAutoplay: () => void;
 };
 
-export function useEventLoopSimulator(): UseEventLoopSimulatorResult {
+export function useReactRenderingSimulator(): UseReactRenderingSimulatorResult {
   const [currentStep, setCurrentStep] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [autoplay, setAutoplay] = useState(false);
@@ -83,7 +83,7 @@ export function useEventLoopSimulator(): UseEventLoopSimulatorResult {
     autoplay,
     speed,
     setSpeed,
-    frame: EVENT_LOOP_FRAMES[currentStep - 1],
+    frame: RENDER_FRAMES[currentStep - 1],
     play,
     pause,
     step,

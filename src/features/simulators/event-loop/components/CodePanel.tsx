@@ -3,8 +3,7 @@
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
-
-import { useSafeReducedMotion } from "../hooks/useSafeReducedMotion";
+import { useSafeReducedMotion } from "@/hooks/useSafeReducedMotion";
 
 type CodePanelProps = {
   activeLines: number[];

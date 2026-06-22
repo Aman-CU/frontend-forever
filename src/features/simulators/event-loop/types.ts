@@ -26,5 +26,3 @@ export type ExecutionOrderEntry = {
   code: string;
   theme: PanelTheme;
 };
-
-export type SimulatorSpeed = 0.5 | 1 | 1.5 | 2;

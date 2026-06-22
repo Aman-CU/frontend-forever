@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import type { SimulatorSpeed } from "../types";
+import type { SimulatorSpeed } from "./types";
 
 const SPEED_OPTIONS: SimulatorSpeed[] = [0.5, 1, 1.5, 2];
 
