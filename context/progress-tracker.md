@@ -142,6 +142,7 @@ Update this file after every completed feature. Any AI agent reading this should
     4. **Minor, fixed structurally rather than just documented** — `cardStatuses` was a positional 5-tuple keyed only by array-order convention against `STAGE_META`, with no type-level link between the two. Converted to `Record<StageId, CardStatus>` (`StageId` a 5-string union) — `scenarios.ts` and `StageCardsRow.tsx` both updated to key by `id` instead of index, so a card can no longer point at the wrong status regardless of array reordering.
     5. **Minor** — `StageCardsRow`'s mobile scroll row had no edge-fade affordance, unlike the established `CompanyLogosStrip` precedent for the identical problem. Added the same `mask-image` treatment, verified via `getComputedStyle` (present at 390px, `none` at 1440px) rather than just eyeballed.
     - Re-verified after all 5 fixes: typecheck/lint clean; full 10-combination viewport×theme matrix still console-clean with zero overflow; re-ran the autoplay/disabled-state/in-card-Increment checks with byte-for-byte the same correct behavior as before the refactor — confirms these were structural/cleanliness fixes, not behavior changes.
+  - Committed as a single `feat(10)` commit, pushed `feature/10-react-rendering-simulator` to origin; PR #17 → `develop` merged by the user manually. Confirmed via `git log origin/develop` (merge commit `4f4567f`) and fast-forwarded local `develop` to match.
 **Currently building:** Nothing in progress.
 **Next:** Start 11 Browser Pipeline Simulator (Hero Version)
 
