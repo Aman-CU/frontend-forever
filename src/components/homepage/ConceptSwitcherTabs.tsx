@@ -17,11 +17,11 @@ type ConceptTab = {
 };
 
 // hasContent flips to true as each simulator is built (Features 09-12) —
-// browser-pipeline and css-specificity stay disabled until then.
+// css-specificity stays disabled until then.
 const CONCEPT_TABS: ConceptTab[] = [
   { id: "event-loop", label: "Event Loop", icon: RotateCw, hasContent: true },
   { id: "react-rendering", label: "React Rendering", icon: Atom, hasContent: true },
-  { id: "browser-pipeline", label: "Browser Pipeline", icon: Globe, hasContent: false },
+  { id: "browser-pipeline", label: "Browser Pipeline", icon: Globe, hasContent: true },
   { id: "css-specificity", label: "CSS Specificity", icon: Braces, hasContent: false },
 ];
 
