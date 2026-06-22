@@ -12,6 +12,7 @@ import { CompanyLogosStrip } from "@/components/homepage/CompanyLogosStrip";
 import { ConceptSwitcherTabs } from "@/components/homepage/ConceptSwitcherTabs";
 import type { ConceptSimulatorId } from "@/components/homepage/ConceptSwitcherTabs";
 import { BrowserPipelineSimulator } from "@/features/simulators/browser-pipeline/components/BrowserPipelineSimulator";
+import { CssSpecificitySimulator } from "@/features/simulators/css-specificity/components/CssSpecificitySimulator";
 import { EventLoopSimulator } from "@/features/simulators/event-loop/components/EventLoopSimulator";
 import { ReactRenderingSimulator } from "@/features/simulators/react-rendering/components/ReactRenderingSimulator";
 
@@ -139,6 +140,17 @@ export function Hero() {
               transition={{ duration: 0.3 }}
             >
               <BrowserPipelineSimulator />
+            </motion.div>
+          )}
+          {activeTab === "css-specificity" && (
+            <motion.div
+              key="css-specificity"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <CssSpecificitySimulator />
             </motion.div>
           )}
         </AnimatePresence>
