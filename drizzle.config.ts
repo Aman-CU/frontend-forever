@@ -11,9 +11,9 @@ export default defineConfig({
     // sslmode is stripped from the URL since it otherwise overrides the `ssl`
     // option below. This machine's network presents a self-signed cert in
     // the chain to Supabase's pooler (local TLS interception, not a Supabase
-    // issue) — CLI tooling is dev-only, so relax verification here. The app's
-    // own src/lib/db.ts only does this outside production.
+    // issue) — relax verification only outside production, same gate as
+    // src/lib/db.ts, in case this ever runs with a production DATABASE_URL.
     url: process.env.DATABASE_URL!.replace(/[?&]sslmode=[^&]+/, ""),
-    ssl: { rejectUnauthorized: false },
+    ssl: process.env.NODE_ENV === "production" ? true : { rejectUnauthorized: false },
   },
 });
