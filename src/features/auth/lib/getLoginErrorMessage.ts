@@ -21,5 +21,9 @@ const DEFAULT_LOGIN_ERROR_MESSAGE =
 
 export function getLoginErrorMessage(code: string | null): string | null {
   if (!code) return null;
-  return LOGIN_ERROR_MESSAGES[code] ?? DEFAULT_LOGIN_ERROR_MESSAGE;
+  // `code` comes from an untrusted URL query param — bracket access alone
+  // would resolve inherited keys like "constructor"/"__proto__" to a
+  // non-string value, which React then can't render as a child.
+  if (!Object.hasOwn(LOGIN_ERROR_MESSAGES, code)) return DEFAULT_LOGIN_ERROR_MESSAGE;
+  return LOGIN_ERROR_MESSAGES[code];
 }

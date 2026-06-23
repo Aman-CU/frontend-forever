@@ -30,16 +30,21 @@ export function OAuthButton({ provider }: Props) {
 
   const handleClick = async () => {
     setIsPending(true);
-    const { error } = await authClient.signIn.social({
-      provider,
-      callbackURL: "/learn",
-      errorCallbackURL: "/login",
-    });
-    // A successful call navigates the browser away to the provider, so we
-    // only ever reach here if the request failed before that redirect.
-    if (error) {
+    try {
+      const { error } = await authClient.signIn.social({
+        provider,
+        callbackURL: "/learn",
+        errorCallbackURL: "/login",
+      });
+      // A successful call navigates the browser away to the provider, so we
+      // only ever reach here if the request failed before that redirect.
+      if (error) {
+        setIsPending(false);
+        router.push(`/login?error=${encodeURIComponent(error.code ?? "unknown")}`);
+      }
+    } catch {
       setIsPending(false);
-      router.push(`/login?error=${encodeURIComponent(error.code ?? "unknown")}`);
+      router.push("/login?error=unknown");
     }
   };
 
