@@ -4,8 +4,6 @@ import Script from "next/script";
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
 
 import "./globals.css";
 
@@ -39,11 +37,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
         <ThemeProvider>
-          <TooltipProvider>
-            <Navbar />
-            <main className="flex flex-1 flex-col">{children}</main>
-            <Footer />
-          </TooltipProvider>
+          <TooltipProvider>{children}</TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

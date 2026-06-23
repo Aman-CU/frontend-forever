@@ -400,6 +400,52 @@ Originally built as one `CompanyLogos.tsx` file with all 7 exports — split int
 
 **Sizing** (verified via `getBoundingClientRect()` in the live DOM, not just by eye): `GoogleLogo`, `AmazonLogo`, `StripeLogo` use `h-5` (20px). `MetaLogo` and `MicrosoftLogo` are icon+text combos — both text `<span>`s have `leading-none` added (Tailwind's default `text-xl` line-height is 28px, which made these two render visibly larger/chunkier than the rest of the row before this was added; `leading-none` collapses the line box down to ~20px, which is what now sets each wrapper's overall height even where the icon itself is smaller, e.g. `MicrosoftLogo`'s `size-4` icon centers inside its taller 20px text box). `AnthropicLogo` (`h-4`) and `CursorLogo` (icon `h-4`, wordmark `h-3`) render at 16px, visibly smaller than the other 5 — a deliberate final-pass choice, not an oversight; if a future pass wants every logo at a uniform height, bump these two to `h-5`/`h-3.75` (preserving `CursorLogo`'s 4:3 icon:wordmark ratio) and re-verify with `getBoundingClientRect()`, the same way this was checked here.
 
+## Auth Components
+
+### LoginPage
+
+File: `src/app/(auth)/login/page.tsx`
+Last updated: 2026-06-23
+
+| Property         | Class                                                                 |
+| ---------------- | ---------------------------------------------------------------------- |
+| Background       | Page: `bg-surface dark:bg-background` (matches Navbar/Footer's split). Card: `bg-surface dark:bg-surface-secondary` |
+| Border            | Card: `border-border-light`                                            |
+| Border radius     | Card: `rounded-2xl`                                                    |
+| Text — primary    | `text-text-primary` — wordmark, "Welcome back" heading                 |
+| Text — secondary  | `text-text-secondary` — subheading, "Back to homepage" line            |
+| Spacing           | Card: `p-8`. Card max width: `max-w-sm`. Button stack gap: `gap-4`      |
+| Shadow            | `shadow-xl` — card only                                                 |
+| Accent usage      | `text-accent` — "Back to homepage" link                                 |
+| Error state       | `bg-error-muted text-error`, `role="alert"` — only renders when `?error=` is present |
+
+**Pattern notes:**
+This page is deliberately chrome-free — no Navbar/Footer — per `architecture.md`'s documented `(auth)/login/page.tsx` route group. Achieving that required moving the homepage and its Navbar/Footer ownership into a sibling `src/app/(main)/layout.tsx`; the root `src/app/layout.tsx` now only provides `ThemeProvider`/`TooltipProvider`. Any future route that *should* show the standard site chrome belongs under `(main)/`; anything that shouldn't (future auth-adjacent pages) belongs under `(auth)/` or its own bare route group.
+
+The error banner's copy is driven entirely by `getLoginErrorMessage()` (`src/features/auth/lib/`), which maps Better-Auth's actual callback error codes (read from `node_modules/better-auth/dist`, not guessed) to specific copy, falling back to a generic message for any unmapped/future code. `OAuthButton` is the only thing that ever triggers this query param — see below.
+
+### OAuthButton
+
+File: `src/features/auth/components/OAuthButton.tsx`
+Last updated: 2026-06-23
+
+| Property         | Class                                                                 |
+| ---------------- | ---------------------------------------------------------------------- |
+| Base              | `Button` (`variant="outline"`, `size="lg"`) — no new button styling, reuses the existing theme-aliased primitive |
+| Spacing           | `gap-2.5 py-3`, full width (`w-full`)                                   |
+| Icon              | `size-4` — `GoogleIcon`/`GithubIcon`, swapped for a spinning `Loader2` while pending |
+
+**Pattern notes:**
+One component, `provider: "google" | "github"` prop, used twice on the login page. Calls `authClient.signIn.social({ provider, callbackURL: "/learn", errorCallbackURL: "/login" })` — **both URLs must be passed explicitly**; Better-Auth's default `errorCallbackURL` is `${baseURL}/error` (a route this app doesn't have), not the page the user started from. A successful call navigates the browser away to the provider, so `handleClick` only ever reaches its own `if (error)` branch when the request failed *before* that redirect (e.g. provider misconfiguration) — in that case it resets its own pending state and routes to `/login?error=<code>` itself, reusing `getLoginErrorMessage`.
+
+### GoogleIcon / GithubIcon
+
+File: `src/features/auth/components/{GoogleIcon,GithubIcon}.tsx`
+Last updated: 2026-06-23
+
+**Pattern notes:**
+Same "inline the official brand SVG" precedent as `shared/logos/` and `shared/XLogo.tsx` — lucide-react's pinned version ships no GitHub glyph, and a sign-in button needs the **full-color** Google "G" mark, not the monochrome `shared/logos/GoogleLogo` built for the homepage company strip (different context, deliberately different treatment — do not consolidate these two). `GithubIcon` follows the `XLogo` pattern exactly (`fill="currentColor"`, `aria-hidden`, `cn("size-4", className)` default). `GoogleIcon` cannot use `currentColor` (its mark is inherently 4-color), but still takes `cn("size-4", className)` and `aria-hidden="true"` for sizing/accessibility consistency with every other icon in this codebase.
+
 ## Simulator Components
 
 _Will be populated as components are built._
