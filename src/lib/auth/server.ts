@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
-import { provisionProfile } from "@/lib/auth/provisionProfile";
+import { provisionProfile, getProfileProvisioningErrorCode } from "@/lib/auth/provisionProfile";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -30,7 +30,10 @@ export const auth = betterAuth({
           try {
             await provisionProfile(user);
           } catch (error) {
-            console.error("Failed to provision profile for user", user.id, error);
+            // Never log `error` itself — Drizzle's DrizzleQueryError embeds
+            // the full insert payload (name, email, avatar URL) in its
+            // message. Only the Postgres error code (if any) is safe.
+            console.error("[auth] Failed to provision profile:", user.id, getProfileProvisioningErrorCode(error));
           }
         },
       },

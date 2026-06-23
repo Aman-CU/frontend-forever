@@ -24,19 +24,25 @@ function randomSuffix(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 6);
 }
 
-function isUsernameConflict(error: unknown): boolean {
-  // Drizzle wraps the raw `pg` error (which carries `.code`/`.constraint`) in
-  // a DrizzleQueryError — the fields we need are on `error.cause`, not on
-  // the error Drizzle itself throws.
+// Drizzle wraps the raw `pg` error (which carries `.code`/`.constraint`) in a
+// DrizzleQueryError — those fields are on `error.cause`, not on the error
+// Drizzle itself throws.
+function getPostgresErrorCause(error: unknown): { code?: unknown; constraint?: unknown } | undefined {
   const cause = error instanceof Error ? error.cause : undefined;
-  return (
-    typeof cause === "object" &&
-    cause !== null &&
-    "code" in cause &&
-    cause.code === POSTGRES_UNIQUE_VIOLATION &&
-    "constraint" in cause &&
-    cause.constraint === PROFILES_USERNAME_CONSTRAINT
-  );
+  return typeof cause === "object" && cause !== null ? cause : undefined;
+}
+
+function isUsernameConflict(error: unknown): boolean {
+  const cause = getPostgresErrorCause(error);
+  return cause?.code === POSTGRES_UNIQUE_VIOLATION && cause?.constraint === PROFILES_USERNAME_CONSTRAINT;
+}
+
+// Safe to log — a Postgres error code (e.g. "23505") never contains the
+// failing row's data, unlike `error.message`/`error.cause`, which Drizzle
+// populates with the full insert payload (name, email, avatar URL).
+export function getProfileProvisioningErrorCode(error: unknown): string | undefined {
+  const code = getPostgresErrorCause(error)?.code;
+  return typeof code === "string" ? code : undefined;
 }
 
 async function upsertProfile(user: NewAuthUser, username: string): Promise<void> {
