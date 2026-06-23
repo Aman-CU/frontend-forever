@@ -179,11 +179,18 @@ _MCP servers will be listed here when configured._
 Required in `.env.local`:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+DATABASE_URL=
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 ```
+
+`DATABASE_URL` points at the Supabase-hosted Postgres instance — Supabase is database + storage only now, not the auth/client layer. See `context/architecture.md` → Auth + DB Client Patterns. None of the above are server-only except where noted; `BETTER_AUTH_URL` is the only one safe to expose as `NEXT_PUBLIC_` if the auth client needs it client-side.
 
 Required server-side only (no `NEXT_PUBLIC_` prefix):
 
@@ -201,7 +208,8 @@ STRIPE_WEBHOOK_SECRET=      (Phase 9 only)
 | Framework | Next.js 15 App Router | SSR for SEO, RSC for performance, edge-ready |
 | Styling | Tailwind CSS v4 + shadcn/ui | Fast to build, accessible primitives |
 | Animation | Framer Motion | Best React animation library for complex state-driven motion |
-| Database | Supabase (Postgres) | Auth + DB + Storage in one, scales well |
+| Database | Supabase (Postgres) | Hosted DB + Storage — accessed via a direct Postgres connection, not the supabase-js/PostgREST client |
+| Auth | Better-Auth | Self-hosted, full control over session/JWT, no vendor lock-in for auth specifically (changed from Supabase Auth before Phase 2 started — Supabase remains the DB) |
 | Content | MDX in repo | Static generation, no CMS dependency |
 | Code execution | Browser iframe sandbox | No backend cost, perfect for frontend challenges |
 | Simulator architecture | Self-contained per concept | Maximum flexibility, zero coupling |

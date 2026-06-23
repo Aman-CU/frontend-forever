@@ -17,20 +17,30 @@ Initialize the Next.js project with full stack configuration.
 **Steps:**
 
 - `npx create-next-app@latest frontend-forever --typescript --tailwind --app --src-dir`
-- Install dependencies: `framer-motion`, `@supabase/ssr`, `@supabase/supabase-js`, `@upstash/ratelimit`, `@upstash/redis`, `lucide-react`, `next-mdx-remote`, `gray-matter`, `@monaco-editor/react`
+- Install dependencies: `framer-motion`, `better-auth`, `drizzle-orm`, `pg`, `@upstash/ratelimit`, `@upstash/redis`, `lucide-react`, `next-mdx-remote`, `gray-matter`, `@monaco-editor/react`
+- Install dev dependency: `drizzle-kit` (schema migrations)
 - Install shadcn/ui: `npx shadcn@latest init`
 - Install base shadcn components: `button`, `dialog`, `tabs`, `dropdown-menu`, `tooltip`, `badge`, `avatar`, `switch`, `input`, `textarea`, `separator`
 - Configure `tsconfig.json` with strict mode and `@/*` alias to `./src/*`
 - Configure `.env.local` with all required environment variables (template only — no real keys)
 
+> **Note (added when Auth moved from Supabase to Better-Auth, then the DB layer from Kysely to Drizzle, both before Phase 2 started):** Phase 0 originally installed `@supabase/ssr`/`@supabase/supabase-js` per the line above. Nothing in Phase 0–1 ever used them (Phase 1 was UI-only). When Feature 14 actually starts, uninstall both and install `better-auth`, `drizzle-orm`, `pg` (+ `drizzle-kit` as a dev dependency) instead — the dependency line above already reflects the corrected list.
+
 **ENV Variables required:**
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+DATABASE_URL=
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 ```
+
+`DATABASE_URL` points at the same Supabase-hosted Postgres instance (its connection-pooler string, not the Supabase project URL) — Supabase is now used purely as hosted Postgres + Storage, not as the auth/client layer. See `context/architecture.md` → Auth + DB Client Patterns.
 
 ---
 
@@ -277,14 +287,20 @@ Wire the 4 hero tabs to their respective simulators with animated transitions.
 
 ## Phase 2 — Auth
 
-### 14 Supabase Setup
+**Switched from Supabase Auth to Better-Auth, decided before this phase started (see `context/progress-tracker.md` → Decisions Made).** Supabase remains the hosted Postgres database (and Storage, if needed later) — only the auth/session/OAuth layer moved. Full rationale and the new client/data-flow patterns are in `context/architecture.md`.
+
+### 14 Better-Auth Setup
 
 **Logic:**
 
-- `lib/supabase/client.ts` — browser client
-- `lib/supabase/server.ts` — server client factory
-- `middleware.ts` — session validation on protected routes
-- Protected routes list in middleware: `/learn/**`, `/practice/**`, `/interview-prep/**`, `/leaderboard`, `/settings`
+- `lib/schema/` — Drizzle table definitions in TypeScript; `drizzle.config.ts` at the project root points `drizzle-kit` at `DATABASE_URL`
+- `lib/db.ts` — shared Drizzle instance (`drizzle-orm/node-postgres` over a `pg` Pool, `DATABASE_URL`), used by both Better-Auth's adapter and app data queries
+- `lib/auth/server.ts` — the `betterAuth()` instance: `drizzleAdapter(db, { provider: 'pg' })` (reuses the same `db` from `lib/db.ts`), `socialProviders: { google, github }`, `advanced.database.generateId` configured to emit uuids (keeps `profiles.id` consistent with every other uuid PK in the schema), and a `databaseHooks.user.create.after` hook that upserts the matching `profiles` row on first sign-in (absorbs what Feature 16 used to do as a separate callback step)
+- `lib/auth/client.ts` — `createAuthClient()` from `better-auth/react`, the browser-side client (`signIn.social`, `signOut`, `useSession`)
+- `app/api/auth/[...all]/route.ts` — Better-Auth's Next.js catch-all route handler (`toNextJsHandler(auth)`) — this single route handles sign-in, the OAuth callback, sign-out, and session reads; there is no separate callback page
+- Run `npx @better-auth/cli generate` once (configured for the Drizzle adapter) to generate its `user` / `session` / `account` / `verification` table definitions into `lib/schema/`, then `npx drizzle-kit migrate` against `DATABASE_URL` to create them (and every app table from Feature 18) in the same Postgres database
+- `proxy.ts` (Next 16's renamed `middleware.ts`) — optimistic session-cookie check via Better-Auth's `getSessionCookie()` on protected routes (cookie presence only; real verification happens per-route via `auth.api.getSession()`)
+- Protected routes list in `proxy.ts`: `/learn/**`, `/practice/**`, `/interview-prep/**`, `/leaderboard`, `/settings`
 
 ---
 
@@ -303,20 +319,20 @@ Wire the 4 hero tabs to their respective simulators with animated transitions.
 
 **Logic:**
 
-- `supabase.auth.signInWithOAuth({ provider: 'google' })`
-- `supabase.auth.signInWithOAuth({ provider: 'github' })`
+- `authClient.signIn.social({ provider: 'google', callbackURL: '/learn' })`
+- `authClient.signIn.social({ provider: 'github', callbackURL: '/learn' })`
+- On failure, Better-Auth redirects back to `/login?error=...` — surface that query param as an error message on this page (same UX contract the old `?error=auth_failed` callback had, just sourced differently)
 
 ---
 
-### 16 Auth Callback Handler
+### 16 Profile Provisioning Hook
+
+**Renamed from "Auth Callback Handler"** — Better-Auth's catch-all route (built in Feature 14) *is* the callback handler, so there is no custom callback page to build. This feature's only remaining scope is the profile-creation side effect:
 
 **Logic:**
 
-- `/auth/callback/page.tsx`
-- Exchange code for session: `supabase.auth.exchangeCodeForSession(code)`
-- On success → redirect to `/learn`
-- On error → redirect to `/login?error=auth_failed`
-- Create profile row on first sign-in (if not exists): `upsert` into `profiles`
+- Implement the `databaseHooks.user.create.after` hook in `lib/auth/server.ts` (stubbed in Feature 14): on a new Better-Auth user row, `upsert` into `profiles` using the OAuth profile data Better-Auth already captured (`full_name`, `email`, `avatar_url`)
+- No redirect logic needed here — Better-Auth's own `callbackURL`/error-redirect handling (configured in Feature 14/15) covers success and failure paths
 
 ---
 
@@ -332,17 +348,22 @@ Update `Navbar.tsx` to handle the authenticated state.
 - "Upgrade to Premium" pill — only if `!user.is_premium`
 - Avatar with dropdown: Profile, Settings, Theme, Sign Out
 
+**Logic:**
+
+- `useUser()` (global hook, `src/hooks/useUser.ts`) wraps `authClient.useSession()` instead of a Supabase auth listener
+- Sign Out calls `authClient.signOut()`
+
 ---
 
 ## Phase 3 — Database
 
-### 18 Supabase Tables + RLS
+### 18 Database Tables
 
-Create all tables from `architecture.md` schema:
+Define all tables from `architecture.md` schema as Drizzle table definitions in `lib/schema/`, then run `npx drizzle-kit migrate` against `DATABASE_URL` (the same direct Postgres connection Better-Auth's adapter uses for its own tables):
 
 **Tables to create:**
 
-1. `profiles` — with trigger on `auth.users` insert for auto-creation
+1. `profiles` — `id` references Better-Auth's `user.id` (no `auth.users` trigger — provisioning happens via the `databaseHooks.user.create.after` hook from Feature 16, not a Postgres trigger)
 2. `concepts` — seed with initial concept list
 3. `user_concept_progress`
 4. `xp_events`
@@ -354,7 +375,7 @@ Create all tables from `architecture.md` schema:
 10. `roadmap_steps`
 11. `bookmarks`
 
-**RLS:** Enable on all tables, `user_id = auth.uid()` policy on every user-owned table
+**Authorization:** No RLS policies — see `architecture.md` → Authorization Model. Every query against a user-owned table must filter `WHERE user_id = session.user.id` in application code (`lib/db.ts`/Drizzle), since the app's Postgres connection is direct and not subject to RLS.
 
 ---
 

@@ -65,14 +65,13 @@ return Response.json({ error: 'Something went wrong. Please try again.' }, { sta
 export async function POST(req: Request) {
   try {
     // 1. Auth
-    const supabase = await createSupabaseServer()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const session = await auth.api.getSession({ headers: req.headers })
+    if (!session?.user) {
       return Response.json({ error: 'Please sign in to continue' }, { status: 401 })
     }
 
     // 2. Rate limit
-    const { success } = await ratelimit.limit(user.id)
+    const { success } = await ratelimit.limit(session.user.id)
     if (!success) {
       return Response.json({ error: "You're doing that too fast. Please wait a moment." }, { status: 429 })
     }
@@ -83,17 +82,13 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    // 4. Business logic
-    const { error: dbError } = await supabase.from('user_concept_progress').upsert({ ... })
-    if (dbError) {
-      console.error('[progress] DB write failed:', dbError.message)
-      return Response.json({ error: 'Could not save your progress. Please try again.' }, { status: 500 })
-    }
+    // 4. Business logic — Drizzle throws rather than returning { error }, so failures land in the catch block below
+    await db.insert(userConceptProgress).values({ ... }).onConflictDoUpdate({ ... })
 
     return Response.json({ data: { success: true } })
 
   } catch (error) {
-    // Catch-all for truly unexpected errors
+    // Catch-all for both DB failures and truly unexpected errors
     console.error('[progress] Unexpected error:', error)
     return Response.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }
@@ -267,36 +262,45 @@ export default function ConceptNotFound() {
 
 ---
 
-## Supabase Error Handling
+## Database Error Handling (Drizzle ORM / `pg`)
 
-Supabase returns `{ data, error }` — always check both:
+Drizzle throws rather than returning a `{ data, error }` tuple — wrap calls in `try/catch`, and use `db.query.*.findFirst()` (resolves `undefined` for no match, doesn't throw) when "no rows" is an expected, normal state rather than a failure:
 
 ```typescript
-const { data, error } = await supabase
-  .from('user_concept_progress')
-  .select('*')
-  .eq('user_id', user.id)
-  .single()
+// "No rows" is expected here — findFirst() resolves undefined, not a thrown error
+const row = await db.query.userConceptProgress.findFirst({
+  where: and(
+    eq(userConceptProgress.userId, session.user.id),
+    eq(userConceptProgress.conceptId, conceptId),
+  ),
+})
 
-if (error) {
-  // PGRST116 = no rows found — this is expected, not a crash
-  if (error.code === 'PGRST116') {
-    return null  // Concept not started yet — normal state
+if (!row) {
+  return null  // Concept not started yet — normal state, not an error
+}
+
+try {
+  await db.insert(xpEvents).values({ ... })
+} catch (error) {
+  // Postgres error codes still apply — they come from the database itself, not from a client library
+  const code = (error as { code?: string }).code
+  if (code === '23505') {
+    // Unique constraint violation — user message: already exists
   }
-  // Any other error is unexpected
-  console.error('[progress] Supabase error:', error.code, error.message)
-  throw new Error('Failed to load progress')
+  console.error('[progress] DB error:', code, error)
+  throw new Error('Failed to save progress')
 }
 ```
 
-### Common Supabase Error Codes
+### Common Postgres Error Codes
 
 | Code | Meaning | How to handle |
 |---|---|---|
-| `PGRST116` | No rows returned by `.single()` | Return null / default value — not an error |
 | `23505` | Unique constraint violation | User message: already exists |
-| `42501` | RLS policy violation | Should not happen if auth is correct — log and investigate |
-| `PGRST301` | JWT expired | Redirect to `/login` |
+| `23503` | Foreign key violation | Usually a bug (referencing a deleted/non-existent row) — log and investigate |
+| _(no rows)_ | `db.query.*.findFirst()` resolves `undefined`, doesn't throw | Return null / default value — not an error |
+
+Session-expiry handling moved to Better-Auth: `auth.api.getSession()` returning `null` (not a Postgres error) means the session is invalid or expired — redirect to `/login`, the same outcome the old `PGRST301`/JWT-expired case produced.
 
 ---
 
@@ -421,12 +425,12 @@ async function handleSubmit() {
 Rules that must never be violated:
 
 - Every `async` function that calls an external service is wrapped in `try/catch`
-- Every Supabase call checks the returned `error` before using `data`
+- Every Drizzle write is wrapped in `try/catch` — Drizzle throws on failure, it has no `{ data, error }` tuple to check
 - `finally` is always used to reset loading state — never leave a component stuck in loading
 - Raw error messages, stack traces, and internal codes are never shown to users
 - Errors are never silently swallowed — either handle and show a message, or re-throw
 - Network errors (fetch throws) are always distinguished from API errors (bad status code)
-- `PGRST116` (no rows) is always treated as a normal empty state, not an error
+- A missing row from `db.query.*.findFirst()` is always treated as a normal empty state, not an error
 - Simulator errors show inline with a Restart button — never a toast
 - All client-facing error messages use the standard wording from the toast table above
 - `console.error` is used for unexpected errors in server routes — never `console.log`

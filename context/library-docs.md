@@ -19,110 +19,189 @@ Never rely on general training knowledge alone for library APIs — they change.
 
 ---
 
-## Supabase (`@supabase/ssr`)
+## Better-Auth (`better-auth`)
 
-### Client vs Server — Never Mix
+**Switched from Supabase Auth, decided before Phase 2 started** — Supabase is now hosted Postgres + Storage only. Better-Auth owns its own `user`/`session`/`account`/`verification` tables in that same Postgres database via Drizzle (no PostgREST, no RLS underneath it). See `context/architecture.md` → Authentication / Auth + DB Client Patterns for the full rationale.
+
+### Server Instance vs Browser Client — Never Mix
 
 ```typescript
-// lib/supabase/client.ts — browser context ONLY
-import { createBrowserClient } from '@supabase/ssr'
+// lib/auth/server.ts — server context ONLY
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { db } from '@/lib/db' // the same Drizzle instance app queries use — see Database section below
 
-export const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+export const auth = betterAuth({
+  database: drizzleAdapter(db, { provider: 'pg' }),
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    },
+  },
+  advanced: {
+    database: { generateId: () => crypto.randomUUID() }, // keep ids uuid, matching every other table's PK
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // upsert into profiles — see build-plan.md Feature 16
+        },
+      },
+    },
+  },
+})
 ```
 
 ```typescript
-// lib/supabase/server.ts — server context ONLY
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+// lib/auth/client.ts — browser context ONLY
+import { createAuthClient } from 'better-auth/react'
 
-export const createSupabaseServer = async () => {
-  const cookieStore = await cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-}
+export const authClient = createAuthClient()
+```
+
+```typescript
+// app/api/auth/[...all]/route.ts — wires the instance into Next.js routing
+import { auth } from '@/lib/auth/server'
+import { toNextJsHandler } from 'better-auth/next-js'
+
+export const { GET, POST } = toNextJsHandler(auth)
 ```
 
 ### Auth
 
 ```typescript
-// Get current user in server context
-const supabase = await createSupabaseServer()
-const { data: { user }, error } = await supabase.auth.getUser()
-if (!user) redirect('/login')
+// Get current session in server context (Server Component, API route, Server Action)
+import { auth } from '@/lib/auth/server'
+import { headers } from 'next/headers'
+
+const session = await auth.api.getSession({ headers: await headers() })
+if (!session?.user) redirect('/login')
 
 // OAuth sign in (client component)
-await supabase.auth.signInWithOAuth({
+import { authClient } from '@/lib/auth/client'
+
+await authClient.signIn.social({
   provider: 'google', // or 'github'
-  options: {
-    redirectTo: `${window.location.origin}/auth/callback`
-  }
+  callbackURL: '/learn',
 })
 
-// Sign out
-await supabase.auth.signOut()
+// Sign out (client component)
+await authClient.signOut()
+
+// Read session reactively (client component)
+const { data: session } = authClient.useSession()
+```
+
+**Rules:**
+- `lib/auth/server.ts`'s `auth.api.getSession()` is the only place that performs real session verification — always server-side
+- `lib/auth/client.ts`'s `authClient` is for triggering sign-in/sign-out and reading session state in Client Components — never use it to make an authorization decision
+- Never call `betterAuth()` more than once — import the single `auth` instance from `lib/auth/server.ts` everywhere
+- There is no custom `/auth/callback` page — `app/api/auth/[...all]/route.ts`'s catch-all handler is the entire OAuth callback flow
+
+---
+
+## Database (Drizzle ORM + `pg`)
+
+App data (everything in `architecture.md`'s schema — `profiles`, `concepts`, `user_concept_progress`, etc.) is queried via a direct Postgres connection, the same database Better-Auth's own tables live in (and the same `db` instance Better-Auth's Drizzle adapter uses internally — see the Better-Auth section above).
+
+### Setup
+
+```typescript
+// lib/schema/profiles.ts — one file per table group, plain Drizzle table definitions
+import { pgTable, uuid, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core'
+
+export const profiles = pgTable('profiles', {
+  id: uuid('id').primaryKey(), // references Better-Auth's user.id
+  username: text('username').notNull().unique(),
+  xp: integer('xp').notNull().default(0),
+  isPremium: boolean('is_premium').notNull().default(false),
+  premiumExpiresAt: timestamp('premium_expires_at'),
+  // ...rest of architecture.md's profiles columns
+})
+```
+
+```typescript
+// lib/db.ts — server context ONLY, never imported into a Client Component
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
+import * as schema from './schema' // barrel file re-exporting every table in lib/schema/
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! })
+export const db = drizzle(pool, { schema })
+```
+
+```typescript
+// drizzle.config.ts — project root, used by the drizzle-kit CLI for migrations
+import { defineConfig } from 'drizzle-kit'
+
+export default defineConfig({
+  schema: './src/lib/schema',
+  out: './drizzle',
+  dialect: 'postgresql',
+  dbCredentials: { url: process.env.DATABASE_URL! },
+})
 ```
 
 ### DB Queries
 
 ```typescript
-// Read — always scope to user_id
-const { data, error } = await supabase
-  .from('user_concept_progress')
-  .select('*')
-  .eq('user_id', user.id)
-  .eq('concept_id', conceptId)
-  .single()
+import { and, eq, sql } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import { userConceptProgress, xpEvents, profiles } from '@/lib/schema'
 
-// Upsert (progress tracking)
-const { error } = await supabase
-  .from('user_concept_progress')
-  .upsert({
-    user_id: user.id,
-    concept_id: conceptId,
-    understand_completed: true,
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'user_id,concept_id' })
+// Read — always scope to user_id (no RLS underneath this connection — see security.md)
+const progress = await db.query.userConceptProgress.findFirst({
+  where: and(
+    eq(userConceptProgress.userId, session.user.id),
+    eq(userConceptProgress.conceptId, conceptId),
+  ),
+})
+
+// Upsert (progress tracking) — Postgres ON CONFLICT via Drizzle
+await db
+  .insert(userConceptProgress)
+  .values({
+    userId: session.user.id,
+    conceptId,
+    understandCompleted: true,
+    updatedAt: new Date(),
+  })
+  .onConflictDoUpdate({
+    target: [userConceptProgress.userId, userConceptProgress.conceptId],
+    set: { understandCompleted: true, updatedAt: new Date() },
+  })
 
 // Insert
-const { data, error } = await supabase
-  .from('xp_events')
-  .insert({
-    user_id: user.id,
-    event_type: 'concept_understand',
-    xp_amount: 10,
-    concept_id: conceptId
+const [event] = await db
+  .insert(xpEvents)
+  .values({
+    userId: session.user.id,
+    eventType: 'concept_understand',
+    xpAmount: 10,
+    conceptId,
   })
-  .select()
-  .single()
+  .returning()
 
 // Increment (XP on profile)
-const { error } = await supabase.rpc('increment_xp', {
-  p_user_id: user.id,
-  p_amount: 10
-})
+await db
+  .update(profiles)
+  .set({ xp: sql`${profiles.xp} + 10` })
+  .where(eq(profiles.id, session.user.id))
 ```
 
 **Rules:**
-- Always scope queries to `user_id` — never query user-owned tables without a user filter
-- Always handle the `error` return — never assume success
-- Use `.single()` when expecting exactly one row
-- Never use `.select('*')` in production — select only the columns you need
-- Use `upsert` with `onConflict` for progress tracking — not insert + update
+- Always scope queries to `user_id` — there is no RLS to fall back on if this is missed
+- Drizzle throws on failure (no `{ data, error }` tuple like supabase-js) — wrap writes in `try/catch` per `error-handling.md`
+- Use `db.query.*.findFirst()` (resolves `undefined`, doesn't throw) when a missing row is a valid, handled case; reach for the result of `.insert(...).returning()` directly (it throws on failure) when a row is required
+- Never select every column with a bare `db.select().from(table)` when only a few columns are needed — use `db.query.*.findFirst({ columns: {...} })` or `.select({ ... })`
+- Use `.onConflictDoUpdate()` for progress tracking — not a separate insert + update
+- Schema changes go through `lib/schema/`, never a hand-written migration — run `npx drizzle-kit generate` then `npx drizzle-kit migrate`
 
 ---
 

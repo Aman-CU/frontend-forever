@@ -140,7 +140,7 @@ Categories evolve as the platform grows. Current set:
 
 | Feature | Details |
 |---|---|
-| Auth | Google OAuth + GitHub OAuth via Supabase |
+| Auth | Google OAuth + GitHub OAuth via Better-Auth |
 | Progress | Tracked per concept, per tab (5 tabs × N concepts) |
 | XP | Earned per activity — concept tabs, challenges, interview answers, streak bonuses |
 | Streaks | Daily learning streak (current + longest) |
@@ -220,7 +220,7 @@ Examples:
 ## Features In Scope
 
 - Full homepage with all 8 sections and purposeful motion
-- Supabase auth (Google + GitHub OAuth only)
+- Better-Auth (Google + GitHub OAuth only)
 - Light + dark theme with manual toggle and system preference detection
 - Learn experience: all 5 tabs required per concept
 - 4 hero simulators: Event Loop, React Rendering, Browser Pipeline, CSS Specificity

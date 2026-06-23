@@ -139,7 +139,7 @@ Never mix relative and absolute imports in the same group.
 - **Local state** (`useState`) — UI state that doesn't need to be shared (accordion open, tab active)
 - **Feature hook** (`useX`) — state shared across components within a feature (simulator state, challenge state)
 - **Global state** (Zustand) — only for truly global state (user auth, search query, theme)
-- **Server state** (Supabase queries in RSC) — user progress, concept data
+- **Server state** (direct Postgres/Drizzle queries in RSC) — user progress, concept data
 - No prop drilling beyond 2 levels — extract a hook or use context
 
 ---
@@ -173,12 +173,11 @@ All API routes follow this structure:
 ```typescript
 export async function POST(req: Request) {
   // 1. Auth check
-  const supabase = await createSupabaseServer()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  const session = await auth.api.getSession({ headers: req.headers })
+  if (!session?.user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   // 2. Rate limit check
-  const { success } = await ratelimit.limit(user.id)
+  const { success } = await ratelimit.limit(session.user.id)
   if (!success) return Response.json({ error: 'Too many requests' }, { status: 429 })
 
   // 3. Parse and validate body
@@ -203,15 +202,18 @@ This order is mandatory. Never skip auth or rate limiting.
 'use server'
 
 export async function updateProgress(conceptId: string, tab: string) {
-  const supabase = await createSupabaseServer()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session?.user) throw new Error('Not authenticated')
 
-  const { error } = await supabase
-    .from('user_concept_progress')
-    .upsert({ user_id: user.id, concept_id: conceptId, [`${tab}_completed`]: true })
+  const completedField = `${tab}Completed` as const // e.g. understandCompleted, simulateCompleted
 
-  if (error) throw error
+  await db
+    .insert(userConceptProgress)
+    .values({ userId: session.user.id, conceptId, [completedField]: true })
+    .onConflictDoUpdate({
+      target: [userConceptProgress.userId, userConceptProgress.conceptId],
+      set: { [completedField]: true },
+    }) // throws on failure — no { error } tuple to check
 }
 ```
 
@@ -264,7 +266,7 @@ Write no comments unless the WHY is non-obvious. A good variable name is better 
 Write a comment for:
 - A workaround for a specific browser/library bug
 - A non-obvious algorithmic invariant (e.g. SM-2 spaced repetition edge case)
-- A constraint that isn't visible from the code (e.g. "Supabase free tier RLS limitation")
+- A constraint that isn't visible from the code (e.g. "no RLS on this connection — user_id filter is the only boundary")
 
 Never write:
 - Comments that restate what the code does
@@ -278,8 +280,13 @@ Never write:
 ```typescript
 // lib/env.ts — typed env accessor
 export const env = {
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  databaseUrl: process.env.DATABASE_URL!,
+  betterAuthSecret: process.env.BETTER_AUTH_SECRET!,
+  betterAuthUrl: process.env.BETTER_AUTH_URL!,
+  googleClientId: process.env.GOOGLE_CLIENT_ID!,
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  githubClientId: process.env.GITHUB_CLIENT_ID!,
+  githubClientSecret: process.env.GITHUB_CLIENT_SECRET!,
   upstashRedisUrl: process.env.UPSTASH_REDIS_REST_URL!,
   upstashRedisToken: process.env.UPSTASH_REDIS_REST_TOKEN!,
 } as const

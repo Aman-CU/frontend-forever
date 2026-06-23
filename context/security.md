@@ -12,21 +12,21 @@ Always validate the session server-side before trusting any request:
 
 ```typescript
 // Every protected API route and Server Action
-const supabase = await createSupabaseServer()
-const { data: { user }, error } = await supabase.auth.getUser()
+import { auth } from '@/lib/auth/server'
+import { headers } from 'next/headers'
 
-// Never use getSession() for security checks — it reads from cookie without server verification
-// Always use getUser() — it verifies the token with Supabase servers
-if (!user || error) {
+const session = await auth.api.getSession({ headers: await headers() })
+
+if (!session?.user) {
   return Response.json({ error: 'Unauthorized' }, { status: 401 })
 }
 ```
 
-`getSession()` reads from the local cookie and can be spoofed. `getUser()` makes a server-side verification call. Always use `getUser()` in security-sensitive paths.
+`auth.api.getSession()` is a real server-side call — it validates the session against the database, the same trust boundary `getUser()` provided under Supabase Auth. Never trust a session object that only came from a client-reported cookie value; always call `auth.api.getSession()` server-side in security-sensitive paths.
 
-### Middleware Protection
+### Proxy (Middleware) Protection
 
-`middleware.ts` guards all protected routes. Never duplicate auth checks inside page components — the middleware handles it. But API routes must still check auth independently — middleware does not run for API routes in all deployment configurations.
+`proxy.ts` (Next 16's renamed `middleware.ts`) guards all protected routes — but it only does an **optimistic** cookie-presence check via Better-Auth's `getSessionCookie()` helper, not full verification (no DB call there, by design — it's a fast UX redirect, not the security boundary). Never duplicate that redirect logic inside page components. But every protected API route and Server Component must still call `auth.api.getSession()` independently — the proxy check alone is not sufficient, the same way Supabase's `middleware.ts` never was.
 
 ### OAuth Only
 
@@ -42,44 +42,39 @@ Never add email/password auth without explicit product decision.
 
 ## Database Security
 
-### Row Level Security (RLS)
+### No RLS — Authorization Is Enforced in Application Code
 
-RLS is enabled on every table with a `user_id` column. Never disable it. Never bypass it with a service role key in client-facing code.
-
-```sql
--- Every user-owned table has this policy
-CREATE POLICY "Users access own data only"
-  ON user_concept_progress
-  FOR ALL
-  USING (user_id = auth.uid());
-```
-
-### Always Scope Queries to User
-
-Even with RLS active, always include the user filter explicitly in application code. Defense in depth — two layers of protection:
+**This is a deliberate change from the original Supabase-Auth design.** App data is now queried via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), not Supabase's PostgREST client — there is no per-request Supabase JWT for an `auth.uid()`-based RLS policy to read, and a direct connection bypasses RLS regardless of whether policies exist on the table. This means the `user_id` filter below is the **only** boundary, not a second layer on top of RLS — get it wrong and there is nothing else stopping a cross-user read or write.
 
 ```typescript
-// Good — explicit user scope + RLS
-const { data } = await supabase
-  .from('user_concept_progress')
-  .select('*')
-  .eq('user_id', user.id)   // explicit filter
-  .eq('concept_id', slug)
+// Mandatory — every query against a user-owned table filters by the session's user id
+import { and, eq } from 'drizzle-orm'
 
-// Bad — relies on RLS alone, and leaks intent
-const { data } = await supabase
-  .from('user_concept_progress')
-  .select('*')
-  .eq('concept_id', slug)
+const session = await auth.api.getSession({ headers: await headers() })
+if (!session?.user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+const progress = await db
+  .select()
+  .from(userConceptProgress)
+  .where(and(
+    eq(userConceptProgress.userId, session.user.id),   // mandatory — the only authorization boundary
+    eq(userConceptProgress.conceptId, slug),
+  ))
+
+// Never — no user_id filter means this returns/touches every user's row
+const progress = await db
+  .select()
+  .from(userConceptProgress)
+  .where(eq(userConceptProgress.conceptId, slug))
 ```
 
-### Never Expose the Service Role Key
+### `DATABASE_URL` Is the New Service-Role-Key-Equivalent
 
-`SUPABASE_SERVICE_ROLE_KEY` bypasses RLS entirely. Rules:
-- Never use it in client-side code
+`DATABASE_URL` has full, unpoliced table access — equivalent in sensitivity to the old `SUPABASE_SERVICE_ROLE_KEY`. Rules:
+- Never use it in client-side code, never import `lib/db.ts` into a Client Component
 - Never prefix it with `NEXT_PUBLIC_`
-- Only use it in trusted server-side scripts (migrations, seed scripts) — never in API routes
-- If it's ever needed in an API route, that's a red flag — redesign the approach
+- Never log it or include it in an error message
+- If a query ever needs to run without a `user_id` filter (admin tooling, seed scripts), that code path must never be reachable from a user-facing API route
 
 ### Input Validation Before Any DB Write
 
@@ -110,12 +105,11 @@ Never trust `body.tab` or `body.eventType` from the client. Always validate agai
 ```typescript
 export async function POST(req: Request) {
   // 1. Auth — always first
-  const supabase = await createSupabaseServer()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  const session = await auth.api.getSession({ headers: req.headers })
+  if (!session?.user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   // 2. Rate limit — always second
-  const { success } = await ratelimit.limit(user.id)
+  const { success } = await ratelimit.limit(session.user.id)
   if (!success) return Response.json({ error: 'Too many requests' }, { status: 429 })
 
   // 3. Parse body
@@ -149,17 +143,19 @@ Always verify the resource belongs to the authenticated user:
 
 ```typescript
 // Bad — trusts client that conceptId belongs to user
-const { data } = await supabase
-  .from('user_concept_progress')
-  .select('*')
-  .eq('concept_id', body.conceptId)
+const data = await db
+  .select()
+  .from(userConceptProgress)
+  .where(eq(userConceptProgress.conceptId, body.conceptId))
 
 // Good — scopes to user_id, so even a wrong conceptId only returns their own data
-const { data } = await supabase
-  .from('user_concept_progress')
-  .select('*')
-  .eq('user_id', user.id)
-  .eq('concept_id', body.conceptId)
+const data = await db
+  .select()
+  .from(userConceptProgress)
+  .where(and(
+    eq(userConceptProgress.userId, session.user.id),
+    eq(userConceptProgress.conceptId, body.conceptId),
+  ))
 ```
 
 ---
@@ -172,14 +168,13 @@ Premium checks must always happen server-side. The client UI shows a blur/lock �
 
 ```typescript
 // In a Server Component or API route
-const { data: profile } = await supabase
-  .from('profiles')
-  .select('is_premium, premium_expires_at')
-  .eq('id', user.id)
-  .single()
+const profile = await db.query.profiles.findFirst({
+  columns: { isPremium: true, premiumExpiresAt: true },
+  where: eq(profiles.id, session.user.id),
+})
 
-const isPremium = profile?.is_premium &&
-  (!profile.premium_expires_at || new Date(profile.premium_expires_at) > new Date())
+const isPremium = profile?.isPremium &&
+  (!profile.premiumExpiresAt || new Date(profile.premiumExpiresAt) > new Date())
 
 if (!isPremium) {
   return Response.json({ error: 'Premium required' }, { status: 403 })
@@ -270,10 +265,10 @@ try {
 
 | Prefix | Exposed to | Use for |
 |---|---|---|
-| `NEXT_PUBLIC_` | Browser + Server | Supabase URL, Supabase Anon Key only |
-| _(no prefix)_ | Server only | Upstash tokens, Stripe secret key |
+| `NEXT_PUBLIC_` | Browser + Server | `BETTER_AUTH_URL` only (the base URL the auth client redirects against) — nothing else in this project needs to be public |
+| _(no prefix)_ | Server only | `DATABASE_URL`, `BETTER_AUTH_SECRET`, OAuth client secrets, Upstash tokens, Stripe secret key |
 
-Never put secret keys in `NEXT_PUBLIC_` variables. The anon key is safe because RLS protects the data — the anon key alone cannot bypass RLS.
+Never put secret keys in `NEXT_PUBLIC_` variables. Unlike the old Supabase anon key (safe by design because RLS protected the data behind it), `DATABASE_URL` has **no** policy layer behind it — it must never be public under any circumstance.
 
 ### Never Log Environment Variables
 
@@ -282,7 +277,7 @@ Never put secret keys in `NEXT_PUBLIC_` variables. The anon key is safe because 
 console.log(process.env.UPSTASH_REDIS_REST_TOKEN)
 
 // Never in error messages
-return Response.json({ error: `Config error: ${process.env.SUPABASE_URL}` })
+return Response.json({ error: `Config error: ${process.env.DATABASE_URL}` })
 ```
 
 ### `.env.local` in `.gitignore`
@@ -325,7 +320,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' https://fonts.gstatic.com",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.upstash.io",
+      "connect-src 'self' https://*.upstash.io", // add Supabase Storage's origin here if/when Storage is actually used
       "frame-src 'none'",                 // Except for our sandbox iframe — handle separately
     ].join('; '),
   },
@@ -395,9 +390,9 @@ Rate limit key is always `user.id` — never IP address for authenticated routes
 
 Rules that must never be violated:
 
-- `getUser()` not `getSession()` for auth verification in API routes
-- RLS is always on — never disable for any table
-- Service role key never appears in any route handler or client code
+- `auth.api.getSession()` (server-verified) is the only valid authorization check — never trust a client-reported session
+- There is no RLS safety net — every query on a user-owned table must filter `WHERE user_id = session.user.id` in application code, with no exceptions
+- `DATABASE_URL` never appears in client code, never gets logged, never appears in an error message
 - All user input is validated against an allowlist before DB writes
 - Premium content is gated server-side — client UI is cosmetic only
 - User code execution is always inside a sandboxed iframe with `allow-scripts` only
