@@ -50,7 +50,11 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          // upsert into profiles — see build-plan.md Feature 16
+          try {
+            await provisionProfile(user) // lib/auth/provisionProfile.ts — Feature 16
+          } catch (error) {
+            console.error('Failed to provision profile for user', user.id, error)
+          }
         },
       },
     },
@@ -114,10 +118,14 @@ App data (everything in `architecture.md`'s schema — `profiles`, `concepts`, `
 
 ```typescript
 // lib/schema/profiles.ts — one file per table group, plain Drizzle table definitions
-import { pgTable, uuid, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core'
+import { user } from './auth-schema'
 
 export const profiles = pgTable('profiles', {
-  id: uuid('id').primaryKey(), // references Better-Auth's user.id
+  // `text`, not `uuid` — must match user.id's actual column type for the FK
+  // to be valid (Better-Auth's own tables use `text` for ids, even though
+  // the values are uuid strings via `advanced.database.generateId`).
+  id: text('id').primaryKey().references(() => user.id, { onDelete: 'cascade' }),
   username: text('username').notNull().unique(),
   xp: integer('xp').notNull().default(0),
   isPremium: boolean('is_premium').notNull().default(false),
@@ -125,6 +133,8 @@ export const profiles = pgTable('profiles', {
   // ...rest of architecture.md's profiles columns
 })
 ```
+
+**Username generation (Feature 16, `lib/auth/provisionProfile.ts`):** OAuth never supplies a username, but `profiles.username` is `NOT NULL UNIQUE`. Slugify the OAuth display name (lowercase, hyphenate, strip invalid chars); on a `23505` unique-violation against `profiles_username_unique`, retry with a random suffix appended, capped at a few attempts, falling back to a fully random slug to guarantee termination. The thrown error from a failed insert is a `DrizzleQueryError` — the real `pg` error (with `.code`/`.constraint`) is on `error.cause`, not on the error itself.
 
 ```typescript
 // lib/db.ts — server context ONLY, never imported into a Client Component

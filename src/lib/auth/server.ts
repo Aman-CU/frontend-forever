@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
+import { provisionProfile } from "@/lib/auth/provisionProfile";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -23,10 +24,15 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        // Stubbed per build-plan.md Feature 16 — `profiles` doesn't exist until
-        // Feature 18, so there's nothing to upsert into yet. Feature 16 implements
-        // the real upsert here once that table is migrated.
-        after: async () => {},
+        after: async (user) => {
+          // The `user` row is already committed — never let a profile-write
+          // failure surface as a sign-in failure (see provisionProfile.ts).
+          try {
+            await provisionProfile(user);
+          } catch (error) {
+            console.error("Failed to provision profile for user", user.id, error);
+          }
+        },
       },
     },
   },

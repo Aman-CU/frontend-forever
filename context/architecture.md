@@ -272,10 +272,12 @@ Accessed via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), 
 
 ### `profiles`
 
+**Pulled forward from Feature 18 during Feature 16** (Profile Provisioning Hook needed a real table to upsert into — see `progress-tracker.md`). The other 10 app tables are still Feature 18's scope.
+
 | Column | Type | Notes |
 |---|---|---|
-| id | uuid | References Better-Auth's `user.id` (Better-Auth is configured to generate uuids via `advanced.database.generateId`, so this stays a uuid like every other table's PK) |
-| username | text | Unique, URL-safe slug |
+| id | text (Postgres column type) | References Better-Auth's `user.id`. Despite the logical "uuid" framing elsewhere in this doc, the Postgres column is `text`, not `uuid` — it must match `user.id`'s actual column type (`text`, populated with uuid strings via `advanced.database.generateId`) for the FK to be valid, same pattern as `session.userId`/`account.userId` |
+| username | text | Unique, URL-safe slug. OAuth never supplies one — generated on first sign-in by slugifying the OAuth display name, retrying with a random suffix on collision. See `lib/auth/provisionProfile.ts` |
 | full_name | text | From OAuth provider |
 | email | text | From OAuth provider |
 | avatar_url | text | From OAuth or custom upload |
@@ -478,8 +480,14 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        // Real implementation in lib/auth/provisionProfile.ts (Feature 16) —
+        // try/catch'd here so a profile-write failure never blocks sign-in.
         after: async (user) => {
-          // upsert into profiles — see Feature 16 in build-plan.md
+          try {
+            await provisionProfile(user)
+          } catch (error) {
+            console.error('Failed to provision profile for user', user.id, error)
+          }
         },
       },
     },
