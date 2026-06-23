@@ -8,7 +8,8 @@
 | Language | TypeScript (strict mode) | Throughout — no `any`, no implicit types |
 | Styling | Tailwind CSS v4 + shadcn/ui | Utility classes + accessible UI primitives |
 | Animation | Framer Motion | Simulator animations, page transitions, motion design |
-| Auth + DB + Storage | Supabase | Postgres, Google/GitHub OAuth, file storage, realtime |
+| Database + Storage | Supabase (Postgres) | Hosted Postgres, file storage. **No longer used for Auth** — accessed via a direct Postgres connection (see DB Client Pattern below), not the `supabase-js`/PostgREST client |
+| Auth | Better-Auth | Self-hosted auth — full control over session/JWT, no vendor lock-in for auth specifically. Google/GitHub OAuth only, same as before |
 | Rate Limiting | Upstash Redis | API route protection — active from day one |
 | Content | MDX (in-repo files) | Concept guides, statically generated at build time |
 | Code Editor | Monaco Editor | Practice section + Build tab |
@@ -55,8 +56,7 @@
 │   │   ├── layout.tsx                   ← Root layout, theme provider, fonts
 │   │   ├── page.tsx                     ← Homepage
 │   │   ├── (auth)/
-│   │   │   ├── login/page.tsx
-│   │   │   └── callback/page.tsx        ← Supabase OAuth callback
+│   │   │   └── login/page.tsx           ← No callback page — Better-Auth's catch-all route handles the OAuth redirect
 │   │   ├── explore/page.tsx
 │   │   ├── learn/
 │   │   │   ├── page.tsx                 ← Learn index (all categories)
@@ -74,7 +74,7 @@
 │   │   ├── leaderboard/page.tsx
 │   │   ├── settings/page.tsx
 │   │   └── api/
-│   │       ├── auth/callback/route.ts
+│   │       ├── auth/[...all]/route.ts   ← Better-Auth's Next.js catch-all handler (sign-in, callback, sign-out, session — all of it)
 │   │       └── progress/
 │   │           └── route.ts             ← Progress write endpoint (rate limited)
 │   │
@@ -118,7 +118,7 @@
 │   │   ├── leaderboard/
 │   │   │   └── components/
 │   │   └── auth/
-│   │       └── components/              ← LoginButton, OAuthButton
+│   │       └── components/              ← LoginButton, OAuthButton (call authClient.signIn.social(...))
 │   │
 │   ├── components/                      ← Truly shared UI — used across multiple features
 │   │   ├── ui/                          ← shadcn/ui components (never modify these directly)
@@ -135,22 +135,24 @@
 │   │       └── ThemeToggle.tsx
 │   │
 │   ├── lib/
-│   │   ├── supabase/
-│   │   │   ├── client.ts                ← Browser Supabase client
-│   │   │   └── server.ts                ← Server Supabase client factory
+│   │   ├── auth/
+│   │   │   ├── server.ts                ← betterAuth() instance — Postgres adapter, Google/GitHub social providers, session config, databaseHooks
+│   │   │   └── client.ts                ← createAuthClient() — browser React client (signIn.social, signOut, useSession)
+│   │   ├── db.ts                        ← Shared Drizzle instance (over a `pg` Pool) — direct Postgres access for both Better-Auth's adapter and app queries
+│   │   ├── schema/                      ← Drizzle table definitions (app tables + Better-Auth's generated user/session/account/verification tables)
 │   │   ├── upstash.ts                   ← Upstash Redis rate limiter
 │   │   ├── mdx.ts                       ← MDX parsing and rendering utilities
 │   │   └── utils.ts                     ← cn(), formatXP(), etc.
 │   │
 │   ├── hooks/                           ← Global hooks (used across features)
-│   │   ├── useUser.ts                   ← Current authenticated user
+│   │   ├── useUser.ts                   ← Current authenticated user (wraps authClient.useSession())
 │   │   ├── useTheme.ts                  ← Light/dark theme
 │   │   └── useSearch.ts                 ← Global search (⌘K)
 │   │
 │   └── types/
 │       └── index.ts                     ← Global TypeScript types
 │
-├── middleware.ts                         ← Auth session guard on protected routes
+├── proxy.ts                              ← Auth session guard on protected routes (Next 16 renames middleware.ts → proxy.ts; see Decisions Made in progress-tracker.md)
 └── public/
     └── logos/                           ← Company logo SVGs for homepage
 ```
@@ -178,15 +180,20 @@
 ```
 User clicks "Continue with Google"
         ↓
-Supabase redirects to Google OAuth
+authClient.signIn.social({ provider: 'google', callbackURL: '/learn' })
         ↓
-Google redirects to /auth/callback
+Better-Auth redirects to Google OAuth
         ↓
-Supabase creates session + profile row
+Google redirects to Better-Auth's built-in callback route (/api/auth/callback/google)
         ↓
-Redirect to /learn
+Better-Auth verifies, creates session + user row (Postgres, direct connection)
         ↓
-middleware.ts validates session on every protected route
+databaseHooks.user.create.after fires → upserts the matching profiles row
+        ↓
+Redirect to /learn (no custom callback page involved)
+        ↓
+proxy.ts checks the session cookie on every protected route (optimistic);
+each Server Component / API route calls auth.api.getSession() for real verification
 ```
 
 ### Progress Tracking
@@ -198,7 +205,7 @@ Feature hook calls POST /api/progress
         ↓
 Rate limiter (Upstash) checks request
         ↓
-Supabase writes to user_concept_progress
+Direct Postgres write (via lib/db.ts) to user_concept_progress, scoped to session.user.id
         ↓
 XP event written to xp_events
         ↓
@@ -259,13 +266,15 @@ Dashboard surfaces due questions on next visit
 
 ---
 
-## Supabase Database Schema
+## Database Schema (Postgres, hosted on Supabase)
+
+Accessed via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), not the `supabase-js`/PostgREST client. Better-Auth owns its own `user` / `session` / `account` / `verification` tables in the same database, in the same Drizzle schema — see Authentication below.
 
 ### `profiles`
 
 | Column | Type | Notes |
 |---|---|---|
-| id | uuid | References auth.users |
+| id | uuid | References Better-Auth's `user.id` (Better-Auth is configured to generate uuids via `advanced.database.generateId`, so this stays a uuid like every other table's PK) |
 | username | text | Unique, URL-safe slug |
 | full_name | text | From OAuth provider |
 | email | text | From OAuth provider |
@@ -416,76 +425,95 @@ Dashboard surfaces due questions on next visit
 
 ---
 
-## Row Level Security
+## Authorization Model (no RLS — enforced in application code)
 
-All tables enforce RLS. Every query scoped to the authenticated user.
+**This is a deliberate change from the original Supabase-Auth design.** RLS policies like `USING (user_id = auth.uid())` only work when queries go through Supabase's PostgREST layer with a Supabase-issued JWT. Better-Auth doesn't issue Supabase-compatible JWTs, and app data is now queried via a direct Postgres connection (`lib/db.ts`) using a single privileged connection string — there is no per-request Supabase JWT for `auth.uid()` to read, and a direct connection bypasses RLS regardless.
 
-```sql
--- Applied to every table with a user_id column
-CREATE POLICY "Users access own data only"
-  ON [table_name]
-  FOR ALL
-  USING (user_id = auth.uid());
-```
+Consequences:
+- RLS is **not** the authorization boundary anymore. Every query against a user-owned table must filter `WHERE user_id = session.user.id` in application code — this is now the *primary* line of defense, not defense-in-depth on top of RLS.
+- `DATABASE_URL` is as sensitive as the old `SUPABASE_SERVICE_ROLE_KEY` was — it has full table access with no policy layer underneath it. Treat it with the same care (server-only, never in client code, never logged).
+- Existing tables may keep RLS enabled at the Postgres level for defense-in-depth against any future direct-PostgREST access, but the application must never rely on it — see `security.md` for the full rule.
 
-Never query any user-owned table without a `user_id` filter.
+Never query any user-owned table without an explicit `user_id` filter in the query itself.
 
 ---
 
 ## Authentication
 
-- Provider: Supabase Auth
+- Provider: Better-Auth (self-hosted, direct Postgres connection — see `lib/auth/server.ts`)
 - Methods: Google OAuth, GitHub OAuth — no email/password
 - Protected routes: `/learn/**`, `/practice/**`, `/interview-prep/**`, `/leaderboard`, `/settings`
 - Public routes: `/`, `/login`, `/explore`, `/roadmaps`, `/roadmaps/[slug]`
-- `middleware.ts` validates session on every request to protected routes
+- `proxy.ts` (Next 16's renamed `middleware.ts`) does an optimistic session-cookie check on every request to a protected route via Better-Auth's `getSessionCookie()` helper — cookie presence only, not full verification
+- Every protected Server Component / API route additionally calls `auth.api.getSession()` for real, server-verified session validation — the proxy redirect is UX, not the security boundary (same principle the old Supabase setup already documented: middleware/proxy alone is never sufficient)
 - After login → redirect to `/learn`
 
 ---
 
-## Supabase Client Pattern
+## Auth + DB Client Patterns
 
-Two separate instances — never mix them:
-
-```typescript
-// lib/supabase/client.ts — browser context only
-import { createBrowserClient } from '@supabase/ssr'
-
-export const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-```
+Two separate concerns, two separate clients — never mix them:
 
 ```typescript
-// lib/supabase/server.ts — server context only
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+// lib/auth/server.ts — the Better-Auth instance, server-side only
+import { betterAuth } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { db } from '@/lib/db'
 
-export const createSupabaseServer = async () => {
-  const cookieStore = await cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          )
+export const auth = betterAuth({
+  database: drizzleAdapter(db, { provider: 'pg' }),
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    },
+  },
+  advanced: {
+    database: { generateId: () => crypto.randomUUID() }, // keep ids uuid, consistent with the rest of the schema
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // upsert into profiles — see Feature 16 in build-plan.md
         },
       },
-    }
-  )
-}
+    },
+  },
+})
 ```
 
+```typescript
+// lib/auth/client.ts — browser context only
+import { createAuthClient } from 'better-auth/react'
+
+export const authClient = createAuthClient()
+// authClient.signIn.social({ provider: 'google' | 'github', callbackURL: '/learn' })
+// authClient.signOut()
+// authClient.useSession()
+```
+
+```typescript
+// lib/db.ts — shared Drizzle instance over the Postgres connection, used by Better-Auth's adapter AND app queries
+import { drizzle } from 'drizzle-orm/node-postgres'
+import { Pool } from 'pg'
+import * as schema from './schema' // src/lib/schema/ — Drizzle table definitions matching architecture.md's tables
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! })
+export const db = drizzle(pool, { schema })
+```
+
+Schema lives in TypeScript (`lib/schema/`), one file per table group, migrated via `drizzle-kit` (`drizzle.config.ts` at the project root) — not hand-written SQL. Better-Auth's own `user`/`session`/`account`/`verification` tables are generated into this same schema directory via `npx @better-auth/cli generate` (configured for the Drizzle adapter), so `drizzle-kit` manages migrations for Better-Auth's tables and the app's tables together, in one schema, against one `DATABASE_URL`.
+
 Rules:
-- Browser client → Client Components, auth state, realtime subscriptions
-- Server client → Server Components, API routes, Server Actions
-- Never use browser client in server context
-- Never use server client in browser context
+- `lib/auth/client.ts` → Client Components only (sign-in buttons, session display)
+- `lib/auth/server.ts` (`auth.api.getSession()`) → Server Components, API routes, Server Actions — the only place session verification happens
+- `lib/db.ts` → server-side only (Server Components, API routes, Server Actions) — never imported into a Client Component, since `DATABASE_URL` must never reach the browser
+- Never use the browser auth client to make authorization decisions server-side, and never import `lib/db.ts` client-side
 
 ---
 
@@ -576,11 +604,12 @@ Rules never to violate:
 - `app/` contains pages and API routes only — no business logic, no direct DB calls
 - Features in `features/` never import from other features — only from `components/`, `lib/`, `hooks/`, `types/`
 - Simulators are fully self-contained — each owns its own state, components, data, and types. No shared simulator engine or cross-simulator imports
-- All Supabase server-side operations use `createSupabaseServer()` — never the browser client
-- All DB queries are scoped to `user_id = auth.uid()` — never query user data without a user filter
+- All session verification uses `auth.api.getSession()` server-side — never trust a client-reported session for authorization
+- `lib/db.ts` (direct Postgres access) is never imported into a Client Component — server-side only
+- All DB queries on user-owned tables are scoped to `WHERE user_id = session.user.id` in application code — there is no RLS/`auth.uid()` safety net underneath a direct Postgres connection, so never query user data without an explicit user filter
 - No hex values or raw Tailwind color classes in components — use design tokens from `ui-tokens.md` only
 - MDX content files are read-only at runtime — never write to `content/` at runtime
 - Rate limiting runs before any write logic in every API route — never skip it
-- Protected route redirects are handled entirely by `middleware.ts` — never duplicate in page components
+- Protected route redirects are handled by `proxy.ts` (optimistic) plus each route's own `auth.api.getSession()` check (real verification) — never duplicate the optimistic redirect logic in page components
 - `is_premium` on DB rows controls access gating — never hardcode which content is premium in component logic
 - Simulator step scripts are the source of truth for what the simulator shows — never derive steps from runtime computation
