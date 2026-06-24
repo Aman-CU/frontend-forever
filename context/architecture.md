@@ -137,8 +137,9 @@
 │   ├── lib/
 │   │   ├── auth/
 │   │   │   ├── server.ts                ← betterAuth() instance — Postgres adapter, Google/GitHub social providers, session config, databaseHooks
-│   │   │   └── client.ts                ← createAuthClient() — browser React client (signIn.social, signOut, useSession)
+│   │   │   └── client.ts                ← createAuthClient() — browser React client ("use client"; signIn.social, signOut, useSession)
 │   │   ├── db.ts                        ← Shared Drizzle instance (over a `pg` Pool) — direct Postgres access for both Better-Auth's adapter and app queries
+│   │   ├── env.ts                       ← Typed env var wrapper (`import "server-only"` — prevents accidental client-bundle inclusion)
 │   │   ├── schema/                      ← Drizzle table definitions (app tables + Better-Auth's generated user/session/account/verification tables)
 │   │   ├── upstash.ts                   ← Upstash Redis rate limiter
 │   │   ├── mdx.ts                       ← MDX parsing and rendering utilities
@@ -466,12 +467,12 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: env.googleClientId,
+      clientSecret: env.googleClientSecret,
     },
     github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      clientId: env.githubClientId,
+      clientSecret: env.githubClientSecret,
     },
   },
   advanced: {
@@ -510,8 +511,9 @@ export const authClient = createAuthClient()
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 import * as schema from './schema' // src/lib/schema/ — Drizzle table definitions matching architecture.md's tables
+import { env } from '@/lib/env'    // never use process.env directly — always go through lib/env
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! })
+const pool = new Pool({ connectionString: env.databaseUrl })
 export const db = drizzle(pool, { schema })
 ```
 

@@ -1,6 +1,9 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle } from "lucide-react";
 
+import { auth } from "@/lib/auth/server";
 import { Separator } from "@/components/ui/separator";
 import { OAuthButton } from "@/features/auth/components/OAuthButton";
 import { getLoginErrorMessage } from "@/features/auth/lib/getLoginErrorMessage";
@@ -10,6 +13,14 @@ type PageProps = {
 };
 
 export default async function LoginPage({ searchParams }: PageProps) {
+  let session = null;
+  try {
+    session = await auth.api.getSession({ headers: await headers() });
+  } catch {
+    // Fall through — render login page
+  }
+  if (session?.user) redirect("/");
+
   const { error } = await searchParams;
   const errorMessage = getLoginErrorMessage(error ?? null);
 

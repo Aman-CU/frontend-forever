@@ -1,18 +1,19 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
+import { env } from "@/lib/env";
 import { provisionProfile, getProfileProvisioningErrorCode } from "@/lib/auth/provisionProfile";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: env.googleClientId,
+      clientSecret: env.googleClientSecret,
     },
     github: {
-      clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      clientId: env.githubClientId,
+      clientSecret: env.githubClientSecret,
     },
   },
   advanced: {
