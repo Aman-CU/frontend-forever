@@ -21,7 +21,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useUser } from "@/hooks/useUser";
+import { useUser, type SessionUser } from "@/hooks/useUser";
 import { UserDropdown } from "@/components/shared/UserDropdown";
 
 type NavLink = {
@@ -39,9 +39,13 @@ const NAV_LINKS: NavLink[] = [
   { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
 ];
 
-export function AppNavbar() {
+type AppNavbarProps = {
+  initialUser?: SessionUser | null;
+};
+
+export function AppNavbar({ initialUser }: AppNavbarProps = {}) {
   const pathname = usePathname();
-  const { user, isLoading } = useUser();
+  const { user, isLoading } = useUser(initialUser);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (

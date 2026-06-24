@@ -1,8 +1,10 @@
 "use client";
 
-import { LogOut, Moon, Settings, Sun, User } from "lucide-react";
+import { Loader2, LogOut, Moon, Settings, Sun, User } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
+import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth/client";
 import { useTheme } from "@/hooks/useTheme";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,8 +41,10 @@ type UserDropdownProps = {
 export function UserDropdown({ user }: UserDropdownProps) {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   async function handleSignOut() {
+    setIsSigningOut(true);
     await authClient.signOut();
     router.push("/");
   }
@@ -49,9 +53,10 @@ export function UserDropdown({ user }: UserDropdownProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Open user menu"
-        className="flex shrink-0 rounded-full ring-offset-background transition-shadow hover:ring-2 hover:ring-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        disabled={isSigningOut}
+        className="relative flex shrink-0 rounded-full ring-offset-background transition-shadow hover:ring-2 hover:ring-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:pointer-events-none"
       >
-        <Avatar className="size-8">
+        <Avatar className={cn("size-8", isSigningOut && "opacity-30")}>
           <AvatarImage
             src={user.image ?? undefined}
             alt={user.name ?? user.email}
@@ -60,6 +65,11 @@ export function UserDropdown({ user }: UserDropdownProps) {
             {getInitials(user.name, user.email)}
           </AvatarFallback>
         </Avatar>
+        {isSigningOut && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="size-4 animate-spin text-text-primary" />
+          </div>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <div className="px-2 py-1.5">
@@ -89,7 +99,8 @@ export function UserDropdown({ user }: UserDropdownProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleSignOut}
-          className="text-error focus:bg-error-muted focus:text-error"
+          variant="destructive"
+          className="text-error focus:bg-error-muted focus:text-error [&_svg]:!text-error"
         >
           <LogOut className="mr-2 size-4" />
           Sign Out

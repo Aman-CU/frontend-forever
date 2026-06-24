@@ -21,7 +21,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { XLogo } from "@/components/shared/XLogo";
 import { UserDropdown } from "@/components/shared/UserDropdown";
-import { useUser } from "@/hooks/useUser";
+import { useUser, type SessionUser } from "@/hooks/useUser";
 
 type NavLink = {
   label: string;
@@ -38,9 +38,13 @@ const NAV_LINKS: NavLink[] = [
   { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
 ];
 
-export function Navbar() {
+type NavbarProps = {
+  initialUser?: SessionUser | null;
+};
+
+export function Navbar({ initialUser }: NavbarProps = {}) {
   const pathname = usePathname();
-  const { user, isLoading } = useUser();
+  const { user, isLoading } = useUser(initialUser);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
