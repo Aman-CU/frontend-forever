@@ -1,14 +1,11 @@
 import { headers } from "next/headers";
 
 import { auth } from "@/lib/auth/server";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
+import { AppNavbar } from "@/components/layout/AppNavbar";
 
-export default async function MainLayout({
+export default async function AppLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   let initialUser: import("@/hooks/useUser").SessionUser | null | undefined;
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -19,9 +16,8 @@ export default async function MainLayout({
 
   return (
     <>
-      <Navbar initialUser={initialUser} />
+      <AppNavbar initialUser={initialUser} />
       <main className="flex flex-1 flex-col">{children}</main>
-      <Footer />
     </>
   );
 }

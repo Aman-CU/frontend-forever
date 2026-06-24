@@ -5,14 +5,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LucideGraduationCap,
+  Code2,
   Compass,
+  LucideGraduationCap,
   Map,
   Menu,
   Trophy,
   Users,
   X,
-  Code2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -20,6 +20,8 @@ import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { XLogo } from "@/components/shared/XLogo";
+import { UserDropdown } from "@/components/shared/UserDropdown";
+import { useUser, type SessionUser } from "@/hooks/useUser";
 
 type NavLink = {
   label: string;
@@ -36,8 +38,13 @@ const NAV_LINKS: NavLink[] = [
   { label: "Leaderboard", href: "/leaderboard", icon: Trophy },
 ];
 
-export function Navbar() {
+type NavbarProps = {
+  initialUser?: SessionUser | null;
+};
+
+export function Navbar({ initialUser }: NavbarProps = {}) {
   const pathname = usePathname();
+  const { user, isLoading } = useUser(initialUser);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -63,6 +70,7 @@ export function Navbar() {
           ))}
         </nav>
 
+        {/* Desktop right cluster — Follow on X + ThemeToggle always visible; last slot swaps on auth state */}
         <div className="hidden items-center gap-1.5 lg:flex xl:gap-3">
           <a
             href="#"
@@ -73,15 +81,20 @@ export function Navbar() {
             <XLogo className="size-3.5" />
           </a>
           <ThemeToggle />
-          <Link
-            href="/login"
-            className={cn(
-              buttonVariants({ variant: "outline" }),
-              "px-3 py-2 text-sm xl:px-5 xl:py-4",
-            )}
-          >
-            Log In
-          </Link>
+          {!isLoading &&
+            (user ? (
+              <UserDropdown user={user} />
+            ) : (
+              <Link
+                href="/login"
+                className={cn(
+                  buttonVariants({ variant: "outline" }),
+                  "px-3 py-2 text-sm xl:px-5 xl:py-4",
+                )}
+              >
+                Log In
+              </Link>
+            ))}
         </div>
 
         <button
@@ -114,16 +127,21 @@ export function Navbar() {
               <XLogo className="size-4" />
             </a>
             <ThemeToggle />
-            <Link
-              href="/login"
-              onClick={() => setIsMenuOpen(false)}
-              className={cn(
-                buttonVariants({ variant: "outline" }),
-                "flex-1 justify-center",
-              )}
-            >
-              Log In
-            </Link>
+            {!isLoading &&
+              (user ? (
+                <UserDropdown user={user} />
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className={cn(
+                    buttonVariants({ variant: "outline" }),
+                    "flex-1 justify-center",
+                  )}
+                >
+                  Log In
+                </Link>
+              ))}
           </div>
         </nav>
       )}
