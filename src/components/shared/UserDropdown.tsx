@@ -31,7 +31,7 @@ function getInitials(name: string | null, email: string): string {
       .slice(0, 2)
       .toUpperCase();
   }
-  return email[0].toUpperCase();
+  return email[0]?.toUpperCase() ?? "?";
 }
 
 type UserDropdownProps = {
@@ -45,8 +45,12 @@ export function UserDropdown({ user }: UserDropdownProps) {
 
   async function handleSignOut() {
     setIsSigningOut(true);
-    await authClient.signOut();
-    router.push("/");
+    try {
+      await authClient.signOut();
+      router.push("/");
+    } catch {
+      setIsSigningOut(false);
+    }
   }
 
   return (

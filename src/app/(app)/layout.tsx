@@ -6,12 +6,12 @@ import { AppNavbar } from "@/components/layout/AppNavbar";
 export default async function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  let initialUser = null;
+  let initialUser: import("@/hooks/useUser").SessionUser | null | undefined;
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     initialUser = session?.user ?? null;
   } catch {
-    // Fall through — navbar will load session client-side
+    // initialUser stays undefined — navbar falls back to client-side loading
   }
 
   return (
