@@ -45,13 +45,14 @@ Installed via `npx shadcn@latest add` in Feature 00. Located in `src/components/
 
 - **`ThemeProvider`** — `src/components/providers/ThemeProvider.tsx`. Client component wrapping the app in root layout. Reads/writes the `dark` class on `<html>` and the `theme` localStorage key. Built on `useSyncExternalStore` (not `useState` + `useEffect`) so the client snapshot can differ from the server snapshot (always `"light"`) without a hydration mismatch — the anti-FOUC inline script in `layout.tsx` (via `next/script`, `strategy="beforeInteractive"`) applies the real class before hydration, and a `MutationObserver` in the provider's `subscribe` picks up both that and system-preference changes. Exposes `{ theme, setTheme, toggleTheme }` via context.
 - Public hook: `src/hooks/useTheme.ts` — re-exports the provider's context hook as `useTheme()`. Use this from components; don't import `ThemeProvider`'s internals directly.
+- Public hook: `src/hooks/useUser.ts` (Feature 17) — wraps `authClient.useSession()` from `better-auth/react`, returns `{ user: session?.user ?? null, isLoading: isPending }`. `"use client"` only. Use this anywhere a component needs to know whether a user is signed in and who they are (name, email, image, id — Better-Auth's `user` table fields only, not `profiles` data like streak/isPremium). Returns `null` user during SSR and while the session is pending, so components gate on both `!isLoading && user` to avoid flash-of-wrong-state.
 
 ## Layout Components
 
 ### Navbar
 
 File: `src/components/layout/Navbar.tsx`
-Last updated: 2026-06-17
+Last updated: 2026-06-24 (Feature 17 — added logged-in state)
 
 | Property         | Class                                                                 |
 | ---------------- | ---------------------------------------------------------------------- |
@@ -69,6 +70,28 @@ Last updated: 2026-06-17
 The header itself has zero chrome (no background distinct from the page, no border, no shadow) — only the floating pill underneath has its own surface/border/shadow. This matches `designs/hero-section-1-event-loop.png`, where pixel-sampling showed the entire light-mode canvas is pure white (`bg-surface`), not the off-white `--color-background` token. In dark mode the header (and `body`, and `Footer`) deliberately switch to `dark:bg-background` instead, diverging from the pill's `bg-surface` — dark themes need a darker backdrop than their elevated surfaces for the pill to read as distinct, since `shadow-xl` barely registers against a dark background. Active nav state uses a pale accent fill (`bg-accent-muted text-accent`), never an underline — a white/transparent active segment would be invisible against the white pill. Any new "floating pill on a flat backdrop" component should reuse this exact `bg-surface`/`dark:bg-background` split, not invent a new one.
 
 **Responsive breakpoint (Feature 09 audit, corrected again same feature):** the full desktop nav (pill + Follow-on-X/theme-toggle/Log-In group) and the hamburger toggle/menu switch on `lg:` (1024px), **not** `xl:` (1280px) — an earlier pass raised this to `xl:` after measuring a 70px overflow at exactly 1024px with full-size elements, but hiding the real nav behind a hamburger through the whole 1024–1279px tablet-landscape range was explicitly rejected. The actual fix is to keep the `lg:` switch and compact what renders there instead: pill links `px-2 py-1.5 text-xs gap-1` (icon `size-3`), "Follow on X" goes icon-only with `aria-label="Follow Frontend Forever on X"` (visible text in `hidden xl:inline`), Log In `px-3 py-2 text-sm`, logo `text-4xl`, wordmark hidden only in the 1024–1099px band (`min-[1024px]:hidden min-[1100px]:inline` — both bounds must be arbitrary values, a named breakpoint like `lg:hidden` does not cascade correctly alongside an arbitrary one). `xl:` (1280px) overrides restore full roomy sizing. Verified zero overflow/clipping at 1024/1100/1279/1280px via screenshots.
+
+**Feature 17 update — logged-in state:** Navbar now imports `useUser()`. Follow on X and `ThemeToggle` are **always rendered** (unconditional) — pulling them outside the auth branch prevents any flash on refresh. Only the last slot changes: `{!isLoading && (user ? <UserDropdown /> : <Link>Log In</Link>)}` — nothing renders there while `isLoading` is true, so there is no swap from Log In → avatar. Mobile menu follows the same pattern. The pill layout, breakpoints, and all existing class structure are unchanged.
+
+### AppNavbar
+
+File: `src/components/layout/AppNavbar.tsx`
+Last updated: 2026-06-24
+
+Flat full-width sticky header for the `(app)/` route group (`/learn`, `/explore`, `/roadmaps`, etc.) — a completely separate component from the homepage `Navbar`. Mounted via `src/app/(app)/layout.tsx`; any route added under `(app)/` inherits it automatically.
+
+| Property         | Class                                                                 |
+| ---------------- | ---------------------------------------------------------------------- |
+| Background       | `bg-surface dark:bg-background` — same split as `Navbar`/`Footer`     |
+| Border            | `border-b border-border` — bottom edge only (no floating pill)        |
+| Height            | `h-14` (vs. `Navbar`'s `h-16` — shorter, denser for app pages)       |
+| Max width         | `max-w-screen-2xl mx-auto px-6 md:px-8`                               |
+| Active link       | `text-accent` (no background fill — text-only active state)           |
+| Inactive link     | `text-text-secondary hover:bg-surface-secondary hover:text-text-primary` |
+| Mobile breakpoint | `lg:` — hamburger below 1024px, full desktop nav at 1024px+           |
+
+**Pattern notes:**
+Logo is "FF" text + "Frontend Forever" wordmark (hidden below `xl:`), not the branded pill from `Navbar`. Nav links (Explore/Learn/Roadmaps/Practice/Interview Prep/Leaderboard) render inline with `rounded-lg px-3 py-1.5 text-sm font-medium` — no pill container, no icons on desktop. Nav block has `ml-10` extra left margin from the logo (on top of the container `gap-5`) + `gap-2` between items. Active link determined by `pathname === link.href || pathname.startsWith(link.href + "/")` via `usePathname()`. Center: a search trigger `<button>` (not wired to a real search yet) at `w-52`/`xl:w-72` with a kbd chip showing lucide's `Command` icon (`size-2.5`) + `K` span — **do not use the `⌘` Unicode character here**: it has different vertical font metrics than alphabetic glyphs and misaligns visually even with `leading-none`; the SVG icon sits perfectly level with text. Right cluster (`!isLoading && user` guard — hidden entirely when logged out or session pending): `<Flame className="size-4 fill-streak stroke-none" />` + "0 day streak" text, a Bell icon with a static `bg-error` dot, and `UserDropdown`; `gap-5 shrink-0` on the cluster div. Streak/isPremium are placeholder values (0/false) until Feature 27 wires the real profile data. Mobile hamburger menu shows icon + label nav links (`AppMobileNavLink`); mobile right cluster mirrors the same `!isLoading && user` gate. `fill-streak stroke-none` is the established pattern (confirmed in Feature 06's `PlatformGraph`) for rendering a lucide icon as a solid filled shape rather than a stroked outline — `fill-streak` picks up the `--color-streak` token, `stroke-none` prevents any inherited stroke.
 
 ### Footer
 
@@ -95,6 +118,7 @@ Uses the identical `bg-surface dark:bg-background` split as the Navbar header (s
 
 - **`ThemeToggle`** — `src/components/shared/ThemeToggle.tsx`. Icon-only button (`Sun`/`Moon` from `lucide-react`) calling `useTheme().toggleTheme()`. Styled with `bg-surface border-border` + hover `bg-surface-secondary`, 36px (`size-9`) square, `rounded-lg`. Has `aria-label` describing the action it performs (not the current state).
 - **`XLogo`** — `src/components/shared/XLogo.tsx`. Inline SVG of the X (formerly Twitter) brand glyph — lucide-react ships no brand icons in this project's pinned version, so the official logo path is inlined. `fill="currentColor"` + `aria-hidden`, defaults to `size-4`, accepts a `className` override. Use this anywhere the X brand mark is needed (Navbar "Follow on X", Footer social row) instead of lucide's `X`/`XIcon` (which is a generic close ✕, not the brand mark).
+- **`UserDropdown`** — `src/components/shared/UserDropdown.tsx` (Feature 17). Avatar button + dropdown menu shared by both `Navbar` and `AppNavbar`. Props: `user: DropdownUser` (`{ name: string | null; email: string; image?: string | null }`). Renders a `size-8` `Avatar` as the trigger (initials fallback: first letters of name words, or first letter of email). Dropdown items: Profile → `/settings/profile`, Settings → `/settings`, theme toggle (calls `useTheme().toggleTheme()`), Sign Out (calls `authClient.signOut()` then `router.push("/")`). **Critical: uses `@base-ui/react/menu` via `dropdown-menu.tsx` — `DropdownMenuTrigger` has no `asChild` prop; place the `<Avatar>` directly as its child, never wrap with a `<button>` or use `asChild`.** Trigger styled with `rounded-full ring-offset-background hover:ring-2 hover:ring-border focus-visible:ring-2 focus-visible:ring-accent` — no separate button element.
 
 ### Simulator Chrome (shared across hero simulators)
 
