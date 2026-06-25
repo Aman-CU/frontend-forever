@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import Script from "next/script";
 
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { DevAbortSuppressor } from "@/components/providers/DevAbortSuppressor";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import "./globals.css";
@@ -36,6 +37,7 @@ export default function RootLayout({
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: themeInitScript }}
         />
+        <DevAbortSuppressor />
         <ThemeProvider>
           <TooltipProvider>{children}</TooltipProvider>
         </ThemeProvider>
