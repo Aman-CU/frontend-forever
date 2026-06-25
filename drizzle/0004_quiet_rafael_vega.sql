@@ -1,0 +1,8 @@
+ALTER TABLE "interview_questions" ADD CONSTRAINT "interview_questions_collection_order_unique" UNIQUE("collection","order_index");--> statement-breakpoint
+ALTER TABLE "challenges" ADD CONSTRAINT "challenges_difficulty_check" CHECK ("challenges"."difficulty" IN ('easy', 'medium', 'hard'));--> statement-breakpoint
+ALTER TABLE "concepts" ADD CONSTRAINT "concepts_category_check" CHECK ("concepts"."category" IN ('javascript-runtime', 'browser-internals', 'react', 'css', 'typescript', 'accessibility', 'performance', 'system-design'));--> statement-breakpoint
+ALTER TABLE "concepts" ADD CONSTRAINT "concepts_difficulty_check" CHECK ("concepts"."difficulty" IN ('beginner', 'intermediate', 'advanced'));--> statement-breakpoint
+ALTER TABLE "interview_questions" ADD CONSTRAINT "interview_questions_collection_check" CHECK ("interview_questions"."collection" IN ('ff-75', 'ff-javascript', 'ff-react', 'ff-system-design'));--> statement-breakpoint
+ALTER TABLE "interview_questions" ADD CONSTRAINT "interview_questions_difficulty_check" CHECK ("interview_questions"."difficulty" IN ('easy', 'medium', 'hard'));--> statement-breakpoint
+ALTER TABLE "user_challenge_submissions" ADD CONSTRAINT "ucs_status_check" CHECK ("user_challenge_submissions"."status" IN ('passed', 'failed'));--> statement-breakpoint
+ALTER TABLE "xp_events" ADD CONSTRAINT "xp_events_event_type_check" CHECK ("xp_events"."event_type" IN ('concept_understand', 'concept_simulate', 'concept_challenge', 'concept_interview', 'concept_build', 'challenge_solved', 'interview_answered', 'streak_bonus'));
