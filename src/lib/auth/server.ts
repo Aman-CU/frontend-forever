@@ -6,6 +6,12 @@ import { provisionProfile, getProfileProvisioningErrorCode } from "@/lib/auth/pr
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes — get-session reads from signed cookie, no DB hit
+    },
+  },
   socialProviders: {
     google: {
       clientId: env.googleClientId,

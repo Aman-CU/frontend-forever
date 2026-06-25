@@ -1,0 +1,2 @@
+ALTER TABLE "roadmap_steps" ADD CONSTRAINT "roadmap_steps_roadmap_order_unique" UNIQUE("roadmap_id","order_index");--> statement-breakpoint
+ALTER TABLE "bookmarks" ADD CONSTRAINT "bookmarks_exactly_one_target_check" CHECK (("bookmarks"."concept_id" IS NOT NULL)::int + ("bookmarks"."question_id" IS NOT NULL)::int + ("bookmarks"."challenge_id" IS NOT NULL)::int = 1);

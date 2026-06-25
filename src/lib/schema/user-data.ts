@@ -1,0 +1,251 @@
+import { relations, sql } from "drizzle-orm";
+import {
+  pgTable,
+  text,
+  integer,
+  boolean,
+  timestamp,
+  uuid,
+  real,
+  index,
+  unique,
+  uniqueIndex,
+  check,
+} from "drizzle-orm/pg-core";
+import { XP_EVENT_TYPES, CHALLENGE_STATUSES } from "@/lib/constants";
+import { profiles } from "./profiles";
+import { concepts, challenges, interviewQuestions } from "./content";
+
+// ── user_concept_progress ─────────────────────────────────────────────────────
+
+export const userConceptProgress = pgTable(
+  "user_concept_progress",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    conceptId: uuid("concept_id")
+      .notNull()
+      .references(() => concepts.id, { onDelete: "cascade" }),
+    understandCompleted: boolean("understand_completed").notNull().default(false),
+    simulateCompleted: boolean("simulate_completed").notNull().default(false),
+    challengeCompleted: boolean("challenge_completed").notNull().default(false),
+    interviewCompleted: boolean("interview_completed").notNull().default(false),
+    buildCompleted: boolean("build_completed").notNull().default(false),
+    fullyCompleted: boolean("fully_completed").notNull().default(false),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    unique("ucp_user_concept_unique").on(table.userId, table.conceptId),
+    index("ucp_user_id_idx").on(table.userId),
+  ],
+);
+
+// ── xp_events ─────────────────────────────────────────────────────────────────
+
+export const xpEvents = pgTable(
+  "xp_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    // nullable — not every event is tied to a single concept/challenge/question
+    conceptId: uuid("concept_id").references(() => concepts.id, { onDelete: "set null" }),
+    challengeId: uuid("challenge_id").references(() => challenges.id, {
+      onDelete: "set null",
+    }),
+    questionId: uuid("question_id").references(() => interviewQuestions.id, {
+      onDelete: "set null",
+    }),
+    eventType: text("event_type").notNull(),
+    xpAmount: integer("xp_amount").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("xp_events_user_id_idx").on(table.userId),
+    index("xp_events_created_at_idx").on(table.createdAt),
+    check(
+      "xp_events_event_type_check",
+      sql`${table.eventType} IN (${sql.join(
+        XP_EVENT_TYPES.map((t) => sql.raw(`'${t}'`)),
+        sql`, `,
+      )})`,
+    ),
+  ],
+);
+
+// ── user_challenge_submissions ────────────────────────────────────────────────
+// No unique constraint — multiple submissions per (user, challenge) are expected.
+
+export const userChallengeSubmissions = pgTable(
+  "user_challenge_submissions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    challengeId: uuid("challenge_id")
+      .notNull()
+      .references(() => challenges.id, { onDelete: "cascade" }),
+    status: text("status").notNull(),
+    code: text("code").notNull(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("ucs_user_id_idx").on(table.userId),
+    index("ucs_challenge_id_idx").on(table.challengeId),
+    check(
+      "ucs_status_check",
+      sql`${table.status} IN (${sql.join(
+        CHALLENGE_STATUSES.map((s) => sql.raw(`'${s}'`)),
+        sql`, `,
+      )})`,
+    ),
+  ],
+);
+
+// ── user_interview_reviews ────────────────────────────────────────────────────
+
+export const userInterviewReviews = pgTable(
+  "user_interview_reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    questionId: uuid("question_id")
+      .notNull()
+      .references(() => interviewQuestions.id, { onDelete: "cascade" }),
+    // SM-2 algorithm fields
+    easeFactor: real("ease_factor").notNull().default(2.5),
+    intervalDays: integer("interval_days").notNull().default(1),
+    repetitions: integer("repetitions").notNull().default(0),
+    quality: integer("quality").notNull().default(0),
+    nextReviewAt: timestamp("next_review_at", { withTimezone: true }),
+    lastReviewedAt: timestamp("last_reviewed_at", { withTimezone: true }),
+  },
+  (table) => [
+    unique("uir_user_question_unique").on(table.userId, table.questionId),
+    index("uir_user_id_idx").on(table.userId),
+    index("uir_next_review_idx").on(table.nextReviewAt),
+  ],
+);
+
+// ── bookmarks ─────────────────────────────────────────────────────────────────
+// Each row targets exactly one entity (concept, question, or challenge).
+// Partial unique indexes enforce one bookmark per (user, entity).
+
+export const bookmarks = pgTable(
+  "bookmarks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    conceptId: uuid("concept_id").references(() => concepts.id, { onDelete: "cascade" }),
+    questionId: uuid("question_id").references(() => interviewQuestions.id, {
+      onDelete: "cascade",
+    }),
+    challengeId: uuid("challenge_id").references(() => challenges.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("bookmarks_user_id_idx").on(table.userId),
+    uniqueIndex("bookmarks_user_concept_unique")
+      .on(table.userId, table.conceptId)
+      .where(sql`${table.conceptId} IS NOT NULL`),
+    uniqueIndex("bookmarks_user_question_unique")
+      .on(table.userId, table.questionId)
+      .where(sql`${table.questionId} IS NOT NULL`),
+    uniqueIndex("bookmarks_user_challenge_unique")
+      .on(table.userId, table.challengeId)
+      .where(sql`${table.challengeId} IS NOT NULL`),
+    check(
+      "bookmarks_exactly_one_target_check",
+      sql`(${table.conceptId} IS NOT NULL)::int + (${table.questionId} IS NOT NULL)::int + (${table.challengeId} IS NOT NULL)::int = 1`,
+    ),
+  ],
+);
+
+// ── relations ─────────────────────────────────────────────────────────────────
+
+export const userConceptProgressRelations = relations(userConceptProgress, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [userConceptProgress.userId],
+    references: [profiles.id],
+  }),
+  concept: one(concepts, {
+    fields: [userConceptProgress.conceptId],
+    references: [concepts.id],
+  }),
+}));
+
+export const xpEventsRelations = relations(xpEvents, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [xpEvents.userId],
+    references: [profiles.id],
+  }),
+  concept: one(concepts, {
+    fields: [xpEvents.conceptId],
+    references: [concepts.id],
+  }),
+  challenge: one(challenges, {
+    fields: [xpEvents.challengeId],
+    references: [challenges.id],
+  }),
+  question: one(interviewQuestions, {
+    fields: [xpEvents.questionId],
+    references: [interviewQuestions.id],
+  }),
+}));
+
+export const userChallengeSubmissionsRelations = relations(
+  userChallengeSubmissions,
+  ({ one }) => ({
+    profile: one(profiles, {
+      fields: [userChallengeSubmissions.userId],
+      references: [profiles.id],
+    }),
+    challenge: one(challenges, {
+      fields: [userChallengeSubmissions.challengeId],
+      references: [challenges.id],
+    }),
+  }),
+);
+
+export const userInterviewReviewsRelations = relations(userInterviewReviews, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [userInterviewReviews.userId],
+    references: [profiles.id],
+  }),
+  question: one(interviewQuestions, {
+    fields: [userInterviewReviews.questionId],
+    references: [interviewQuestions.id],
+  }),
+}));
+
+export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [bookmarks.userId],
+    references: [profiles.id],
+  }),
+  concept: one(concepts, {
+    fields: [bookmarks.conceptId],
+    references: [concepts.id],
+  }),
+  question: one(interviewQuestions, {
+    fields: [bookmarks.questionId],
+    references: [interviewQuestions.id],
+  }),
+  challenge: one(challenges, {
+    fields: [bookmarks.challengeId],
+    references: [challenges.id],
+  }),
+}));

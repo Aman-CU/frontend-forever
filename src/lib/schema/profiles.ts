@@ -1,6 +1,13 @@
 import { relations } from "drizzle-orm";
 import { pgTable, text, integer, boolean, date, timestamp } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
+import {
+  userConceptProgress,
+  xpEvents,
+  userChallengeSubmissions,
+  userInterviewReviews,
+  bookmarks,
+} from "./user-data";
 
 // `id` is `text`, not a Postgres `uuid` column, even though the value is always
 // a uuid string — it must match `user.id`'s type (text) for the FK to be valid,
@@ -19,17 +26,22 @@ export const profiles = pgTable("profiles", {
   streakLongest: integer("streak_longest").notNull().default(0),
   streakLastActivity: date("streak_last_activity"),
   isPremium: boolean("is_premium").notNull().default(false),
-  premiumExpiresAt: timestamp("premium_expires_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
+  premiumExpiresAt: timestamp("premium_expires_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
 });
 
-export const profilesRelations = relations(profiles, ({ one }) => ({
+export const profilesRelations = relations(profiles, ({ one, many }) => ({
   user: one(user, {
     fields: [profiles.id],
     references: [user.id],
   }),
+  conceptProgress: many(userConceptProgress),
+  xpEvents: many(xpEvents),
+  challengeSubmissions: many(userChallengeSubmissions),
+  interviewReviews: many(userInterviewReviews),
+  bookmarks: many(bookmarks),
 }));

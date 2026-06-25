@@ -46,9 +46,18 @@ export function UserDropdown({ user }: UserDropdownProps) {
   async function handleSignOut() {
     setIsSigningOut(true);
     try {
-      await authClient.signOut();
-      router.push("/");
+      // 8-second ceiling — in dev the TLS-intercepting proxy can make the
+      // session DELETE take 7+ seconds when the pool connection is cold.
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 8_000),
+      );
+      await Promise.race([authClient.signOut(), timeout]);
+      // Hard navigation: the layout never remounts on router.push() so
+      // isSigningOut would stay true indefinitely. replace() forces a full
+      // reload, resets all component state, and gives a fresh server render.
+      window.location.replace("/");
     } catch {
+      // Timed out or server error — reset spinner so the user can retry.
       setIsSigningOut(false);
     }
   }

@@ -40,6 +40,10 @@ const nextConfig: NextConfig = {
     ? { allowedDevOrigins: process.env.NEXT_ALLOWED_DEV_ORIGINS.split(",") }
     : {}),
   async headers() {
+    // Security headers are production-only — in dev they interfere with
+    // Turbopack's HMR WebSocket, Next.js dev overlays, and cause Framer
+    // Motion's whileInView sections to stay invisible until re-render.
+    if (process.env.NODE_ENV !== "production") return [];
     return [
       {
         source: "/(.*)",
