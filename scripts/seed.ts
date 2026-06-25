@@ -536,7 +536,10 @@ async function seed() {
       .filter(Boolean) as { roadmapId: string; conceptId: string; orderIndex: number }[];
 
     if (stepRows.length) {
-      await db.insert(roadmapSteps).values(stepRows).onConflictDoNothing();
+      await db
+        .insert(roadmapSteps)
+        .values(stepRows)
+        .onConflictDoNothing({ target: [roadmapSteps.roadmapId, roadmapSteps.orderIndex] });
     }
 
     const action = inserted ? "inserted" : "already existed";

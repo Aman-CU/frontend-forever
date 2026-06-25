@@ -167,6 +167,10 @@ export const bookmarks = pgTable(
     uniqueIndex("bookmarks_user_challenge_unique")
       .on(table.userId, table.challengeId)
       .where(sql`${table.challengeId} IS NOT NULL`),
+    check(
+      "bookmarks_exactly_one_target_check",
+      sql`(${table.conceptId} IS NOT NULL)::int + (${table.questionId} IS NOT NULL)::int + (${table.challengeId} IS NOT NULL)::int = 1`,
+    ),
   ],
 );
 

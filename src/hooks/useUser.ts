@@ -16,13 +16,16 @@ type UseUserResult = {
 
 export function useUser(initialUser?: SessionUser | null): UseUserResult {
   const { data: session, isPending } = authClient.useSession();
-  // Prefer live session data; fall back to server-provided initialUser when the
-  // session is pending or resolved to null (e.g. after an aborted fetch). This
-  // ensures the first client render always matches the SSR output.
   const rawUser = session?.user;
+  // While the session is still loading, fall back to the SSR-provided
+  // initialUser so the first client render matches the server output.
+  // Once isPending is false we trust the live session result — returning null
+  // when there is no session (e.g. after sign-out) is correct behaviour.
   const user: SessionUser | null = rawUser
     ? { id: rawUser.id, name: rawUser.name ?? null, email: rawUser.email, image: rawUser.image }
-    : (initialUser ?? null);
+    : isPending
+      ? (initialUser ?? null)
+      : null;
   return {
     user,
     isLoading: isPending && initialUser === undefined,

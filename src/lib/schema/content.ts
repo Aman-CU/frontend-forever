@@ -158,7 +158,10 @@ export const roadmapSteps = pgTable(
     orderIndex: integer("order_index").notNull().default(0),
     isOptional: boolean("is_optional").notNull().default(false),
   },
-  (table) => [index("roadmap_steps_roadmap_id_idx").on(table.roadmapId)],
+  (table) => [
+    index("roadmap_steps_roadmap_id_idx").on(table.roadmapId),
+    unique("roadmap_steps_roadmap_order_unique").on(table.roadmapId, table.orderIndex),
+  ],
 );
 
 // ── relations ─────────────────────────────────────────────────────────────────
