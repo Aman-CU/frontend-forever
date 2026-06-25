@@ -12,5 +12,5 @@ export async function POST(req: Request) {
     return Response.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  return new Response(null, { status: 501 });
+  return Response.json({ error: "Not implemented" }, { status: 501 });
 }
