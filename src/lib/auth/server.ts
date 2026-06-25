@@ -2,15 +2,34 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
+import { redis } from "@/lib/upstash";
 import { provisionProfile, getProfileProvisioningErrorCode } from "@/lib/auth/provisionProfile";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
+  secondaryStorage: {
+    get: (key) => redis.get<string>(key),
+    set: async (key, value, ttl) => {
+      if (ttl) {
+        await redis.set(key, value, { ex: ttl });
+      } else {
+        await redis.set(key, value);
+      }
+    },
+    delete: (key) => redis.del(key).then(() => undefined),
+  },
   session: {
+    storeSessionInDatabase: true,
     cookieCache: {
       enabled: true,
       maxAge: 5 * 60, // 5 minutes — get-session reads from signed cookie, no DB hit
     },
+  },
+  rateLimit: {
+    enabled: true,
+    window: 60,
+    max: 5,
+    storage: "secondary-storage",
   },
   socialProviders: {
     google: {
