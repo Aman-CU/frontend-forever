@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { and, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
@@ -32,9 +33,45 @@ export type ConceptDetail = {
   isPremium: boolean;
 };
 
-// Single concept by slug, for the concept page shell. cache()-wrapped so a
-// repeated lookup in the same render pass (e.g. metadata + page body) hits once.
-export const getConceptBySlug = cache(
+// The static concept catalog, grouped by category — identical for every user, so
+// it's cached across requests/deploys (invalidate with revalidateTag("concepts")
+// after a content reseed). No user data and no headers/cookies access inside, as
+// required by unstable_cache.
+type CatalogConcept = Omit<ConceptSummary, "isCompleted">;
+
+const getConceptCatalog = unstable_cache(
+  async (): Promise<Record<ConceptCategory, CatalogConcept[]>> => {
+    const allConcepts = await db
+      .select({
+        id: concepts.id,
+        slug: concepts.slug,
+        title: concepts.title,
+        category: concepts.category,
+        difficulty: concepts.difficulty,
+        isPremium: concepts.isPremium,
+        orderIndex: concepts.orderIndex,
+      })
+      .from(concepts)
+      .orderBy(concepts.category, concepts.orderIndex);
+
+    const grouped = Object.fromEntries(
+      CONCEPT_CATEGORIES.map((cat) => [cat, [] as CatalogConcept[]]),
+    ) as Record<ConceptCategory, CatalogConcept[]>;
+
+    for (const concept of allConcepts) {
+      const { category, ...rest } = concept;
+      grouped[category as ConceptCategory]?.push(rest);
+    }
+
+    return grouped;
+  },
+  ["concept-catalog"],
+  { tags: ["concepts"], revalidate: 3600 },
+);
+
+// Single concept by slug, for the concept page shell. Static content, so cached
+// across requests (same "concepts" tag as the catalog).
+export const getConceptBySlug = unstable_cache(
   async (slug: string): Promise<ConceptDetail | null> => {
     const rows = await db
       .select({
@@ -55,25 +92,16 @@ export const getConceptBySlug = cache(
 
     return { ...row, category: row.category as ConceptCategory };
   },
+  ["concept-by-slug"],
+  { tags: ["concepts"], revalidate: 3600 },
 );
 
-// cache() deduplicates identical calls within the same server render pass —
-// both learn/layout.tsx (sidebar) and learn/page.tsx (cards) call this function,
-// but only one DB round-trip happens per request.
+// Overlays the current user's completion state onto the cached catalog. cache()
+// dedupes the per-request call (layout + page both call it); only the small
+// per-user progress query is live — the heavy concept read comes from the cache.
 export const getCategorySummaries = cache(
   async (userId: string | null): Promise<CategorySummary[]> => {
-    const allConcepts = await db
-      .select({
-        id: concepts.id,
-        slug: concepts.slug,
-        title: concepts.title,
-        category: concepts.category,
-        difficulty: concepts.difficulty,
-        isPremium: concepts.isPremium,
-        orderIndex: concepts.orderIndex,
-      })
-      .from(concepts)
-      .orderBy(concepts.category, concepts.orderIndex);
+    const catalog = await getConceptCatalog();
 
     let completedConceptIds = new Set<string>();
     if (userId) {
@@ -89,42 +117,18 @@ export const getCategorySummaries = cache(
       completedConceptIds = new Set(progress.map((p) => p.conceptId));
     }
 
-    const categoryMap = new Map<ConceptCategory, CategorySummary>();
-
-    for (const concept of allConcepts) {
-      const cat = concept.category as ConceptCategory;
-      if (!categoryMap.has(cat)) {
-        categoryMap.set(cat, {
-          category: cat,
-          conceptCount: 0,
-          completedCount: 0,
-          concepts: [],
-        });
-      }
-      const entry = categoryMap.get(cat)!;
-      const isCompleted = completedConceptIds.has(concept.id);
-      entry.conceptCount++;
-      if (isCompleted) entry.completedCount++;
-      entry.concepts.push({
-        id: concept.id,
-        slug: concept.slug,
-        title: concept.title,
-        difficulty: concept.difficulty,
-        isPremium: concept.isPremium,
-        orderIndex: concept.orderIndex,
-        isCompleted,
-      });
-    }
-
-    // Return in canonical CONCEPT_CATEGORIES order
-    return CONCEPT_CATEGORIES.map(
-      (cat) =>
-        categoryMap.get(cat) ?? {
-          category: cat,
-          conceptCount: 0,
-          completedCount: 0,
-          concepts: [],
-        },
-    );
+    return CONCEPT_CATEGORIES.map((category) => {
+      const catalogConcepts = catalog[category] ?? [];
+      const conceptSummaries = catalogConcepts.map((concept) => ({
+        ...concept,
+        isCompleted: completedConceptIds.has(concept.id),
+      }));
+      return {
+        category,
+        conceptCount: conceptSummaries.length,
+        completedCount: conceptSummaries.filter((c) => c.isCompleted).length,
+        concepts: conceptSummaries,
+      };
+    });
   },
 );
