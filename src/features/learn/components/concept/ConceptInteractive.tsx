@@ -4,20 +4,17 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Code2, Lightbulb, Trophy, Users, Wrench } from "lucide-react";
+import { Code2, Trophy, Users, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { type ConceptTab } from "@/lib/constants";
 import { ConceptTabs } from "./ConceptTabs";
 import { TabPlaceholder } from "./TabPlaceholder";
 
-// Placeholder copy per tab — replaced by Features 22-26 with real content.
-const TAB_BODY: Record<ConceptTab, { icon: LucideIcon; title: string; description: string }> = {
-  understand: {
-    icon: Lightbulb,
-    title: "Understand content — coming in Feature 22",
-    description: "The concept guide (MDX) and the What's Happening / Key Insight cards render here.",
-  },
+// Placeholder copy for the not-yet-built tabs (Understand is real as of Feature 22;
+// the rest arrive in Features 23-26).
+type PlaceholderTab = Exclude<ConceptTab, "understand">;
+const TAB_BODY: Record<PlaceholderTab, { icon: LucideIcon; title: string; description: string }> = {
   simulate: {
     icon: Code2,
     title: "Simulate content — coming in Feature 23",
@@ -41,14 +38,15 @@ const TAB_BODY: Record<ConceptTab, { icon: LucideIcon; title: string; descriptio
 };
 
 type Props = {
-  // header and rail are server-rendered and passed in, so they stay off the client bundle.
+  // header, rail, and understandContent are server-rendered and passed in, so they
+  // stay off the client bundle (the Understand tab renders MDX, which needs the server).
   header: ReactNode;
   rail: ReactNode;
+  understandContent: ReactNode;
 };
 
-export function ConceptInteractive({ header, rail }: Props) {
+export function ConceptInteractive({ header, rail, understandContent }: Props) {
   const [activeTab, setActiveTab] = useState<ConceptTab>("understand");
-  const body = TAB_BODY[activeTab];
 
   return (
     <div className="flex flex-col gap-6 px-6 py-8 md:px-8 lg:flex-row lg:gap-8">
@@ -73,7 +71,15 @@ export function ConceptInteractive({ header, rail }: Props) {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
-              <TabPlaceholder icon={body.icon} title={body.title} description={body.description} />
+              {activeTab === "understand" ? (
+                understandContent
+              ) : (
+                <TabPlaceholder
+                  icon={TAB_BODY[activeTab].icon}
+                  title={TAB_BODY[activeTab].title}
+                  description={TAB_BODY[activeTab].description}
+                />
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
