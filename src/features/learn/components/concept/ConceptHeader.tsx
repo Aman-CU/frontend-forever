@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { Bookmark, BookOpen, ChevronRight, Share2 } from "lucide-react";
 

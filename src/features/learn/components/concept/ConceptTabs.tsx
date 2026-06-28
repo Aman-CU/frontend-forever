@@ -1,5 +1,8 @@
 "use client";
 
+import { useRef } from "react";
+import type { KeyboardEvent } from "react";
+
 import { Code2, Lightbulb, Trophy, Users, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -20,20 +23,53 @@ type Props = {
 };
 
 export function ConceptTabs({ activeTab, onTabChange }: Props) {
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Roving-focus keyboard nav for the WAI-ARIA tabs pattern (automatic activation).
+  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    let nextIndex = index;
+    switch (event.key) {
+      case "ArrowRight":
+        nextIndex = (index + 1) % CONCEPT_TABS.length;
+        break;
+      case "ArrowLeft":
+        nextIndex = (index - 1 + CONCEPT_TABS.length) % CONCEPT_TABS.length;
+        break;
+      case "Home":
+        nextIndex = 0;
+        break;
+      case "End":
+        nextIndex = CONCEPT_TABS.length - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    onTabChange(CONCEPT_TABS[nextIndex]);
+    tabRefs.current[nextIndex]?.focus();
+  }
+
   return (
     <div className="border-b border-border" role="tablist" aria-label="Concept sections">
       <div className="flex gap-1 overflow-x-auto">
-        {CONCEPT_TABS.map((tab) => {
+        {CONCEPT_TABS.map((tab, index) => {
           const { label, icon: Icon } = TAB_META[tab];
           const isActive = tab === activeTab;
 
           return (
             <button
               key={tab}
+              ref={(el) => {
+                tabRefs.current[index] = el;
+              }}
               type="button"
               role="tab"
+              id={`concept-tab-${tab}`}
               aria-selected={isActive}
+              aria-controls={`concept-panel-${tab}`}
+              tabIndex={isActive ? 0 : -1}
               onClick={() => onTabChange(tab)}
+              onKeyDown={(event) => handleKeyDown(event, index)}
               className={cn(
                 "-mb-px flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors",
                 isActive
