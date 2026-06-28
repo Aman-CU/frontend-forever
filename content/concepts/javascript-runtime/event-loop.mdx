@@ -1,0 +1,59 @@
+---
+title: "Event Loop"
+description: "Understand how JavaScript's single-threaded runtime handles async code via the call stack, task queue, and microtask queue."
+category: "javascript-runtime"
+difficulty: "intermediate"
+order: 1
+whatsHappening: "JavaScript runs on a single thread with one call stack. The event loop is the mechanism that decides what runs next — pulling work from the microtask and task queues only once the stack is empty."
+keyInsight: "Microtasks (promise callbacks) always drain completely before the next task (like a setTimeout callback) runs. That's why a promise logged after a setTimeout still prints first."
+memoryHook: "Microtasks = ASAP. Tasks = later. The stack must be empty before either queue is touched, and microtasks always cut the line."
+inRealLife: "Like a chef who finishes the dish in front of them before checking tickets — and always handles a 'remake this now' note (microtask) before starting the next new order (task)."
+---
+
+## The single thread
+
+JavaScript executes one statement at a time on a single thread. There is exactly one **call stack** — when you call a function it gets pushed on, and when it returns it gets popped off. While a function is on the stack, nothing else can run.
+
+So how does a single-threaded language handle a network request, a timer, or a click without freezing? It doesn't do the waiting itself. It hands that work to the **runtime** (the browser or Node) and keeps going.
+
+## Where async work waits
+
+When you call `setTimeout` or `fetch`, the function returns immediately. The actual work happens outside your code, in facilities the host environment provides — the browser's **Web APIs** (or Node's equivalent). When that work finishes, its callback isn't run right away — it's placed in a queue to wait its turn:
+
+- The **task queue** (a.k.a. macrotask queue) holds callbacks from `setTimeout`, `setInterval`, and most events.
+- The **microtask queue** holds promise callbacks (`.then`, `await` continuations) and `queueMicrotask`.
+
+## The loop itself
+
+The **event loop** has one job, repeated forever:
+
+1. If the call stack is **not** empty, let it keep running. Do nothing else.
+2. Once the stack **is** empty, drain the **entire** microtask queue — running each microtask, including any new microtasks they schedule.
+3. Then take **one** task from the task queue, run it, and go back to step 1.
+
+The critical detail is step 2: microtasks are drained *completely* before a single task runs. A task can never sneak in between two microtasks.
+
+## Reading the classic example
+
+```js
+console.log("start");
+
+setTimeout(() => {
+  console.log("timeout");
+}, 0);
+
+Promise.resolve().then(() => {
+  console.log("promise");
+});
+
+console.log("end");
+```
+
+This prints `start`, `end`, `promise`, `timeout` — in that order:
+
+- `start` and `end` are synchronous, so they run first, top to bottom.
+- `setTimeout`'s callback goes to the **task** queue; the promise's `.then` goes to the **microtask** queue.
+- The stack empties after `end`. The event loop drains microtasks first, so `promise` prints.
+- Only then does it take the one waiting task, so `timeout` prints last.
+
+Even with a `0ms` timeout, the promise wins — because microtasks always run before the next task.

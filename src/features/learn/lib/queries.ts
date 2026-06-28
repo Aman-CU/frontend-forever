@@ -96,6 +96,22 @@ export const getConceptBySlug = unstable_cache(
   { tags: ["concepts"], revalidate: 3600 },
 );
 
+// Whether the given user has marked a concept's Understand tab complete. Per-user
+// and small/indexed, so it stays a live query (not cached).
+export async function getUnderstoodState(
+  userId: string,
+  conceptId: string,
+): Promise<boolean> {
+  const row = await db.query.userConceptProgress.findFirst({
+    columns: { understandCompleted: true },
+    where: and(
+      eq(userConceptProgress.userId, userId),
+      eq(userConceptProgress.conceptId, conceptId),
+    ),
+  });
+  return row?.understandCompleted ?? false;
+}
+
 // Overlays the current user's completion state onto the cached catalog. cache()
 // dedupes the per-request call (layout + page both call it); only the small
 // per-user progress query is live — the heavy concept read comes from the cache.
