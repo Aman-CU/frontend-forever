@@ -18,7 +18,7 @@ So how does a single-threaded language handle a network request, a timer, or a c
 
 ## Where async work waits
 
-When you call `setTimeout` or `fetch`, the function returns immediately. The actual work happens in the runtime's Web APIs. When that work finishes, its callback isn't run right away — it's placed in a queue to wait its turn:
+When you call `setTimeout` or `fetch`, the function returns immediately. The actual work happens outside your code, in facilities the host environment provides — the browser's **Web APIs** (or Node's equivalent). When that work finishes, its callback isn't run right away — it's placed in a queue to wait its turn:
 
 - The **task queue** (a.k.a. macrotask queue) holds callbacks from `setTimeout`, `setInterval`, and most events.
 - The **microtask queue** holds promise callbacks (`.then`, `await` continuations) and `queueMicrotask`.

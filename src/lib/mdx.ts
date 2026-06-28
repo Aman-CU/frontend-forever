@@ -32,7 +32,12 @@ export type ConceptContent = {
 // Understand tab can show a "guide coming soon" state instead of throwing —
 // only event-loop is authored in Feature 22.
 export function getConceptContent(category: string, slug: string): ConceptContent | null {
-  const filePath = path.join(CONCEPTS_DIR, category, `${slug}.mdx`);
+  // category/slug come from the URL — resolve and confirm the path stays inside
+  // CONCEPTS_DIR so a crafted slug (e.g. "../../etc/passwd") can't escape it.
+  const baseDir = path.resolve(CONCEPTS_DIR);
+  const filePath = path.resolve(baseDir, category, `${slug}.mdx`);
+  if (!filePath.startsWith(baseDir + path.sep)) return null;
+
   if (!fs.existsSync(filePath)) return null;
 
   const source = fs.readFileSync(filePath, "utf-8");

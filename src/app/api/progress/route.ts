@@ -18,6 +18,8 @@ const COMPLETED_SET: Record<ConceptTab, Partial<ProgressInsert>> = {
   build: { buildCompleted: true },
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function isConceptTab(value: unknown): value is ConceptTab {
   return typeof value === "string" && (CONCEPT_TABS as readonly string[]).includes(value);
 }
@@ -46,7 +48,9 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
   const { conceptId, tab } = (body ?? {}) as { conceptId?: unknown; tab?: unknown };
-  if (typeof conceptId !== "string" || !conceptId || !isConceptTab(tab)) {
+  // Validate the UUID shape up front so a malformed id is a clean 400 rather than
+  // a foreign-key violation surfacing as a 500 from the catch below.
+  if (typeof conceptId !== "string" || !UUID_RE.test(conceptId) || !isConceptTab(tab)) {
     return Response.json({ error: "Invalid conceptId or tab" }, { status: 400 });
   }
 
