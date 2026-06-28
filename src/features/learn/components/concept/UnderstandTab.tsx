@@ -31,7 +31,7 @@ export function UnderstandTab({ content, conceptId, isLoggedIn, initialUnderstoo
 
   return (
     <div>
-      <article className="max-w-prose">
+      <article>
         <MDXRemote source={content.content} components={mdxComponents} />
       </article>
       <InfoCards frontmatter={content.frontmatter} />
