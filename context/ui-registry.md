@@ -476,7 +476,67 @@ _Will be populated as components are built._
 
 ## Learn Components
 
-_Will be populated as components are built._
+### `LearnSidebar`
+- **File:** `src/components/layout/LearnSidebar.tsx`
+- **Type:** Client Component (`"use client"` — uses `usePathname()`, `useRouter()`, `useTheme()`)
+- **Props:** `{ categories: CategorySummary[], user: DropdownUser | null }` — `DropdownUser` imported (type-only) from `src/components/shared/UserDropdown.tsx`
+- **Renders:** sticky sidebar (`sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-[260px] shrink-0 flex-col border-r border-border bg-surface md:flex`) — hidden on mobile via `hidden md:flex`, sticks below h-14 AppNavbar
+- **Structure (top to bottom):**
+  1. **Header** — `px-4 pb-2 pt-5`: uppercase muted "LEARN" label (`text-xs font-semibold uppercase tracking-wider text-text-muted`); no border-b, no concept count, no subtitle
+  2. **Scrollable nav** — `flex-1 overflow-y-auto py-1`: one `CategoryAccordionItem` per category
+  3. **Bottom section** (`border-t border-border`) — two subsections:
+     - **Nav links** (`px-2 py-1`): Settings (`<Link href="/settings">`), Theme (button calling `toggleTheme()` with `Sun`/`Moon` icon swap), Feedback (`<Link href="/feedback">`), Changelog (`<Link href="/changelog">`) — all `text-sm text-text-secondary hover:bg-surface-secondary hover:text-text-primary`
+     - **Overall Progress** (`border-t border-border px-4 pb-6 pt-3`): bold "Overall Progress" label + `X%` computed from `completedConcepts/totalConcepts`; `h-1.5` progress bar (`bg-border` track, `bg-accent` fill, `role="progressbar"`); "View learning stats →" `<Link href="/learn/stats">` in `text-text-muted`
+     - **Profile row** (shown only when `user !== null`): `<DropdownMenu>` trigger = full-width `flex items-center gap-2.5` row with `<Avatar>` (size-8) + name/email stack + `<ChevronDown>`; `DropdownMenuContent side="top"` with Profile + Settings items navigated via `onClick + router.push()` (no `asChild` — see `UserDropdown` critical note)
+- **Key pattern:** receives pre-fetched data as props — no DB calls inside; data flows from `learn/layout.tsx` → `LearnSidebar` → `CategoryAccordionItem`
+
+### `CategoryAccordionItem`
+- **File:** `src/components/layout/CategoryAccordionItem.tsx`
+- **Type:** Client Component (`"use client"` — uses `useState(false)` for open/closed)
+- **Props:** `{ category: CategorySummary, meta: CategoryMeta, pathname: string }`
+- **Renders:** collapsible accordion row — icon/badge (h-7 w-7 rounded-md colored bg) + label + ChevronRight (rotates 90deg when open); no concept count displayed
+- **Badge/icon logic:** if `meta.badge` is set, renders a `<span>` text badge (e.g. "JS", "TS") instead of the lucide icon; background uses `meta.badgeStyle.bg` (arbitrary Tailwind value allowed, e.g. `bg-[#FFFF00]`) and text uses `meta.badgeStyle.text`; falls back to `ICON_BG[colorKey]`/`ICON_TEXT[colorKey]` when no `badgeStyle` is set
+- **Animation:** `AnimatePresence` + `motion.div` with `height: 0 → "auto"`, `opacity: 0 → 1`, duration 0.2s
+- **Concept links:** each link has a **status circle on the left** (replaces old right-side Check):
+  - Active: `bg-text-primary` + white `<Check>` icon
+  - Completed: `bg-success` + white `<Check>` icon
+  - Not started: `border border-border bg-transparent` (empty circle)
+  - Active link row: `rounded-l-none border-l-2 border-accent bg-accent-muted text-accent font-medium`
+  - Premium concepts: `<Lock>` icon on the right
+- **Default state:** collapsed (`useState(false)`) — accordion is closed on first render
+
+### `CategoryCard`
+- **File:** `src/features/learn/components/CategoryCard.tsx`
+- **Type:** Server Component (no `"use client"`)
+- **Props:** `{ category: CategorySummary, meta: CategoryMeta, isLoggedIn: boolean }`
+- **Renders:** link card → `/learn/${category.category}/${firstSlug}` (or `/learn` fallback if no concepts)
+- **Hover:** `hover:-translate-y-0.5 hover:shadow-md` + `hover:border-{colorKey}` (per-color map)
+- **Icon/badge:** same `badgeStyle` logic as `CategoryAccordionItem` — if `meta.badge` is set, renders text badge with `badgeStyle.bg`/`badgeStyle.text`; otherwise renders lucide icon with `ICON_BG[colorKey]`/`ICON_TEXT[colorKey]`
+- **Footer:** logged-out shows "Start →" in category color; logged-in shows `X/Y done` or `Complete` + `<CheckCircle2 className="text-success">`
+- **Color system:** `ICON_BG`/`ICON_TEXT`/`HOVER_BORDER` — `Record<ColorKey, string>` maps for all 6 hue tokens; `badgeStyle` on `CategoryMeta` overrides these for per-category badge colors
+
+### Learn Layout
+- **File:** `src/app/(app)/learn/layout.tsx`
+- **Type:** Async Server Component
+- **Fetches:** `auth.api.getSession()` in try/catch → extracts `user: DropdownUser | null` from session → `getCategorySummaries(userId)` (deduped via `React.cache`)
+- **Renders:** `<div className="flex flex-1"><LearnSidebar categories={categories} user={user} /><div className="min-w-0 flex-1">{children}</div></div>`
+- **Key pattern:** passes both categories and user to `LearnSidebar`; page also calls `getCategorySummaries` but hits the same `React.cache` entry — one DB round-trip total
+
+### Learn Index Page
+- **File:** `src/app/(app)/learn/page.tsx`
+- **Type:** Async Server Component
+- **Heading:** "What do you want to learn?" + description
+- **Grid:** `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4` — 8 `<CategoryCard>`s
+- **Data:** `getCategorySummaries(userId)` (cache-deduplicated with layout's call)
+
+### Learn Data Layer
+- **Queries file:** `src/features/learn/lib/queries.ts` — `getCategorySummaries(userId)` wrapped in `React.cache()`; queries all concepts ordered by category + orderIndex; if userId provided, joins `user_concept_progress WHERE fullyCompleted = true` to build completedConceptIds set; returns `CategorySummary[]` in canonical `CONCEPT_CATEGORIES` order
+- **Meta file:** `src/features/learn/lib/categoryMeta.ts` — static `CATEGORY_META` map (8 entries): `{ label, description, icon (LucideIcon), colorKey, badge?, badgeStyle? }`
+  - `badge?: string` — text to show inside the icon slot (e.g. "JS", "TS"); when set, the icon is hidden and a `<span>` renders instead
+  - `badgeStyle?: { bg: string; text: string }` — arbitrary Tailwind classes for the badge background and text, allowing per-category color overrides that don't follow `colorKey`. JS uses `bg-[#FFFF00] text-[#111827]` (pure bright yellow, fixed-dark text that doesn't flip in dark mode); TS uses `bg-info text-accent-foreground` (solid blue, `accent-foreground` is theme-invariant white)
+  - Current colorKey assignments: javascript-runtime→`xp`, browser-internals→`info`, react→`premium`, css→`success`, typescript→`info`, accessibility→`xp`, performance→`accent`, system-design→`premium`
+  - Accessibility icon: `Lock` (not `Eye`)
+- **Types exported:** `CategorySummary`, `ConceptSummary`, `CategoryMeta`, `ColorKey`, `ColorClasses`
 
 ## Practice Components
 

@@ -88,6 +88,10 @@
    */
   --color-cta-dark: #0A0A0A;
 
+  /* ─── Language Badges (theme-invariant — not overridden in .dark {}) ─── */
+  --color-js-badge-bg: #FFFF00;
+  --color-js-badge-text: #111827;
+
   /* ─── Border Radius ─── */
   --radius-xs: 4px;
   --radius-sm: 6px;
