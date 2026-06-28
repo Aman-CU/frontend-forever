@@ -1,3 +1,6 @@
+import { cache } from "react";
+import { headers } from "next/headers";
+
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
@@ -68,3 +71,14 @@ export const auth = betterAuth({
 });
 
 export type Session = typeof auth.$Infer.Session;
+
+// Deduplicates the session lookup across RSC layout + page trees on the same
+// request — both learn/layout.tsx and learn/page.tsx call this; only one
+// auth.api.getSession() fires per request.
+export const getCachedSession = cache(async () => {
+  try {
+    return await auth.api.getSession({ headers: await headers() });
+  } catch {
+    return null;
+  }
+});
