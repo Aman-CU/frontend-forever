@@ -256,8 +256,13 @@ Update this file after every completed feature. Any AI agent reading this should
     6. **Status circles** (`CategoryAccordionItem.tsx`): each concept link now has a status circle on the left (replaces the old right-side `<Check>`). Three states driven by `isActive` and `concept.isCompleted`: active = `bg-text-primary` + white Check, completed = `bg-success` + white Check, not started = `border border-border bg-transparent` (empty). Premium `<Lock>` icon remains on the right.
     7. **`badgeStyle` propagated to `CategoryCard.tsx`** — same `badgeStyle.bg`/`badgeStyle.text` logic for the icon slot in the grid cards, so JS and TS cards match the sidebar.
     - All changes typecheck/lint clean throughout.
+**Last completed:** 21 Concept Page Shell — ran the `architect` skill before building. Four decisions resolved with the user up front, all confirming the recommended option: (1) tab switching is client `useState` (default `understand`), AnimatePresence cross-fade like the Hero — not URL query param or sub-routes; (2) each of the 5 tab bodies is a labeled placeholder empty-state (Features 22–26 drop in real content); (3) the "Your Turn" right rail is a full static visual placeholder matching the design (quiz card + Execution Order + Related Topics), no real quiz logic; (4) Guide/Save/Share + bookmark buttons are styled but inert. Two assumptions folded in without asking (obvious defaults): the page is a dynamic server component (no `generateStaticParams` — that's Feature 22/MDX), and the category breadcrumb crumb is plain text since no `/learn/[category]` index route exists.
+  - Discovered `designs/Learn-design.png` is actually the Event Loop **concept page** (not the learn index, despite the filename) — it's the exact screen this feature shells out. Built the main content to match: breadcrumb (Learn → category → concept), title + bookmark, description, action buttons, 5-tab nav with green-underline active state, placeholder tab body, and the right rail. The left `LearnSidebar` comes for free from the existing `learn/layout.tsx` (Feature 20) since the concept route nests inside it.
+  - New route: `src/app/(app)/learn/[category]/[slug]/page.tsx` (async server component) — awaits params, fetches the concept, `notFound()` on unknown slug **or** category-mismatch (keeps the breadcrumb honest, prevents duplicate URLs). New query `getConceptBySlug(slug)` in `src/features/learn/lib/queries.ts` (`cache()`-wrapped, returns `ConceptDetail | null`).
+  - New components under `src/features/learn/components/concept/`: `ConceptPageShell.tsx` (client — owns `activeTab`, lays out header/tabs/content-grid, conditionally renders the rail only on the Understand tab, main goes full-width otherwise), `ConceptHeader.tsx`, `ConceptTabs.tsx` (controlled, reuses the canonical `CONCEPT_TABS` constant + a per-tab icon map), `TabPlaceholder.tsx` (reusable dashed empty-state), `YourTurnRail.tsx` (three static cards). Tab body copy lives in `ConceptPageShell`'s `TAB_BODY` map. All files under the 200-line limit.
+  - Verified: `npx tsc --noEmit` (source) + `npx eslint` clean; dev server returns 200 for `/learn/javascript-runtime/event-loop` and 404 for an unknown slug. Playwright (cached chromium-1228, no `playwright` package installed — pointed `playwright-core` directly at the cached `chrome.exe`): zero console/page errors across light/dark × desktop/mobile; tab-switching asserted via DOM counts (rail present on Understand=1, Simulate body present=1, rail hidden on Simulate=0); mobile (390px) `scrollWidth === clientWidth` (390/390, no overflow — cleaner than the homepage's pre-existing `CompanyLogosStrip` baseline); screenshots confirm the layout matches the design in both themes, the rail stacks below content on mobile with the sidebar hidden, and the Simulate tab goes full-width. The floating "N" circle in dev screenshots is the Next.js dev-tools indicator (dev-only), not part of the UI.
 **Currently building:** Nothing.
-**Next:** 21 Concept Page Shell.
+**Next:** 22 Understand Tab.
 
 ---
 
@@ -298,7 +303,7 @@ Update this file after every completed feature. Any AI agent reading this should
 ### Phase 4 — Learn Experience
 
 - [x] 20 Learn Index Page
-- [ ] 21 Concept Page Shell
+- [x] 21 Concept Page Shell
 - [ ] 22 Understand Tab
 - [ ] 23 Simulate Tab — Full Simulators
 - [ ] 24 Challenge Tab
