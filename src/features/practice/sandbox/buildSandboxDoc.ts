@@ -71,25 +71,14 @@ export function buildSandboxDoc(
 <head><meta charset="utf-8" /></head>
 <body>
 <script>
-  window.__ff = { done: false, nonce: ${JSON.stringify(nonce)} };
-  window.__ff.post = function (msg) {
-    msg.__nonce = window.__ff.nonce;
-    parent.postMessage(msg, "*");
-  };
-  window.__ff.finish = function (msg) {
-    if (window.__ff.done) return;
-    window.__ff.done = true;
-    clearTimeout(window.__ff.guard);
-    window.__ff.post(msg);
-  };
-  window.__ff.guard = setTimeout(function () {
-    window.__ff.finish({
-      type: "ERROR",
-      error: "Execution timed out (${timeoutMs / 1000}s limit). Check for an infinite loop or a promise that never resolves.",
-    });
-  }, ${timeoutMs});
+  // Records an early parse/runtime error for display only. This is a plain
+  // string with no secrets, so user code clobbering it can at most hide its own
+  // error — it can never forge a passing result (see the harness closure below).
+  window.__ffEarlyError = null;
   window.addEventListener("error", function (e) {
-    window.__ff.finish({ type: "ERROR", error: String((e && e.message) || "Script error") });
+    if (window.__ffEarlyError == null) {
+      window.__ffEarlyError = String((e && e.message) || "Script error");
+    }
   });
 </script>
 <script>
@@ -98,11 +87,41 @@ ${escapeForScript(userCode)}
 </script>
 <script>
 (function () {
+  // The nonce and the post/finish plumbing live ONLY in this closure — never on
+  // window. User code already ran in the script above and has no reference to
+  // them, and the nonce is unguessable, so a submission cannot postMessage a
+  // forged RESULT back to the parent to bypass the real tests.
+  var NONCE = ${JSON.stringify(nonce)};
+  var done = false;
+  function post(msg) {
+    msg.__nonce = NONCE;
+    parent.postMessage(msg, "*");
+  }
+  function finish(msg) {
+    if (done) return;
+    done = true;
+    clearTimeout(guard);
+    post(msg);
+  }
+  var guard = setTimeout(function () {
+    finish({
+      type: "ERROR",
+      error: "Execution timed out (${timeoutMs / 1000}s limit). Check for an infinite loop or a promise that never resolves.",
+    });
+  }, ${timeoutMs});
+  window.addEventListener("error", function (e) {
+    finish({ type: "ERROR", error: String((e && e.message) || "Script error") });
+  });
   ${HELPERS}
   var TESTS = [
 ${testEntries}
   ];
   (async function () {
+    // A syntax/parse error in the user code surfaces as a single run-level error.
+    if (window.__ffEarlyError) {
+      finish({ type: "ERROR", error: window.__ffEarlyError });
+      return;
+    }
     var results = [];
     for (var i = 0; i < TESTS.length; i++) {
       try {
@@ -116,7 +135,7 @@ ${testEntries}
         });
       }
     }
-    window.__ff.finish({ type: "RESULT", results: results });
+    finish({ type: "RESULT", results: results });
   })();
 })();
 </script>

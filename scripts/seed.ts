@@ -502,13 +502,17 @@ async function seed() {
 
   console.log("[seed] Inserting challenges...");
   const challengeValues = CHALLENGES.map(({ conceptSlug, ...ch }) => {
+    // Fail fast: a conceptSlug that doesn't resolve is a seed-data bug, not a
+    // reason to silently insert an unlinked challenge.
     if (conceptSlug && !conceptBySlug[conceptSlug]) {
-      console.warn(`[seed] No concept found for challenge "${ch.slug}" conceptSlug "${conceptSlug}"`);
+      throw new Error(
+        `[seed] Challenge "${ch.slug}" references unknown conceptSlug "${conceptSlug}". Fix the seed before re-running.`,
+      );
     }
     return {
       ...ch,
       isPremium: ch.isPremium ?? false,
-      conceptId: conceptSlug ? conceptBySlug[conceptSlug] ?? null : null,
+      conceptId: conceptSlug ? conceptBySlug[conceptSlug] : null,
     };
   });
   // onConflictDoUpdate (not DoNothing) so re-running backfills conceptId onto
@@ -519,7 +523,9 @@ async function seed() {
     .onConflictDoUpdate({
       target: challenges.slug,
       set: {
-        conceptId: sql`excluded.concept_id`,
+        // COALESCE so a standalone challenge (no conceptSlug → null) never
+        // clobbers an existing link on re-run; a real new link still applies.
+        conceptId: sql`COALESCE(excluded.concept_id, ${challenges.conceptId})`,
         title: sql`excluded.title`,
         description: sql`excluded.description`,
         difficulty: sql`excluded.difficulty`,

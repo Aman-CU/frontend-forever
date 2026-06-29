@@ -46,6 +46,12 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
   // today — no challenge is premium yet.
   const isPremiumLocked = (challenge?.isPremium ?? false) && !isPremiumUser;
 
+  // Never serialize the reference solution into the client payload for a locked
+  // challenge — premium content is gated server-side (security.md), the client
+  // UI is cosmetic only.
+  const clientChallenge =
+    challenge && isPremiumLocked ? { ...challenge, solutionCode: "" } : challenge;
+
   // Built on the server (MDX needs the server) and passed into the client tab
   // switcher as a prop — keeps the guide off the client bundle.
   const understandContent = (
@@ -68,7 +74,7 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
 
   const challengeContent = (
     <ConceptChallenge
-      challenge={challenge}
+      challenge={clientChallenge}
       conceptId={concept.id}
       isLoggedIn={userId !== null}
       initialCompleted={initialChallenged}

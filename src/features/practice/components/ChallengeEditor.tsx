@@ -46,14 +46,14 @@ export function ChallengeEditor({
 function EditorSkeleton({ height }: { height: number }) {
   return (
     <div
-      className="flex animate-pulse flex-col gap-2.5 bg-[#1e1e1e] p-4"
+      className="flex animate-pulse flex-col gap-2.5 bg-editor-surface p-4"
       style={{ height }}
       aria-label="Loading editor"
     >
       {[80, 64, 72, 56, 68, 48].map((w, i) => (
         <div
           key={i}
-          className="h-3 rounded bg-white/10"
+          className="h-3 rounded bg-editor-foreground/10"
           style={{ width: `${w}%` }}
         />
       ))}

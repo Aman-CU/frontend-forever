@@ -88,6 +88,15 @@
    */
   --color-cta-dark: #0A0A0A;
 
+  /*
+   * ─── Code Editor Palette (theme-invariant) ───
+   * Monaco renders with its own "vs-dark" theme regardless of site theme (see
+   * library-docs.md → Monaco). These mirror vs-dark so the editor skeleton and
+   * read-only code blocks (ChallengeEditor, SolutionPanel) match it seamlessly.
+   */
+  --color-editor-surface: #1E1E1E;
+  --color-editor-foreground: #D4D4D4;
+
   /* ─── Language Badges (theme-invariant — not overridden in .dark {}) ─── */
   --color-js-badge-bg: #FFFF00;
   --color-js-badge-text: #111827;

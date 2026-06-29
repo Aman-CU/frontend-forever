@@ -43,8 +43,8 @@ export function SolutionPanel({ solutionCode, unlocked, lockedReason }: Props) {
       <header className="border-b border-border bg-surface px-4 py-2.5">
         <h3 className="text-sm font-semibold text-text-primary">Reference solution</h3>
       </header>
-      <pre className="overflow-x-auto bg-[#1e1e1e] p-4">
-        <code className="font-mono text-xs leading-relaxed text-[#d4d4d4]">{solutionCode}</code>
+      <pre className="overflow-x-auto bg-editor-surface p-4">
+        <code className="font-mono text-xs leading-relaxed text-editor-foreground">{solutionCode}</code>
       </pre>
     </section>
   );
