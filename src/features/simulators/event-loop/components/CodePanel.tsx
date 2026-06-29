@@ -44,7 +44,9 @@ export function CodePanel({ code, activeLines }: CodePanelProps) {
                 </span>
               )}
             </span>
-            {line.indent ? <span className="w-4 shrink-0" /> : null}
+            {Array.from({ length: line.indent ?? 0 }, (_, level) => (
+              <span key={level} className="w-4 shrink-0" />
+            ))}
             <span>
               {line.tokens.map((token, tokenIndex) => (
                 <span
