@@ -3,22 +3,22 @@
 import { List } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { SELECTORS } from "../../data/scenarios";
 import { PendingPlaceholder } from "../PendingPlaceholder";
-import type { StageStatus } from "../../types";
+import type { SelectorInfo, StageStatus } from "../../types";
 
 type MatchingSelectorsBodyProps = {
   status: StageStatus;
+  selectors: SelectorInfo[];
 };
 
-export function MatchingSelectorsBody({ status }: MatchingSelectorsBodyProps) {
+export function MatchingSelectorsBody({ status, selectors }: MatchingSelectorsBodyProps) {
   if (status === "pending") {
     return <PendingPlaceholder icon={List} />;
   }
 
   return (
     <div className="flex flex-1 flex-col justify-center gap-1.5">
-      {SELECTORS.map((selector, index) => (
+      {selectors.map((selector, index) => (
         <motion.div
           key={selector.selector}
           initial={{ opacity: 0, x: -8 }}

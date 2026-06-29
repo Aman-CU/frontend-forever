@@ -6,12 +6,13 @@ import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import type { CardStatuses, StageId } from "../types";
+import type { CardStatuses, RenderScenarioKind, StageId } from "../types";
 import { ComponentStateBody } from "./stage-bodies/ComponentStateBody";
 import { DiffingBody } from "./stage-bodies/DiffingBody";
 import { RealDomBody } from "./stage-bodies/RealDomBody";
 import { RenderPhaseBody } from "./stage-bodies/RenderPhaseBody";
 import { VirtualDomBody } from "./stage-bodies/VirtualDomBody";
+import { ComponentTreeView } from "./ComponentTreeView";
 import { StageCard } from "./StageCard";
 import type { StageColor } from "./StageCard";
 
@@ -21,18 +22,18 @@ type StageMeta = {
   title: string;
   color: StageColor;
   captionTitle: string;
-  captionSubtext: string;
 };
 
 // Keyed by `id`, not position — StageCardsRow looks up each card's status via
 // cardStatuses[meta.id], so reordering this array can never desync a card
-// from the wrong status the way indexing a positional tuple could.
+// from the wrong status the way indexing a positional tuple could. The caption
+// subtext line is scenario-specific and comes in via props, not from here.
 const STAGE_META: StageMeta[] = [
-  { id: "component-state", icon: Database, title: "Component State", color: "premium", captionTitle: "User Click", captionSubtext: "Click Increment" },
-  { id: "render-phase", icon: Zap, title: "Render Phase", color: "info", captionTitle: "State Update", captionSubtext: "count becomes 1" },
-  { id: "virtual-dom", icon: Box, title: "Virtual DOM", color: "success", captionTitle: "Render Phase", captionSubtext: "Virtual DOM created" },
-  { id: "diffing", icon: GitCompare, title: "Diffing", color: "streak", captionTitle: "Diffing", captionSubtext: "Only changed node detected" },
-  { id: "real-dom", icon: Monitor, title: "Real DOM", color: "accent", captionTitle: "DOM Update", captionSubtext: "Only the changed node updated" },
+  { id: "component-state", icon: Database, title: "Component State", color: "premium", captionTitle: "User Click" },
+  { id: "render-phase", icon: Zap, title: "Render Phase", color: "info", captionTitle: "State Update" },
+  { id: "virtual-dom", icon: Box, title: "Virtual DOM", color: "success", captionTitle: "Render Phase" },
+  { id: "diffing", icon: GitCompare, title: "Diffing", color: "streak", captionTitle: "Diffing" },
+  { id: "real-dom", icon: Monitor, title: "Real DOM", color: "accent", captionTitle: "DOM Update" },
 ];
 
 // 5 card columns (equal 1fr each) interleaved with 4 auto-width arrow
@@ -41,34 +42,98 @@ const STAGE_META: StageMeta[] = [
 const GRID_TEMPLATE = "grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr]";
 
 type StageCardsRowProps = {
+  kind: RenderScenarioKind;
   cardStatuses: CardStatuses;
   componentStateCount: number;
   realDomCount: number;
+  /** The value the update settles on — drives the "after" tree in Virtual DOM/Diffing. */
+  targetCount: number;
+  componentLabel: string;
+  stateLabel: string;
+  clickLabel: string;
+  childLabel: string;
+  captionSubtexts: Record<StageId, string>;
   isPlaying: boolean;
   onIncrement: () => void;
 };
 
 export function StageCardsRow({
+  kind,
   cardStatuses,
   componentStateCount,
   realDomCount,
+  targetCount,
+  componentLabel,
+  stateLabel,
+  clickLabel,
+  childLabel,
+  captionSubtexts,
   isPlaying,
   onIncrement,
 }: StageCardsRowProps) {
-  const bodies: Record<StageId, ReactNode> = {
-    "component-state": (
-      <ComponentStateBody
-        status={cardStatuses["component-state"]}
-        count={componentStateCount}
-        isPlaying={isPlaying}
-        onIncrement={onIncrement}
-      />
-    ),
-    "render-phase": <RenderPhaseBody status={cardStatuses["render-phase"]} />,
-    "virtual-dom": <VirtualDomBody status={cardStatuses["virtual-dom"]} />,
-    diffing: <DiffingBody status={cardStatuses.diffing} />,
-    "real-dom": <RealDomBody status={cardStatuses["real-dom"]} count={realDomCount} />,
-  };
+  const componentState = (
+    <ComponentStateBody
+      status={cardStatuses["component-state"]}
+      count={componentStateCount}
+      isPlaying={isPlaying}
+      onIncrement={onIncrement}
+      componentLabel={componentLabel}
+      stateLabel={stateLabel}
+      clickLabel={clickLabel}
+    />
+  );
+
+  // The "wasted-render" scenario swaps the counter trees for a Parent→Child
+  // component tree across the four downstream cards; everything else (the card
+  // shells, statuses, captions) is shared.
+  const bodies: Record<StageId, ReactNode> =
+    kind === "wasted-render"
+      ? {
+          "component-state": componentState,
+          "render-phase": (
+            <ComponentTreeView
+              status={cardStatuses["render-phase"]}
+              mode="rerender"
+              parentValue={targetCount}
+              parentBefore={realDomCount}
+              childLabel={childLabel}
+            />
+          ),
+          "virtual-dom": (
+            <ComponentTreeView
+              status={cardStatuses["virtual-dom"]}
+              mode="vdom"
+              parentValue={targetCount}
+              parentBefore={realDomCount}
+              childLabel={childLabel}
+            />
+          ),
+          diffing: (
+            <ComponentTreeView
+              status={cardStatuses.diffing}
+              mode="diff"
+              parentValue={targetCount}
+              parentBefore={realDomCount}
+              childLabel={childLabel}
+            />
+          ),
+          "real-dom": (
+            <ComponentTreeView
+              status={cardStatuses["real-dom"]}
+              mode="commit"
+              parentValue={realDomCount}
+              parentBefore={realDomCount}
+              childLabel={childLabel}
+            />
+          ),
+        }
+      : {
+          "component-state": componentState,
+          "render-phase": <RenderPhaseBody status={cardStatuses["render-phase"]} />,
+          "virtual-dom": <VirtualDomBody status={cardStatuses["virtual-dom"]} count={targetCount} />,
+          diffing: <DiffingBody status={cardStatuses.diffing} count={targetCount} />,
+          "real-dom": <RealDomBody status={cardStatuses["real-dom"]} count={realDomCount} />,
+        };
 
   return (
     <div className="overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,transparent,black_2%,black_98%,transparent)] lg:[mask-image:none]">
@@ -82,7 +147,7 @@ export function StageCardsRow({
               status={cardStatuses[meta.id]}
               captionNumber={index + 1}
               captionTitle={meta.captionTitle}
-              captionSubtext={meta.captionSubtext}
+              captionSubtext={captionSubtexts[meta.id]}
             >
               {bodies[meta.id]}
             </StageCard>

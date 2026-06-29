@@ -10,11 +10,22 @@ type ComponentStateBodyProps = {
   count: number;
   isPlaying: boolean;
   onIncrement: () => void;
+  componentLabel: string;
+  stateLabel: string;
+  clickLabel: string;
 };
 
-export function ComponentStateBody({ status, count, isPlaying, onIncrement }: ComponentStateBodyProps) {
+export function ComponentStateBody({
+  status,
+  count,
+  isPlaying,
+  onIncrement,
+  componentLabel,
+  stateLabel,
+  clickLabel,
+}: ComponentStateBodyProps) {
   return (
-    <CardZones topLabel="Counter Component">
+    <CardZones topLabel={componentLabel}>
       <motion.div
         key={count}
         initial={status === "active" ? { scale: 0.7, opacity: 0 } : false}
@@ -22,7 +33,7 @@ export function ComponentStateBody({ status, count, isPlaying, onIncrement }: Co
         transition={{ duration: 0.3 }}
         className="flex flex-col items-center gap-1 rounded-md bg-premium-light px-6 py-3"
       >
-        <span className="text-xs text-text-muted">count</span>
+        <span className="text-xs text-text-muted">{stateLabel}</span>
         <span className="text-3xl font-bold text-premium">{count}</span>
       </motion.div>
       <button
@@ -31,7 +42,7 @@ export function ComponentStateBody({ status, count, isPlaying, onIncrement }: Co
         disabled={isPlaying}
         className="rounded-md bg-premium px-5 py-2 text-sm font-semibold text-text-inverse disabled:cursor-not-allowed disabled:opacity-50"
       >
-        Increment
+        {clickLabel}
       </button>
     </CardZones>
   );

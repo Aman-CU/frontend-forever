@@ -26,3 +26,29 @@ export type RenderFrame = {
   realDomCount: number;
   description: string;
 };
+
+// "dom-update" walks the counter example (a state change patches one DOM node).
+// "wasted-render" tells a different story with a Parent→Child component tree
+// (the child re-renders but its DOM is never touched), so its Render/VirtualDOM/
+// Diffing/RealDOM cards render a ComponentTreeView instead of the counter trees.
+export type RenderScenarioKind = "dom-update" | "wasted-render";
+
+// A selectable scenario. The visuals, caption subtexts, the value the update
+// lands on, the component/state labels, and the insight all differ per scenario;
+// captionSubtexts override the per-card caption line under each stage card.
+export type RenderScenario = {
+  id: string;
+  label: string;
+  kind: RenderScenarioKind;
+  frames: RenderFrame[];
+  /** The value the update settles on, shown in the trees. */
+  targetCount: number;
+  /** Component State card: the component name, the state field label, the button label. */
+  componentLabel: string;
+  stateLabel: string;
+  clickLabel: string;
+  /** wasted-render only: the child component's name in the tree. */
+  childLabel: string;
+  captionSubtexts: Record<StageId, string>;
+  insight: { title: string; body: string };
+};

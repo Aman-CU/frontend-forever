@@ -23,10 +23,25 @@ export type SelectorInfo = {
   kind: SelectorKind;
   kindLabel: string;
   score: SpecificityScore;
+  /** True when the rule is marked !important — it then wins regardless of score. */
+  important?: boolean;
 };
 
 export type SpecificityFrame = {
   step: number;
   stageStatuses: StageStatuses;
   description: string;
+};
+
+// A selectable scenario. The competing selectors, the winning selector, the
+// element markup, and the caption subtexts all differ per scenario; the 5-stage
+// shape is shared so every visual is reused unchanged.
+export type SpecificityScenario = {
+  id: string;
+  label: string;
+  frames: SpecificityFrame[];
+  elementHtml: string;
+  selectors: SelectorInfo[];
+  winner: string;
+  captionSubtexts: Record<StageId, string>;
 };

@@ -8,17 +8,19 @@ import { YourTurnRail } from "./YourTurnRail";
 type Props = {
   concept: ConceptDetail;
   understandContent: ReactNode;
+  simulateContent: ReactNode;
 };
 
 // Server component: renders the static header + rail (and the server-rendered
 // Understand content built by the page) and hands them to the client tab switcher
 // as props, keeping them out of the client bundle.
-export function ConceptPageShell({ concept, understandContent }: Props) {
+export function ConceptPageShell({ concept, understandContent, simulateContent }: Props) {
   return (
     <ConceptInteractive
       header={<ConceptHeader concept={concept} />}
       rail={<YourTurnRail />}
       understandContent={understandContent}
+      simulateContent={simulateContent}
     />
   );
 }

@@ -3,11 +3,11 @@ import { MoveRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import { EXECUTION_ORDER_BY_OUTPUT } from "../data/scenarios";
-import type { ConsoleOutputToken, PanelTheme } from "../types";
+import type { ExecutionOrderEntry, PanelTheme } from "../types";
 
 type ExecutionOrderProps = {
-  consoleOutput: ConsoleOutputToken[];
+  consoleOutput: string[];
+  executionOrderByOutput: Record<string, ExecutionOrderEntry>;
 };
 
 const THEME_TEXT: Record<PanelTheme, string> = {
@@ -17,7 +17,7 @@ const THEME_TEXT: Record<PanelTheme, string> = {
   streak: "text-streak",
 };
 
-export function ExecutionOrder({ consoleOutput }: ExecutionOrderProps) {
+export function ExecutionOrder({ consoleOutput, executionOrderByOutput }: ExecutionOrderProps) {
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface-secondary px-4 py-3">
       <span className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
@@ -30,7 +30,8 @@ export function ExecutionOrder({ consoleOutput }: ExecutionOrderProps) {
         <div className="flex flex-wrap items-center gap-2">
           <AnimatePresence mode="popLayout">
             {consoleOutput.map((output, index) => {
-              const entry = EXECUTION_ORDER_BY_OUTPUT[output];
+              const entry = executionOrderByOutput[output];
+              if (!entry) return null;
 
               return (
                 <motion.div

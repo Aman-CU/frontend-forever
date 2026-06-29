@@ -12,7 +12,8 @@ type FlowItem = {
 
 // One entry per step (1-6) — order must match the real-world stage sequence
 // these labels describe, since `currentStep` indexes into this array by
-// position.
+// position. The first label is the user action, which differs per scenario
+// (Click Increment vs Click Like), so it comes in via props.
 const FLOW_ITEMS: FlowItem[] = [
   { label: "Click Increment", color: "premium" },
   { label: "State Update", color: "info" },
@@ -24,14 +25,19 @@ const FLOW_ITEMS: FlowItem[] = [
 
 type ExecutionFlowBarProps = {
   currentStep: number;
+  actionLabel?: string;
 };
 
-export function ExecutionFlowBar({ currentStep }: ExecutionFlowBarProps) {
+export function ExecutionFlowBar({ currentStep, actionLabel }: ExecutionFlowBarProps) {
+  const items = actionLabel
+    ? FLOW_ITEMS.map((item, i) => (i === 0 ? { ...item, label: actionLabel } : item))
+    : FLOW_ITEMS;
+
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border-light bg-surface-secondary p-3">
       <span className="text-xs font-semibold text-text-primary">Execution Flow</span>
       <div className="flex flex-wrap items-center gap-1">
-        {FLOW_ITEMS.map((item, index) => {
+        {items.map((item, index) => {
           const step = index + 1;
           const theme = STAGE_THEME[item.color];
           const isCurrent = step === currentStep;

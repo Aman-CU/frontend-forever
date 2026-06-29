@@ -10,9 +10,10 @@ import type { CardStatus } from "../../types";
 
 type VirtualDomBodyProps = {
   status: CardStatus;
+  count: number;
 };
 
-export function VirtualDomBody({ status }: VirtualDomBodyProps) {
+export function VirtualDomBody({ status, count }: VirtualDomBodyProps) {
   if (status === "pending") {
     return (
       <CardZones topLabel="Not created yet" bottomNote="Waiting…">
@@ -28,7 +29,7 @@ export function VirtualDomBody({ status }: VirtualDomBodyProps) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.35 }}
       >
-        <MiniTree h2Value={1} highlight="success" />
+        <MiniTree h2Value={count} highlight="success" />
       </motion.div>
     </CardZones>
   );

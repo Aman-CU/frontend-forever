@@ -6,7 +6,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import type { StageId, StageStatuses } from "../types";
+import type { SelectorInfo, StageId, StageStatuses } from "../types";
 import { ElementBody } from "./stage-bodies/ElementBody";
 import { FinalStyleBody } from "./stage-bodies/FinalStyleBody";
 import { MatchingSelectorsBody } from "./stage-bodies/MatchingSelectorsBody";
@@ -21,17 +21,17 @@ type StageMeta = {
   color: SpecificityColor;
   title: string;
   captionTitle: string;
-  captionSubtext: string;
 };
 
 // Keyed by id, not position — a card can't desync from the wrong status the
-// way indexing a positional tuple could if this array were ever reordered.
+// way indexing a positional tuple could if this array were ever reordered. The
+// caption subtext line is scenario-specific and comes in via props.
 const STAGE_META: StageMeta[] = [
-  { id: "element", icon: Code2, color: "accent", title: "Element", captionTitle: "Element", captionSubtext: "The element to style" },
-  { id: "matching", icon: List, color: "info", title: "Matching Selectors", captionTitle: "Matching Selectors", captionSubtext: "4 selectors match" },
-  { id: "calculator", icon: Calculator, color: "premium", title: "Specificity Calculator", captionTitle: "Specificity Calculation", captionSubtext: "[ID, Class, Type] score" },
-  { id: "winner", icon: Trophy, color: "streak", title: "Winner Selection", captionTitle: "Winner Selection", captionSubtext: "Highest score wins" },
-  { id: "final", icon: Paintbrush, color: "success", title: "Final Style Applied", captionTitle: "Final Style Applied", captionSubtext: "Winning rule applied" },
+  { id: "element", icon: Code2, color: "accent", title: "Element", captionTitle: "Element" },
+  { id: "matching", icon: List, color: "info", title: "Matching Selectors", captionTitle: "Matching Selectors" },
+  { id: "calculator", icon: Calculator, color: "premium", title: "Specificity Calculator", captionTitle: "Specificity Calculation" },
+  { id: "winner", icon: Trophy, color: "streak", title: "Winner Selection", captionTitle: "Winner Selection" },
+  { id: "final", icon: Paintbrush, color: "success", title: "Final Style Applied", captionTitle: "Final Style Applied" },
 ];
 
 // 5 card columns (equal 1fr each) interleaved with 4 auto-width arrow
@@ -41,14 +41,28 @@ const GRID_TEMPLATE = "grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr]";
 
 type StageCardsRowProps = {
   stageStatuses: StageStatuses;
+  selectors: SelectorInfo[];
+  winner: string;
+  elementHtml: string;
+  captionSubtexts: Record<StageId, string>;
 };
 
-export function StageCardsRow({ stageStatuses }: StageCardsRowProps) {
+export function StageCardsRow({
+  stageStatuses,
+  selectors,
+  winner,
+  elementHtml,
+  captionSubtexts,
+}: StageCardsRowProps) {
   const bodies: Record<StageId, ReactNode> = {
-    element: <ElementBody status={stageStatuses.element} />,
-    matching: <MatchingSelectorsBody status={stageStatuses.matching} />,
-    calculator: <SpecificityCalculatorBody status={stageStatuses.calculator} />,
-    winner: <WinnerSelectionBody status={stageStatuses.winner} />,
+    element: <ElementBody status={stageStatuses.element} elementHtml={elementHtml} />,
+    matching: <MatchingSelectorsBody status={stageStatuses.matching} selectors={selectors} />,
+    calculator: (
+      <SpecificityCalculatorBody status={stageStatuses.calculator} selectors={selectors} />
+    ),
+    winner: (
+      <WinnerSelectionBody status={stageStatuses.winner} selectors={selectors} winner={winner} />
+    ),
     final: <FinalStyleBody status={stageStatuses.final} />,
   };
 
@@ -64,7 +78,7 @@ export function StageCardsRow({ stageStatuses }: StageCardsRowProps) {
               status={stageStatuses[meta.id]}
               captionNumber={index + 1}
               captionTitle={meta.captionTitle}
-              captionSubtext={meta.captionSubtext}
+              captionSubtext={captionSubtexts[meta.id]}
             >
               {bodies[meta.id]}
             </SpecificityCard>
