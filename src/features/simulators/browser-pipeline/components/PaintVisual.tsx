@@ -1,15 +1,20 @@
 import { PaintBucket } from "lucide-react";
 
-import type { StageStatus } from "../types";
+import type { PageBox, StageStatus } from "../types";
 import { PageMockupContent } from "./PageMockupContent";
 import { PendingPlaceholder } from "./PendingPlaceholder";
 
-export function PaintVisual({ status }: { status: StageStatus }) {
+type PaintVisualProps = {
+  status: StageStatus;
+  pageBoxes: PageBox[];
+};
+
+export function PaintVisual({ status, pageBoxes }: PaintVisualProps) {
   if (status === "pending") return <PendingPlaceholder icon={PaintBucket} />;
 
   return (
     <div className="flex flex-1 items-center justify-center p-1">
-      <PageMockupContent layered />
+      <PageMockupContent layered pageBoxes={pageBoxes} />
     </div>
   );
 }

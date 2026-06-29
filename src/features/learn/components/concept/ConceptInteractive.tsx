@@ -4,22 +4,17 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Code2, Trophy, Users, Wrench } from "lucide-react";
+import { Trophy, Users, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { type ConceptTab } from "@/lib/constants";
 import { ConceptTabs } from "./ConceptTabs";
 import { TabPlaceholder } from "./TabPlaceholder";
 
-// Placeholder copy for the not-yet-built tabs (Understand is real as of Feature 22;
-// the rest arrive in Features 23-26).
-type PlaceholderTab = Exclude<ConceptTab, "understand">;
+// Placeholder copy for the not-yet-built tabs (Understand is real as of Feature 22,
+// Simulate as of Feature 23; the rest arrive in Features 24-26).
+type PlaceholderTab = Exclude<ConceptTab, "understand" | "simulate">;
 const TAB_BODY: Record<PlaceholderTab, { icon: LucideIcon; title: string; description: string }> = {
-  simulate: {
-    icon: Code2,
-    title: "Simulate content — coming in Feature 23",
-    description: "The full interactive simulator with play, step, and scenario controls lives here.",
-  },
   challenge: {
     icon: Trophy,
     title: "Challenge content — coming in Feature 24",
@@ -38,14 +33,21 @@ const TAB_BODY: Record<PlaceholderTab, { icon: LucideIcon; title: string; descri
 };
 
 type Props = {
-  // header, rail, and understandContent are server-rendered and passed in, so they
-  // stay off the client bundle (the Understand tab renders MDX, which needs the server).
+  // header, rail, understandContent, and simulateContent are built upstream and
+  // passed in as nodes, so they stay off this client component's own bundle (the
+  // Understand tab renders MDX, which needs the server).
   header: ReactNode;
   rail: ReactNode;
   understandContent: ReactNode;
+  simulateContent: ReactNode;
 };
 
-export function ConceptInteractive({ header, rail, understandContent }: Props) {
+export function ConceptInteractive({
+  header,
+  rail,
+  understandContent,
+  simulateContent,
+}: Props) {
   const [activeTab, setActiveTab] = useState<ConceptTab>("understand");
 
   return (
@@ -73,6 +75,8 @@ export function ConceptInteractive({ header, rail, understandContent }: Props) {
             >
               {activeTab === "understand" ? (
                 understandContent
+              ) : activeTab === "simulate" ? (
+                simulateContent
               ) : (
                 <TabPlaceholder
                   icon={TAB_BODY[activeTab].icon}

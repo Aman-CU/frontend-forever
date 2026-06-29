@@ -1,12 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-import type { SimulatorSpeed } from "@/components/shared/simulator-chrome/types";
+import type {
+  ScenarioOption,
+  SimulatorSpeed,
+} from "@/components/shared/simulator-chrome/types";
 
-import { SPECIFICITY_FRAMES } from "../data/scenarios";
-import type { SpecificityFrame } from "../types";
+import { SPECIFICITY_SCENARIOS } from "../data/scenarios";
+import type { SpecificityFrame, SpecificityScenario } from "../types";
 
-const TOTAL_STEPS = SPECIFICITY_FRAMES.length;
 const BASE_INTERVAL_MS = 1800;
+const SCENARIO_OPTIONS: ScenarioOption[] = SPECIFICITY_SCENARIOS.map((s) => ({
+  id: s.id,
+  label: s.label,
+}));
+
+type UseCssSpecificitySimulatorOptions = {
+  /** Fired each time the simulator reaches its final frame (a full play-through). */
+  onReachedEnd?: () => void;
+};
 
 type UseCssSpecificitySimulatorResult = {
   currentStep: number;
@@ -16,6 +27,10 @@ type UseCssSpecificitySimulatorResult = {
   speed: SimulatorSpeed;
   setSpeed: (speed: SimulatorSpeed) => void;
   frame: SpecificityFrame;
+  scenario: SpecificityScenario;
+  scenarios: ScenarioOption[];
+  activeScenarioId: string;
+  setScenario: (id: string) => void;
   play: () => void;
   pause: () => void;
   step: () => void;
@@ -24,17 +39,36 @@ type UseCssSpecificitySimulatorResult = {
   toggleAutoplay: () => void;
 };
 
-export function useCssSpecificitySimulator(): UseCssSpecificitySimulatorResult {
+export function useCssSpecificitySimulator(
+  { onReachedEnd }: UseCssSpecificitySimulatorOptions = {},
+): UseCssSpecificitySimulatorResult {
+  const [activeScenarioId, setActiveScenarioId] = useState(SPECIFICITY_SCENARIOS[0].id);
   const [currentStep, setCurrentStep] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [autoplay, setAutoplay] = useState(false);
   const [speed, setSpeed] = useState<SimulatorSpeed>(1);
 
+  const scenario =
+    SPECIFICITY_SCENARIOS.find((s) => s.id === activeScenarioId) ?? SPECIFICITY_SCENARIOS[0];
+  const frames = scenario.frames;
+  const totalSteps = frames.length;
+
+  const onReachedEndRef = useRef(onReachedEnd);
+  useEffect(() => {
+    onReachedEndRef.current = onReachedEnd;
+  });
+
+  useEffect(() => {
+    if (currentStep === totalSteps) {
+      onReachedEndRef.current?.();
+    }
+  }, [currentStep, totalSteps]);
+
   useEffect(() => {
     if (!isPlaying) return;
 
     const id = setTimeout(() => {
-      if (currentStep === TOTAL_STEPS) {
+      if (currentStep === totalSteps) {
         if (autoplay) {
           setCurrentStep(1);
         } else {
@@ -46,10 +80,16 @@ export function useCssSpecificitySimulator(): UseCssSpecificitySimulatorResult {
     }, BASE_INTERVAL_MS / speed);
 
     return () => clearTimeout(id);
-  }, [isPlaying, currentStep, speed, autoplay]);
+  }, [isPlaying, currentStep, speed, autoplay, totalSteps]);
+
+  function setScenario(id: string) {
+    setActiveScenarioId(id);
+    setCurrentStep(1);
+    setIsPlaying(false);
+  }
 
   function play() {
-    setCurrentStep((step) => (step === TOTAL_STEPS ? 1 : step));
+    setCurrentStep((step) => (step === totalSteps ? 1 : step));
     setIsPlaying(true);
   }
 
@@ -59,7 +99,7 @@ export function useCssSpecificitySimulator(): UseCssSpecificitySimulatorResult {
 
   function step() {
     setIsPlaying(false);
-    setCurrentStep((s) => Math.min(s + 1, TOTAL_STEPS));
+    setCurrentStep((s) => Math.min(s + 1, totalSteps));
   }
 
   function stepBack() {
@@ -78,12 +118,16 @@ export function useCssSpecificitySimulator(): UseCssSpecificitySimulatorResult {
 
   return {
     currentStep,
-    totalSteps: TOTAL_STEPS,
+    totalSteps,
     isPlaying,
     autoplay,
     speed,
     setSpeed,
-    frame: SPECIFICITY_FRAMES[currentStep - 1],
+    frame: frames[currentStep - 1],
+    scenario,
+    scenarios: SCENARIO_OPTIONS,
+    activeScenarioId,
+    setScenario,
     play,
     pause,
     step,

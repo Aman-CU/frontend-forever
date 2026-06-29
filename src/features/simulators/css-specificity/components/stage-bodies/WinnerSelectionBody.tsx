@@ -5,23 +5,24 @@ import { motion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 
-import { SELECTORS, WINNER_SELECTOR } from "../../data/scenarios";
 import { PendingPlaceholder } from "../PendingPlaceholder";
-import type { StageStatus } from "../../types";
+import type { SelectorInfo, StageStatus } from "../../types";
 
 type WinnerSelectionBodyProps = {
   status: StageStatus;
+  selectors: SelectorInfo[];
+  winner: string;
 };
 
-export function WinnerSelectionBody({ status }: WinnerSelectionBodyProps) {
+export function WinnerSelectionBody({ status, selectors, winner }: WinnerSelectionBodyProps) {
   if (status === "pending") {
     return <PendingPlaceholder icon={Trophy} />;
   }
 
   return (
     <div className="flex flex-1 flex-col justify-center gap-1.5">
-      {SELECTORS.map((selector) => {
-        const isWinner = selector.selector === WINNER_SELECTOR;
+      {selectors.map((selector) => {
+        const isWinner = selector.selector === winner;
         const [id, cls, type] = selector.score;
 
         return (
@@ -34,11 +35,16 @@ export function WinnerSelectionBody({ status }: WinnerSelectionBodyProps) {
           >
             <span
               className={cn(
-                "font-mono text-xs",
+                "flex items-center gap-1 font-mono text-xs",
                 isWinner ? "font-semibold text-premium" : "text-text-muted",
               )}
             >
               {selector.selector}
+              {selector.important && (
+                <span className="rounded bg-streak-light px-1 py-0.5 text-[9px] font-semibold uppercase text-streak">
+                  !important
+                </span>
+              )}
             </span>
             <span className="flex items-center gap-1">
               <span className={cn("font-mono text-xs", isWinner ? "text-premium" : "text-text-muted")}>

@@ -52,14 +52,17 @@ export function TreeView({
         transition={{ duration: 0.25, delay }}
         className={cn(
           "rounded-md border px-1.5 py-1 font-mono text-[10px] whitespace-nowrap",
-          node.excluded
-            ? "border-dashed border-border-light text-text-muted line-through opacity-60"
-            : "border-border-light bg-surface-secondary text-text-secondary",
+          node.excluded && "border-dashed border-border-light text-text-muted line-through opacity-60",
+          node.hidden && "border-dashed border-streak/50 bg-streak-light text-streak",
+          !node.excluded &&
+            !node.hidden &&
+            "border-border-light bg-surface-secondary text-text-secondary",
         )}
       >
         {node.label}
       </motion.span>
       {node.excluded && <span className="text-[9px] text-text-muted">excluded</span>}
+      {node.hidden && <span className="text-[9px] text-streak">hidden</span>}
 
       {showChildren && (
         <>

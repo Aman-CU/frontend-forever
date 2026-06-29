@@ -10,9 +10,10 @@ import type { CardStatus } from "../../types";
 
 type DiffingBodyProps = {
   status: CardStatus;
+  count: number;
 };
 
-export function DiffingBody({ status }: DiffingBodyProps) {
+export function DiffingBody({ status, count }: DiffingBodyProps) {
   if (status === "pending") {
     return (
       <CardZones topLabel="Not compared yet" bottomNote="Waiting…">
@@ -43,7 +44,7 @@ export function DiffingBody({ status }: DiffingBodyProps) {
         className="flex gap-3"
       >
         <MiniTree h2Value={0} label="Before" />
-        <MiniTree h2Value={1} highlight="streak" label="After" />
+        <MiniTree h2Value={count} highlight="streak" label="After" />
       </motion.div>
     </CardZones>
   );

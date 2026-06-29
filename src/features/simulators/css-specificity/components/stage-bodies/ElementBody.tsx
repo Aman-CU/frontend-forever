@@ -3,15 +3,15 @@
 import { Code2 } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { ELEMENT_HTML } from "../../data/scenarios";
 import { PendingPlaceholder } from "../PendingPlaceholder";
 import type { StageStatus } from "../../types";
 
 type ElementBodyProps = {
   status: StageStatus;
+  elementHtml: string;
 };
 
-export function ElementBody({ status }: ElementBodyProps) {
+export function ElementBody({ status, elementHtml }: ElementBodyProps) {
   if (status === "pending") {
     return <PendingPlaceholder icon={Code2} />;
   }
@@ -24,7 +24,7 @@ export function ElementBody({ status }: ElementBodyProps) {
       className="flex flex-1 items-center justify-center"
     >
       <pre className="w-full overflow-x-auto rounded-md bg-surface-secondary p-2.5 text-left font-mono text-[11px] leading-relaxed text-text-secondary">
-        <code>{ELEMENT_HTML}</code>
+        <code>{elementHtml}</code>
       </pre>
     </motion.div>
   );

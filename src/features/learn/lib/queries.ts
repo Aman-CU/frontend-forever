@@ -112,6 +112,23 @@ export async function getUnderstoodState(
   return row?.understandCompleted ?? false;
 }
 
+// Whether the given user has marked a concept's Simulate tab complete (set the
+// first time they play a simulator through to its final frame). Per-user and
+// indexed, so it stays a live query (not cached), same as getUnderstoodState.
+export async function getSimulateState(
+  userId: string,
+  conceptId: string,
+): Promise<boolean> {
+  const row = await db.query.userConceptProgress.findFirst({
+    columns: { simulateCompleted: true },
+    where: and(
+      eq(userConceptProgress.userId, userId),
+      eq(userConceptProgress.conceptId, conceptId),
+    ),
+  });
+  return row?.simulateCompleted ?? false;
+}
+
 // Overlays the current user's completion state onto the cached catalog. cache()
 // dedupes the per-request call (layout + page both call it); only the small
 // per-user progress query is live — the heavy concept read comes from the cache.

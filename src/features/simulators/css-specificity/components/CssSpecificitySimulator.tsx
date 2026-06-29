@@ -2,14 +2,19 @@
 
 import { BrowserChromeBar } from "@/components/shared/simulator-chrome/BrowserChromeBar";
 import { PanelHeader } from "@/components/shared/simulator-chrome/PanelHeader";
+import { ScenarioSwitcher } from "@/components/shared/simulator-chrome/ScenarioSwitcher";
 import { SimulatorControls } from "@/components/shared/simulator-chrome/SimulatorControls";
+import type { SimulatorRootProps } from "@/components/shared/simulator-chrome/types";
 
 import { useCssSpecificitySimulator } from "../hooks/useCssSpecificitySimulator";
 import { ExecutionFlowBar } from "./ExecutionFlowBar";
 import { ReferenceSection } from "./ReferenceSection";
 import { StageCardsRow } from "./StageCardsRow";
 
-export function CssSpecificitySimulator() {
+export function CssSpecificitySimulator({
+  showScenarioSwitcher,
+  onReachedEnd,
+}: SimulatorRootProps = {}) {
   const {
     currentStep,
     totalSteps,
@@ -18,13 +23,17 @@ export function CssSpecificitySimulator() {
     speed,
     setSpeed,
     frame,
+    scenario,
+    scenarios,
+    activeScenarioId,
+    setScenario,
     play,
     pause,
     step,
     stepBack,
     restart,
     toggleAutoplay,
-  } = useCssSpecificitySimulator();
+  } = useCssSpecificitySimulator({ onReachedEnd });
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface text-left shadow-xl">
@@ -36,7 +45,20 @@ export function CssSpecificitySimulator() {
       <PanelHeader currentStep={currentStep} totalSteps={totalSteps} isPlaying={isPlaying} />
 
       <div className="flex flex-col gap-2.5 p-4">
-        <StageCardsRow stageStatuses={frame.stageStatuses} />
+        {showScenarioSwitcher && (
+          <ScenarioSwitcher
+            scenarios={scenarios}
+            activeId={activeScenarioId}
+            onChange={setScenario}
+          />
+        )}
+        <StageCardsRow
+          stageStatuses={frame.stageStatuses}
+          selectors={scenario.selectors}
+          winner={scenario.winner}
+          elementHtml={scenario.elementHtml}
+          captionSubtexts={scenario.captionSubtexts}
+        />
         <ExecutionFlowBar currentStep={currentStep} />
         <ReferenceSection />
       </div>

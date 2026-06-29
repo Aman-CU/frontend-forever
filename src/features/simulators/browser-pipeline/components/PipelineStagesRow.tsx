@@ -6,7 +6,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import type { StageId, StageStatuses } from "../types";
+import type { LayoutBox, PageBox, StageId, StageStatuses, TreeNode } from "../types";
 import { CompositeVisual } from "./CompositeVisual";
 import { LayoutVisual } from "./LayoutVisual";
 import { PaintVisual } from "./PaintVisual";
@@ -26,7 +26,9 @@ type StageMeta = {
 };
 
 // Keyed by id, same precedent as react-rendering's STAGE_META / this
-// feature's own TRACK_META — a card can't desync from the wrong status.
+// feature's own TRACK_META — a card can't desync from the wrong status. The
+// Render Tree caption is scenario-specific (display:none vs visibility:hidden)
+// and overridden via props below.
 const STAGE_META: StageMeta[] = [
   {
     id: "render-tree",
@@ -34,7 +36,7 @@ const STAGE_META: StageMeta[] = [
     color: "accent",
     title: "Render Tree",
     captionTitle: "Render Tree",
-    captionSubtext: "DOM + CSSOM merge, display:none excluded",
+    captionSubtext: "DOM + CSSOM merge",
   },
   {
     id: "layout",
@@ -64,12 +66,29 @@ const STAGE_META: StageMeta[] = [
 
 const GRID_TEMPLATE = "grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr]";
 
-export function PipelineStagesRow({ stageStatuses }: { stageStatuses: StageStatuses }) {
+type PipelineStagesRowProps = {
+  stageStatuses: StageStatuses;
+  renderTree: TreeNode;
+  renderTreeCaption: string;
+  layoutBoxes: LayoutBox[];
+  pageBoxes: PageBox[];
+};
+
+export function PipelineStagesRow({
+  stageStatuses,
+  renderTree,
+  renderTreeCaption,
+  layoutBoxes,
+  pageBoxes,
+}: PipelineStagesRowProps) {
   const bodies: Record<SequentialStageId, ReactNode> = {
-    "render-tree": <RenderTreeVisual status={stageStatuses["render-tree"]} />,
-    layout: <LayoutVisual status={stageStatuses.layout} />,
-    paint: <PaintVisual status={stageStatuses.paint} />,
-    composite: <CompositeVisual status={stageStatuses.composite} />,
+    "render-tree": <RenderTreeVisual status={stageStatuses["render-tree"]} renderTree={renderTree} />,
+    layout: <LayoutVisual status={stageStatuses.layout} layoutBoxes={layoutBoxes} />,
+    paint: <PaintVisual status={stageStatuses.paint} pageBoxes={pageBoxes} />,
+    composite: <CompositeVisual status={stageStatuses.composite} pageBoxes={pageBoxes} />,
+  };
+  const captionOverrides: Partial<Record<SequentialStageId, string>> = {
+    "render-tree": renderTreeCaption,
   };
 
   return (
@@ -84,7 +103,7 @@ export function PipelineStagesRow({ stageStatuses }: { stageStatuses: StageStatu
               status={stageStatuses[meta.id]}
               captionNumber={index + 3}
               captionTitle={meta.captionTitle}
-              captionSubtext={meta.captionSubtext}
+              captionSubtext={captionOverrides[meta.id] ?? meta.captionSubtext}
             >
               {bodies[meta.id]}
             </PipelineCard>

@@ -3,11 +3,11 @@ import { Terminal } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-import { EXECUTION_ORDER_BY_OUTPUT } from "../data/scenarios";
-import type { ConsoleOutputToken, PanelTheme } from "../types";
+import type { ExecutionOrderEntry, PanelTheme } from "../types";
 
 type OutputPanelProps = {
-  consoleOutput: ConsoleOutputToken[];
+  consoleOutput: string[];
+  executionOrderByOutput: Record<string, ExecutionOrderEntry>;
 };
 
 const THEME_TEXT: Record<PanelTheme, string> = {
@@ -17,7 +17,7 @@ const THEME_TEXT: Record<PanelTheme, string> = {
   streak: "text-streak",
 };
 
-export function OutputPanel({ consoleOutput }: OutputPanelProps) {
+export function OutputPanel({ consoleOutput, executionOrderByOutput }: OutputPanelProps) {
   return (
     <div className="flex h-full min-h-[100px] flex-col gap-2 rounded-lg border border-border bg-surface-secondary p-3">
       <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-text-secondary">
@@ -31,7 +31,8 @@ export function OutputPanel({ consoleOutput }: OutputPanelProps) {
         ) : (
           <AnimatePresence mode="popLayout">
             {consoleOutput.map((output) => {
-              const entry = EXECUTION_ORDER_BY_OUTPUT[output];
+              const entry = executionOrderByOutput[output];
+              if (!entry) return null;
 
               return (
                 <motion.div
