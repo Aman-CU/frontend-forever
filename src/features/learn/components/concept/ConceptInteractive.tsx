@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Trophy, Users, Wrench } from "lucide-react";
+import { Users, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { type ConceptTab } from "@/lib/constants";
@@ -12,14 +12,9 @@ import { ConceptTabs } from "./ConceptTabs";
 import { TabPlaceholder } from "./TabPlaceholder";
 
 // Placeholder copy for the not-yet-built tabs (Understand is real as of Feature 22,
-// Simulate as of Feature 23; the rest arrive in Features 24-26).
-type PlaceholderTab = Exclude<ConceptTab, "understand" | "simulate">;
+// Simulate as of Feature 23, Challenge as of Feature 24; the rest arrive in 25-26).
+type PlaceholderTab = Exclude<ConceptTab, "understand" | "simulate" | "challenge">;
 const TAB_BODY: Record<PlaceholderTab, { icon: LucideIcon; title: string; description: string }> = {
-  challenge: {
-    icon: Trophy,
-    title: "Challenge content — coming in Feature 24",
-    description: "A Monaco editor, test runner, and progressive hints for the concept challenge.",
-  },
   interview: {
     icon: Users,
     title: "Interview content — coming in Feature 25",
@@ -40,6 +35,7 @@ type Props = {
   rail: ReactNode;
   understandContent: ReactNode;
   simulateContent: ReactNode;
+  challengeContent: ReactNode;
 };
 
 export function ConceptInteractive({
@@ -47,6 +43,7 @@ export function ConceptInteractive({
   rail,
   understandContent,
   simulateContent,
+  challengeContent,
 }: Props) {
   const [activeTab, setActiveTab] = useState<ConceptTab>("understand");
 
@@ -77,6 +74,8 @@ export function ConceptInteractive({
                 understandContent
               ) : activeTab === "simulate" ? (
                 simulateContent
+              ) : activeTab === "challenge" ? (
+                challengeContent
               ) : (
                 <TabPlaceholder
                   icon={TAB_BODY[activeTab].icon}

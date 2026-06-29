@@ -4,7 +4,7 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { CONCEPT_CATEGORIES, type ConceptCategory } from "@/lib/constants";
-import { concepts, userConceptProgress } from "@/lib/schema";
+import { challenges, concepts, profiles, userConceptProgress } from "@/lib/schema";
 
 export type ConceptSummary = {
   id: string;
@@ -127,6 +127,74 @@ export async function getSimulateState(
     ),
   });
   return row?.simulateCompleted ?? false;
+}
+
+// The single challenge bound to a concept (its Challenge tab renders this one).
+// Static content, so cached across requests under the "concepts" tag.
+export type ChallengeData = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  starterCode: string;
+  solutionCode: string;
+  testCases: { input: string; expected: string; label: string }[];
+  hints: string[];
+  isPremium: boolean;
+};
+
+export const getChallengeByConceptId = unstable_cache(
+  async (conceptId: string): Promise<ChallengeData | null> => {
+    const rows = await db
+      .select({
+        id: challenges.id,
+        slug: challenges.slug,
+        title: challenges.title,
+        description: challenges.description,
+        difficulty: challenges.difficulty,
+        starterCode: challenges.starterCode,
+        solutionCode: challenges.solutionCode,
+        testCases: challenges.testCases,
+        hints: challenges.hints,
+        isPremium: challenges.isPremium,
+      })
+      .from(challenges)
+      .where(eq(challenges.conceptId, conceptId))
+      .orderBy(challenges.orderIndex)
+      .limit(1);
+
+    return rows[0] ?? null;
+  },
+  ["challenge-by-concept"],
+  { tags: ["concepts"], revalidate: 3600 },
+);
+
+// Whether the given user has completed a concept's Challenge tab. Per-user and
+// indexed, so it stays a live query (not cached), same as getSimulateState.
+export async function getChallengeState(
+  userId: string,
+  conceptId: string,
+): Promise<boolean> {
+  const row = await db.query.userConceptProgress.findFirst({
+    columns: { challengeCompleted: true },
+    where: and(
+      eq(userConceptProgress.userId, userId),
+      eq(userConceptProgress.conceptId, conceptId),
+    ),
+  });
+  return row?.challengeCompleted ?? false;
+}
+
+// Whether the user currently has active premium — for server-side gating of
+// premium challenges (the seam Feature 38 fills out). Live, per-user.
+export async function getIsPremiumUser(userId: string): Promise<boolean> {
+  const row = await db.query.profiles.findFirst({
+    columns: { isPremium: true, premiumExpiresAt: true },
+    where: eq(profiles.id, userId),
+  });
+  if (!row?.isPremium) return false;
+  return !row.premiumExpiresAt || row.premiumExpiresAt > new Date();
 }
 
 // Overlays the current user's completion state onto the cached catalog. cache()
