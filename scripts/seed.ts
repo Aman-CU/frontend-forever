@@ -213,8 +213,33 @@ Try it live in the playground below — type into the search box, then make your
     slug: "virtual-list",
     conceptSlug: "react-rendering",
     title: "Virtualized list windowing",
-    description:
-      "Virtualization keeps a list of 10,000 rows at 60fps by only rendering the rows currently in view. The heart of it is the windowing math. Write `visibleRange(scrollTop, rowHeight, containerHeight, totalRows, overscan)` that returns `{ start, end }` — the inclusive index range of rows to render. Clamp to `[0, totalRows - 1]` and include an `overscan` buffer of extra rows above and below the viewport to prevent flicker.",
+    description: `**Virtualization** (or "windowing") renders a huge list at 60fps by only mounting the rows you can actually see — a few dozen, not thousands.
+
+## The problem
+
+Render 10,000 rows the naive way and the browser creates 10,000 DOM nodes. Every scroll, re-render, and layout has to walk all of them, so the page stutters and memory balloons — all to show about a dozen rows at a time.
+
+## The idea
+
+The screen only fits a handful of rows, so mount *only those* and swap them as the user scrolls. The trick is the **windowing math**: given the scroll position, which row indices are on screen right now? You keep one tall spacer the full height of the list (so the scrollbar stays honest) and absolutely-position the visible rows inside it.
+
+## Your task
+
+Write \`visibleRange(scrollTop, rowHeight, containerHeight, totalRows, overscan)\` returning \`{ start, end }\` — the **inclusive** index range of rows to mount:
+
+- the first visible row is \`Math.floor(scrollTop / rowHeight)\`
+- the last is \`Math.floor((scrollTop + containerHeight) / rowHeight)\`
+- pad the range by \`overscan\` rows on each side so fast scrolls don't flash blank
+- clamp to \`[0, totalRows - 1]\` — never index past the list
+
+\`\`\`js
+visibleRange(0, 40, 400, 10000, 3)      // { start: 0, end: 13 }
+visibleRange(4000, 40, 400, 10000, 3)   // { start: 97, end: 113 }
+\`\`\`
+
+> **Why overscan?** Rendering exactly the visible rows means a quick scroll can outrun React and flash empty space. A few buffer rows above and below hide the seam.
+
+Scroll the list in the playground below — your window keeps the DOM-node count tiny no matter how far down you go.`,
     difficulty: "medium",
     starterCode: `function visibleRange(scrollTop, rowHeight, containerHeight, totalRows, overscan) {
   // return { start, end } — inclusive row indices to render
@@ -262,8 +287,36 @@ Try it live in the playground below — type into the search box, then make your
     slug: "specificity-calculator",
     conceptSlug: "css-specificity",
     title: "CSS specificity calculator",
-    description:
-      "Given a CSS selector string, return its specificity as a `[id, class, element]` tuple. Handle IDs (`#`), classes (`.`), attributes (`[]`), pseudo-classes (`:`), elements, and pseudo-elements (`::`). Ignore the universal selector (`*`) and combinators.",
+    description: `**Specificity** is how the browser breaks ties when several CSS rules target the same element. It's the answer to "why isn't my style applying?"
+
+## The problem
+
+Two rules set the same button's color — which wins? Not "the last one written" and not "the most code". The browser scores each selector and the higher score wins. Guess wrong and you reach for \`!important\`, which just moves the fight somewhere worse.
+
+## The idea
+
+Every selector gets a three-part score — **[id, class, element]** — counted most-powerful first:
+
+- **id**: \`#cta\` → IDs
+- **class**: \`.btn\`, \`[type="text"]\`, \`:hover\` → classes, attributes, and pseudo-classes
+- **element**: \`button\`, \`::before\` → type selectors and pseudo-elements
+
+Compare the tuples left to right: \`[1,0,0]\` (one ID) beats \`[0,2,0]\` (two classes), which beats \`[0,0,5]\` (five elements). The universal selector \`*\` and combinators (\`>\`, \`+\`, \`~\`) score nothing.
+
+## Your task
+
+Write \`specificity(selector)\` returning a \`[id, class, element]\` tuple:
+
+\`\`\`js
+specificity("#cta")             // [1, 0, 0]
+specificity(".btn.primary")     // [0, 2, 0]
+specificity("button#cta.btn")   // [1, 1, 1]
+specificity("[type='text']")    // [0, 1, 0]
+\`\`\`
+
+> **One ID beats a hundred classes.** Specificity is compared column by column, never summed — \`[1,0,0]\` always wins over \`[0,99,0]\`. That's exactly why an ID selector is so hard to override.
+
+Watch four selectors fight over one button in the playground below — your scoring crowns the winner.`,
     difficulty: "easy",
     starterCode: `function specificity(selector) {
   // returns [idCount, classCount, elementCount]
