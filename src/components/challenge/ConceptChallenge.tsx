@@ -4,12 +4,14 @@ import { useRef, useState } from "react";
 
 import { CheckCircle2, Loader2, Play, RotateCcw } from "lucide-react";
 
+import { ChallengeDescription } from "@/features/practice/components/ChallengeDescription";
 import { ChallengeEditor } from "@/features/practice/components/ChallengeEditor";
 import { ChallengePrompt } from "@/features/practice/components/ChallengePrompt";
 import {
   ChallengeEmptyState,
   ChallengePremiumLocked,
 } from "@/features/practice/components/ChallengeStates";
+import { ChallengePlayground } from "@/features/practice/components/ChallengePlayground";
 import { HintsPanel } from "@/features/practice/components/HintsPanel";
 import { SolutionPanel } from "@/features/practice/components/SolutionPanel";
 import { TestResultsPanel } from "@/features/practice/components/TestResultsPanel";
@@ -115,11 +117,11 @@ function ChallengeWorkspace({
 
   return (
     <div className="flex flex-col gap-5">
-      <ChallengePrompt
-        title={challenge.title}
-        difficulty={challenge.difficulty}
-        description={challenge.description}
-      />
+      <ChallengePrompt title={challenge.title} difficulty={challenge.difficulty} />
+
+      <ChallengeDescription markdown={challenge.description} />
+
+      <ChallengePlayground slug={challenge.slug} code={code} />
 
       {passed ? (
         <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-success-muted px-3 py-1.5 text-sm font-medium text-success">

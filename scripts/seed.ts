@@ -156,8 +156,34 @@ const CHALLENGES: ChallengeSeed[] = [
     slug: "implement-debounce",
     conceptSlug: "event-loop",
     title: "Implement debounce",
-    description:
-      "Write a `debounce(fn, delay)` function that delays invoking `fn` until `delay` milliseconds have elapsed since the last call. The debounced function must also expose a `.cancel()` method that cancels any pending invocation.",
+    description: `**Debounce** delays running a function until the user *stops* triggering it. It's the standard fix for "this is firing way too often."
+
+## The problem
+
+Picture a search box that calls an API on every keystroke. Type **india** and you fire five requests — for \`i\`, \`in\`, \`ind\`, \`indi\`, \`india\` — but only the last one matters. The other four are wasted bandwidth and server load, and a slow earlier response can even land *after* the final one and overwrite it.
+
+## The idea
+
+A debounced function waits for quiet. Every new call **resets a timer**; the real work only runs once \`delay\` milliseconds pass with no new calls. Type fast, pause, and a single request fires.
+
+## Your task
+
+Write \`debounce(fn, delay)\` that returns a new function which:
+
+- delays calling \`fn\` until \`delay\` ms have passed since the **last** call
+- forwards the latest arguments and \`this\` to \`fn\`
+- exposes a \`.cancel()\` method that throws away any pending call
+
+\`\`\`js
+const search = debounce((q) => fetch("/api?q=" + q), 300);
+search("i"); search("in"); search("ind");
+// only "ind" runs, 300ms after the last call
+search.cancel(); // ...unless you cancel first
+\`\`\`
+
+> **Debounce vs throttle:** debounce waits for a pause (great for search, resize, autosave). Throttle runs at a steady maximum rate (great for scroll handlers). Different tools for different jobs.
+
+Try it live in the playground below — type into the search box, then make your \`debounce\` cut the request count.`,
     difficulty: "easy",
     starterCode: `function debounce(fn, delay) {
   // your implementation here
