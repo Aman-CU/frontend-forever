@@ -7,6 +7,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { drizzle } from "drizzle-orm/node-postgres";
+import { sql } from "drizzle-orm";
 import { Pool } from "pg";
 import { concepts, challenges, interviewQuestions, roadmaps, roadmapSteps } from "../src/lib/schema";
 import type {
@@ -27,6 +28,9 @@ type ConceptSeed = {
 
 type ChallengeSeed = {
   slug: string;
+  // Concept this challenge belongs to (its Challenge tab renders this one).
+  // Resolved to a concept_id at insert time; omit for standalone challenges.
+  conceptSlug?: string;
   title: string;
   description: string;
   difficulty: ChallengeDifficulty;
@@ -150,9 +154,36 @@ const CONCEPTS: ConceptSeed[] = [
 const CHALLENGES: ChallengeSeed[] = [
   {
     slug: "implement-debounce",
+    conceptSlug: "event-loop",
     title: "Implement debounce",
-    description:
-      "Write a `debounce(fn, delay)` function that delays invoking `fn` until `delay` milliseconds have elapsed since the last call. The debounced function must also expose a `.cancel()` method that cancels any pending invocation.",
+    description: `**Debounce** delays running a function until the user *stops* triggering it. It's the standard fix for "this is firing way too often."
+
+## The problem
+
+Picture a search box that calls an API on every keystroke. Type **india** and you fire five requests — for \`i\`, \`in\`, \`ind\`, \`indi\`, \`india\` — but only the last one matters. The other four are wasted bandwidth and server load, and a slow earlier response can even land *after* the final one and overwrite it.
+
+## The idea
+
+A debounced function waits for quiet. Every new call **resets a timer**; the real work only runs once \`delay\` milliseconds pass with no new calls. Type fast, pause, and a single request fires.
+
+## Your task
+
+Write \`debounce(fn, delay)\` that returns a new function which:
+
+- delays calling \`fn\` until \`delay\` ms have passed since the **last** call
+- forwards the latest arguments and \`this\` to \`fn\`
+- exposes a \`.cancel()\` method that throws away any pending call
+
+\`\`\`js
+const search = debounce((q) => fetch("/api?q=" + q), 300);
+search("i"); search("in"); search("ind");
+// only "ind" runs, 300ms after the last call
+search.cancel(); // ...unless you cancel first
+\`\`\`
+
+> **Debounce vs throttle:** debounce waits for a pause (great for search, resize, autosave). Throttle runs at a steady maximum rate (great for scroll handlers). Different tools for different jobs.
+
+Try it live in the playground below — type into the search box, then make your \`debounce\` cut the request count.`,
     difficulty: "easy",
     starterCode: `function debounce(fn, delay) {
   // your implementation here
@@ -180,50 +211,56 @@ const CHALLENGES: ChallengeSeed[] = [
   },
   {
     slug: "virtual-list",
-    title: "Virtualized list",
+    conceptSlug: "react-rendering",
+    title: "Virtualized list windowing",
     description:
-      "Render a list of 10,000 items at 60fps. Only the rows currently visible in the scroll container should be in the DOM. Each row is 40px tall. The container is 400px tall.",
+      "Virtualization keeps a list of 10,000 rows at 60fps by only rendering the rows currently in view. The heart of it is the windowing math. Write `visibleRange(scrollTop, rowHeight, containerHeight, totalRows, overscan)` that returns `{ start, end }` — the inclusive index range of rows to render. Clamp to `[0, totalRows - 1]` and include an `overscan` buffer of extra rows above and below the viewport to prevent flicker.",
     difficulty: "medium",
-    starterCode: `function VirtualList({ items }) {
-  // items: string[], each row 40px, container 400px
-  // only render visible rows + a small overscan buffer
+    starterCode: `function visibleRange(scrollTop, rowHeight, containerHeight, totalRows, overscan) {
+  // return { start, end } — inclusive row indices to render
+  // clamp to [0, totalRows - 1] and include the overscan buffer
 }`,
-    solutionCode: `function VirtualList({ items }) {
-  const [scrollTop, setScrollTop] = React.useState(0);
-  const rowHeight = 40;
-  const containerHeight = 400;
-  const overscan = 3;
-  const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
-  const endIndex = Math.min(items.length - 1, Math.floor((scrollTop + containerHeight) / rowHeight) + overscan);
-  const visibleItems = items.slice(startIndex, endIndex + 1);
-  return (
-    <div style={{ height: containerHeight, overflowY: 'auto' }} onScroll={e => setScrollTop(e.currentTarget.scrollTop)}>
-      <div style={{ height: items.length * rowHeight, position: 'relative' }}>
-        {visibleItems.map((item, i) => (
-          <div key={startIndex + i} style={{ position: 'absolute', top: (startIndex + i) * rowHeight, height: rowHeight }}>
-            {item}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+    solutionCode: `function visibleRange(scrollTop, rowHeight, containerHeight, totalRows, overscan) {
+  const first = Math.floor(scrollTop / rowHeight);
+  const last = Math.floor((scrollTop + containerHeight) / rowHeight);
+  const start = Math.max(0, first - overscan);
+  const end = Math.min(totalRows - 1, last + overscan);
+  return { start, end };
 }`,
     testCases: [
-      { input: "scroll to top", expected: "rows 0-12 in DOM", label: "Initial render" },
-      { input: "scroll to middle", expected: "only visible rows Â± overscan in DOM", label: "Windowed render" },
-      { input: "DOM node count", expected: "< 20 nodes for 10000 items", label: "DOM stays small" },
+      {
+        input: "visibleRange(0, 40, 400, 10000, 3)",
+        expected: "{ start: 0, end: 13 }",
+        label: "Initial window from the top",
+      },
+      {
+        input: "visibleRange(4000, 40, 400, 10000, 3)",
+        expected: "{ start: 97, end: 113 }",
+        label: "Windowed mid-scroll with overscan",
+      },
+      {
+        input: "visibleRange(399600, 40, 400, 10000, 3)",
+        expected: "{ start: 9987, end: 9999 }",
+        label: "Clamps at the end of the list",
+      },
+      {
+        input: "end - start for any scrollTop",
+        expected: "< 20 rows rendered",
+        label: "Window stays tiny for 10,000 rows",
+      },
     ],
     hints: [
-      "Track scrollTop with onScroll on the container.",
-      "The total list height must still be items.length * rowHeight so the scrollbar is correct.",
-      "Use absolute positioning for visible rows offset by their index * rowHeight.",
-      "Add a small overscan buffer (3â€“5 rows) above and below the viewport to prevent flicker.",
+      "The first visible row index is Math.floor(scrollTop / rowHeight).",
+      "The last visible row is Math.floor((scrollTop + containerHeight) / rowHeight).",
+      "Subtract overscan from start and add it to end to render a small buffer beyond the viewport.",
+      "Clamp start with Math.max(0, ...) and end with Math.min(totalRows - 1, ...) so you never index past the list.",
     ],
     isPremium: false,
     orderIndex: 2,
   },
   {
     slug: "specificity-calculator",
+    conceptSlug: "css-specificity",
     title: "CSS specificity calculator",
     description:
       "Given a CSS selector string, return its specificity as a `[id, class, element]` tuple. Handle IDs (`#`), classes (`.`), attributes (`[]`), pseudo-classes (`:`), elements, and pseudo-elements (`::`). Ignore the universal selector (`*`) and combinators.",
@@ -490,12 +527,44 @@ async function seed() {
   console.log(`[seed] ${insertedConcepts.length} new concept(s) inserted (${allConcepts.length} total)`);
 
   console.log("[seed] Inserting challenges...");
+  const challengeValues = CHALLENGES.map(({ conceptSlug, ...ch }) => {
+    // Fail fast: a conceptSlug that doesn't resolve is a seed-data bug, not a
+    // reason to silently insert an unlinked challenge.
+    if (conceptSlug && !conceptBySlug[conceptSlug]) {
+      throw new Error(
+        `[seed] Challenge "${ch.slug}" references unknown conceptSlug "${conceptSlug}". Fix the seed before re-running.`,
+      );
+    }
+    return {
+      ...ch,
+      isPremium: ch.isPremium ?? false,
+      conceptId: conceptSlug ? conceptBySlug[conceptSlug] : null,
+    };
+  });
+  // onConflictDoUpdate (not DoNothing) so re-running backfills conceptId onto
+  // challenges seeded before they were concept-linked. Still idempotent on slug.
   const insertedChallenges = await db
     .insert(challenges)
-    .values(CHALLENGES.map((ch) => ({ ...ch, isPremium: ch.isPremium ?? false })))
-    .onConflictDoNothing({ target: challenges.slug })
+    .values(challengeValues)
+    .onConflictDoUpdate({
+      target: challenges.slug,
+      set: {
+        // COALESCE so a standalone challenge (no conceptSlug → null) never
+        // clobbers an existing link on re-run; a real new link still applies.
+        conceptId: sql`COALESCE(excluded.concept_id, ${challenges.conceptId})`,
+        title: sql`excluded.title`,
+        description: sql`excluded.description`,
+        difficulty: sql`excluded.difficulty`,
+        starterCode: sql`excluded.starter_code`,
+        solutionCode: sql`excluded.solution_code`,
+        testCases: sql`excluded.test_cases`,
+        hints: sql`excluded.hints`,
+        isPremium: sql`excluded.is_premium`,
+        orderIndex: sql`excluded.order_index`,
+      },
+    })
     .returning({ slug: challenges.slug });
-  console.log(`[seed] ${insertedChallenges.length} new challenge(s) inserted`);
+  console.log(`[seed] ${insertedChallenges.length} challenge(s) upserted`);
 
   console.log("[seed] Inserting interview questions...");
   const insertedQuestions = await db

@@ -576,7 +576,38 @@ The first real tab body — a concept's MDX guide + 4 info cards + a "Mark as un
 
 ## Practice Components
 
-_Will be populated as components are built._
+### Code-Execution Sandbox (Feature 24)
+
+`src/features/practice/sandbox/` — the browser code-execution engine, reused by the Build tab (F26) and the standalone Practice section (F28–29). Runs user JS in a hidden, isolated iframe (`sandbox="allow-scripts"`, **no** `allow-same-origin`), `postMessage` only, per `security.md` → Code Execution Security.
+
+- **`buildSandboxDoc(userCode, tests, nonce, timeoutMs=5000)`** — `buildSandboxDoc.ts`. Returns the iframe `srcdoc`: (1) an early `error` recorder (display-only `window.__ffEarlyError` string, no secrets); (2) the user code in its **own** `<script>` (a syntax error there can't stop the harness; its top-level declarations become globals the tests call); (3) an authored-tests runner closure that owns a self-clearing timeout guard and posts one `RESULT`. The per-run `nonce` and the `post`/`finish` plumbing live **only inside the runner closure** (never on `window`), so user submission code can't read the nonce or forge a `RESULT` to bypass the tests. Injects `assert`/`assertEqual`/deep-`eq`/`delay` helpers into test scope. Escapes `</script>` in user code; every message carries `nonce`.
+- **`runInSandbox(userCode, tests): Promise<SandboxRunResult>`** — `runInSandbox.ts`. Creates the hidden iframe, listens on `message` filtered by `nonce`, 6s parent timeout (> the inner 5s guard), tears down the iframe + listener before resolving. Resolves once, never rejects.
+- **`useSandbox()`** — `useSandbox.ts`. `'use client'`. Returns `{ status: "idle"|"running"|"done", result, run(code, tests), reset() }`; `run()` returns the `SandboxRunResult` and ignores re-entrant calls.
+- **`getTestSpec(slug): SandboxTest[] | null`** — `testSpecs.ts`. In-code executable assertions per challenge slug (`implement-debounce`, `specificity-calculator`, `virtual-list`), each test's `label` matching the seeded `test_cases[].label` 1:1. The DB `test_cases` are display labels; these are the real tests.
+- **Types** (`types.ts`, re-exported from `index.ts`): `SandboxTest { label, source }`, `TestResult { label, passed, error? }`, `SandboxRunResult { results, error }`, `SandboxStatus`.
+- **Production CSP:** the sandbox requires `frame-src 'self'` (set in `next.config.ts`, Feature 24); the srcdoc's inline harness inherits the page `script-src 'self' 'unsafe-inline'`.
+
+### Challenge UI (Feature 24)
+
+`src/features/practice/components/` — the Challenge tab's presentational pieces (live in `features/practice` so the `components/`-layer host can import them; a feature importing another feature is forbidden).
+
+- **`ChallengeEditor`** — Monaco wrapper. `'use client'`; always `theme="vs-dark"`; minimap off; explicit pixel `height`; dark pulsing skeleton via the Editor `loading` prop. Per `library-docs.md` → Monaco. **Gotcha:** `@monaco-editor/react` does not fire `onChange` for a programmatic `editor.setValue()` — only real edits update the controlled value.
+- **`TestResultsPanel`** — `{ testCases, result, status }`. Spec rows with idle/running/pass/fail status icons (`Circle`/`Loader2`/`CheckCircle2`/`XCircle`), `X/Y passing` summary, a run-level error banner (`AlertTriangle`, `bg-error-muted`), and per-test error text.
+- **`HintsPanel`** — `{ hints }`. Collapsible (`AnimatePresence` height animation) with **progressive** one-at-a-time reveal ("Show a hint" / "Show next hint"), `Lightbulb` + `text-xp`. Renders nothing for empty hints.
+- **`SolutionPanel`** — `{ solutionCode, unlocked, lockedReason }`. Locked → dashed `Lock` note; unlocked → "View solution" button → read-only `bg-editor-surface` / `text-editor-foreground` code block (theme-invariant Monaco-palette tokens, see below).
+- **`ChallengePrompt`** — `{ title, difficulty, description }`. Title + difficulty pill (easy→`success`, medium→`accent`, hard→`error` muted tokens) + description with a small inline-`code` renderer (splits on backticks; authored content only, no HTML injection).
+- **`ChallengeStates`** — `ChallengeEmptyState` ("Challenge coming soon", `Trophy`, parallels the Simulate empty state) and `ChallengePremiumLocked` (F38 seam, `Lock`, `premium` tokens).
+- **Host — `ConceptChallenge`** — `src/components/challenge/ConceptChallenge.tsx`. `'use client'`, **`components/` layer** (imports `features/practice`). Props `{ challenge: ChallengeData | null, conceptId, isLoggedIn, initialCompleted, isPremiumLocked }`. Renders the empty/premium state, else the workspace: prompt → description → playground → success banner → editor → Run Tests / Reset + attempt counter → results → hints → solution. Owns editor state, attempt count, the solution gate (pass **or** 3 attempts), and the fire-once `POST /api/progress { conceptId, tab:"challenge" }` (ref-guarded, logged-out-silent — mirrors `ConceptSimulator`). **Banner rule:** the green "All tests passing" banner is driven by the *current* run only (`passed`); a previously-completed challenge shows a separate neutral pill that hides once a new run starts — the two never co-exist with a failing panel.
+- **`ChallengePrompt`** — title + difficulty pill only (description moved out). **`ChallengeDescription`** — `{ markdown }`. A dependency-free Markdown-subset renderer (h2/h3 headings, paragraphs, `-` lists, ``` fenced code, `>` blockquote, inline `code`, `**bold**`, `*italic*`), token-styled. Authored content only (no HTML injection). Used for all challenge descriptions; the seed authors them in Markdown.
+- **Data layer:** `getChallengeByConceptId(conceptId)` (cached, `"concepts"` tag → `ChallengeData | null`), `getChallengeState(userId, conceptId)` (live per-user), `getIsPremiumUser(userId)` (live, premium seam) in `src/features/learn/lib/queries.ts`. `page.tsx` builds `<ConceptChallenge>` and threads it through `ConceptPageShell` → `ConceptInteractive` as `challengeContent` (children-as-props, same as F22/F23). **Dev note:** `getChallengeByConceptId` is `unstable_cache`d (disk-backed); after a content reseed the old value persists until `.next` is cleared or the `"concepts"` tag is revalidated.
+
+### Live Playground (Feature 24)
+
+A neal.fun-style interactive demo that runs the user's *actual* code live, alongside the test runner. Only challenges with a bespoke demo have one.
+
+- **Live sandbox** (`src/features/practice/sandbox/`): `buildLiveDoc(userCode, driverSource, nonce)` — a **persistent, bidirectional** `allow-scripts` srcdoc (vs the one-shot `buildSandboxDoc`). User code runs first (globals); a trusted challenge *driver* runs in a private closure with `post()` + the user's globals and defines `handle(type, payload)` for inbound parent events. Nonce/post stay closure-private (anti-spoof). `getLiveDriver(slug)` (`liveDrivers.ts`) returns the driver — the debounce driver wraps the user's `debounce` around a "fire request" reporter and fires on every key when the debounce is missing/broken. `useLiveSandbox(code, driver, onEvent)` (`useLiveSandbox.ts`) manages one session, rebuilds on (debounced) code change, and **queues events until the iframe posts READY, then flushes** (so the demo works from the first keystroke).
+- **`DebounceDemo`** + **`RequestLane`** (`features/practice/components/`) — the visual: a search box; each keystroke fires a request; two lanes ("Without debounce" naive / "With your debounce" live-from-sandbox), each an animated packet → 📡 server, an API-call counter, and a $0.002/call cost; a "wasted calls saved" line once the user's debounce reduces calls.
+- **`ChallengePlayground`** — `{ slug, code }`. A slug `switch` returning the right demo (JSX directly, not a created-during-render component) or null. Rendered by `ConceptChallenge` between the description and the editor, fed the editor's current `code`.
 
 ## Interview Prep Components
 

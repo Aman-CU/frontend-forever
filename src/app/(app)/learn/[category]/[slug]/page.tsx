@@ -3,11 +3,15 @@ import { notFound } from "next/navigation";
 import { getCachedSession } from "@/lib/auth/server";
 import { getConceptContent } from "@/lib/mdx";
 import {
+  getChallengeByConceptId,
+  getChallengeState,
   getConceptBySlug,
+  getIsPremiumUser,
   getSimulateState,
   getUnderstoodState,
 } from "@/features/learn/lib/queries";
 import { ConceptPageShell } from "@/features/learn/components/concept/ConceptPageShell";
+import { ConceptChallenge } from "@/components/challenge/ConceptChallenge";
 import { ConceptSimulator } from "@/components/simulators/ConceptSimulator";
 import { UnderstandTab } from "@/features/learn/components/concept/UnderstandTab";
 
@@ -28,12 +32,25 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
   const userId = session?.user?.id ?? null;
 
   const mdx = getConceptContent(category, slug);
-  const [initialUnderstood, initialSimulated] = userId
+  const challenge = await getChallengeByConceptId(concept.id);
+  const [initialUnderstood, initialSimulated, initialChallenged, isPremiumUser] = userId
     ? await Promise.all([
         getUnderstoodState(userId, concept.id),
         getSimulateState(userId, concept.id),
+        getChallengeState(userId, concept.id),
+        getIsPremiumUser(userId),
       ])
-    : [false, false];
+    : [false, false, false, false];
+
+  // Server-side premium gate seam (Feature 38 fleshes this out). Always false
+  // today — no challenge is premium yet.
+  const isPremiumLocked = (challenge?.isPremium ?? false) && !isPremiumUser;
+
+  // Never serialize the reference solution into the client payload for a locked
+  // challenge — premium content is gated server-side (security.md), the client
+  // UI is cosmetic only.
+  const clientChallenge =
+    challenge && isPremiumLocked ? { ...challenge, solutionCode: "" } : challenge;
 
   // Built on the server (MDX needs the server) and passed into the client tab
   // switcher as a prop — keeps the guide off the client bundle.
@@ -55,11 +72,22 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
     />
   );
 
+  const challengeContent = (
+    <ConceptChallenge
+      challenge={clientChallenge}
+      conceptId={concept.id}
+      isLoggedIn={userId !== null}
+      initialCompleted={initialChallenged}
+      isPremiumLocked={isPremiumLocked}
+    />
+  );
+
   return (
     <ConceptPageShell
       concept={concept}
       understandContent={understandContent}
       simulateContent={simulateContent}
+      challengeContent={challengeContent}
     />
   );
 }

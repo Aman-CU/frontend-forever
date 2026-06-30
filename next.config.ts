@@ -22,9 +22,11 @@ const securityHeaders = [
       "font-src 'self' https://fonts.gstatic.com",
       // https://*.upstash.io for rate-limit requests (Feature 19+).
       "connect-src 'self' https://*.upstash.io",
-      // frame-src: none until the code-execution sandbox iframe is added (Features 24-25);
-      // update to 'self' at that point per security.md.
-      "frame-src 'none'",
+      // 'self' allows the Challenge/Build code-execution sandbox (Feature 24): a
+      // hidden srcdoc iframe with sandbox="allow-scripts" (no allow-same-origin),
+      // an opaque origin that can only postMessage back to the parent. Its inline
+      // harness runs under the inherited 'unsafe-inline' script-src above.
+      "frame-src 'self'",
     ].join("; "),
   },
 ];
