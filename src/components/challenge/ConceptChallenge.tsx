@@ -69,10 +69,14 @@ function ChallengeWorkspace({
   // Fire-once guard for the completion POST, mirroring ConceptSimulator.
   const hasPostedRef = useRef(initialCompleted);
 
+  // `passed` reflects the CURRENT run only — never historical completion — so the
+  // green banner can't contradict a failing result panel below it.
   const passed =
     !!result && !result.error && result.results.length > 0 && result.results.every((r) => r.passed);
-  const succeeded = completed || passed;
-  const solutionUnlocked = succeeded || attempts >= REVEAL_AFTER_ATTEMPTS;
+  // Show the "already completed" pill only before the user runs again this
+  // session; once there's a fresh result, the results panel speaks for itself.
+  const showCompletedPill = completed && !passed && result === null;
+  const solutionUnlocked = completed || passed || attempts >= REVEAL_AFTER_ATTEMPTS;
 
   async function handleRun() {
     if (!tests || status === "running") return;
@@ -117,12 +121,17 @@ function ChallengeWorkspace({
         description={challenge.description}
       />
 
-      {succeeded && (
+      {passed ? (
         <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-success-muted px-3 py-1.5 text-sm font-medium text-success">
           <CheckCircle2 className="h-4 w-4" aria-hidden />
           All tests passing — challenge complete
         </div>
-      )}
+      ) : showCompletedPill ? (
+        <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-surface-secondary px-3 py-1.5 text-sm font-medium text-text-secondary">
+          <CheckCircle2 className="h-4 w-4 text-success" aria-hidden />
+          You&apos;ve completed this challenge — run again any time
+        </div>
+      ) : null}
 
       <ChallengeEditor value={code} onChange={setCode} />
 
@@ -148,7 +157,7 @@ function ChallengeWorkspace({
           <RotateCcw className="h-4 w-4" aria-hidden />
           Reset
         </button>
-        {attempts > 0 && !succeeded && (
+        {attempts > 0 && !passed && (
           <span className="text-xs text-text-muted">
             {attempts} failed {attempts === 1 ? "attempt" : "attempts"}
           </span>
