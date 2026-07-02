@@ -4,7 +4,13 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { CONCEPT_CATEGORIES, type ConceptCategory } from "@/lib/constants";
-import { challenges, concepts, profiles, userConceptProgress } from "@/lib/schema";
+import {
+  challenges,
+  concepts,
+  interviewQuestions,
+  profiles,
+  userConceptProgress,
+} from "@/lib/schema";
 
 export type ConceptSummary = {
   id: string;
@@ -184,6 +190,53 @@ export async function getChallengeState(
     ),
   });
   return row?.challengeCompleted ?? false;
+}
+
+// The interview questions linked to a concept (its Interview tab renders these).
+// Static content, so cached across requests under the "concepts" tag.
+export type InterviewQuestionData = {
+  id: string;
+  question: string;
+  answer: string;
+  difficulty: string;
+  companies: string[];
+  isPremium: boolean;
+};
+
+export const getInterviewQuestionsByConceptId = unstable_cache(
+  async (conceptId: string): Promise<InterviewQuestionData[]> => {
+    return db
+      .select({
+        id: interviewQuestions.id,
+        question: interviewQuestions.question,
+        answer: interviewQuestions.answer,
+        difficulty: interviewQuestions.difficulty,
+        companies: interviewQuestions.companies,
+        isPremium: interviewQuestions.isPremium,
+      })
+      .from(interviewQuestions)
+      .where(eq(interviewQuestions.conceptId, conceptId))
+      .orderBy(interviewQuestions.orderIndex);
+  },
+  ["interview-questions-by-concept"],
+  { tags: ["concepts"], revalidate: 3600 },
+);
+
+// Whether the given user has completed a concept's Interview tab (set once they
+// rate every question). Per-user and indexed, so it stays a live query, same as
+// getChallengeState.
+export async function getInterviewState(
+  userId: string,
+  conceptId: string,
+): Promise<boolean> {
+  const row = await db.query.userConceptProgress.findFirst({
+    columns: { interviewCompleted: true },
+    where: and(
+      eq(userConceptProgress.userId, userId),
+      eq(userConceptProgress.conceptId, conceptId),
+    ),
+  });
+  return row?.interviewCompleted ?? false;
 }
 
 // Whether the user currently has active premium — for server-side gating of

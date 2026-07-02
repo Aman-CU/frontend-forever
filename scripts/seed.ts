@@ -1,5 +1,5 @@
 ﻿/**
- * Seed script â€” run with: npx tsx scripts/seed.ts
+ * Seed script — run with: npx tsx scripts/seed.ts
  * Safe to re-run: all inserts are idempotent (keyed on slug or collection+order_index).
  * Extend this file as platform content grows; never bake seeds into migrations.
  */
@@ -44,6 +44,10 @@ type ChallengeSeed = {
 
 type InterviewQuestionSeed = {
   collection: InterviewCollection;
+  // Optional link to a concept — powers the concept page's Interview tab, which
+  // queries by concept_id. Unlinked questions (null) still appear in their
+  // collection on the Interview Prep pages (Features 30-31).
+  conceptSlug?: string;
   question: string;
   answer: string;
   difficulty: ChallengeDifficulty;
@@ -60,7 +64,7 @@ type RoadmapSeed = {
   steps: string[];
 };
 
-// â”€â”€ DB connection (same TLS pattern as drizzle.config.ts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── DB connection (same TLS pattern as drizzle.config.ts) ────────────────────
 
 const url = new URL(process.env.DATABASE_URL!);
 url.searchParams.delete("sslmode");
@@ -72,7 +76,7 @@ const pool = new Pool({
 
 const db = drizzle(pool);
 
-// â”€â”€ Concepts (one per category) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Concepts (one per category) ───────────────────────────────────────────────
 
 const CONCEPTS: ConceptSeed[] = [
   {
@@ -133,7 +137,7 @@ const CONCEPTS: ConceptSeed[] = [
     slug: "core-web-vitals",
     title: "Core Web Vitals",
     description:
-      "Measure and optimize LCP, INP, and CLS â€” Google's metrics for real-world page experience and search ranking.",
+      "Measure and optimize LCP, INP, and CLS — Google's metrics for real-world page experience and search ranking.",
     category: "performance",
     difficulty: "intermediate",
     orderIndex: 1,
@@ -149,7 +153,7 @@ const CONCEPTS: ConceptSeed[] = [
   },
 ];
 
-// â”€â”€ Challenges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Challenges ────────────────────────────────────────────────────────────────
 
 const CHALLENGES: ChallengeSeed[] = [
   {
@@ -340,22 +344,23 @@ Watch four selectors fight over one button in the playground below — your scor
     ],
     hints: [
       "Count `#word` for IDs, `.word` and `:pseudo-class` for classes, element names and `::pseudo-element` for elements.",
-      "Attribute selectors `[...]` count as a class-level specificity â€” strip them first to avoid false matches.",
+      "Attribute selectors `[...]` count as a class-level specificity — strip them first to avoid false matches.",
       "The universal selector `*` contributes 0 to all three counts.",
     ],
     orderIndex: 1,
   },
 ];
 
-// â”€â”€ Interview questions (5 per collection) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Interview questions (5 per collection) ────────────────────────────────────
 
 const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
   // ff-75
   {
     collection: "ff-75",
+    conceptSlug: "event-loop",
     question: "What is the event loop and why does it exist?",
     answer:
-      "JavaScript is single-threaded â€” only one piece of code runs at a time. The event loop is the mechanism that lets it handle async work (timers, network requests, user events) without blocking. It continuously checks the call stack; when the stack is empty, it processes the microtask queue fully, then picks one task from the task queue, runs it to completion, and repeats.\n\nThis matters because blocking the call stack for even a few hundred milliseconds will make the UI unresponsive â€” the event loop is what lets JavaScript appear concurrent.",
+      "JavaScript is single-threaded — only one piece of code runs at a time. The event loop is the mechanism that lets it handle async work (timers, network requests, user events) without blocking. It continuously checks the call stack; when the stack is empty, it processes the microtask queue fully, then picks one task from the task queue, runs it to completion, and repeats.\n\nThis matters because blocking the call stack for even a few hundred milliseconds will make the UI unresponsive — the event loop is what lets JavaScript appear concurrent.",
     difficulty: "easy",
     companies: ["Google", "Meta", "Stripe"],
     orderIndex: 1,
@@ -364,13 +369,14 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-75",
     question: "What is the difference between `null` and `undefined` in JavaScript?",
     answer:
-      "`undefined` means a variable has been declared but not yet assigned a value â€” it's the runtime's default. `null` is an explicit absence of value intentionally set by the programmer.\n\nKey differences: `typeof undefined` is `'undefined'`; `typeof null` is `'object'` (a historical bug in JS). `undefined == null` is `true` (loose equality), but `undefined === null` is `false` (strict equality). Always use strict equality to distinguish them.",
+      "`undefined` means a variable has been declared but not yet assigned a value — it's the runtime's default. `null` is an explicit absence of value intentionally set by the programmer.\n\nKey differences: `typeof undefined` is `'undefined'`; `typeof null` is `'object'` (a historical bug in JS). `undefined == null` is `true` (loose equality), but `undefined === null` is `false` (strict equality). Always use strict equality to distinguish them.",
     difficulty: "easy",
     companies: ["Amazon", "Microsoft"],
     orderIndex: 2,
   },
   {
     collection: "ff-75",
+    conceptSlug: "css-specificity",
     question: "Explain CSS specificity and how conflicts are resolved.",
     answer:
       "When multiple CSS rules target the same element, the browser uses specificity to decide which rule wins. Specificity is a three-part score: [id, class, element]. IDs contribute to the first bucket, class selectors / attribute selectors / pseudo-classes to the second, and type selectors / pseudo-elements to the third.\n\nThe scores are compared left-to-right: a rule with any ID wins over one with no IDs, regardless of how many classes the loser has. If specificity ties, the last rule in source order wins. `!important` overrides all specificity and should be avoided.",
@@ -380,9 +386,10 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
   },
   {
     collection: "ff-75",
+    conceptSlug: "browser-rendering-pipeline",
     question: "What happens when you type a URL in the browser and press Enter?",
     answer:
-      "1. **DNS resolution** â€” the browser resolves the hostname to an IP address, checking its cache, then the OS, then a DNS resolver.\n2. **TCP + TLS handshake** â€” a connection is established; HTTPS negotiates a TLS session.\n3. **HTTP request** â€” the browser sends a GET request; the server responds with HTML.\n4. **HTML parsing** â€” the browser parses HTML top-to-bottom, constructing the DOM. When it encounters `<link rel='stylesheet'>` it fetches CSS (render-blocking). `<script>` without `async`/`defer` is also render-blocking.\n5. **Render pipeline** â€” DOM + CSSOM â†’ Render Tree â†’ Layout â†’ Paint â†’ Composite â†’ pixels on screen.\n6. **Subsequent requests** â€” images, fonts, JS, etc. are fetched as discovered.",
+      "1. **DNS resolution** — the browser resolves the hostname to an IP address, checking its cache, then the OS, then a DNS resolver.\n2. **TCP + TLS handshake** — a connection is established; HTTPS negotiates a TLS session.\n3. **HTTP request** — the browser sends a GET request; the server responds with HTML.\n4. **HTML parsing** — the browser parses HTML top-to-bottom, constructing the DOM. When it encounters `<link rel='stylesheet'>` it fetches CSS (render-blocking). `<script>` without `async`/`defer` is also render-blocking.\n5. **Render pipeline** — DOM + CSSOM → Render Tree → Layout → Paint → Composite → pixels on screen.\n6. **Subsequent requests** — images, fonts, JS, etc. are fetched as discovered.",
     difficulty: "medium",
     companies: ["Google", "Meta", "Amazon", "Microsoft", "Stripe"],
     orderIndex: 4,
@@ -391,10 +398,92 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-75",
     question: "What is the difference between `==` and `===` in JavaScript?",
     answer:
-      "`===` (strict equality) checks both value and type â€” no coercion. `==` (loose equality) performs type coercion before comparing, following a complex set of rules that can produce surprising results:\n\n```js\n0 == false   // true  (false coerces to 0)\n'' == false  // true\nnull == undefined // true\nnull == 0   // false\n```\n\nAlways prefer `===` unless you specifically need the `null == undefined` coercion (checking for either), which is the one common legitimate use of `==`.",
+      "`===` (strict equality) checks both value and type — no coercion. `==` (loose equality) performs type coercion before comparing, following a complex set of rules that can produce surprising results:\n\n```js\n0 == false   // true  (false coerces to 0)\n'' == false  // true\nnull == undefined // true\nnull == 0   // false\n```\n\nAlways prefer `===` unless you specifically need the `null == undefined` coercion (checking for either), which is the one common legitimate use of `==`.",
     difficulty: "easy",
     companies: ["Meta", "Stripe"],
     orderIndex: 5,
+  },
+  // css-specificity concept top-ups (queried by concept_id on the Interview tab)
+  {
+    collection: "ff-75",
+    conceptSlug: "css-specificity",
+    question: "How do you calculate the specificity of a selector like `#nav ul.menu li a`?",
+    answer:
+      "Count the selector's parts into three buckets `[id, class, element]`:\n\n1. **IDs** — `#nav` → 1\n2. **Classes / attributes / pseudo-classes** — `.menu` → 1\n3. **Elements / pseudo-elements** — `ul`, `li`, `a` → 3\n\nSo the score is `[1, 1, 3]`. Comparison is left-to-right, and a higher bucket always dominates: `[1, 0, 0]` (a single `#id`) beats `[0, 10, 0]` (ten classes), because the first bucket is compared before the second. The universal selector `*` and combinators (`>`, `+`, `~`, whitespace) add nothing.",
+    difficulty: "medium",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 6,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "css-specificity",
+    question: "Why is using `!important` discouraged, and what problems does it cause?",
+    answer:
+      "`!important` overrides the entire specificity calculation, so the normal cascade no longer explains why a rule wins. That causes real problems:\n\n- **Escalation** — the only way to beat an `!important` is another `!important`, so one usage tends to breed more\n- **Debugging pain** — DevTools shows a rule winning even though a far more specific selector exists\n- **Broken overrides** — utility classes and component variants silently stop working\n\nLegitimate uses are narrow: overriding third-party styles you can't edit, or utility helpers like `.hidden { display: none !important }`. Prefer raising specificity or fixing source order instead.",
+    difficulty: "easy",
+    companies: ["Airbnb", "Stripe"],
+    orderIndex: 7,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "css-specificity",
+    question: "When two rules have equal specificity, how does the browser decide which wins?",
+    answer:
+      "When specificity ties, **source order** decides — the rule that appears later in the stylesheet (or in the later-loaded stylesheet) wins.\n\n```css\n.btn { color: blue; }\n.btn { color: green; } /* wins — same specificity, later */\n```\n\nThis is why the order you import stylesheets matters, and why utility-first frameworks depend on a predictable final layer. Note that the full cascade also weighs **origin and importance** (user-agent < user < author, with `!important` flipping the order) *before* specificity — but within the same origin and importance, specificity first, then source order.",
+    difficulty: "medium",
+    companies: ["Google", "Microsoft"],
+    orderIndex: 8,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "css-specificity",
+    question: "Do inline styles have specificity, and how do they compare to selectors?",
+    answer:
+      "Yes. An inline `style` attribute sits in a bucket *above* all selectors — think of it as `[1, 0, 0, 0]`, a fourth column to the left of `[id, class, element]`. So any inline style beats any selector-based rule, no matter how specific the selector is.\n\nThe only thing that overrides an inline style is a declaration marked `!important` in a stylesheet. This is a big reason inline styles are hard to override and are usually avoided for anything beyond dynamic, one-off values set by JavaScript.",
+    difficulty: "medium",
+    companies: ["Meta", "Stripe"],
+    orderIndex: 9,
+  },
+  // browser-rendering-pipeline concept top-ups
+  {
+    collection: "ff-75",
+    conceptSlug: "browser-rendering-pipeline",
+    question: "What is the difference between the DOM and the CSSOM, and why does the browser build both?",
+    answer:
+      "The **DOM** (Document Object Model) is the tree the browser builds by parsing HTML — it represents the page's content and structure. The **CSSOM** (CSS Object Model) is the tree built by parsing CSS — it represents the style rules and how they cascade onto elements.\n\nThe browser needs both because content and presentation are separate inputs. It then combines them into the **Render Tree** — only the nodes that will actually be displayed, each with its computed styles attached. Both must be ready before the render tree can be built, which is why CSS is render-blocking: the browser won't paint content it might immediately have to restyle.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 10,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "browser-rendering-pipeline",
+    question: "What is the difference between layout (reflow) and paint, and why does it matter for performance?",
+    answer:
+      "**Layout (reflow)** computes the geometry of every element — position and size. **Paint** fills in the pixels — colors, text, borders, shadows.\n\nWhy it matters: layout is expensive because changing one element's size can cascade to its siblings and descendants. Properties that trigger layout (`width`, `top`, `margin`, `font-size`) are costlier to animate than paint-only properties (`color`, `background`).\n\nThe cheapest changes are **composite-only** — `transform` and `opacity` — because they can be handled by the GPU without re-running layout or paint. That's the reason `transform: translate()` is preferred over animating `top`/`left`.",
+    difficulty: "hard",
+    companies: ["Google", "Meta", "Amazon"],
+    orderIndex: 11,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "browser-rendering-pipeline",
+    question: "What does 'render-blocking' mean, and which resources block rendering?",
+    answer:
+      "A render-blocking resource is one the browser must fetch and process **before** it can paint the first pixels.\n\n- **CSS** is render-blocking by default — the browser won't paint until the CSSOM is ready, to avoid a flash of unstyled content\n- **Synchronous `<script>`** (no `async`/`defer`) is parser-blocking: it halts HTML parsing until the script downloads and runs\n\nMitigations:\n1. Add `defer` (or `async`) to scripts so parsing continues\n2. Inline critical CSS and lazy-load the rest\n3. Use `media` attributes so non-matching stylesheets don't block\n4. Preload key fonts to avoid a later reflow",
+    difficulty: "medium",
+    companies: ["Google", "Stripe"],
+    orderIndex: 12,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "browser-rendering-pipeline",
+    question: "Why can an element be in the DOM but not appear in the render tree?",
+    answer:
+      "The render tree contains only nodes that are actually painted, so some DOM nodes are deliberately excluded:\n\n- Elements with `display: none` — removed from the render tree entirely (they take up no space)\n- Non-visual nodes like `<head>`, `<meta>`, `<script>`, `<title>`\n\nA key contrast: `visibility: hidden` and `opacity: 0` elements **do** stay in the render tree — they still occupy layout space, they're just not visible. Only `display: none` drops out. This is exactly why the render tree can be smaller than the DOM, and why toggling `display: none` triggers layout while toggling `visibility` only triggers paint.",
+    difficulty: "medium",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 13,
   },
 
   // ff-javascript
@@ -402,7 +491,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-javascript",
     question: "Explain how prototypal inheritance works in JavaScript.",
     answer:
-      "Every JavaScript object has an internal `[[Prototype]]` link to another object (or `null`). When you access a property, the engine first checks the object itself, then walks the prototype chain until it finds the property or reaches `null`.\n\nYou set up inheritance by linking prototypes: `Object.create(parentProto)` creates an object whose `[[Prototype]]` is `parentProto`. The `class` syntax is syntactic sugar over this mechanism â€” `extends` sets up the prototype chain and `super()` calls the parent constructor. Understanding the underlying chain explains why `instanceof` works, why methods can be shared across instances, and what `hasOwnProperty` guards against.",
+      "Every JavaScript object has an internal `[[Prototype]]` link to another object (or `null`). When you access a property, the engine first checks the object itself, then walks the prototype chain until it finds the property or reaches `null`.\n\nYou set up inheritance by linking prototypes: `Object.create(parentProto)` creates an object whose `[[Prototype]]` is `parentProto`. The `class` syntax is syntactic sugar over this mechanism — `extends` sets up the prototype chain and `super()` calls the parent constructor. Understanding the underlying chain explains why `instanceof` works, why methods can be shared across instances, and what `hasOwnProperty` guards against.",
     difficulty: "medium",
     companies: ["Google", "Meta"],
     orderIndex: 1,
@@ -411,7 +500,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-javascript",
     question: "What is a closure and when would you use one?",
     answer:
-      "A closure is a function that retains access to the variables from its defining scope, even after that scope has returned. Every function in JavaScript closes over its surrounding scope.\n\nCommon uses:\n- **Private state** â€” module pattern, encapsulating variables that shouldn't be directly accessible\n- **Partial application / currying** â€” baking some arguments into a function\n- **Event handlers** â€” the handler closes over the relevant state at setup time\n- **Memoization** â€” a closure holds the cache object\n\nThe gotcha: all closures from the same scope share the same variable binding, so closures created in a `for` loop with `var` all see the final value of the loop variable unless you use `let` or an IIFE.",
+      "A closure is a function that retains access to the variables from its defining scope, even after that scope has returned. Every function in JavaScript closes over its surrounding scope.\n\nCommon uses:\n- **Private state** — module pattern, encapsulating variables that shouldn't be directly accessible\n- **Partial application / currying** — baking some arguments into a function\n- **Event handlers** — the handler closes over the relevant state at setup time\n- **Memoization** — a closure holds the cache object\n\nThe gotcha: all closures from the same scope share the same variable binding, so closures created in a `for` loop with `var` all see the final value of the loop variable unless you use `let` or an IIFE.",
     difficulty: "medium",
     companies: ["Amazon", "Stripe", "Airbnb"],
     orderIndex: 2,
@@ -420,7 +509,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-javascript",
     question: "What is the difference between `Promise.all`, `Promise.allSettled`, `Promise.any`, and `Promise.race`?",
     answer:
-      "All four accept an iterable of promises:\n\n- **`Promise.all`** â€” resolves when all resolve, rejects immediately if any rejects (short-circuits). Use when you need every result and a single failure should abort.\n- **`Promise.allSettled`** â€” waits for every promise regardless of outcome, resolves with an array of `{ status, value/reason }` objects. Use when you need all outcomes.\n- **`Promise.any`** â€” resolves with the first successful result, rejects only if all reject (with an `AggregateError`). Use for fallback/racing to first success.\n- **`Promise.race`** â€” settles with the first promise to settle (resolve or reject). Use for timeouts.",
+      "All four accept an iterable of promises:\n\n- **`Promise.all`** — resolves when all resolve, rejects immediately if any rejects (short-circuits). Use when you need every result and a single failure should abort.\n- **`Promise.allSettled`** — waits for every promise regardless of outcome, resolves with an array of `{ status, value/reason }` objects. Use when you need all outcomes.\n- **`Promise.any`** — resolves with the first successful result, rejects only if all reject (with an `AggregateError`). Use for fallback/racing to first success.\n- **`Promise.race`** — settles with the first promise to settle (resolve or reject). Use for timeouts.",
     difficulty: "medium",
     companies: ["Google", "Meta", "Stripe"],
     orderIndex: 3,
@@ -429,7 +518,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-javascript",
     question: "Explain the `this` keyword and how it's determined.",
     answer:
-      "`this` is determined at call time, not definition time (except for arrow functions):\n\n1. **Regular function call** â€” `this` is `globalThis` (or `undefined` in strict mode)\n2. **Method call** â€” `obj.method()` â†’ `this` is `obj`\n3. **Constructor call** â€” `new Fn()` â†’ `this` is the new instance\n4. **Explicit binding** â€” `.call(ctx)`, `.apply(ctx)`, `.bind(ctx)` â†’ `this` is `ctx`\n5. **Arrow function** â€” no own `this`; inherits from the enclosing lexical scope at definition time\n\nThe last rule is why arrow functions are preferred for callbacks: they don't rebind `this`, so a method using `setTimeout(() => this.update(), 100)` keeps the intended receiver.",
+      "`this` is determined at call time, not definition time (except for arrow functions):\n\n1. **Regular function call** — `this` is `globalThis` (or `undefined` in strict mode)\n2. **Method call** — `obj.method()` → `this` is `obj`\n3. **Constructor call** — `new Fn()` → `this` is the new instance\n4. **Explicit binding** — `.call(ctx)`, `.apply(ctx)`, `.bind(ctx)` → `this` is `ctx`\n5. **Arrow function** — no own `this`; inherits from the enclosing lexical scope at definition time\n\nThe last rule is why arrow functions are preferred for callbacks: they don't rebind `this`, so a method using `setTimeout(() => this.update(), 100)` keeps the intended receiver.",
     difficulty: "medium",
     companies: ["Google", "Meta", "Amazon", "Microsoft"],
     orderIndex: 4,
@@ -438,54 +527,101 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-javascript",
     question: "What is event delegation and why is it useful?",
     answer:
-      "Event delegation attaches a single event listener to a parent element instead of one listener per child, exploiting the fact that events bubble up the DOM tree.\n\n```js\ndocument.querySelector('#list').addEventListener('click', (e) => {\n  if (e.target.matches('li')) handleItem(e.target);\n});\n```\n\nWhy it matters:\n- **Performance** â€” one listener vs. potentially thousands\n- **Dynamic children** â€” works for elements added to the DOM after the listener is attached (the classic problem with directly-bound handlers)\n- **Memory** â€” fewer listeners means less memory retained\n\nThe tradeoff: the handler must check `e.target` to identify which child fired the event, adding a little logic overhead.",
+      "Event delegation attaches a single event listener to a parent element instead of one listener per child, exploiting the fact that events bubble up the DOM tree.\n\n```js\ndocument.querySelector('#list').addEventListener('click', (e) => {\n  if (e.target.matches('li')) handleItem(e.target);\n});\n```\n\nWhy it matters:\n- **Performance** — one listener vs. potentially thousands\n- **Dynamic children** — works for elements added to the DOM after the listener is attached (the classic problem with directly-bound handlers)\n- **Memory** — fewer listeners means less memory retained\n\nThe tradeoff: the handler must check `e.target` to identify which child fired the event, adding a little logic overhead.",
     difficulty: "easy",
     companies: ["Airbnb", "Stripe"],
     orderIndex: 5,
+  },
+  // event-loop concept top-ups (queried by concept_id on the Interview tab)
+  {
+    collection: "ff-javascript",
+    conceptSlug: "event-loop",
+    question: "What is the difference between the microtask queue and the task (macrotask) queue?",
+    answer:
+      "Both hold callbacks waiting to run, but they're drained differently:\n\n- **Microtask queue** — `Promise.then/catch/finally`, `queueMicrotask`, `MutationObserver`. After each task, the event loop drains the **entire** microtask queue before doing anything else.\n- **Task (macrotask) queue** — `setTimeout`, `setInterval`, I/O, UI events. The loop takes **one** task per iteration.\n\nThe order each loop iteration: run one task → drain all microtasks → render (if needed) → repeat. This is why a promise callback always runs before a `setTimeout(…, 0)` queued at the same time — microtasks jump ahead of the next task.",
+    difficulty: "medium",
+    companies: ["Google", "Stripe"],
+    orderIndex: 6,
+  },
+  {
+    collection: "ff-javascript",
+    conceptSlug: "event-loop",
+    question:
+      "What does this log, and why? `console.log(1); setTimeout(() => console.log(2)); Promise.resolve().then(() => console.log(3)); console.log(4);`",
+    answer:
+      "It logs `1`, `4`, `3`, `2`.\n\n1. `console.log(1)` — synchronous, runs now\n2. `setTimeout(…)` — its callback goes to the **task queue**\n3. `Promise.resolve().then(…)` — its callback goes to the **microtask queue**\n4. `console.log(4)` — synchronous, runs now\n\nThe synchronous code finishes first (`1`, `4`). The call stack is now empty, so the loop drains all microtasks before touching tasks — `3` prints. Only then does the next task run — `2`. Microtasks always beat tasks queued in the same tick.",
+    difficulty: "medium",
+    companies: ["Meta", "Amazon", "Stripe"],
+    orderIndex: 7,
+  },
+  {
+    collection: "ff-javascript",
+    conceptSlug: "event-loop",
+    question: "Does `setTimeout(fn, 0)` run `fn` immediately? Why or why not?",
+    answer:
+      "No. `setTimeout(fn, 0)` schedules `fn` as a **task** to run *as soon as possible*, but not before the current synchronous code finishes and the microtask queue is drained.\n\nThe `0` is a *minimum* delay, not a guarantee — the browser also clamps nested timeouts to ~4ms and won't run the callback while the call stack is busy. So `setTimeout(fn, 0)` really means \"run `fn` after the current execution and all pending microtasks complete,\" which is a common trick to defer work until after the current call stack unwinds.",
+    difficulty: "easy",
+    companies: ["Amazon", "Microsoft"],
+    orderIndex: 8,
+  },
+  {
+    collection: "ff-javascript",
+    conceptSlug: "event-loop",
+    question: "How does `async`/`await` interact with the event loop?",
+    answer:
+      "`async`/`await` is syntax over promises, so it runs on the **microtask** queue. When execution hits `await`, the async function pauses and returns control to the caller; everything *after* the `await` is scheduled as a microtask that resumes once the awaited value settles.\n\n```js\nasync function f() {\n  console.log('a');\n  await null;        // suspend here\n  console.log('b');  // resumes as a microtask\n}\nf();\nconsole.log('c');\n// logs: a, c, b\n```\n\nSo code after `await` never runs synchronously — it always yields to the microtask queue first, even when awaiting an already-resolved value.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 9,
   },
 
   // ff-react
   {
     collection: "ff-react",
+    conceptSlug: "react-rendering",
     question: "When does React re-render a component?",
     answer:
-      "React re-renders a component in three situations:\n\n1. **Its own state changes** â€” via `setState` (class) or a state setter from `useState`/`useReducer`\n2. **Its parent re-renders** â€” by default, React re-renders all children when a parent re-renders, regardless of whether props changed\n3. **A context it consumes changes** â€” any component calling `useContext` re-renders when the context value changes\n\nTo opt out of parent-triggered re-renders, wrap the component in `React.memo`. To stabilize callbacks and objects passed as props (so `memo` actually helps), use `useCallback` and `useMemo`. The most common performance mistake is adding `memo`/`useCallback` before profiling â€” they have overhead too.",
+      "React re-renders a component in three situations:\n\n1. **Its own state changes** — via `setState` (class) or a state setter from `useState`/`useReducer`\n2. **Its parent re-renders** — by default, React re-renders all children when a parent re-renders, regardless of whether props changed\n3. **A context it consumes changes** — any component calling `useContext` re-renders when the context value changes\n\nTo opt out of parent-triggered re-renders, wrap the component in `React.memo`. To stabilize callbacks and objects passed as props (so `memo` actually helps), use `useCallback` and `useMemo`. The most common performance mistake is adding `memo`/`useCallback` before profiling — they have overhead too.",
     difficulty: "easy",
     companies: ["Meta", "Airbnb"],
     orderIndex: 1,
   },
   {
     collection: "ff-react",
+    conceptSlug: "react-rendering",
     question: "What is the difference between `useEffect` and `useLayoutEffect`?",
     answer:
-      "`useEffect` runs **after** the browser has painted â€” asynchronously. `useLayoutEffect` runs **before** the browser paints â€” synchronously after React commits DOM changes.\n\nUse `useLayoutEffect` when you need to read layout from the DOM (e.g. `getBoundingClientRect()`) and apply a change before the user sees the initial paint, preventing a visual flash. Otherwise, prefer `useEffect` â€” it doesn't block painting.\n\nPractical rule: start with `useEffect`. If you see a flicker on initial render, consider `useLayoutEffect`. On the server, `useLayoutEffect` emits a warning (it can't run on the server); use `useEffect` for SSR-safe logic.",
+      "`useEffect` runs **after** the browser has painted — asynchronously. `useLayoutEffect` runs **before** the browser paints — synchronously after React commits DOM changes.\n\nUse `useLayoutEffect` when you need to read layout from the DOM (e.g. `getBoundingClientRect()`) and apply a change before the user sees the initial paint, preventing a visual flash. Otherwise, prefer `useEffect` — it doesn't block painting.\n\nPractical rule: start with `useEffect`. If you see a flicker on initial render, consider `useLayoutEffect`. On the server, `useLayoutEffect` emits a warning (it can't run on the server); use `useEffect` for SSR-safe logic.",
     difficulty: "medium",
     companies: ["Meta", "Stripe"],
     orderIndex: 2,
   },
   {
     collection: "ff-react",
+    conceptSlug: "react-rendering",
     question: "Explain the React reconciliation algorithm.",
     answer:
-      "Reconciliation is how React decides what changed between renders and what DOM updates are needed.\n\nKey rules:\n1. **Different types â†’ full remount** â€” if the element type changes (e.g. `<div>` â†’ `<span>`), React destroys the old subtree and mounts a new one\n2. **Same type â†’ update in place** â€” React updates only the changed attributes/children\n3. **Lists need keys** â€” when rendering arrays, React uses `key` props to match old and new children. Without stable keys, React resorts to positional matching, which causes incorrect updates (and subtle bugs) when items are reordered or added at the beginning\n\nThe algorithm runs in O(n) time by making two assumptions: elements of different types produce different trees, and keys identify stable elements across renders.",
+      "Reconciliation is how React decides what changed between renders and what DOM updates are needed.\n\nKey rules:\n1. **Different types → full remount** — if the element type changes (e.g. `<div>` → `<span>`), React destroys the old subtree and mounts a new one\n2. **Same type → update in place** — React updates only the changed attributes/children\n3. **Lists need keys** — when rendering arrays, React uses `key` props to match old and new children. Without stable keys, React resorts to positional matching, which causes incorrect updates (and subtle bugs) when items are reordered or added at the beginning\n\nThe algorithm runs in O(n) time by making two assumptions: elements of different types produce different trees, and keys identify stable elements across renders.",
     difficulty: "medium",
     companies: ["Meta", "Google", "Airbnb"],
     orderIndex: 3,
   },
   {
     collection: "ff-react",
+    conceptSlug: "react-rendering",
     question: "What is the purpose of `useRef` and when should you use it over `useState`?",
     answer:
-      "`useRef` returns a mutable object `{ current: value }` that persists across renders but does **not** trigger a re-render when changed.\n\nUse `useRef` when:\n- **DOM access** â€” attaching to an element with `ref={myRef}` to call `.focus()`, measure layout, etc.\n- **Storing mutable values** that shouldn't cause re-renders â€” timer IDs, previous values, event handler references, imperative library instances\n- **Breaking stale closure problems** â€” store the latest value of a prop/state in a ref so an event handler always reads the current value\n\nIf a change should update the UI, use `useState`. If it's internal bookkeeping that doesn't affect rendering, use `useRef`.",
+      "`useRef` returns a mutable object `{ current: value }` that persists across renders but does **not** trigger a re-render when changed.\n\nUse `useRef` when:\n- **DOM access** — attaching to an element with `ref={myRef}` to call `.focus()`, measure layout, etc.\n- **Storing mutable values** that shouldn't cause re-renders — timer IDs, previous values, event handler references, imperative library instances\n- **Breaking stale closure problems** — store the latest value of a prop/state in a ref so an event handler always reads the current value\n\nIf a change should update the UI, use `useState`. If it's internal bookkeeping that doesn't affect rendering, use `useRef`.",
     difficulty: "medium",
     companies: ["Meta", "Amazon"],
     orderIndex: 4,
   },
   {
     collection: "ff-react",
+    conceptSlug: "react-rendering",
     question: "What is React Suspense and how does it work?",
     answer:
-      "Suspense lets components declare that they're waiting for something (data, a lazy-loaded component) before rendering. While waiting, React shows a fallback UI defined by the nearest `<Suspense fallback={...}>` boundary.\n\nHow it works: a component 'suspends' by throwing a Promise. React catches it, renders the fallback, and retries the component when the Promise resolves. You don't throw the Promise manually â€” libraries like React Query, Relay, or `React.lazy` do it for you.\n\n```jsx\nconst LazyChart = React.lazy(() => import('./Chart'));\n<Suspense fallback={<Spinner />}>\n  <LazyChart />\n</Suspense>\n```\n\nIn React 18+, Suspense integrates with concurrent features â€” it enables streaming SSR (rendering the shell immediately, streaming shell content as it resolves) and transitions (keeping the current UI visible while the next route loads).",
+      "Suspense lets components declare that they're waiting for something (data, a lazy-loaded component) before rendering. While waiting, React shows a fallback UI defined by the nearest `<Suspense fallback={...}>` boundary.\n\nHow it works: a component 'suspends' by throwing a Promise. React catches it, renders the fallback, and retries the component when the Promise resolves. You don't throw the Promise manually — libraries like React Query, Relay, or `React.lazy` do it for you.\n\n```jsx\nconst LazyChart = React.lazy(() => import('./Chart'));\n<Suspense fallback={<Spinner />}>\n  <LazyChart />\n</Suspense>\n```\n\nIn React 18+, Suspense integrates with concurrent features — it enables streaming SSR (rendering the shell immediately, streaming shell content as it resolves) and transitions (keeping the current UI visible while the next route loads).",
     difficulty: "hard",
     companies: ["Meta", "Google"],
     orderIndex: 5,
@@ -496,7 +632,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-system-design",
     question: "How would you design a real-time collaborative text editor (like Google Docs)?",
     answer:
-      "**Core challenge:** multiple users editing simultaneously without conflicting changes corrupting the document.\n\n**Approach: Operational Transformation (OT) or CRDTs**\n- OT transforms each operation relative to concurrent operations so they converge. Requires a central server to order operations.\n- CRDTs (e.g. Yjs, Automerge) allow peer-to-peer convergence without a central arbiter.\n\n**Architecture:**\n1. **Client** â€” local optimistic updates; send ops to server via WebSocket\n2. **Server** â€” orders ops, broadcasts to other clients, persists to DB\n3. **Transport** â€” WebSocket for real-time; HTTP fallback / periodic snapshots\n4. **Persistence** â€” store the op log + periodic document snapshots for efficient load\n5. **Presence** â€” cursor positions, user selections (ephemeral, not in op log)\n\n**Scalability:** Shard documents across servers; use a pub/sub (Redis, Kafka) to fan out ops to all connections for a given document.",
+      "**Core challenge:** multiple users editing simultaneously without conflicting changes corrupting the document.\n\n**Approach: Operational Transformation (OT) or CRDTs**\n- OT transforms each operation relative to concurrent operations so they converge. Requires a central server to order operations.\n- CRDTs (e.g. Yjs, Automerge) allow peer-to-peer convergence without a central arbiter.\n\n**Architecture:**\n1. **Client** — local optimistic updates; send ops to server via WebSocket\n2. **Server** — orders ops, broadcasts to other clients, persists to DB\n3. **Transport** — WebSocket for real-time; HTTP fallback / periodic snapshots\n4. **Persistence** — store the op log + periodic document snapshots for efficient load\n5. **Presence** — cursor positions, user selections (ephemeral, not in op log)\n\n**Scalability:** Shard documents across servers; use a pub/sub (Redis, Kafka) to fan out ops to all connections for a given document.",
     difficulty: "hard",
     companies: ["Google", "Notion", "Figma"],
     isPremium: true,
@@ -506,7 +642,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-system-design",
     question: "How would you design an infinite-scroll news feed?",
     answer:
-      "**Requirements:** fast initial load, smooth scrolling, fresh content, back-navigation restores position.\n\n**API design:** cursor-based pagination (not offset) â€” `GET /feed?after=<cursor>&limit=20`. Cursor is an opaque server token (e.g. encoded timestamp + id) that's stable even if new posts are inserted.\n\n**Client:**\n- Fetch the first page on load; fetch the next page when the user scrolls near the bottom (IntersectionObserver on a sentinel element)\n- Cache pages in memory (React Query, SWR) â€” don't refetch on back-navigation\n- Virtualise the list with a library like `react-window` if posts are numerous\n- Store scroll position + cursor in session storage so the browser's back button restores the position\n\n**Freshness:** Poll for new items at the top at a low frequency (30s) without resetting the cursor; surface a 'X new posts' banner rather than auto-inserting and shifting the user's reading position.\n\n**CDN:** Edge-cache feed responses for a short TTL (5â€“30s) to reduce origin load.",
+      "**Requirements:** fast initial load, smooth scrolling, fresh content, back-navigation restores position.\n\n**API design:** cursor-based pagination (not offset) — `GET /feed?after=<cursor>&limit=20`. Cursor is an opaque server token (e.g. encoded timestamp + id) that's stable even if new posts are inserted.\n\n**Client:**\n- Fetch the first page on load; fetch the next page when the user scrolls near the bottom (IntersectionObserver on a sentinel element)\n- Cache pages in memory (React Query, SWR) — don't refetch on back-navigation\n- Virtualise the list with a library like `react-window` if posts are numerous\n- Store scroll position + cursor in session storage so the browser's back button restores the position\n\n**Freshness:** Poll for new items at the top at a low frequency (30s) without resetting the cursor; surface a 'X new posts' banner rather than auto-inserting and shifting the user's reading position.\n\n**CDN:** Edge-cache feed responses for a short TTL (5“30s) to reduce origin load.",
     difficulty: "medium",
     companies: ["Meta", "Twitter", "LinkedIn"],
     orderIndex: 2,
@@ -515,7 +651,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-system-design",
     question: "How would you design a client-side caching strategy for a large React application?",
     answer:
-      "**Layers:**\n\n1. **Server state** (async, remote) â€” use a library (React Query, SWR, Apollo). They handle deduplication, background refetch, stale-while-revalidate, and cache invalidation. Never put server state in Redux/Zustand â€” that's the leading cause of stale data bugs.\n\n2. **UI state** (ephemeral, local) â€” useState, useReducer, or a lightweight store (Zustand, Jotai). Keep it as close to the consuming component as possible.\n\n3. **HTTP caching** â€” set correct `Cache-Control` headers on API responses. `stale-while-revalidate` allows serving a cached response while fetching a fresh one.\n\n4. **Persistent cache** â€” for offline support or faster first paint, serialise the React Query cache to `localStorage`/`IndexedDB` on unload and restore it on load (react-query's `persistQueryClient` plugin).\n\n**Cache invalidation strategy:** invalidate by tag (not by URL) â€” after a mutation, mark all queries with a given tag as stale so they refetch on next access. Optimistic updates (mutate the cache immediately, roll back on error) make mutations feel instant.",
+      "**Layers:**\n\n1. **Server state** (async, remote) — use a library (React Query, SWR, Apollo). They handle deduplication, background refetch, stale-while-revalidate, and cache invalidation. Never put server state in Redux/Zustand — that's the leading cause of stale data bugs.\n\n2. **UI state** (ephemeral, local) — useState, useReducer, or a lightweight store (Zustand, Jotai). Keep it as close to the consuming component as possible.\n\n3. **HTTP caching** — set correct `Cache-Control` headers on API responses. `stale-while-revalidate` allows serving a cached response while fetching a fresh one.\n\n4. **Persistent cache** — for offline support or faster first paint, serialise the React Query cache to `localStorage`/`IndexedDB` on unload and restore it on load (react-query's `persistQueryClient` plugin).\n\n**Cache invalidation strategy:** invalidate by tag (not by URL) — after a mutation, mark all queries with a given tag as stale so they refetch on next access. Optimistic updates (mutate the cache immediately, roll back on error) make mutations feel instant.",
     difficulty: "hard",
     companies: ["Google", "Airbnb", "Stripe"],
     isPremium: true,
@@ -525,7 +661,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-system-design",
     question: "How would you design a component library for a large organisation?",
     answer:
-      "**Goals:** consistency, accessibility, performance, developer ergonomics, and independently versioned releases.\n\n**Structure:**\n- Monorepo (Turborepo/Nx) â€” one package per logical group (`@org/button`, `@org/form`) or a single `@org/ui` bundle\n- Design token layer â€” spacing, color, typography as CSS variables or a token file; consumed by all components\n- Accessibility by default â€” every interactive component passes axe/Playwright accessibility checks in CI\n- Headless primitives layer (Radix UI, Base UI, Ariakit) for complex widgets (menus, dialogs, comboboxes) to avoid reimplementing keyboard navigation and ARIA\n\n**Distribution:**\n- Build to ESM + CJS with tree-shaking support (Rollup/tsup)\n- Ship TypeScript types, not just `.d.ts` declarations\n- Publish to a private npm registry or Verdaccio for internal use\n\n**Governance:**\n- Changelog discipline (Changesets) â€” never break APIs without a major bump\n- Visual regression tests (Chromatic/Percy) â€” screenshot every story in CI\n- Storybook â€” living documentation and interaction tests",
+      "**Goals:** consistency, accessibility, performance, developer ergonomics, and independently versioned releases.\n\n**Structure:**\n- Monorepo (Turborepo/Nx) — one package per logical group (`@org/button`, `@org/form`) or a single `@org/ui` bundle\n- Design token layer — spacing, color, typography as CSS variables or a token file; consumed by all components\n- Accessibility by default — every interactive component passes axe/Playwright accessibility checks in CI\n- Headless primitives layer (Radix UI, Base UI, Ariakit) for complex widgets (menus, dialogs, comboboxes) to avoid reimplementing keyboard navigation and ARIA\n\n**Distribution:**\n- Build to ESM + CJS with tree-shaking support (Rollup/tsup)\n- Ship TypeScript types, not just `.d.ts` declarations\n- Publish to a private npm registry or Verdaccio for internal use\n\n**Governance:**\n- Changelog discipline (Changesets) — never break APIs without a major bump\n- Visual regression tests (Chromatic/Percy) — screenshot every story in CI\n- Storybook — living documentation and interaction tests",
     difficulty: "medium",
     companies: ["Airbnb", "Stripe", "Microsoft"],
     orderIndex: 4,
@@ -534,21 +670,21 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-system-design",
     question: "How would you optimise a web app's Time to First Byte (TTFB) and Largest Contentful Paint (LCP)?",
     answer:
-      "**TTFB (server response time):**\n- Move compute to the edge (Vercel Edge Functions, Cloudflare Workers) â€” run close to the user\n- Cache rendered HTML at the CDN with short TTLs (`s-maxage=60, stale-while-revalidate=300`)\n- Use streaming SSR (Next.js App Router) â€” flush the shell immediately, stream slow data\n- DB query optimisation â€” add missing indexes, avoid N+1, use connection pooling\n\n**LCP (largest visible element paints fast):**\n- The LCP element is usually a hero image or large heading â€” identify it with Chrome DevTools / WebPageTest\n- Preload the LCP image: `<link rel='preload' as='image' href='...'>`\n- Serve images in WebP/AVIF at the correct intrinsic size; use `srcset` + `sizes`\n- Eliminate render-blocking resources â€” defer non-critical JS, inline critical CSS\n- Use a CDN with edge PoPs close to users for static assets\n- Font loading: `font-display: swap` + `preload` the subset actually used above the fold",
+      "**TTFB (server response time):**\n- Move compute to the edge (Vercel Edge Functions, Cloudflare Workers) — run close to the user\n- Cache rendered HTML at the CDN with short TTLs (`s-maxage=60, stale-while-revalidate=300`)\n- Use streaming SSR (Next.js App Router) — flush the shell immediately, stream slow data\n- DB query optimisation — add missing indexes, avoid N+1, use connection pooling\n\n**LCP (largest visible element paints fast):**\n- The LCP element is usually a hero image or large heading — identify it with Chrome DevTools / WebPageTest\n- Preload the LCP image: `<link rel='preload' as='image' href='...'>`\n- Serve images in WebP/AVIF at the correct intrinsic size; use `srcset` + `sizes`\n- Eliminate render-blocking resources — defer non-critical JS, inline critical CSS\n- Use a CDN with edge PoPs close to users for static assets\n- Font loading: `font-display: swap` + `preload` the subset actually used above the fold",
     difficulty: "medium",
     companies: ["Google", "Stripe", "Amazon"],
     orderIndex: 5,
   },
 ];
 
-// â”€â”€ Roadmaps â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Roadmaps ──────────────────────────────────────────────────────────────────
 
 const ROADMAPS: RoadmapSeed[] = [
   {
     slug: "frontend-foundations",
     title: "Frontend Foundations",
     description:
-      "Build a solid mental model of how browsers and JavaScript actually work â€” the concepts that underpin every frontend interview.",
+      "Build a solid mental model of how browsers and JavaScript actually work — the concepts that underpin every frontend interview.",
     orderIndex: 1,
     steps: ["event-loop", "browser-rendering-pipeline", "css-specificity", "react-rendering"],
   },
@@ -556,13 +692,13 @@ const ROADMAPS: RoadmapSeed[] = [
     slug: "react-expert-path",
     title: "React Expert Path",
     description:
-      "Go deep on React, TypeScript, performance, and accessibility â€” the stack expected of a senior frontend engineer.",
+      "Go deep on React, TypeScript, performance, and accessibility — the stack expected of a senior frontend engineer.",
     orderIndex: 2,
     steps: ["type-narrowing", "react-rendering", "core-web-vitals", "aria-roles-and-semantic-html"],
   },
 ];
 
-// â”€â”€ Seed â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Seed ──────────────────────────────────────────────────────────────────────
 
 async function seed() {
   console.log("[seed] Inserting concepts...");
@@ -572,7 +708,7 @@ async function seed() {
     .onConflictDoNothing({ target: concepts.slug })
     .returning({ id: concepts.id, slug: concepts.slug });
 
-  // Build a slug â†’ id map from what's now in the DB (inserted + pre-existing)
+  // Build a slug → id map from what's now in the DB (inserted + pre-existing)
   const allConcepts = await db
     .select({ id: concepts.id, slug: concepts.slug })
     .from(concepts);
@@ -620,14 +756,41 @@ async function seed() {
   console.log(`[seed] ${insertedChallenges.length} challenge(s) upserted`);
 
   console.log("[seed] Inserting interview questions...");
+  const questionValues = INTERVIEW_QUESTIONS.map(({ conceptSlug, ...q }) => {
+    // Fail fast: a conceptSlug that doesn't resolve is a seed-data bug, not a
+    // reason to silently insert an unlinked question (mirrors challenges above).
+    if (conceptSlug && !conceptBySlug[conceptSlug]) {
+      throw new Error(
+        `[seed] Interview question "${q.question}" references unknown conceptSlug "${conceptSlug}". Fix the seed before re-running.`,
+      );
+    }
+    return {
+      ...q,
+      isPremium: q.isPremium ?? false,
+      conceptId: conceptSlug ? conceptBySlug[conceptSlug] : null,
+    };
+  });
+  // onConflictDoUpdate (not DoNothing) so re-running backfills concept_id onto
+  // questions seeded before they were concept-linked. Idempotent on (collection,
+  // order_index).
   const insertedQuestions = await db
     .insert(interviewQuestions)
-    .values(INTERVIEW_QUESTIONS.map((q) => ({ ...q, isPremium: q.isPremium ?? false })))
-    .onConflictDoNothing({
+    .values(questionValues)
+    .onConflictDoUpdate({
       target: [interviewQuestions.collection, interviewQuestions.orderIndex],
+      set: {
+        // COALESCE so an unlinked question (null) never clobbers an existing
+        // link on re-run; a real new link still applies.
+        conceptId: sql`COALESCE(excluded.concept_id, ${interviewQuestions.conceptId})`,
+        question: sql`excluded.question`,
+        answer: sql`excluded.answer`,
+        difficulty: sql`excluded.difficulty`,
+        companies: sql`excluded.companies`,
+        isPremium: sql`excluded.is_premium`,
+      },
     })
     .returning({ id: interviewQuestions.id });
-  console.log(`[seed] ${insertedQuestions.length} new question(s) inserted`);
+  console.log(`[seed] ${insertedQuestions.length} question(s) upserted`);
 
   console.log("[seed] Inserting roadmaps...");
   for (const roadmap of ROADMAPS) {
@@ -650,7 +813,7 @@ async function seed() {
       .map((slug, i) => {
         const conceptId = conceptBySlug[slug];
         if (!conceptId) {
-          console.warn(`[seed] No concept found for slug "${slug}" â€” skipping step`);
+          console.warn(`[seed] No concept found for slug "${slug}" — skipping step`);
           return null;
         }
         return { roadmapId, conceptId, orderIndex: i + 1 };

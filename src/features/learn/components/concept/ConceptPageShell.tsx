@@ -10,6 +10,7 @@ type Props = {
   understandContent: ReactNode;
   simulateContent: ReactNode;
   challengeContent: ReactNode;
+  interviewContent: ReactNode;
 };
 
 // Server component: renders the static header + rail (and the server-rendered
@@ -20,6 +21,7 @@ export function ConceptPageShell({
   understandContent,
   simulateContent,
   challengeContent,
+  interviewContent,
 }: Props) {
   return (
     <ConceptInteractive
@@ -28,6 +30,7 @@ export function ConceptPageShell({
       understandContent={understandContent}
       simulateContent={simulateContent}
       challengeContent={challengeContent}
+      interviewContent={interviewContent}
     />
   );
 }

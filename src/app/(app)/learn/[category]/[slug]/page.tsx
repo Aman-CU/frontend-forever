@@ -6,12 +6,15 @@ import {
   getChallengeByConceptId,
   getChallengeState,
   getConceptBySlug,
+  getInterviewQuestionsByConceptId,
+  getInterviewState,
   getIsPremiumUser,
   getSimulateState,
   getUnderstoodState,
 } from "@/features/learn/lib/queries";
 import { ConceptPageShell } from "@/features/learn/components/concept/ConceptPageShell";
 import { ConceptChallenge } from "@/components/challenge/ConceptChallenge";
+import { ConceptInterview } from "@/components/interview/ConceptInterview";
 import { ConceptSimulator } from "@/components/simulators/ConceptSimulator";
 import { UnderstandTab } from "@/features/learn/components/concept/UnderstandTab";
 
@@ -32,15 +35,25 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
   const userId = session?.user?.id ?? null;
 
   const mdx = getConceptContent(category, slug);
-  const challenge = await getChallengeByConceptId(concept.id);
-  const [initialUnderstood, initialSimulated, initialChallenged, isPremiumUser] = userId
+  const [challenge, interviewQuestions] = await Promise.all([
+    getChallengeByConceptId(concept.id),
+    getInterviewQuestionsByConceptId(concept.id),
+  ]);
+  const [
+    initialUnderstood,
+    initialSimulated,
+    initialChallenged,
+    initialInterviewed,
+    isPremiumUser,
+  ] = userId
     ? await Promise.all([
         getUnderstoodState(userId, concept.id),
         getSimulateState(userId, concept.id),
         getChallengeState(userId, concept.id),
+        getInterviewState(userId, concept.id),
         getIsPremiumUser(userId),
       ])
-    : [false, false, false, false];
+    : [false, false, false, false, false];
 
   // Server-side premium gate seam (Feature 38 fleshes this out). Always false
   // today — no challenge is premium yet.
@@ -82,12 +95,22 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
     />
   );
 
+  const interviewContent = (
+    <ConceptInterview
+      questions={interviewQuestions}
+      conceptId={concept.id}
+      isLoggedIn={userId !== null}
+      initialCompleted={initialInterviewed}
+    />
+  );
+
   return (
     <ConceptPageShell
       concept={concept}
       understandContent={understandContent}
       simulateContent={simulateContent}
       challengeContent={challengeContent}
+      interviewContent={interviewContent}
     />
   );
 }
