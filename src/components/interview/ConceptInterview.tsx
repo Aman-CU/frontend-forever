@@ -11,8 +11,12 @@ import {
 } from "@/features/interview-prep/components/QuestionCard";
 import type { InterviewQuestionData } from "@/features/learn/lib/queries";
 
+// isLocked is computed server-side (page.tsx) from isPremium + the viewer's
+// premium status — see security.md, premium gating is never client-side only.
+type ClientInterviewQuestion = InterviewQuestionData & { isLocked: boolean };
+
 type Props = {
-  questions: InterviewQuestionData[];
+  questions: ClientInterviewQuestion[];
   conceptId: string;
   isLoggedIn: boolean;
   initialCompleted: boolean;
@@ -36,8 +40,22 @@ export function ConceptInterview({
   // Fire-once guard for the completion POST, mirroring ConceptChallenge.
   const hasPostedRef = useRef(initialCompleted);
 
-  const total = questions.length;
+  const hasQuestions = questions.length > 0;
+  // Premium-locked questions can't be rated (no visible answer to assess), so
+  // they're excluded from the denominator — completion means "answered every
+  // question you can actually see." Currently always equal to questions.length
+  // (no concept-linked question is premium yet), but this keeps the count
+  // correct the moment one is.
+  const total = questions.filter((q) => !q.isLocked).length;
   const answeredCount = Object.keys(ratings).length;
+  // A returning user can have initialCompleted=true from a past session while
+  // this session's local ratings are still empty (ratings aren't persisted per-
+  // question — see architect notes). Showing the green "Completed" pill next to
+  // "0 of N answered" reads as contradictory, so the pill only appears once this
+  // session's own progress actually reflects completion.
+  const showCompletedPill = completed && total > 0 && answeredCount === total;
+  const showPreviouslyCompletedNote =
+    completed && total > 0 && !showCompletedPill && answeredCount === 0;
 
   async function postCompletion() {
     // Logged-out users see their local progress but nothing is written (and
@@ -70,7 +88,7 @@ export function ConceptInterview({
     if (total > 0 && answeredIds.size === total) void postCompletion();
   }
 
-  if (total === 0) {
+  if (!hasQuestions) {
     return (
       <div className="flex min-h-[320px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface-secondary/40 px-6 py-12 text-center">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-secondary text-text-muted">
@@ -90,7 +108,7 @@ export function ConceptInterview({
     );
   }
 
-  const pct = Math.round((answeredCount / total) * 100);
+  const pct = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-5">
@@ -99,11 +117,12 @@ export function ConceptInterview({
           <div>
             <h2 className="text-lg font-bold text-text-primary">Interview Questions</h2>
             <p className="mt-0.5 text-sm text-text-secondary">
-              Reveal each answer, then mark how you did. Answer all {total} to complete
-              this tab.
+              {total > 0
+                ? `Reveal each answer, then mark how you did. Answer all ${total} to complete this tab.`
+                : "These questions are part of Premium. Upgrade to unlock them."}
             </p>
           </div>
-          {completed && (
+          {showCompletedPill && (
             <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-success-muted px-3 py-1.5 text-sm font-medium text-success">
               <CheckCircle2 className="h-4 w-4" aria-hidden />
               Completed
@@ -111,24 +130,32 @@ export function ConceptInterview({
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <div
-            className="h-2 flex-1 overflow-hidden rounded-full bg-surface-secondary"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={total}
-            aria-valuenow={answeredCount}
-            aria-label="Questions answered"
-          >
+        {total > 0 && (
+          <div className="flex items-center gap-3">
             <div
-              className="h-full rounded-full bg-accent transition-all duration-300"
-              style={{ width: `${pct}%` }}
-            />
+              className="h-2 flex-1 overflow-hidden rounded-full bg-surface-secondary"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={total}
+              aria-valuenow={answeredCount}
+              aria-label="Questions answered"
+            >
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-300"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="shrink-0 text-sm font-medium text-text-secondary tabular-nums">
+              {answeredCount} of {total} answered
+            </span>
           </div>
-          <span className="shrink-0 text-sm font-medium text-text-secondary tabular-nums">
-            {answeredCount} of {total} answered
-          </span>
-        </div>
+        )}
+        {showPreviouslyCompletedNote && (
+          <p className="text-xs text-text-muted">
+            You&apos;ve completed this tab before — rate the questions again to refresh
+            your memory.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">

@@ -351,7 +351,7 @@ Watch four selectors fight over one button in the playground below — your scor
   },
 ];
 
-// ── Interview questions (5 per collection) ────────────────────────────────────
+// ── Interview questions (5 per collection, plus concept-linked top-ups) ────────
 
 const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
   // ff-75
@@ -591,7 +591,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     conceptSlug: "react-rendering",
     question: "What is the difference between `useEffect` and `useLayoutEffect`?",
     answer:
-      "`useEffect` runs **after** the browser has painted — asynchronously. `useLayoutEffect` runs **before** the browser paints — synchronously after React commits DOM changes.\n\nUse `useLayoutEffect` when you need to read layout from the DOM (e.g. `getBoundingClientRect()`) and apply a change before the user sees the initial paint, preventing a visual flash. Otherwise, prefer `useEffect` — it doesn't block painting.\n\nPractical rule: start with `useEffect`. If you see a flicker on initial render, consider `useLayoutEffect`. On the server, `useLayoutEffect` emits a warning (it can't run on the server); use `useEffect` for SSR-safe logic.",
+      "`useEffect` runs **after** the browser has painted — asynchronously. `useLayoutEffect` runs **before** the browser paints — synchronously after React commits DOM changes.\n\nUse `useLayoutEffect` when you need to read layout from the DOM (e.g. `getBoundingClientRect()`) and apply a change before the user sees the initial paint, preventing a visual flash. Otherwise, prefer `useEffect` — it doesn't block painting.\n\nPractical rule: start with `useEffect`. If you see a flicker on initial render, consider `useLayoutEffect`. On the server, `useLayoutEffect` does not run at all — prefer `useEffect` for SSR-safe logic.",
     difficulty: "medium",
     companies: ["Meta", "Stripe"],
     orderIndex: 2,
@@ -642,7 +642,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     collection: "ff-system-design",
     question: "How would you design an infinite-scroll news feed?",
     answer:
-      "**Requirements:** fast initial load, smooth scrolling, fresh content, back-navigation restores position.\n\n**API design:** cursor-based pagination (not offset) — `GET /feed?after=<cursor>&limit=20`. Cursor is an opaque server token (e.g. encoded timestamp + id) that's stable even if new posts are inserted.\n\n**Client:**\n- Fetch the first page on load; fetch the next page when the user scrolls near the bottom (IntersectionObserver on a sentinel element)\n- Cache pages in memory (React Query, SWR) — don't refetch on back-navigation\n- Virtualise the list with a library like `react-window` if posts are numerous\n- Store scroll position + cursor in session storage so the browser's back button restores the position\n\n**Freshness:** Poll for new items at the top at a low frequency (30s) without resetting the cursor; surface a 'X new posts' banner rather than auto-inserting and shifting the user's reading position.\n\n**CDN:** Edge-cache feed responses for a short TTL (5“30s) to reduce origin load.",
+      "**Requirements:** fast initial load, smooth scrolling, fresh content, back-navigation restores position.\n\n**API design:** cursor-based pagination (not offset) — `GET /feed?after=<cursor>&limit=20`. Cursor is an opaque server token (e.g. encoded timestamp + id) that's stable even if new posts are inserted.\n\n**Client:**\n- Fetch the first page on load; fetch the next page when the user scrolls near the bottom (IntersectionObserver on a sentinel element)\n- Cache pages in memory (React Query, SWR) — don't refetch on back-navigation\n- Virtualise the list with a library like `react-window` if posts are numerous\n- Store scroll position + cursor in session storage so the browser's back button restores the position\n\n**Freshness:** Poll for new items at the top at a low frequency (30s) without resetting the cursor; surface a 'X new posts' banner rather than auto-inserting and shifting the user's reading position.\n\n**CDN:** Edge-cache feed responses for a short TTL (5–30s) to reduce origin load.",
     difficulty: "medium",
     companies: ["Meta", "Twitter", "LinkedIn"],
     orderIndex: 2,
@@ -772,7 +772,13 @@ async function seed() {
   });
   // onConflictDoUpdate (not DoNothing) so re-running backfills concept_id onto
   // questions seeded before they were concept-linked. Idempotent on (collection,
-  // order_index).
+  // order_index) — same caveat as CHALLENGES' slug-based identity, but this table
+  // has no stable per-row key: reordering questions within a collection (rather
+  // than appending) will upsert onto the wrong existing row instead of the
+  // intended one, and can leave a stale duplicate behind. Fixing this properly
+  // needs a schema change (a stable `slug`/key column, unique per row) — tracked
+  // as a known follow-up, out of scope for this pass since it isn't hit by any
+  // seed edit made so far (only appends, never reorders).
   const insertedQuestions = await db
     .insert(interviewQuestions)
     .values(questionValues)

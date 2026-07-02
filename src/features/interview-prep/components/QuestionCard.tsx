@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, ChevronDown, RotateCcw } from "lucide-react";
+import { CheckCircle2, ChevronDown, Lock, RotateCcw } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Markdown } from "@/components/shared/Markdown";
@@ -21,6 +21,10 @@ export type InterviewQuestionView = {
   answer: string;
   difficulty: string;
   companies: string[];
+  // Server-computed (security.md — premium gating is never client-side only):
+  // true when this question is premium and the viewer isn't. `answer` is already
+  // stripped to "" by the host in that case; this flag drives the locked UI.
+  isLocked: boolean;
 };
 
 const DIFFICULTY_STYLES: Record<ChallengeDifficulty, string> = {
@@ -76,6 +80,12 @@ export function QuestionCard({ index, question, rating, onRate }: Props) {
             )}
           </span>
           <span className="mt-2 flex flex-wrap items-center gap-1.5">
+            {question.isLocked && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-premium-light px-2 py-0.5 text-[0.6875rem] font-semibold text-premium">
+                <Lock className="h-2.5 w-2.5" aria-hidden />
+                Premium
+              </span>
+            )}
             <span
               className={cn(
                 "rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold capitalize",
@@ -114,29 +124,40 @@ export function QuestionCard({ index, question, rating, onRate }: Props) {
             className="overflow-hidden"
           >
             <div className="border-t border-border px-4 py-4">
-              <Markdown markdown={question.answer} />
+              {question.isLocked ? (
+                <div className="flex items-center gap-3 rounded-lg border border-dashed border-premium/40 bg-premium-light/30 px-4 py-3">
+                  <Lock className="h-5 w-5 shrink-0 text-premium" aria-hidden />
+                  <p className="text-sm text-text-secondary">
+                    Upgrade to Premium to unlock this answer.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <Markdown markdown={question.answer} />
 
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium text-text-muted">
-                  How did you do?
-                </span>
-                <RatingButton
-                  active={rating === "knew"}
-                  activeClass="bg-success-muted text-success"
-                  onClick={() => onRate("knew")}
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-                  I knew this
-                </RatingButton>
-                <RatingButton
-                  active={rating === "review"}
-                  activeClass="bg-warning-muted text-warning"
-                  onClick={() => onRate("review")}
-                >
-                  <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-                  Need to review
-                </RatingButton>
-              </div>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-medium text-text-muted">
+                      How did you do?
+                    </span>
+                    <RatingButton
+                      active={rating === "knew"}
+                      activeClass="bg-success-muted text-success"
+                      onClick={() => onRate("knew")}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                      I knew this
+                    </RatingButton>
+                    <RatingButton
+                      active={rating === "review"}
+                      activeClass="bg-warning-muted text-warning"
+                      onClick={() => onRate("review")}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                      Need to review
+                    </RatingButton>
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         )}
