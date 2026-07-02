@@ -314,7 +314,7 @@ Update this file after every completed feature. Any AI agent reading this should
   - **Follow-up (user-reported, same session): the premium-lock teaser's dashed border looked broken — top edge invisible in a screenshot.** Diagnosed rather than guessed: `getComputedStyle` confirmed all 4 sides of the `border-dashed border-premium/40` box had identical width/style/color — not a broken/missing border in code. The real cause was legibility: a 1px dashed line at 40% opacity is thin enough that at normal (1x) screen resolution the top edge — sitting right below the card's own header divider, the lowest-contrast zone on the card — visually disappeared while the other 3 sides (bordered by more contrast from the box's own fill/text) stayed legible; a 3x-zoomed crop showed the border technically present, but a normal-resolution screenshot reproduced the same "invisible top edge" the user saw. **Fix:** bumped `border-premium/40` → `border-premium/70`. Verified via normal-resolution screenshots (not zoomed crops) that all 4 sides are now evenly visible in both light and dark mode. Also caught and fixed a stale-cache side effect from the prior round's temporary DB flip (a dev-only `unstable_cache` entry was still serving the old locked state after a restart that didn't wipe `.next`) — full `.next` wipe + restart confirmed the real state: 0 concept-linked questions are actually premium.
   - **Merged to `develop` via PR #40 (merge commit `117b2a1`)** — Interview Tab + the `/review` architecture fix + the CodeRabbit-findings fixes (premium redaction, completed-pill contradiction, seed content cleanup, merged `Promise.all`) + the border-legibility fix, all in one PR/branch (`feature/25-interview-tab`, 3 commits: `6c276b1`/`33dd772`/`afb6588`). `develop` tip is `117b2a1`.
 **Currently building:** Nothing.
-**Next:** 26 Build Tab.
+**Next:** 26 Build Tab, then 27 Progress API + XP System (finishes Phase 4), then Phase 10 — Concept Curriculum Expansion (Features 40–48), then Phase 5+ resumes. See Decisions Made below for why this order.
 
 ---
 
@@ -390,6 +390,18 @@ Update this file after every completed feature. Any AI agent reading this should
 - [ ] 38 Premium Content Gating
 - [ ] 39 Stripe Integration
 
+### Phase 10 — Concept Curriculum Expansion
+
+- [ ] 40 Curriculum Definition
+- [ ] 41 JavaScript Runtime Concepts
+- [ ] 42 Browser Internals Concepts
+- [ ] 43 React Concepts
+- [ ] 44 CSS Concepts
+- [ ] 45 TypeScript Concepts
+- [ ] 46 Accessibility Concepts
+- [ ] 47 Performance Concepts
+- [ ] 48 System Design Concepts
+
 ---
 
 ## Decisions Made During Build
@@ -409,6 +421,15 @@ Update this file after every completed feature. Any AI agent reading this should
   - **Why this was safe to do as a docs-only pass:** confirmed via `Glob` that no auth or DB code exists yet (`src/lib/` only has `utils.ts`, no `middleware.ts`/`proxy.ts`, no `app/(auth)/`, no `app/api/`) — Phase 1 was UI-only and Phase 2 hadn't started, so there was nothing to migrate or delete, only planning docs to correct before the first line of auth code gets written.
   - **Done in Feature 14** (was: "left for whoever builds Feature 14"): `@supabase/ssr`/`@supabase/supabase-js` uninstalled, `better-auth`/`drizzle-orm`/`pg` (+ `drizzle-kit`/`@types/pg` dev deps) installed. `.env.local` updated to the new var list (`NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY` removed).
 - **01 Design System:** Hit a stale Turbopack dev cache during verification — `globals.css` was fully rewritten but the served CSS still reflected the old shadcn token mapping (`.text-accent { color: var(--accent) }` instead of `var(--color-accent)`). Fixed by killing the dev server and deleting `.next` before restarting. Worth trying first if styles look wrong after an unusually large `globals.css` change and the file content looks correct on disk.
+- **Pre-Phase-10 decision (after Feature 25 shipped, before Feature 26 started): added Phase 10 — Concept Curriculum Expansion to `build-plan.md`.** User observation that started it: every category has exactly 1 built concept (JS Runtime = Event Loop only), and even the concepts with a full 4-tab experience (React Rendering, CSS Specificity) are missing a written guide — the catalog looks far thinner than the platform's own Interview Prep collections imply. Four decisions resolved with the user up front:
+  1. **Priority:** run this phase next, ahead of resuming Phase 5+ (Practice/Interview Prep/Roadmaps/Leaderboard/Premium) — those all lean on a real concept catalog behind them. **Refinement, same session, in two steps:** first, Feature 26 (Build Tab) — already "Next" before this decision — still runs *first*, since it's the last missing tab *system* and Phase 10 is about filling systems that already exist, not building new ones. **Second correction (user caught this, not initially planned for):** Feature 27 (Progress API + XP System) — the actual last feature of Phase 4, not Feature 26 — also has to run before Phase 10. `/api/progress` was deliberately built minimal in Feature 22 (writes only the tab-completion flag; Feature 27 layers on `xp_events`, `profiles.xp`, and streak updates) — every tab completion across every concept, including all of Phase 10's new ones, routes through it, so it needs to be complete before Phase 10 floods the catalog with content that would otherwise complete without earning XP. So the actual order is: 26 → 27 → Phase 10 → Phase 5+.
+  2. **Simulate tab scope:** user chose "every concept eventually gets one" over the recommended "flagship concepts only." This makes Simulate open-ended — each simulator is a multi-day bespoke Framer Motion build (Features 09–12's precedent), so it is **not** one of Phase 10's numbered features; it's an ongoing backlog pulled from over time (prioritization rule: every category reaches 2 simulators before any category reaches 3), independent of the Understand/Challenge/Interview/Build content passes.
+  3. **Scale:** decided category-by-category rather than one target count — JS Runtime and React ended up deepest (14 and 12 concepts) matching how real interview platforms weight those two; System Design stayed shortest (7) since there's little genuinely "beginner" content in frontend system design.
+  4. **Concept list authorship:** user asked for a drafted proposal to react to, not a from-scratch brainstorm. Delivered as a reviewable artifact (not written into the repo until approved), then revised twice before being written into `build-plan.md`:
+     - **Senior-engineer review pass** (explicit user ask: "review it like a senior engineer, don't miss important concepts"): caught 2 real teaching-order bugs (Event Loop was sequenced after Promises & Async/Await, backwards — promises are scheduled *by* the event loop; CSS Specificity was sequenced before Cascade & Inheritance, its own prerequisite) and ~15 real content gaps, the most significant being TypeScript jumping straight to Interfaces with no beginner on-ramp, React having no Forms concept despite it being one of the most common practical React interview tasks, JS Runtime never covering `==`/`===` coercion despite it already being a seeded interview question, and Browser Internals having nothing on CORS or web security (XSS/CSRF/CSP) despite this project's own `security.md` leaning on exactly that knowledge.
+     - **Follow-up catch (user-reported):** Callbacks & Higher-Order Functions was missing from JS Runtime entirely — not a minor gap, since it's the prerequisite for Array & Object Methods (map/filter/reduce *are* the callback pattern) and the motivating problem Promises exist to solve. Inserted after Closures, which also reordered Array & Object Methods to come after it rather than before.
+  - **Final approved curriculum: 76 concepts (8 existing + 68 proposed)** across all 8 categories, transcribed in full into `build-plan.md`'s Phase 10 section (Features 41–48, one per category) — that section, not any external draft, is now the durable source of truth.
+  - **Numbering constraint surfaced and resolved:** feature numbers are tied to git branch names (`feature/[number]-[name]`) throughout this file's history, so a new phase can only be *numbered* at the end (40+) even though it's *scheduled* to run before Phase 5 — build-plan.md's top-level "Build order" line and the Phase 10 section both carry a note explaining this so a future session doesn't assume numbering order means execution order.
 
 ---
 
