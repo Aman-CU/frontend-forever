@@ -3,23 +3,28 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent } from "react";
 
-import { RotateCcw, Search, Sparkles } from "lucide-react";
+import { RotateCcw, Search } from "lucide-react";
 
 import { getLiveDriver, useLiveSandbox } from "@/features/practice/sandbox";
-import { RequestLane, type Packet } from "./RequestLane";
+import { Celebration } from "./playground/Celebration";
+import { ServerPanel, type Coin } from "./playground/ServerPanel";
 
-const COST_PER_CALL = 0.002;
-const DEMO_DELAY_MS = 500;
+const COST = 0.002; // $ per request
+const SCALE_USERS = 1_000_000;
+const bigUsd = (n: number) => `$${Math.round(n).toLocaleString()}`;
 
-// neal.fun-style playground for the debounce challenge: type in the search box
-// and watch two lanes race. The "naive" lane fires a request on every keystroke;
-// the "your debounce" lane runs the user's actual code in a live sandbox, so a
-// correct debounce visibly collapses the burst into a single call.
+// Recent-request count → 0–100 load, decaying over ~1.2s.
+function loadFrom(times: number[]) {
+  const recent = times.filter((t) => Date.now() - t < 1200);
+  return { recent, load: Math.min(100, recent.length * 16) };
+}
+
+// "The Server Bill": two servers race. The left fires a request on every
+// keystroke (naive); the right is driven by the user's actual debounce in a live
+// sandbox. A correct debounce keeps the right server cool and the bill low.
 export function DebounceDemo({ code }: { code: string }) {
   const driver = getLiveDriver("implement-debounce");
 
-  // Feed the session a debounced copy of the editor code so typing in the editor
-  // doesn't rebuild the iframe on every keystroke.
   const [liveCode, setLiveCode] = useState(code);
   useEffect(() => {
     const timer = setTimeout(() => setLiveCode(code), 600);
@@ -27,95 +32,129 @@ export function DebounceDemo({ code }: { code: string }) {
   }, [code]);
 
   const [query, setQuery] = useState("");
-  const [naiveCalls, setNaiveCalls] = useState(0);
-  const [debouncedCalls, setDebouncedCalls] = useState(0);
-  const [naivePackets, setNaivePackets] = useState<Packet[]>([]);
-  const [goodPackets, setGoodPackets] = useState<Packet[]>([]);
+  const [naive, setNaive] = useState(0);
+  const [yours, setYours] = useState(0);
+  const [naiveCoins, setNaiveCoins] = useState<Coin[]>([]);
+  const [yourCoins, setYourCoins] = useState<Coin[]>([]);
+  const [naiveLoad, setNaiveLoad] = useState(0);
+  const [yourLoad, setYourLoad] = useState(0);
+  const [celebrate, setCelebrate] = useState(0);
+
   const seq = useRef(0);
+  const naiveTimes = useRef<number[]>([]);
+  const yourTimes = useRef<number[]>([]);
+  const celebrated = useRef(false);
 
   const { send } = useLiveSandbox(liveCode, driver, (event) => {
     if (event.type === "CALL") {
-      setDebouncedCalls((count) => count + 1);
-      setGoodPackets((packets) => [...packets.slice(-24), { id: seq.current++ }]);
+      setYours((c) => c + 1);
+      yourTimes.current.push(Date.now());
+      setYourCoins((c) => [...c.slice(-10), { id: seq.current++ }]);
     }
   });
 
+  // Decay both server loads from their recent request rate.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const n = loadFrom(naiveTimes.current);
+      const y = loadFrom(yourTimes.current);
+      naiveTimes.current = n.recent;
+      yourTimes.current = y.recent;
+      setNaiveLoad(n.load);
+      setYourLoad(y.load);
+    }, 150);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Only claim savings once the user's code has fired at least one request — a
+  // real debounce always fires ≥1, so yours === 0 means "no calls yet", not 100%.
+  const savedPct = yours > 0 && naive > 0 ? Math.round((1 - yours / naive) * 100) : 0;
+  const dailyNaive = naive * COST * SCALE_USERS;
+  const dailySaved = (naive - yours) * COST * SCALE_USERS;
+
+  useEffect(() => {
+    if (!celebrated.current && naive >= 6 && yours > 0 && savedPct >= 40) {
+      celebrated.current = true;
+      setCelebrate((c) => c + 1);
+    }
+  }, [naive, yours, savedPct]);
+
   function handleType(event: ChangeEvent<HTMLInputElement>) {
     setQuery(event.target.value);
-    setNaiveCalls((count) => count + 1);
-    setNaivePackets((packets) => [...packets.slice(-24), { id: seq.current++ }]);
+    setNaive((c) => c + 1);
+    naiveTimes.current.push(Date.now());
+    setNaiveCoins((c) => [...c.slice(-10), { id: seq.current++ }]);
     send("KEY");
   }
 
   function reset() {
     setQuery("");
-    setNaiveCalls(0);
-    setDebouncedCalls(0);
-    setNaivePackets([]);
-    setGoodPackets([]);
+    setNaive(0);
+    setYours(0);
+    setNaiveCoins([]);
+    setYourCoins([]);
+    setNaiveLoad(0);
+    setYourLoad(0);
+    naiveTimes.current = [];
+    yourTimes.current = [];
+    celebrated.current = false;
   }
-
-  const saved = Math.max(0, naiveCalls - debouncedCalls);
-  const working = naiveCalls >= 4 && debouncedCalls > 0 && debouncedCalls < naiveCalls;
 
   return (
     <section
       aria-label="Debounce playground"
-      className="flex flex-col gap-4 rounded-xl border border-border bg-surface-secondary/40 p-4 sm:p-5"
+      className="relative flex flex-col gap-4 rounded-xl border border-border bg-surface-secondary/40 p-4 sm:p-5"
     >
-      <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-accent" aria-hidden />
-        <h3 className="text-sm font-semibold text-text-primary">Live playground</h3>
-        <span className="text-xs text-text-muted">
-          fires a request every keystroke ({DEMO_DELAY_MS}ms debounce)
-        </span>
+      <Celebration trigger={celebrate} />
+
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <h3 className="text-base font-bold text-text-primary">💸 The Server Bill</h3>
+        <span className="text-xs text-text-muted">every keystroke pings the server — watch both bills add up</span>
       </div>
 
       <div className="relative">
-        <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
-          aria-hidden
-        />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" aria-hidden />
         <input
           type="text"
           value={query}
           onChange={handleType}
-          placeholder="Search countries… type fast!"
+          placeholder="Search 100M products… type fast!"
           aria-label="Demo search box"
           className="w-full rounded-lg border border-border bg-surface py-2.5 pl-9 pr-3 text-sm text-text-primary outline-none transition-colors focus:border-accent"
         />
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <RequestLane
-          label="Without debounce"
-          tone="naive"
-          calls={naiveCalls}
-          packets={naivePackets}
-          onPacketDone={(id) => setNaivePackets((p) => p.filter((x) => x.id !== id))}
+        <ServerPanel
+          title="Without debounce"
+          calls={naive}
+          load={naiveLoad}
+          coins={naiveCoins}
+          onCoinDone={(id) => setNaiveCoins((c) => c.filter((x) => x.id !== id))}
         />
-        <RequestLane
-          label="With your debounce"
-          tone="good"
-          calls={debouncedCalls}
-          packets={goodPackets}
-          onPacketDone={(id) => setGoodPackets((p) => p.filter((x) => x.id !== id))}
+        <ServerPanel
+          title="With your debounce"
+          calls={yours}
+          load={yourLoad}
+          coins={yourCoins}
+          onCoinDone={(id) => setYourCoins((c) => c.filter((x) => x.id !== id))}
         />
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-text-secondary">
-          {working ? (
+          {savedPct >= 40 ? (
             <span className="font-medium text-success">
-              Nice — {saved} wasted {saved === 1 ? "call" : "calls"} avoided, $
-              {(saved * COST_PER_CALL).toFixed(3)} saved.
+              😌 Your debounce is earning its keep — {bigUsd(dailySaved)}/day saved at {SCALE_USERS.toLocaleString()} users.
             </span>
-          ) : naiveCalls >= 4 ? (
-            <span className="text-text-muted">
-              Your debounce isn&apos;t cutting calls yet — implement it and the right lane will drop.
+          ) : naive >= 4 ? (
+            <span>
+              🥵 Both servers are on fire — at {SCALE_USERS.toLocaleString()} users that&apos;s{" "}
+              <span className="font-semibold text-error">{bigUsd(dailyNaive)}/day</span>. Implement{" "}
+              <code className="rounded bg-surface-secondary px-1 font-mono text-[0.8125rem]">debounce</code> to cool the right one down.
             </span>
           ) : (
-            <span className="text-text-muted">Type in the box above to fire some requests.</span>
+            <span className="text-text-muted">Type in the search box to start sending requests.</span>
           )}
         </p>
         <button

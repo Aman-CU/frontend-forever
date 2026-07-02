@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { DevAbortSuppressor } from "@/components/providers/DevAbortSuppressor";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -30,10 +31,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col antialiased">
-        <script
-          id="theme-init"
-          dangerouslySetInnerHTML={{ __html: themeInitScript }}
-        />
+        {/* next/script (beforeInteractive) inlines this into the document so it
+            runs before paint — preventing the theme flash — without React
+            rendering a raw <script> element (which React 19 rejects on the
+            client). */}
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         <DevAbortSuppressor />
         <ThemeProvider>
           <TooltipProvider>{children}</TooltipProvider>
