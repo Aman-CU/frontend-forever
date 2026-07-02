@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Users, Wrench } from "lucide-react";
+import { Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { type ConceptTab } from "@/lib/constants";
@@ -12,14 +12,13 @@ import { ConceptTabs } from "./ConceptTabs";
 import { TabPlaceholder } from "./TabPlaceholder";
 
 // Placeholder copy for the not-yet-built tabs (Understand is real as of Feature 22,
-// Simulate as of Feature 23, Challenge as of Feature 24; the rest arrive in 25-26).
-type PlaceholderTab = Exclude<ConceptTab, "understand" | "simulate" | "challenge">;
+// Simulate as of Feature 23, Challenge as of Feature 24, Interview as of Feature 25;
+// Build arrives in 26).
+type PlaceholderTab = Exclude<
+  ConceptTab,
+  "understand" | "simulate" | "challenge" | "interview"
+>;
 const TAB_BODY: Record<PlaceholderTab, { icon: LucideIcon; title: string; description: string }> = {
-  interview: {
-    icon: Users,
-    title: "Interview content — coming in Feature 25",
-    description: "Common interview questions about this concept, each with a revealable answer.",
-  },
   build: {
     icon: Wrench,
     title: "Build content — coming in Feature 26",
@@ -36,6 +35,7 @@ type Props = {
   understandContent: ReactNode;
   simulateContent: ReactNode;
   challengeContent: ReactNode;
+  interviewContent: ReactNode;
 };
 
 export function ConceptInteractive({
@@ -44,6 +44,7 @@ export function ConceptInteractive({
   understandContent,
   simulateContent,
   challengeContent,
+  interviewContent,
 }: Props) {
   const [activeTab, setActiveTab] = useState<ConceptTab>("understand");
 
@@ -76,6 +77,8 @@ export function ConceptInteractive({
                 simulateContent
               ) : activeTab === "challenge" ? (
                 challengeContent
+              ) : activeTab === "interview" ? (
+                interviewContent
               ) : (
                 <TabPlaceholder
                   icon={TAB_BODY[activeTab].icon}
