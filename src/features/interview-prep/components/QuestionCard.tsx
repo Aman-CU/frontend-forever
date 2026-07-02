@@ -125,7 +125,7 @@ export function QuestionCard({ index, question, rating, onRate }: Props) {
           >
             <div className="border-t border-border px-4 py-4">
               {question.isLocked ? (
-                <div className="flex items-center gap-3 rounded-lg border border-dashed border-premium/40 bg-premium-light/30 px-4 py-3">
+                <div className="flex items-center gap-3 rounded-lg border border-dashed border-premium/70 bg-premium-light/30 px-4 py-3">
                   <Lock className="h-5 w-5 shrink-0 text-premium" aria-hidden />
                   <p className="text-sm text-text-secondary">
                     Upgrade to Premium to unlock this answer.
