@@ -6,6 +6,8 @@ Full page UI built with realistic placeholder content first — verified visuall
 
 Build order: **Homepage first → Auth → Database → Learn → Practice → Interview Prep → Roadmaps → Leaderboard → Premium**
 
+**Sequencing note (added after Feature 25):** Phase 10 — Concept Curriculum Expansion is numbered last (features are append-only so existing numbers/branches never shift) but is *scheduled* to run right after Features 26 and 27 finish Phase 4 (Build Tab, then Progress API + XP System), before Phase 5 (Practice) resumes — see `progress-tracker.md` → Decisions Made and the Phase 10 section below for why.
+
 ---
 
 ## Phase 0 — Foundation
@@ -660,18 +662,187 @@ Each simulator tracks `simulate_completed` when the user plays through all steps
 
 ---
 
+## Phase 10 — Concept Curriculum Expansion
+
+**Decided after Feature 25** (see `progress-tracker.md` → Decisions Made). Every category has exactly 1 built concept today — this phase expands each to a full easy → hard curriculum. Numbered at the end (40+) so existing feature numbers/branches never renumber, but **scheduled to run right after Features 26 and 27 finish Phase 4** (Build Tab, then Progress API + XP System — every tab completion across every concept routes through `/api/progress`, so its XP/streak logic needs to be complete before Phase 10 floods the catalog with new concepts that would otherwise complete without earning anything), before Phase 5 (Practice) resumes — a thin catalog also undermines Practice/Interview Prep/Roadmaps, which all lean on it.
+
+**This phase is content authoring, not system building.** Understand, Challenge, Interview, and Build are all generic, content-driven systems already proven on the first concept in most categories (Features 22, 24, 25, 26) — adding a concept to them means writing a guide/challenge/questions/project brief, not writing new code. **Simulate is the one exception**: every simulator is a bespoke, hand-built Framer Motion feature (Features 09–12), so it is *not* part of this phase's per-category features — see the Simulator Backlog note at the end of this phase.
+
+The concept list below was drafted collaboratively, then revised twice: a senior-engineer pass that fixed two teaching-order bugs (Event Loop before Promises, not after; Cascade & Inheritance before Specificity, not after) and added missing fundamentals (Equality & Coercion, TypeScript's Basic Types on-ramp, React Forms, CORS/Web Security, and others); then a direct catch that Callbacks & Higher-Order Functions was missing entirely from JS Runtime, which also reordered Array & Object Methods to come after it (map/filter/reduce *are* the callback pattern).
+
+### 40 Curriculum Definition
+
+Seed every concept below — data only, no tab content yet.
+
+**Logic:**
+
+- Add all 68 new concepts (title/slug/description/category/difficulty/`orderIndex`) to `CONCEPTS` in `scripts/seed.ts`, following the existing `conceptSlug`-link pattern from Features 24/25
+- No schema change — `concepts` already supports this; only a **new category** would need a migration, and none is being added here
+- Every new concept appears immediately on the Learn index and gets a working `[category]/[slug]` page with graceful "coming soon" states on every tab (existing empty-state pattern from Features 22–25) — this alone fixes the "JS only has 1 concept" perception before any content is written
+
+---
+
+### 41 JavaScript Runtime Concepts
+
+Existing: **Event Loop** (intermediate). Expand to 14 concepts, easy → hard:
+
+1. Hoisting & the Temporal Dead Zone — beginner
+2. Equality & Type Coercion — beginner
+3. Closures — beginner
+4. Callbacks & Higher-Order Functions — beginner
+5. Array & Object Methods, Immutability — beginner
+6. `this` Binding & Execution Context — intermediate
+7. Prototypal Inheritance — intermediate
+8. Modules: ESM vs. CommonJS — intermediate
+9. Event Loop — intermediate *(existing)*
+10. Promises & Async/Await — intermediate
+11. Debouncing & Throttling — intermediate *(pairs with the existing `implement-debounce` Practice challenge)*
+12. Function Composition & Currying — advanced
+13. Memory Management & Leaks — advanced
+14. Generators & Iterators — advanced
+
+---
+
+### 42 Browser Internals Concepts
+
+Existing: **Browser Rendering Pipeline** (intermediate). Expand to 9 concepts, easy → hard:
+
+1. DOM vs. BOM — beginner
+2. Event Delegation, Bubbling & Capturing — beginner
+3. Storage APIs — intermediate
+4. Browser Rendering Pipeline — intermediate *(existing)*
+5. CORS & the Same-Origin Policy — intermediate
+6. Web Security Fundamentals (XSS, CSRF, CSP) — advanced
+7. The Network Stack (DNS → TCP → TLS → HTTP) — advanced
+8. Service Workers & Caching Strategies — advanced
+9. Web Workers & Concurrency — advanced
+
+---
+
+### 43 React Concepts
+
+Existing: **React Rendering & Reconciliation** (intermediate). Expand to 12 concepts, easy → hard:
+
+1. JSX & the Virtual DOM — beginner
+2. useState & useEffect Fundamentals — beginner
+3. Forms: Controlled vs. Uncontrolled — beginner
+4. useRef & Imperative Handles — intermediate
+5. Context API & Prop Drilling — intermediate
+6. React Rendering & Reconciliation — intermediate *(existing)*
+7. Component Composition Patterns (render props, children, compound components) — intermediate
+8. Custom Hooks & Composition — intermediate
+9. Error Boundaries — advanced
+10. Render Performance: memo, useMemo, useCallback — advanced
+11. Concurrent React & Suspense — advanced
+12. State Management Tradeoffs — advanced
+
+---
+
+### 44 CSS Concepts
+
+Existing: **CSS Specificity** (beginner). Expand to 10 concepts, easy → hard:
+
+1. The Box Model — beginner
+2. Units & Sizing — beginner
+3. The Cascade & Inheritance — beginner
+4. CSS Specificity — beginner *(existing)*
+5. Flexbox vs. Grid — beginner
+6. Positioning & Stacking Contexts — intermediate
+7. Responsive Design & Container Queries — intermediate
+8. Custom Properties & Theming — intermediate
+9. Selectors: Pseudo-classes, Pseudo-elements & `:has()` — advanced
+10. Animation Performance — advanced
+
+---
+
+### 45 TypeScript Concepts
+
+Existing: **Type Narrowing** (intermediate). Expand to 8 concepts, easy → hard:
+
+1. Basic Types, Inference & `any`/`unknown`/`never` — beginner
+2. Interfaces vs. Type Aliases — beginner
+3. Generics — intermediate
+4. Utility Types (Partial, Pick, Omit, Record) — intermediate
+5. Type Narrowing — intermediate *(existing)*
+6. Discriminated Unions in Practice — advanced
+7. Conditional & Mapped Types — advanced
+8. Template Literal & Branded Types — advanced
+
+---
+
+### 46 Accessibility Concepts
+
+Existing: **Semantic HTML & ARIA Roles** (beginner). Expand to 8 concepts, easy → hard:
+
+1. Semantic HTML & ARIA Roles — beginner *(existing)*
+2. Accessible Images & Media — beginner
+3. Color Contrast & Visual Accessibility — beginner
+4. Keyboard Navigation & Focus Management — intermediate
+5. Accessible Forms — intermediate
+6. ARIA Live Regions — advanced
+7. Accessible Component Patterns (modals, menus, comboboxes) — advanced
+8. Automated a11y Testing (axe-core, Lighthouse) — advanced
+
+---
+
+### 47 Performance Concepts
+
+Existing: **Core Web Vitals** (intermediate). Expand to 8 concepts, easy → hard:
+
+1. Image & Asset Optimization — beginner
+2. Bundle Size & Code Splitting — intermediate
+3. Resource Loading & Render-Blocking (preload/prefetch/preconnect, async/defer) — intermediate
+4. Core Web Vitals — intermediate *(existing)*
+5. List Virtualization — intermediate *(pairs with the existing `virtual-list` Practice challenge)*
+6. Profiling with DevTools — advanced
+7. Streaming SSR & Hydration — advanced
+8. Performance Budgets — advanced
+
+---
+
+### 48 System Design Concepts
+
+Existing: **Frontend Architecture Patterns** (advanced). Expand to 7 concepts, intermediate → advanced (this category has little genuinely "beginner" content):
+
+1. Component-Driven Architecture — intermediate
+2. API Design & Data-Fetching Strategy — advanced
+3. Designing Real-Time Updates (WebSockets, SSE, polling) — advanced
+4. Designing an Infinite-Scroll Feed — advanced *(deepens the existing seeded interview question)*
+5. Designing a Real-Time Collaborative Editor — advanced *(deepens the existing seeded interview question)*
+6. Frontend Architecture Patterns — advanced *(existing)*
+7. State Management at Scale — advanced
+
+---
+
+### Scope per feature (41–48)
+
+Each category feature follows the same per-concept checklist, mirroring the pattern already proven once per category:
+
+- **Understand:** MDX guide, following Feature 22's frontmatter contract (`whatsHappening`/`keyInsight`/`memoryHook`/`inRealLife`)
+- **Challenge:** a Practice challenge with executable tests where the concept supports one, linked via `conceptSlug` (Feature 24's pattern) — not mandatory for every concept, but most should get one
+- **Interview:** 5–8 seeded questions linked via `conceptSlug` (Feature 25's pattern)
+- **Build:** a project brief once Feature 26's system exists (it ships before this phase starts, so this is available from Feature 41 onward)
+- **Simulate:** out of scope — see below
+
+### Simulator Backlog (ongoing, not feature-numbered)
+
+Every concept eventually gets a hand-built Simulate experience, but each one is a multi-day bespoke build (Features 09–12 set the precedent) — this doesn't get a fixed feature count or a fixed order here. Pull from it whenever, prioritizing so **every category reaches 2 simulators before any category reaches 3** — i.e. build each category's first new concept's simulator before going deeper into any one category.
+
+---
+
 ## Feature Count
 
-| Phase                        | Features |
-| ---------------------------- | -------- |
-| Phase 0 — Foundation         | 2        |
-| Phase 1 — Homepage           | 11       |
-| Phase 2 — Auth               | 4        |
-| Phase 3 — Database           | 2        |
-| Phase 4 — Learn              | 8        |
-| Phase 5 — Practice           | 2        |
-| Phase 6 — Interview Prep     | 3        |
-| Phase 7 — Explore + Roadmaps | 3        |
-| Phase 8 — Leaderboard        | 2        |
-| Phase 9 — Premium            | 2        |
-| **Total**                    | **39**   |
+| Phase                          | Features |
+| ------------------------------ | -------- |
+| Phase 0 — Foundation           | 2        |
+| Phase 1 — Homepage             | 11       |
+| Phase 2 — Auth                 | 4        |
+| Phase 3 — Database             | 2        |
+| Phase 4 — Learn                | 8        |
+| Phase 5 — Practice             | 2        |
+| Phase 6 — Interview Prep       | 3        |
+| Phase 7 — Explore + Roadmaps   | 3        |
+| Phase 8 — Leaderboard          | 2        |
+| Phase 9 — Premium              | 2        |
+| Phase 10 — Concept Curriculum  | 9        |
+| **Total**                      | **48**   |
