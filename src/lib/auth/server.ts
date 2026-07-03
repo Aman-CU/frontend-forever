@@ -33,6 +33,23 @@ export const auth = betterAuth({
     window: 60,
     max: 5,
     storage: "secondary-storage",
+    // /get-session is a read-only check of the caller's own already-issued
+    // cookie, not a sensitive/brute-forceable action like sign-in — there's
+    // nothing to guess, so hammering it gains an attacker nothing. But every
+    // full page navigation fires one (the client session store remounts from
+    // scratch each time), and the global 5-req/60s default is tuned for
+    // sign-in abuse, not that. A short burst of normal navigation (e.g. one
+    // page linking to another which links to a third) trips it, and — because
+    // a fresh page's session store has no prior data to fall back on — the
+    // Navbar renders logged-out for up to the rest of the window (confirmed:
+    // `curl` 6x in a row returns 200,200,200,200,200,429). Real user-reported
+    // bug, not test noise (this endpoint was already seen tripping the same
+    // limit under rapid *headless test* page loads during Feature 25's
+    // verification, dismissed then as harmless — it isn't, once a human
+    // triggers it through completely ordinary browsing).
+    customRules: {
+      "/get-session": { window: 60, max: 100 },
+    },
   },
   socialProviders: {
     google: {

@@ -7,9 +7,10 @@ import { auth } from "@/lib/auth/server";
 import { Separator } from "@/components/ui/separator";
 import { OAuthButton } from "@/features/auth/components/OAuthButton";
 import { getLoginErrorMessage } from "@/features/auth/lib/getLoginErrorMessage";
+import { getSafeRedirectPath } from "@/features/auth/lib/getSafeRedirectPath";
 
 type PageProps = {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; callbackURL?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: PageProps) {
@@ -19,9 +20,14 @@ export default async function LoginPage({ searchParams }: PageProps) {
   } catch {
     // Fall through — render login page
   }
-  if (session?.user) redirect("/");
 
-  const { error } = await searchParams;
+  const { error, callbackURL } = await searchParams;
+  // Validated once here so both the already-logged-in bounce and the sign-in
+  // buttons below use the same safe destination — e.g. a locked Build project
+  // links to "/login?callbackURL=/pricing" so either path lands there.
+  if (session?.user) redirect(getSafeRedirectPath(callbackURL, "/"));
+
+  const safeCallbackURL = getSafeRedirectPath(callbackURL, "/learn");
   const errorMessage = getLoginErrorMessage(error ?? null);
 
   return (
@@ -60,9 +66,9 @@ export default async function LoginPage({ searchParams }: PageProps) {
           )}
 
           <div className="mt-8 flex flex-col gap-4">
-            <OAuthButton provider="google" />
+            <OAuthButton provider="google" callbackURL={safeCallbackURL} />
             <Separator className="my-0" />
-            <OAuthButton provider="github" />
+            <OAuthButton provider="github" callbackURL={safeCallbackURL} />
           </div>
         </div>
 

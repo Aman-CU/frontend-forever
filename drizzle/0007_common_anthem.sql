@@ -1,0 +1,1 @@
+ALTER TABLE "project_briefs" ADD COLUMN "solution_code" text DEFAULT '' NOT NULL;

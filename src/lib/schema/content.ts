@@ -132,6 +132,46 @@ export const interviewQuestions = pgTable(
   ],
 );
 
+// ── project_briefs ────────────────────────────────────────────────────────────
+// Build tab content (Feature 26). Unlike challenges (nullable concept_id, some
+// standalone), a project brief is always concept-linked — the Build tab only
+// ever renders the one project tied to its concept. No hints/difficulty
+// columns: build-plan.md's Build tab UI spec has no Hints panel and no
+// difficulty badge (the concept's own difficulty already shows in the page
+// header). solution_code *was* dropped for the same reason at first, then
+// added back on explicit user request — someone stuck on the project needs
+// somewhere to find the answer, same as Challenge's reference solution.
+
+export const projectBriefs = pgTable(
+  "project_briefs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    conceptId: uuid("concept_id")
+      .notNull()
+      .references(() => concepts.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    starterCode: text("starter_code").notNull().default(""),
+    // Reference solution — always available once the project itself is visible
+    // (no premium re-gate on top of the project-level one; no attempt-count
+    // gate either, unlike Challenge's SolutionPanel, since Build has no
+    // attempt-tracking concept — Mark Build Complete is self-reported).
+    solutionCode: text("solution_code").notNull().default(""),
+    // Array of { input, expected, label } — same shape as challenges.test_cases.
+    // Informational only: Mark Build Complete is self-reported and never gated
+    // on these passing (a real project's UI can't be exhaustively unit-tested).
+    testCases: jsonb("test_cases")
+      .$type<{ input: string; expected: string; label: string }[]>()
+      .notNull()
+      .default([]),
+    isPremium: boolean("is_premium").notNull().default(false),
+    orderIndex: integer("order_index").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [index("project_briefs_concept_id_idx").on(table.conceptId)],
+);
+
 // ── roadmaps ──────────────────────────────────────────────────────────────────
 
 export const roadmaps = pgTable("roadmaps", {
@@ -169,12 +209,20 @@ export const roadmapSteps = pgTable(
 export const conceptsRelations = relations(concepts, ({ many }) => ({
   challenges: many(challenges),
   interviewQuestions: many(interviewQuestions),
+  projectBriefs: many(projectBriefs),
   roadmapSteps: many(roadmapSteps),
 }));
 
 export const challengesRelations = relations(challenges, ({ one }) => ({
   concept: one(concepts, {
     fields: [challenges.conceptId],
+    references: [concepts.id],
+  }),
+}));
+
+export const projectBriefsRelations = relations(projectBriefs, ({ one }) => ({
+  concept: one(concepts, {
+    fields: [projectBriefs.conceptId],
     references: [concepts.id],
   }),
 }));

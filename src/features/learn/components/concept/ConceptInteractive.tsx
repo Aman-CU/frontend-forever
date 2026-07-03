@@ -4,38 +4,21 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Wrench } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
 import { type ConceptTab } from "@/lib/constants";
 import { ConceptTabs } from "./ConceptTabs";
-import { TabPlaceholder } from "./TabPlaceholder";
-
-// Placeholder copy for the not-yet-built tabs (Understand is real as of Feature 22,
-// Simulate as of Feature 23, Challenge as of Feature 24, Interview as of Feature 25;
-// Build arrives in 26).
-type PlaceholderTab = Exclude<
-  ConceptTab,
-  "understand" | "simulate" | "challenge" | "interview"
->;
-const TAB_BODY: Record<PlaceholderTab, { icon: LucideIcon; title: string; description: string }> = {
-  build: {
-    icon: Wrench,
-    title: "Build content — coming in Feature 26",
-    description: "A project brief and Monaco editor to implement something real with this concept.",
-  },
-};
 
 type Props = {
-  // header, rail, understandContent, and simulateContent are built upstream and
-  // passed in as nodes, so they stay off this client component's own bundle (the
-  // Understand tab renders MDX, which needs the server).
+  // header, rail, and every tab's content are built upstream and passed in as
+  // nodes, so they stay off this client component's own bundle (Understand
+  // renders MDX, which needs the server). All 5 tabs are real as of Feature 26.
   header: ReactNode;
   rail: ReactNode;
   understandContent: ReactNode;
   simulateContent: ReactNode;
   challengeContent: ReactNode;
   interviewContent: ReactNode;
+  buildContent: ReactNode;
 };
 
 export function ConceptInteractive({
@@ -45,6 +28,7 @@ export function ConceptInteractive({
   simulateContent,
   challengeContent,
   interviewContent,
+  buildContent,
 }: Props) {
   const [activeTab, setActiveTab] = useState<ConceptTab>("understand");
 
@@ -80,11 +64,7 @@ export function ConceptInteractive({
               ) : activeTab === "interview" ? (
                 interviewContent
               ) : (
-                <TabPlaceholder
-                  icon={TAB_BODY[activeTab].icon}
-                  title={TAB_BODY[activeTab].title}
-                  description={TAB_BODY[activeTab].description}
-                />
+                buildContent
               )}
             </motion.div>
           </AnimatePresence>

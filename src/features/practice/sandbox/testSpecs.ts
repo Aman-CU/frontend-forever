@@ -1,4 +1,4 @@
-import type { SandboxTest } from "./types";
+import type { SandboxTest } from "@/lib/sandbox";
 
 // Executable assertions per challenge slug. These are the *real* tests Run Tests
 // checks against — the DB `test_cases` are display labels only. Each test's

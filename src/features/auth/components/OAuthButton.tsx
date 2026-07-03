@@ -13,6 +13,12 @@ type Provider = "google" | "github";
 
 type Props = {
   provider: Provider;
+  // Where Better-Auth redirects after a successful sign-in. Defaults to
+  // "/learn" (the standard post-login destination) — the login page overrides
+  // this with a validated `callbackURL` query param when one is present, so a
+  // link like "Log in to upgrade" can carry the user through to where they
+  // were actually headed instead of dropping them back at /learn.
+  callbackURL?: string;
 };
 
 const PROVIDER_CONFIG: Record<
@@ -23,7 +29,7 @@ const PROVIDER_CONFIG: Record<
   github: { label: "Continue with GitHub", icon: GithubIcon },
 };
 
-export function OAuthButton({ provider }: Props) {
+export function OAuthButton({ provider, callbackURL = "/learn" }: Props) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const { label, icon: Icon } = PROVIDER_CONFIG[provider];
@@ -33,7 +39,7 @@ export function OAuthButton({ provider }: Props) {
     try {
       const { error } = await authClient.signIn.social({
         provider,
-        callbackURL: "/learn",
+        callbackURL,
         errorCallbackURL: "/login",
       });
       // A successful call navigates the browser away to the provider, so we

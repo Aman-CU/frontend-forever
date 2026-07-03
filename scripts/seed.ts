@@ -9,7 +9,14 @@ config({ path: ".env.local" });
 import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import { Pool } from "pg";
-import { concepts, challenges, interviewQuestions, roadmaps, roadmapSteps } from "../src/lib/schema";
+import {
+  concepts,
+  challenges,
+  interviewQuestions,
+  projectBriefs,
+  roadmaps,
+  roadmapSteps,
+} from "../src/lib/schema";
 import type {
   ConceptCategory,
   ConceptDifficulty,
@@ -52,6 +59,20 @@ type InterviewQuestionSeed = {
   answer: string;
   difficulty: ChallengeDifficulty;
   companies: string[];
+  isPremium?: boolean;
+  orderIndex: number;
+};
+
+type ProjectBriefSeed = {
+  slug: string;
+  // Build tab content is always concept-linked (unlike challenges, which can be
+  // standalone) — every entry here must resolve to a real concept.
+  conceptSlug: string;
+  title: string;
+  description: string;
+  starterCode: string;
+  solutionCode: string;
+  testCases: { input: string; expected: string; label: string }[];
   isPremium?: boolean;
   orderIndex: number;
 };
@@ -677,6 +698,342 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
   },
 ];
 
+// ── Project briefs (Build tab, Feature 26) ─────────────────────────────────────
+// One per concept that has full Simulate/Challenge/Interview content — matching
+// the breadth precedent set by CHALLENGES/INTERVIEW_QUESTIONS. react-rendering's
+// Kanban Board is the free flagship (ties back to the homepage's
+// ProjectEditorMiniVisual, which already shows a KanbanBoard.tsx mockup); the
+// other 3 are premium. No solution_code/hints in the schema — build-plan.md's
+// Build tab UI has no Solution or Hints panel, only description/editor/tests/
+// Mark Build Complete.
+
+const PROJECT_BRIEFS: ProjectBriefSeed[] = [
+  {
+    slug: "kanban-board",
+    conceptSlug: "react-rendering",
+    title: "Build a Kanban Board",
+    description: `Build the reordering engine behind a **Kanban board** — drag a card between columns and it has to land in exactly the right spot, without ever mutating state directly.
+
+## The problem
+
+A Kanban board's core interaction is deceptively fiddly: drag a card from "In Progress" to "Done," or reorder cards within the same column, and the board's state has to update immutably — React re-renders correctly only when it gets a **new** object, not a mutated one.
+
+## The idea
+
+Every drag-and-drop library (\`@dnd-kit\`, \`react-beautiful-dnd\`) eventually calls something like this underneath: given the current columns, where a card came from, where it's going, and what index it should land at — compute the **next** state.
+
+## Your task
+
+Write \`moveCard(columns, fromColumn, toColumn, cardId, toIndex)\` that returns a **new** \`columns\` object with \`cardId\` removed from \`fromColumn\` and inserted into \`toColumn\` at \`toIndex\`:
+
+- never mutate the input \`columns\` object or its arrays
+- moving within the same column (\`fromColumn === toColumn\`) reorders it
+- clamp \`toIndex\` to \`[0, destination.length]\` so an out-of-range drop still lands somewhere sane
+
+\`\`\`js
+moveCard({ todo: ['a', 'b'], doing: [] }, 'todo', 'doing', 'a', 0)
+// { todo: ['b'], doing: ['a'] }
+\`\`\`
+
+> **Why immutability matters here:** React's reconciliation compares by reference. If \`moveCard\` mutated the original \`columns\` object instead of returning a new one, every column would look "unchanged" to React and the board would silently fail to re-render.
+
+Wire this into a real board with 3 columns and drag-and-drop once it passes — that's the project.`,
+    starterCode: `function moveCard(columns, fromColumn, toColumn, cardId, toIndex) {
+  // return a NEW columns object — don't mutate \`columns\` or its arrays
+}`,
+    solutionCode: `function moveCard(columns, fromColumn, toColumn, cardId, toIndex) {
+  const source = columns[fromColumn].filter((id) => id !== cardId);
+  const destinationBase = fromColumn === toColumn ? source : columns[toColumn];
+  const clampedIndex = Math.max(0, Math.min(toIndex, destinationBase.length));
+  const destination = [
+    ...destinationBase.slice(0, clampedIndex),
+    cardId,
+    ...destinationBase.slice(clampedIndex),
+  ];
+  if (fromColumn === toColumn) {
+    return { ...columns, [fromColumn]: destination };
+  }
+  return { ...columns, [fromColumn]: source, [toColumn]: destination };
+}`,
+    testCases: [
+      {
+        input: "moveCard({ todo: ['a','b'], doing: [] }, 'todo', 'doing', 'a', 0)",
+        expected: "{ todo: ['b'], doing: ['a'] }",
+        label: "Moves a card to a different column",
+      },
+      {
+        input: "moveCard({ todo: ['a','b','c'] }, 'todo', 'todo', 'c', 0)",
+        expected: "{ todo: ['c','a','b'] }",
+        label: "Reorders within the same column",
+      },
+      {
+        input: "the original columns object, checked after the call",
+        expected: "unchanged",
+        label: "Does not mutate the input",
+      },
+      {
+        input: "toIndex: 99 on a 2-card destination column",
+        expected: "clamped to the end",
+        label: "Clamps an out-of-range index to the end",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 1,
+  },
+  {
+    slug: "async-task-runner",
+    conceptSlug: "event-loop",
+    title: "Build an Async Task Runner",
+    description: `Build a small **concurrency-limited task runner** — the pattern behind every "upload these 200 files, but only 4 at a time" feature.
+
+## The problem
+
+Fire off 200 \`fetch()\` calls at once and you'll flood the network (and often hit the browser's own per-host connection limit). Run them one at a time with a \`for\` loop and \`await\` and you'll be waiting far longer than necessary. Real apps need something in between.
+
+## The idea
+
+A concurrency-limited runner keeps exactly \`limit\` tasks in flight at any moment. The moment one finishes, the next queued task starts — no more, no less. This leans directly on how the event loop schedules microtasks: each "worker" is really just a loop that keeps \`await\`-ing the next task from a shared queue.
+
+## Your task
+
+Write \`async runWithConcurrency(tasks, limit)\` where \`tasks\` is an array of functions, each returning a Promise:
+
+- run at most \`limit\` tasks at the same time
+- return an array of results in the **same order as \`tasks\`** — not the order they finished in
+- resolve only once every task has settled
+
+\`\`\`js
+const tasks = [() => fetch('/a'), () => fetch('/b'), () => fetch('/c')];
+await runWithConcurrency(tasks, 2); // only 2 requests in flight at once
+\`\`\`
+
+> **Why order matters:** two tasks started at the same time can resolve in either order depending on network timing. The caller shouldn't have to guess — \`runWithConcurrency\` must always hand back results indexed the same way \`tasks\` was.
+
+Once this passes, use it to build a small "upload queue" UI showing live progress per file.`,
+    starterCode: `async function runWithConcurrency(tasks, limit) {
+  // run at most \`limit\` tasks concurrently; return results in the same
+  // order as \`tasks\`, once every task has settled
+}`,
+    solutionCode: `async function runWithConcurrency(tasks, limit) {
+  const results = new Array(tasks.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < tasks.length) {
+      const current = nextIndex++;
+      results[current] = await tasks[current]();
+    }
+  }
+
+  const workerCount = Math.min(limit, tasks.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
+}`,
+    testCases: [
+      {
+        input: "3 tasks with different delays, limit 3",
+        expected: "results in original order",
+        label: "Returns results in original order",
+      },
+      {
+        input: "6 tasks, limit 2",
+        expected: "never more than 2 running at once",
+        label: "Never runs more than `limit` tasks concurrently",
+      },
+      {
+        input: "5 tasks, limit 2",
+        expected: "all 5 tasks eventually run",
+        label: "Runs all tasks, not just the first `limit`",
+      },
+      {
+        input: "one task with a much longer delay",
+        expected: "awaited before the runner resolves",
+        label: "Resolves once every task settles",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "render-blocking-analyzer",
+    conceptSlug: "browser-rendering-pipeline",
+    title: "Build a Render-Blocking Resource Analyzer",
+    description: `Build the logic behind a Lighthouse-style audit: given a page's resources, which ones are actually **blocking the first paint**?
+
+## The problem
+
+Every stylesheet and script a page loads can silently delay the first pixel on screen. Knowing *which* resources are the real offenders — rather than "just add \`defer\` to everything and hope" — is the first step to fixing a slow page.
+
+## The idea
+
+Two resource types can block rendering, each with its own escape hatch:
+
+- **Stylesheets** block by default — unless a \`media\` attribute (like \`print\`) means the current context doesn't need them right away
+- **Scripts** block by default — unless they carry \`async\` or \`defer\`, which let HTML parsing continue without waiting for them
+
+## Your task
+
+Write \`getRenderBlockingResources(resources)\` — given an array of \`{ type: 'script' | 'style', src, async?, defer?, media? }\` objects, return only the ones that actually block the initial render:
+
+- a \`style\` resource blocks unless \`media\` is set and isn't \`'screen'\`/\`'all'\`
+- a \`script\` resource blocks unless \`async\` or \`defer\` is \`true\`
+
+\`\`\`js
+getRenderBlockingResources([
+  { type: 'style', src: 'print.css', media: 'print' },
+  { type: 'script', src: 'analytics.js', async: true },
+  { type: 'script', src: 'app.js' },
+])
+// → [{ type: 'script', src: 'app.js' }]
+\`\`\`
+
+> **Why this matters in real audits:** this exact classification is what tools like Lighthouse use to flag "eliminate render-blocking resources" — the fix is almost always adding \`defer\`/\`async\`, or scoping a stylesheet's \`media\` so it isn't render-blocking for the common case.
+
+Once this passes, feed it a real page's resource list (from the Network tab) and render the blocking ones as a warning list.`,
+    starterCode: `function getRenderBlockingResources(resources) {
+  // return only the resources that block the initial render
+}`,
+    solutionCode: `function getRenderBlockingResources(resources) {
+  return resources.filter((resource) => {
+    if (resource.type === "style") {
+      const nonBlockingMedia = resource.media && resource.media !== "screen" && resource.media !== "all";
+      return !nonBlockingMedia;
+    }
+    if (resource.type === "script") {
+      return !resource.async && !resource.defer;
+    }
+    return false;
+  });
+}`,
+    testCases: [
+      {
+        input: "a plain style resource with no media",
+        expected: "blocks rendering",
+        label: "A plain stylesheet blocks rendering",
+      },
+      {
+        input: "media: 'print'",
+        expected: "does not block rendering",
+        label: "A print-only stylesheet does not block rendering",
+      },
+      {
+        input: "a script with no async/defer",
+        expected: "blocks rendering",
+        label: "A synchronous script blocks rendering",
+      },
+      {
+        input: "async: true or defer: true",
+        expected: "does not block rendering",
+        label: "async/defer scripts do not block rendering",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "specificity-conflict-finder",
+    conceptSlug: "css-specificity",
+    title: "Build a Specificity Conflict Finder",
+    description: `Build a small linter that catches CSS's most common silent bug: a rule that can **never win**, no matter where you put it in the file.
+
+## The problem
+
+You add a rule, refresh the page, and nothing changes. Nine times out of ten, an earlier (or later, tie-broken) rule with equal-or-higher specificity is already winning that property — and nothing tells you that except trial and error in DevTools.
+
+## The idea
+
+Walk a stylesheet's rules in source order, tracking the current specificity "winner" for each CSS property. A rule is dead on arrival if an existing winner for that property already beats — or ties — it (ties go to the later rule in the real cascade, so a tie replaces the winner rather than losing to it).
+
+## Your task
+
+Write \`specificity(selector)\` (same \`[id, class, element]\` scoring as the CSS Specificity concept) and \`findOverriddenRules(rules)\` — given \`rules: { selector, property }[]\` in source order, return the **indices** of rules that can never apply:
+
+\`\`\`js
+findOverriddenRules([
+  { selector: '.btn', property: 'color' },
+  { selector: '#cta', property: 'color' },
+])
+// → [0] — the #cta rule always beats .btn for color
+\`\`\`
+
+- only rules targeting the **same property** compete with each other
+- on a specificity tie, the later rule wins (matches the real cascade) — so the *earlier* one becomes overridden
+
+> **Why this is worth building:** this is a real, shippable idea — a "specificity linter" that flags dead CSS rules before they ship, instead of after someone spends twenty minutes in DevTools wondering why a color won't change.
+
+Once this passes, feed it a real stylesheet's parsed rules and render the dead ones as warnings.`,
+    starterCode: `function specificity(selector) {
+  // returns [idCount, classCount, elementCount]
+}
+
+function findOverriddenRules(rules) {
+  // return the indices of rules that can never apply — an earlier-or-tied
+  // higher-specificity rule for the same property already wins
+}`,
+    solutionCode: `function specificity(selector) {
+  let id = 0, cls = 0, el = 0;
+  const s = selector.replace(/\\[[^\\]]*\\]/g, () => { cls++; return ''; });
+  for (const part of s.split(/[ >+~]/)) {
+    id  += (part.match(/#[a-zA-Z]/g) || []).length;
+    cls += (part.match(/\\.[a-zA-Z]|:[^:]/g) || []).length;
+    el  += (part.match(/^[a-zA-Z]|::[a-zA-Z]/g) || []).length;
+  }
+  return [id, cls, el];
+}
+
+function compareSpecificity(a, b) {
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
+}
+
+function findOverriddenRules(rules) {
+  const winnerByProperty = {};
+  const overridden = [];
+
+  rules.forEach((rule, index) => {
+    const score = specificity(rule.selector);
+    const current = winnerByProperty[rule.property];
+    // A tie goes to the later rule (matches the real cascade), so >= 0 means
+    // this rule becomes the new winner and the previous one is overridden.
+    if (!current || compareSpecificity(score, current.score) >= 0) {
+      if (current) overridden.push(current.index);
+      winnerByProperty[rule.property] = { index, score };
+    } else {
+      overridden.push(index);
+    }
+  });
+
+  return overridden.sort((a, b) => a - b);
+}`,
+    testCases: [
+      {
+        input: "['.btn', '#cta'] both set color",
+        expected: "[0] — #cta overrides .btn",
+        label: "A later rule with higher specificity overrides an earlier one",
+      },
+      {
+        input: "['#cta', '.btn'] both set color",
+        expected: "[1] — .btn can never win",
+        label: "An earlier rule with higher specificity is not overridden by a later weaker one",
+      },
+      {
+        input: "['.btn', '.primary'] both set color, equal specificity",
+        expected: "[0] — the later rule wins the tie",
+        label: "Equal specificity — the later rule wins (source order tiebreak)",
+      },
+      {
+        input: "'.btn' sets color, '.btn' sets background",
+        expected: "[] — different properties never conflict",
+        label: "Different properties never conflict",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+];
+
 // ── Roadmaps ──────────────────────────────────────────────────────────────────
 
 const ROADMAPS: RoadmapSeed[] = [
@@ -797,6 +1154,37 @@ async function seed() {
     })
     .returning({ id: interviewQuestions.id });
   console.log(`[seed] ${insertedQuestions.length} question(s) upserted`);
+
+  console.log("[seed] Inserting project briefs...");
+  const projectBriefValues = PROJECT_BRIEFS.map(({ conceptSlug, ...pb }) => {
+    // Fail fast, same as CHALLENGES/INTERVIEW_QUESTIONS above — a project brief
+    // is always concept-linked (no standalone case), so an unknown conceptSlug
+    // is a seed-data bug.
+    if (!conceptBySlug[conceptSlug]) {
+      throw new Error(
+        `[seed] Project brief "${pb.slug}" references unknown conceptSlug "${conceptSlug}". Fix the seed before re-running.`,
+      );
+    }
+    return { ...pb, isPremium: pb.isPremium ?? false, conceptId: conceptBySlug[conceptSlug] };
+  });
+  const insertedProjectBriefs = await db
+    .insert(projectBriefs)
+    .values(projectBriefValues)
+    .onConflictDoUpdate({
+      target: projectBriefs.slug,
+      set: {
+        conceptId: sql`excluded.concept_id`,
+        title: sql`excluded.title`,
+        description: sql`excluded.description`,
+        starterCode: sql`excluded.starter_code`,
+        solutionCode: sql`excluded.solution_code`,
+        testCases: sql`excluded.test_cases`,
+        isPremium: sql`excluded.is_premium`,
+        orderIndex: sql`excluded.order_index`,
+      },
+    })
+    .returning({ slug: projectBriefs.slug });
+  console.log(`[seed] ${insertedProjectBriefs.length} project brief(s) upserted`);
 
   console.log("[seed] Inserting roadmaps...");
   for (const roadmap of ROADMAPS) {

@@ -10,8 +10,10 @@ type Props = {
 };
 
 // Monaco is always dark regardless of site theme (intentional contrast), minimap
-// off, explicit pixel height — per library-docs.md → Monaco Editor.
-export function ChallengeEditor({
+// off, explicit pixel height — per library-docs.md → Monaco Editor. Promoted here
+// (Feature 26) from features/practice/components/ so features/build can use the
+// identical editor without a features/ → features/ import.
+export function CodeEditor({
   value,
   onChange,
   language = "javascript",
