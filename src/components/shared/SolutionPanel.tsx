@@ -7,12 +7,17 @@ import { Lock, Unlock } from "lucide-react";
 type Props = {
   solutionCode: string;
   unlocked: boolean;
-  // Why the solution is still locked, shown when unlocked is false.
-  lockedReason: string;
+  // Why the solution is still locked, shown when unlocked is false. Optional —
+  // the Build tab always passes unlocked=true (no attempt-count gate the way
+  // Challenge has), so it never needs a reason.
+  lockedReason?: string;
 };
 
-// View Solution: gated until the challenge is passed or attempted enough times
-// (the wrapper decides; this just renders locked vs. revealable state).
+// View Solution: the caller decides when it's unlocked (Challenge gates on
+// passing or attempt count; Build has no attempt-tracking concept, so it's
+// always unlocked once the project itself is visible) — this just renders
+// locked vs. revealable state. Promoted here (Feature 26) from
+// features/practice/components/ so features/build can reuse it too.
 export function SolutionPanel({ solutionCode, unlocked, lockedReason }: Props) {
   const [revealed, setRevealed] = useState(false);
 

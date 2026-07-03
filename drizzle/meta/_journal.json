@@ -43,6 +43,20 @@
       "when": 1782386587010,
       "tag": "0005_nosy_dormammu",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783073527217,
+      "tag": "0006_dry_night_thrasher",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783094931437,
+      "tag": "0007_common_anthem",
+      "breakpoints": true
     }
   ]
 }

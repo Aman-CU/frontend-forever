@@ -104,9 +104,11 @@
 │   │   │   ├── components/              ← ConceptTabs, UnderstandTab, InterviewTab, BuildTab
 │   │   │   └── hooks/                   ← useConceptProgress
 │   │   ├── practice/
-│   │   │   ├── components/              ← ChallengeEditor, TestRunner, HintsPanel
-│   │   │   ├── hooks/                   ← useChallenge, useSandbox
-│   │   │   └── sandbox/                 ← iframe execution engine
+│   │   │   ├── components/              ← HintsPanel, SolutionPanel, ChallengePrompt, etc.
+│   │   │   └── sandbox/                 ← Practice-only content (testSpecs, live-playground drivers) — the run engine itself lives in lib/sandbox + hooks/ (see below)
+│   │   ├── build/
+│   │   │   ├── components/              ← BuildStates, MarkBuildCompleteButton
+│   │   │   └── data/                    ← testSpecs (per-project-brief executable assertions)
 │   │   ├── interview-prep/
 │   │   │   ├── components/              ← QuestionCard, ReviewSession, CollectionList
 │   │   │   ├── hooks/                   ← useSpacedRepetition
@@ -132,7 +134,9 @@
 │   │       ├── ProgressRing.tsx
 │   │       ├── XPBadge.tsx
 │   │       ├── PremiumBadge.tsx
-│   │       └── ThemeToggle.tsx
+│   │       ├── ThemeToggle.tsx
+│   │       ├── CodeEditor.tsx           ← Monaco wrapper — promoted from features/practice/ in Feature 26, shared by Challenge + Build tabs
+│   │       └── TestResultsPanel.tsx     ← same promotion, same two consumers
 │   │
 │   ├── lib/
 │   │   ├── auth/
@@ -141,6 +145,7 @@
 │   │   ├── db.ts                        ← Shared Drizzle instance (over a `pg` Pool) — direct Postgres access for both Better-Auth's adapter and app queries
 │   │   ├── env.ts                       ← Typed env var wrapper (`import "server-only"` — prevents accidental client-bundle inclusion)
 │   │   ├── schema/                      ← Drizzle table definitions (app tables + Better-Auth's generated user/session/account/verification tables)
+│   │   ├── sandbox/                     ← Browser code-execution engine (runInSandbox, buildSandboxDoc, types) — promoted from features/practice/ in Feature 26 so features/build can use it too (features never import features)
 │   │   ├── upstash.ts                   ← Upstash Redis rate limiter
 │   │   ├── mdx.ts                       ← MDX parsing and rendering utilities
 │   │   └── utils.ts                     ← cn(), formatXP(), etc.
@@ -148,6 +153,7 @@
 │   ├── hooks/                           ← Global hooks (used across features)
 │   │   ├── useUser.ts                   ← Current authenticated user (wraps authClient.useSession())
 │   │   ├── useTheme.ts                  ← Light/dark theme
+│   │   ├── useSandbox.ts                ← React wrapper around lib/sandbox's runInSandbox — promoted from features/practice/ in Feature 26
 │   │   └── useSearch.ts                 ← Global search (⌘K)
 │   │
 │   └── types/
@@ -380,6 +386,24 @@ Accessed via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), 
 | order_index | integer | |
 | created_at | timestamptz | |
 
+### `project_briefs`
+
+**Build tab content (Feature 26).** Unlike `challenges` (nullable `concept_id`, some standalone), a project brief is always concept-linked. No `hints`/`difficulty` columns — the Build tab has no Hints panel and no difficulty badge of its own (see `build-plan.md`'s Feature 26 spec; the concept's own difficulty already shows in the page header). `solution_code` was dropped for the same reason at first, then added back in a same-feature follow-up on explicit user request (someone stuck on the project needs somewhere to find the answer) — migration `0007_common_anthem`.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | |
+| concept_id | uuid | References concepts — **not nullable**, always concept-linked |
+| slug | text | Unique |
+| title | text | |
+| description | text | Markdown |
+| starter_code | text | Default editor content |
+| solution_code | text | Reference solution — unlike `challenges.solution_code`, never attempt-gated (Build has no attempt-tracking concept); still redacted server-side when the project is premium-locked |
+| test_cases | jsonb | Array of `{input, expected, label}` — informational only, never gates "Mark Build Complete" |
+| is_premium | boolean | Default false |
+| order_index | integer | |
+| created_at | timestamptz | |
+
 ### `user_interview_reviews` (spaced repetition — SM-2)
 
 | Column | Type | Notes |
@@ -548,6 +572,24 @@ if (!success) {
   return new Response('Too many requests', { status: 429 })
 }
 ```
+
+### Better-Auth's Own Rate Limiter (separate mechanism, not the Upstash instance above)
+
+Better-Auth ships its own built-in rate limiter, configured directly on the `betterAuth()` instance in `lib/auth/server.ts` — a global `{ window: 60, max: 5 }`, stored in Redis via `secondaryStorage` (the same Upstash Redis, but a different code path than `lib/upstash.ts`'s `Ratelimit` object above). It governs Better-Auth's own endpoints (`/sign-in/social`, `/get-session`, etc.), not the app's own API routes.
+
+**`/get-session` needs its own, much higher ceiling — confirmed by a real incident, not a hypothetical:** unlike sign-in (a genuinely brute-forceable action worth throttling hard), `get-session` just validates the caller's own already-issued cookie — there's no secret to guess, so hammering it gains an attacker nothing. But it fires on *every single page load* (the client session store remounts from scratch on each full navigation), so a handful of ordinary page-to-page clicks in under a minute can trip the same 5-req/60s limit meant for sign-in abuse. When that happens on a fresh page (no prior session data cached yet to fall back on — Better-Auth's client correctly preserves the last-known session on non-401 errors, but there's nothing to preserve on a page's very first fetch), the Navbar renders logged-out until the window resets — up to a minute, sometimes closer to two if a user's own refreshes re-trip it. Fixed via `rateLimit.customRules`:
+
+```typescript
+rateLimit: {
+  window: 60,
+  max: 5, // stays strict for sign-in/sign-up (Better-Auth's own built-in special rules already cover those separately)
+  customRules: {
+    "/get-session": { window: 60, max: 100 }, // read-only, not brute-forceable — the global default was never meant for this endpoint
+  },
+}
+```
+
+Verified via repeated `curl` bursts against the running dev server: before the fix, 6 rapid requests reliably produced a `429` on the 6th; after, the same burst stayed `200` up through ~100 requests before capping (confirming the override is live, not just configured).
 
 ---
 

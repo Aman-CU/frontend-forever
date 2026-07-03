@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { CheckCircle2, Loader2, Play, RotateCcw } from "lucide-react";
 
 import { ChallengeDescription } from "@/features/practice/components/ChallengeDescription";
-import { ChallengeEditor } from "@/features/practice/components/ChallengeEditor";
+import { CodeEditor } from "@/components/shared/CodeEditor";
 import { ChallengePrompt } from "@/features/practice/components/ChallengePrompt";
 import {
   ChallengeEmptyState,
@@ -13,8 +13,8 @@ import {
 } from "@/features/practice/components/ChallengeStates";
 import { ChallengePlayground } from "@/features/practice/components/ChallengePlayground";
 import { HintsPanel } from "@/features/practice/components/HintsPanel";
-import { SolutionPanel } from "@/features/practice/components/SolutionPanel";
-import { TestResultsPanel } from "@/features/practice/components/TestResultsPanel";
+import { SolutionPanel } from "@/components/shared/SolutionPanel";
+import { TestResultsPanel } from "@/components/shared/TestResultsPanel";
 import { getTestSpec, useSandbox } from "@/features/practice/sandbox";
 import type { ChallengeData } from "@/features/learn/lib/queries";
 
@@ -135,7 +135,7 @@ function ChallengeWorkspace({
         </div>
       ) : null}
 
-      <ChallengeEditor value={code} onChange={setCode} />
+      <CodeEditor value={code} onChange={setCode} />
 
       <div className="flex flex-wrap items-center gap-3">
         <button

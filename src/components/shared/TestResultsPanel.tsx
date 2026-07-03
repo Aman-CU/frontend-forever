@@ -3,17 +3,22 @@
 import { AlertTriangle, CheckCircle2, Circle, Loader2, XCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { SandboxRunResult } from "@/features/practice/sandbox";
-import type { SandboxStatus } from "@/features/practice/sandbox";
+import type { SandboxRunResult } from "@/lib/sandbox";
+import type { SandboxStatus } from "@/hooks/useSandbox";
 
-export type ChallengeTestCase = { input: string; expected: string; label: string };
+// Display-only test case shape (label + input/expected shown in the panel).
+// Named generically — used by both the Challenge tab and the Build tab, not
+// just Challenge, since it was promoted to components/shared/ in Feature 26.
+export type TestCaseDisplay = { input: string; expected: string; label: string };
 
 type Props = {
-  testCases: ChallengeTestCase[];
+  testCases: TestCaseDisplay[];
   result: SandboxRunResult | null;
   status: SandboxStatus;
 };
 
+// Promoted here (Feature 26) from features/practice/components/ so
+// features/build can reuse the identical results UI.
 export function TestResultsPanel({ testCases, result, status }: Props) {
   const running = status === "running";
   const passedCount = result?.results.filter((r) => r.passed).length ?? 0;

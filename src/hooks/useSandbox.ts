@@ -2,8 +2,8 @@
 
 import { useCallback, useRef, useState } from "react";
 
-import { runInSandbox } from "./runInSandbox";
-import type { SandboxRunResult, SandboxTest } from "./types";
+import { runInSandbox } from "@/lib/sandbox/runInSandbox";
+import type { SandboxRunResult, SandboxTest } from "@/lib/sandbox/types";
 
 export type SandboxStatus = "idle" | "running" | "done";
 

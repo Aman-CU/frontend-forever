@@ -9,6 +9,7 @@ import {
   concepts,
   interviewQuestions,
   profiles,
+  projectBriefs,
   userConceptProgress,
 } from "@/lib/schema";
 
@@ -237,6 +238,56 @@ export async function getInterviewState(
     ),
   });
   return row?.interviewCompleted ?? false;
+}
+
+// The single project brief bound to a concept (its Build tab renders this one).
+// Static content, so cached across requests under the "concepts" tag.
+export type ProjectBriefData = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  starterCode: string;
+  solutionCode: string;
+  testCases: { input: string; expected: string; label: string }[];
+  isPremium: boolean;
+};
+
+export const getProjectBriefByConceptId = unstable_cache(
+  async (conceptId: string): Promise<ProjectBriefData | null> => {
+    const rows = await db
+      .select({
+        id: projectBriefs.id,
+        slug: projectBriefs.slug,
+        title: projectBriefs.title,
+        description: projectBriefs.description,
+        starterCode: projectBriefs.starterCode,
+        solutionCode: projectBriefs.solutionCode,
+        testCases: projectBriefs.testCases,
+        isPremium: projectBriefs.isPremium,
+      })
+      .from(projectBriefs)
+      .where(eq(projectBriefs.conceptId, conceptId))
+      .orderBy(projectBriefs.orderIndex)
+      .limit(1);
+
+    return rows[0] ?? null;
+  },
+  ["project-brief-by-concept"],
+  { tags: ["concepts"], revalidate: 3600 },
+);
+
+// Whether the given user has completed a concept's Build tab. Per-user and
+// indexed, so it stays a live query (not cached), same as getInterviewState.
+export async function getBuildState(userId: string, conceptId: string): Promise<boolean> {
+  const row = await db.query.userConceptProgress.findFirst({
+    columns: { buildCompleted: true },
+    where: and(
+      eq(userConceptProgress.userId, userId),
+      eq(userConceptProgress.conceptId, conceptId),
+    ),
+  });
+  return row?.buildCompleted ?? false;
 }
 
 // Whether the user currently has active premium — for server-side gating of

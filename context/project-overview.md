@@ -160,7 +160,7 @@ Categories evolve as the platform grows. Current set:
 **Premium (30% of content):**
 - FF System Design (all questions)
 - Advanced challenges
-- Build tab (Monaco editor projects)
+- Most Build tab projects (Monaco editor projects) — one free flagship project per category demonstrates the tab before the paywall (Feature 26), same pattern as Challenge/Interview's free flagship content
 - Study Plans
 - Company Collections (Google, Meta, Amazon, Microsoft, Stripe)
 - Priority spaced repetition scheduling
