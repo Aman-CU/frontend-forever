@@ -1,22 +1,9 @@
-import type { InferInsertModel } from "drizzle-orm";
-
 import { auth } from "@/lib/auth/server";
 import { ratelimit } from "@/lib/upstash";
 import { db } from "@/lib/db";
-import { userConceptProgress } from "@/lib/schema";
+import { getPostgresErrorCode } from "@/lib/dbErrors";
 import { CONCEPT_TABS, type ConceptTab } from "@/lib/constants";
-
-type ProgressInsert = InferInsertModel<typeof userConceptProgress>;
-
-// Per-tab completion flag. Feature 22 only wires "understand"; the rest are ready
-// for Feature 27, which adds XP events, streaks, and the fully-completed bonus.
-const COMPLETED_SET: Record<ConceptTab, Partial<ProgressInsert>> = {
-  understand: { understandCompleted: true },
-  simulate: { simulateCompleted: true },
-  challenge: { challengeCompleted: true },
-  interview: { interviewCompleted: true },
-  build: { buildCompleted: true },
-};
+import { applyProgressUpdate } from "@/lib/progress/applyProgressUpdate";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -31,8 +18,10 @@ export async function POST(req: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Rate limit
-  const { success } = await ratelimit.limit(session.user.id);
+  // 2. Rate limit — namespaced so this route has its own bucket, separate
+  // from other write routes (e.g. /api/interview-rating) that share the
+  // same underlying Ratelimit instance.
+  const { success } = await ratelimit.limit(`progress:${session.user.id}`);
   if (!success) {
     return Response.json(
       { error: "You're doing that too fast. Please wait a moment." },
@@ -54,17 +43,11 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid conceptId or tab" }, { status: 400 });
   }
 
-  // 4. Upsert the tab's completion flag, scoped to the session user
-  const flag = COMPLETED_SET[tab];
+  // 4. Progress write + XP + streak, all-or-nothing.
   try {
-    await db
-      .insert(userConceptProgress)
-      .values({ userId: session.user.id, conceptId, ...flag })
-      .onConflictDoUpdate({
-        target: [userConceptProgress.userId, userConceptProgress.conceptId],
-        set: { ...flag, updatedAt: new Date() },
-      });
-  } catch {
+    await db.transaction((tx) => applyProgressUpdate(tx, session.user.id, conceptId, tab));
+  } catch (error) {
+    console.error("[progress] DB write failed:", getPostgresErrorCode(error));
     return Response.json({ error: "Could not save progress" }, { status: 500 });
   }
 

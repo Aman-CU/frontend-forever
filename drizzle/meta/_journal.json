@@ -57,6 +57,13 @@
       "when": 1783094931437,
       "tag": "0007_common_anthem",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783183458211,
+      "tag": "0008_lean_triathlon",
+      "breakpoints": true
     }
   ]
 }

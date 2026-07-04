@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   Bell,
   Code2,
   Command,
   Compass,
-  Flame,
   LucideGraduationCap,
   Map,
   Menu,
@@ -18,17 +17,11 @@ import {
   Users,
   X,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import { useUser, type SessionUser } from "@/hooks/useUser";
 import { UserDropdown } from "@/components/shared/UserDropdown";
-
-type NavLink = {
-  label: string;
-  href: string;
-  icon: LucideIcon;
-};
+import { AppNavbarStats } from "./AppNavbarStats";
+import { AppNavLink, AppMobileNavLink, type NavLink } from "./AppNavLinks";
 
 const NAV_LINKS: NavLink[] = [
   { label: "Explore", href: "/explore", icon: Compass },
@@ -41,9 +34,11 @@ const NAV_LINKS: NavLink[] = [
 
 type AppNavbarProps = {
   initialUser?: SessionUser | null;
+  initialStreak?: number;
+  initialXp?: number;
 };
 
-export function AppNavbar({ initialUser }: AppNavbarProps = {}) {
+export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: AppNavbarProps = {}) {
   const pathname = usePathname();
   const { user, isLoading } = useUser(initialUser);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -93,10 +88,7 @@ export function AppNavbar({ initialUser }: AppNavbarProps = {}) {
         {/* Right cluster (desktop) — only once session resolves */}
         {!isLoading && user && (
           <div className="hidden shrink-0 items-center gap-5 lg:flex">
-            <div className="flex items-center gap-1 text-sm font-semibold text-text-primary">
-              <Flame className="size-4 fill-streak stroke-none" />
-              <span>0 day streak</span>
-            </div>
+            <AppNavbarStats xp={initialXp} streak={initialStreak} />
 
             <button
               type="button"
@@ -141,67 +133,12 @@ export function AppNavbar({ initialUser }: AppNavbarProps = {}) {
 
           {!isLoading && user && (
             <div className="mt-3 flex items-center justify-between border-t border-border pt-4">
-              <div className="flex items-center gap-1.5 text-sm font-semibold text-text-primary">
-                <Flame className="size-4 fill-streak stroke-none" />
-                <span>0 day streak</span>
-              </div>
+              <AppNavbarStats xp={initialXp} streak={initialStreak} />
               <UserDropdown user={user} />
             </div>
           )}
         </div>
       )}
     </header>
-  );
-}
-
-type AppNavLinkProps = {
-  link: NavLink;
-  pathname: string;
-};
-
-function AppNavLink({ link, pathname }: AppNavLinkProps) {
-  const isActive =
-    pathname === link.href || pathname.startsWith(`${link.href}/`);
-
-  return (
-    <Link
-      href={link.href}
-      className={cn(
-        "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-        isActive
-          ? "text-accent"
-          : "text-text-secondary hover:bg-surface-secondary hover:text-text-primary",
-      )}
-    >
-      {link.label}
-    </Link>
-  );
-}
-
-type AppMobileNavLinkProps = {
-  link: NavLink;
-  pathname: string;
-  onClick: () => void;
-};
-
-function AppMobileNavLink({ link, pathname, onClick }: AppMobileNavLinkProps) {
-  const isActive =
-    pathname === link.href || pathname.startsWith(`${link.href}/`);
-  const Icon = link.icon;
-
-  return (
-    <Link
-      href={link.href}
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-2 rounded-lg px-2 py-3 text-sm font-medium transition-colors",
-        isActive
-          ? "bg-accent-muted text-accent"
-          : "text-text-primary hover:bg-surface-secondary",
-      )}
-    >
-      <Icon className="size-4" />
-      {link.label}
-    </Link>
   );
 }

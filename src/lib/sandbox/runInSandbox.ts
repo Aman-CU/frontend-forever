@@ -1,9 +1,14 @@
 import { buildSandboxDoc } from "./buildSandboxDoc";
 import type { SandboxRunResult, SandboxTest, TestResult } from "./types";
 
-// Last-resort parent-side cap, slightly longer than the inner 5s guard so the
-// iframe's own timeout reports first when it can.
-const PARENT_TIMEOUT_MS = 6000;
+// Last-resort parent-side cap, slightly longer than buildSandboxDoc's inner
+// guard so the iframe's own timeout reports first when it can. Both were
+// originally 5s/6s, but a correct solution's real iframe run (fresh JS
+// context + postMessage round-trip) already takes ~2s on its own — too
+// little headroom once real dev-mode main-thread contention (Next.js/
+// Turbopack HMR, React, Monaco all sharing the same thread) is added on top;
+// confirmed via a live user report of legitimate solutions timing out.
+const PARENT_TIMEOUT_MS = 13000;
 
 /**
  * Run user code against the given tests inside a fresh hidden sandbox iframe.

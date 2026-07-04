@@ -8,6 +8,7 @@ import {
   getChallengeState,
   getConceptBySlug,
   getInterviewQuestionsByConceptId,
+  getInterviewRatings,
   getInterviewState,
   getIsPremiumUser,
   getProjectBriefByConceptId,
@@ -46,6 +47,7 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
     initialSimulated,
     initialChallenged,
     initialInterviewed,
+    initialInterviewRatings,
     initialBuilt,
     isPremiumUser,
   ] = await Promise.all([
@@ -56,6 +58,7 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
     userId ? getSimulateState(userId, concept.id) : Promise.resolve(false),
     userId ? getChallengeState(userId, concept.id) : Promise.resolve(false),
     userId ? getInterviewState(userId, concept.id) : Promise.resolve(false),
+    userId ? getInterviewRatings(userId, concept.id) : Promise.resolve({}),
     userId ? getBuildState(userId, concept.id) : Promise.resolve(false),
     userId ? getIsPremiumUser(userId) : Promise.resolve(false),
   ]);
@@ -127,6 +130,7 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
       conceptId={concept.id}
       isLoggedIn={userId !== null}
       initialCompleted={initialInterviewed}
+      initialRatings={initialInterviewRatings}
     />
   );
 

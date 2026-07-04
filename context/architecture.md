@@ -75,8 +75,10 @@
 │   │   ├── settings/page.tsx
 │   │   └── api/
 │   │       ├── auth/[...all]/route.ts   ← Better-Auth's Next.js catch-all handler (sign-in, callback, sign-out, session — all of it)
-│   │       └── progress/
-│   │           └── route.ts             ← Progress write endpoint (rate limited)
+│   │       ├── progress/
+│   │       │   └── route.ts             ← Progress write endpoint (rate limited)
+│   │       └── interview-rating/
+│   │           └── route.ts             ← Per-question Interview tab rating upsert into user_interview_reviews (rate limited) — Feature 27 follow-up
 │   │
 │   ├── features/                        ← Feature modules — self-contained
 │   │   ├── simulators/
@@ -125,7 +127,10 @@
 │   ├── components/                      ← Truly shared UI — used across multiple features
 │   │   ├── ui/                          ← shadcn/ui components (never modify these directly)
 │   │   ├── layout/
-│   │   │   ├── Navbar.tsx               ← Handles both logged-out and logged-in states
+│   │   │   ├── Navbar.tsx               ← Logged-out variant
+│   │   │   ├── AppNavbar.tsx            ← Logged-in variant (Feature 17) — real streak/XP as of Feature 27, orchestration only post-split
+│   │   │   ├── AppNavbarStats.tsx       ← The XP+streak pair, shared by AppNavbar's desktop + mobile clusters — split out of AppNavbar.tsx in a Feature 27 /review follow-up (200-line file limit)
+│   │   │   ├── AppNavLinks.tsx          ← AppNavLink/AppMobileNavLink — same split as above
 │   │   │   ├── Footer.tsx
 │   │   │   └── LearnSidebar.tsx
 │   │   └── shared/
@@ -143,9 +148,13 @@
 │   │   │   ├── server.ts                ← betterAuth() instance — Postgres adapter, Google/GitHub social providers, session config, databaseHooks
 │   │   │   └── client.ts                ← createAuthClient() — browser React client ("use client"; signIn.social, signOut, useSession)
 │   │   ├── db.ts                        ← Shared Drizzle instance (over a `pg` Pool) — direct Postgres access for both Better-Auth's adapter and app queries
+│   │   ├── dbErrors.ts                  ← getPostgresErrorCode(error) — safe-to-log Postgres error code extraction (never logs the raw error, which can embed a full insert payload — see lib/auth/provisionProfile.ts); added Feature 27 /review follow-up, used by api/progress and api/interview-rating
+│   │   ├── profile.ts                   ← getProfileSummary(userId) — { xp, streakCurrent }, cache()-wrapped; feeds AppNavbar's real streak/XP (Feature 27)
 │   │   ├── env.ts                       ← Typed env var wrapper (`import "server-only"` — prevents accidental client-bundle inclusion)
 │   │   ├── schema/                      ← Drizzle table definitions (app tables + Better-Auth's generated user/session/account/verification tables)
 │   │   ├── sandbox/                     ← Browser code-execution engine (runInSandbox, buildSandboxDoc, types) — promoted from features/practice/ in Feature 26 so features/build can use it too (features never import features)
+│   │   ├── progress/
+│   │   │   └── applyProgressUpdate.ts   ← Feature 27: the transactional progress/XP/streak write, called by api/progress/route.ts inside db.transaction() — split out of the route so it stays under the 200-line file limit and is directly testable
 │   │   ├── upstash.ts                   ← Upstash Redis rate limiter
 │   │   ├── mdx.ts                       ← MDX parsing and rendering utilities
 │   │   └── utils.ts                     ← cn(), formatXP(), etc.
@@ -212,13 +221,23 @@ Feature hook calls POST /api/progress
         ↓
 Rate limiter (Upstash) checks request
         ↓
-Direct Postgres write (via lib/db.ts) to user_concept_progress, scoped to session.user.id
+db.transaction() wraps everything below — all-or-nothing (Feature 27,
+the first transaction in the codebase; see lib/progress/applyProgressUpdate.ts)
         ↓
-XP event written to xp_events
+user_concept_progress row locked (SELECT ... FOR UPDATE), scoped to session.user.id
         ↓
-profiles.xp incremented
+Tab's completion flag upserted; XP event written to xp_events ONLY if that
+flag was false→true (idempotent — repeat completions award nothing)
         ↓
-profiles.streak_current updated if new day
+If all 5 tab flags are now true and weren't before: fully_completed set,
+completed_at stamped, a +50 XP concept_completed bonus event written
+        ↓
+profiles row locked (SELECT ... FOR UPDATE); if streak_last_activity isn't
+today (UTC): streak_current incremented (or reset to 1 after a gap),
+streak_longest updated, a +5 XP streak_bonus event written — at most once
+per UTC calendar day regardless of how many tabs are completed that day
+        ↓
+profiles.xp incremented by the total XP awarded this request
 ```
 
 ### MDX Content (Static Generation)
@@ -338,7 +357,7 @@ Accessed via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), 
 | concept_id | uuid | Nullable |
 | challenge_id | uuid | Nullable |
 | question_id | uuid | Nullable |
-| event_type | text | concept_understand / concept_simulate / concept_challenge / concept_interview / concept_build / challenge_solved / interview_answered / streak_bonus |
+| event_type | text | concept_understand / concept_simulate / concept_challenge / concept_interview / concept_build / concept_completed / challenge_solved / interview_answered / streak_bonus |
 | xp_amount | integer | |
 | created_at | timestamptz | |
 

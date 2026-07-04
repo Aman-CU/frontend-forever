@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import { useRouter } from "next/navigation";
 import { Loader2, Play, RotateCcw } from "lucide-react";
 
 import { CodeEditor } from "@/components/shared/CodeEditor";
@@ -58,6 +59,7 @@ function BuildWorkspace({
   isLoggedIn: boolean;
   initialCompleted: boolean;
 }) {
+  const router = useRouter();
   const tests = getBuildTestSpec(projectBrief.slug);
   const { status, result, run } = useSandbox();
   const [code, setCode] = useState(projectBrief.starterCode);
@@ -90,6 +92,9 @@ function BuildWorkspace({
         return;
       }
       setCompleted(true);
+      // Refreshes server-rendered data on this route (in particular AppNavbar's
+      // XP/streak) so it doesn't stay stale until the next full navigation.
+      router.refresh();
     } catch {
       hasPostedRef.current = false;
     }

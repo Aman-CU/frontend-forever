@@ -44,6 +44,10 @@ export function MarkUnderstoodButton({ conceptId, isLoggedIn, initialUnderstood 
         return;
       }
       setUnderstood(true);
+      // Refreshes server-rendered data on this route — in particular
+      // AppNavbar's XP/streak (fetched once per navigation in (app)/layout.tsx),
+      // which would otherwise stay stale until the user's next full navigation.
+      router.refresh();
     } catch {
       setError("Could not save your progress. Please try again.");
     } finally {
