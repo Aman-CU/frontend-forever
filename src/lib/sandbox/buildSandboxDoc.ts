@@ -55,7 +55,7 @@ export function buildSandboxDoc(
   userCode: string,
   tests: SandboxTest[],
   nonce: string,
-  timeoutMs = 5000,
+  timeoutMs = 12000,
 ): string {
   const testEntries = tests
     .map(
