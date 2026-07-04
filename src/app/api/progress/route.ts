@@ -1,22 +1,8 @@
-import type { InferInsertModel } from "drizzle-orm";
-
 import { auth } from "@/lib/auth/server";
 import { ratelimit } from "@/lib/upstash";
 import { db } from "@/lib/db";
-import { userConceptProgress } from "@/lib/schema";
 import { CONCEPT_TABS, type ConceptTab } from "@/lib/constants";
-
-type ProgressInsert = InferInsertModel<typeof userConceptProgress>;
-
-// Per-tab completion flag. Feature 22 only wires "understand"; the rest are ready
-// for Feature 27, which adds XP events, streaks, and the fully-completed bonus.
-const COMPLETED_SET: Record<ConceptTab, Partial<ProgressInsert>> = {
-  understand: { understandCompleted: true },
-  simulate: { simulateCompleted: true },
-  challenge: { challengeCompleted: true },
-  interview: { interviewCompleted: true },
-  build: { buildCompleted: true },
-};
+import { applyProgressUpdate } from "@/lib/progress/applyProgressUpdate";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -54,16 +40,9 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid conceptId or tab" }, { status: 400 });
   }
 
-  // 4. Upsert the tab's completion flag, scoped to the session user
-  const flag = COMPLETED_SET[tab];
+  // 4. Progress write + XP + streak, all-or-nothing.
   try {
-    await db
-      .insert(userConceptProgress)
-      .values({ userId: session.user.id, conceptId, ...flag })
-      .onConflictDoUpdate({
-        target: [userConceptProgress.userId, userConceptProgress.conceptId],
-        set: { ...flag, updatedAt: new Date() },
-      });
+    await db.transaction((tx) => applyProgressUpdate(tx, session.user.id, conceptId, tab));
   } catch {
     return Response.json({ error: "Could not save progress" }, { status: 500 });
   }

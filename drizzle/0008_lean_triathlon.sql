@@ -1,0 +1,2 @@
+ALTER TABLE "xp_events" DROP CONSTRAINT "xp_events_event_type_check";--> statement-breakpoint
+ALTER TABLE "xp_events" ADD CONSTRAINT "xp_events_event_type_check" CHECK ("xp_events"."event_type" IN ('concept_understand', 'concept_simulate', 'concept_challenge', 'concept_interview', 'concept_build', 'concept_completed', 'challenge_solved', 'interview_answered', 'streak_bonus'));

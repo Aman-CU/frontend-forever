@@ -41,9 +41,10 @@ const NAV_LINKS: NavLink[] = [
 
 type AppNavbarProps = {
   initialUser?: SessionUser | null;
+  initialStreak?: number;
 };
 
-export function AppNavbar({ initialUser }: AppNavbarProps = {}) {
+export function AppNavbar({ initialUser, initialStreak = 0 }: AppNavbarProps = {}) {
   const pathname = usePathname();
   const { user, isLoading } = useUser(initialUser);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -95,7 +96,7 @@ export function AppNavbar({ initialUser }: AppNavbarProps = {}) {
           <div className="hidden shrink-0 items-center gap-5 lg:flex">
             <div className="flex items-center gap-1 text-sm font-semibold text-text-primary">
               <Flame className="size-4 fill-streak stroke-none" />
-              <span>0 day streak</span>
+              <span>{initialStreak} day streak</span>
             </div>
 
             <button

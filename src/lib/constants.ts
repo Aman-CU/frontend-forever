@@ -43,6 +43,7 @@ export const XP_EVENT_TYPES = [
   "concept_challenge",
   "concept_interview",
   "concept_build",
+  "concept_completed",
   "challenge_solved",
   "interview_answered",
   "streak_bonus",
@@ -51,3 +52,24 @@ export type XPEventType = (typeof XP_EVENT_TYPES)[number];
 
 export const CHALLENGE_STATUSES = ["passed", "failed"] as const;
 export type ChallengeStatus = (typeof CHALLENGE_STATUSES)[number];
+
+// XP System (context/architecture.md → XP System table). Every tab-completion
+// POST to /api/progress reads its reward from here — never inline an XP amount.
+export const TAB_XP_REWARDS: Record<ConceptTab, number> = {
+  understand: 10,
+  simulate: 15,
+  challenge: 25,
+  interview: 20,
+  build: 30,
+};
+
+export const TAB_XP_EVENT_TYPE: Record<ConceptTab, XPEventType> = {
+  understand: "concept_understand",
+  simulate: "concept_simulate",
+  challenge: "concept_challenge",
+  interview: "concept_interview",
+  build: "concept_build",
+};
+
+export const CONCEPT_COMPLETED_BONUS_XP = 50;
+export const STREAK_BONUS_XP = 5;
