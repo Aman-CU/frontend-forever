@@ -75,8 +75,10 @@
 │   │   ├── settings/page.tsx
 │   │   └── api/
 │   │       ├── auth/[...all]/route.ts   ← Better-Auth's Next.js catch-all handler (sign-in, callback, sign-out, session — all of it)
-│   │       └── progress/
-│   │           └── route.ts             ← Progress write endpoint (rate limited)
+│   │       ├── progress/
+│   │       │   └── route.ts             ← Progress write endpoint (rate limited)
+│   │       └── interview-rating/
+│   │           └── route.ts             ← Per-question Interview tab rating upsert into user_interview_reviews (rate limited) — Feature 27 follow-up
 │   │
 │   ├── features/                        ← Feature modules — self-contained
 │   │   ├── simulators/

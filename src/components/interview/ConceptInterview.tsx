@@ -20,6 +20,7 @@ type Props = {
   conceptId: string;
   isLoggedIn: boolean;
   initialCompleted: boolean;
+  initialRatings: Record<string, QuestionRating>;
 };
 
 // components/-layer host for a concept's Interview tab — lives here (not
@@ -34,8 +35,9 @@ export function ConceptInterview({
   conceptId,
   isLoggedIn,
   initialCompleted,
+  initialRatings,
 }: Props) {
-  const [ratings, setRatings] = useState<Record<string, QuestionRating>>({});
+  const [ratings, setRatings] = useState<Record<string, QuestionRating>>(initialRatings);
   const [completed, setCompleted] = useState(initialCompleted);
   // Fire-once guard for the completion POST, mirroring ConceptChallenge.
   const hasPostedRef = useRef(initialCompleted);
@@ -80,6 +82,17 @@ export function ConceptInterview({
 
   function handleRate(questionId: string, rating: QuestionRating) {
     setRatings((prev) => ({ ...prev, [questionId]: rating }));
+    // Best-effort persistence so the rating survives a tab switch or reload —
+    // logged-out users still get the local-only experience (silent no-op),
+    // same contract as the completion POST below. Not fire-once: re-rating an
+    // already-rated question is a deliberate action and the route upserts.
+    if (isLoggedIn) {
+      void fetch("/api/interview-rating", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId, rating }),
+      }).catch(() => {});
+    }
     // Fire the completion POST the moment the last unrated question is rated.
     // Computed from the pre-update snapshot + this id so we never depend on an
     // effect (the fire-once ref keeps re-rates from double-posting).
