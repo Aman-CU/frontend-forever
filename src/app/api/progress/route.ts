@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth/server";
 import { ratelimit } from "@/lib/upstash";
 import { db } from "@/lib/db";
+import { getPostgresErrorCode } from "@/lib/dbErrors";
 import { CONCEPT_TABS, type ConceptTab } from "@/lib/constants";
 import { applyProgressUpdate } from "@/lib/progress/applyProgressUpdate";
 
@@ -43,7 +44,8 @@ export async function POST(req: Request) {
   // 4. Progress write + XP + streak, all-or-nothing.
   try {
     await db.transaction((tx) => applyProgressUpdate(tx, session.user.id, conceptId, tab));
-  } catch {
+  } catch (error) {
+    console.error("[progress] DB write failed:", getPostgresErrorCode(error));
     return Response.json({ error: "Could not save progress" }, { status: 500 });
   }
 

@@ -38,12 +38,17 @@ type Props = {
   question: InterviewQuestionView;
   rating: QuestionRating | undefined;
   onRate: (rating: QuestionRating) => void;
+  // True when the last attempt to persist this question's rating failed
+  // server-side (network error or non-OK response) — the host still shows
+  // the rating as selected locally, so this tells the user it hasn't
+  // actually saved yet rather than leaving that failure invisible.
+  saveFailed?: boolean;
 };
 
 // A single expandable interview question: click the header to reveal the answer,
 // then self-assess with "I knew this" / "Need to review". The rating is local
 // state (Feature 25) — the SM-2 spaced-repetition persistence is Feature 32.
-export function QuestionCard({ index, question, rating, onRate }: Props) {
+export function QuestionCard({ index, question, rating, onRate, saveFailed }: Props) {
   const [revealed, setRevealed] = useState(false);
   const reduceMotion = useSafeReducedMotion();
   const answerId = useId();
@@ -156,6 +161,11 @@ export function QuestionCard({ index, question, rating, onRate }: Props) {
                       Need to review
                     </RatingButton>
                   </div>
+                  {saveFailed && (
+                    <p className="mt-2 text-xs text-error">
+                      Couldn&apos;t save this rating — pick a rating again to retry.
+                    </p>
+                  )}
                 </>
               )}
             </div>

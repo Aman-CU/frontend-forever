@@ -39,6 +39,9 @@ export function ConceptInterview({
 }: Props) {
   const [ratings, setRatings] = useState<Record<string, QuestionRating>>(initialRatings);
   const [completed, setCompleted] = useState(initialCompleted);
+  // Questions whose rating failed to persist server-side (surfaced inline on
+  // the card so the user knows to retry — see handleRate/postRating below).
+  const [failedRatingIds, setFailedRatingIds] = useState<Set<string>>(new Set());
   // Fire-once guard for the completion POST, mirroring ConceptChallenge.
   const hasPostedRef = useRef(initialCompleted);
 
@@ -50,10 +53,11 @@ export function ConceptInterview({
   // correct the moment one is.
   const total = questions.filter((q) => !q.isLocked).length;
   const answeredCount = Object.keys(ratings).length;
-  // A returning user can have initialCompleted=true from a past session while
-  // this session's local ratings are still empty (ratings aren't persisted per-
-  // question — see architect notes). Showing the green "Completed" pill next to
-  // "0 of N answered" reads as contradictory, so the pill only appears once this
+  // A returning user normally has ratings restored via initialRatings, so this
+  // is rare — but a legacy completion from before ratings were persisted (or a
+  // save that failed every time) can still leave completed=true with nothing
+  // rated this session. Showing the green "Completed" pill next to "0 of N
+  // answered" would read as contradictory, so the pill only appears once this
   // session's own progress actually reflects completion.
   const showCompletedPill = completed && total > 0 && answeredCount === total;
   const showPreviouslyCompletedNote =
@@ -80,19 +84,40 @@ export function ConceptInterview({
     }
   }
 
-  function handleRate(questionId: string, rating: QuestionRating) {
-    setRatings((prev) => ({ ...prev, [questionId]: rating }));
-    // Best-effort persistence so the rating survives a tab switch or reload —
-    // logged-out users still get the local-only experience (silent no-op),
-    // same contract as the completion POST below. Not fire-once: re-rating an
-    // already-rated question is a deliberate action and the route upserts.
-    if (isLoggedIn) {
-      void fetch("/api/interview-rating", {
+  // Best-effort persistence so the rating survives a tab switch or reload —
+  // logged-out users still get the local-only experience (silent no-op, same
+  // contract as postCompletion). Not fire-once: re-rating an already-rated
+  // question is a deliberate action and the route upserts. A failure here is
+  // never silently swallowed — it's logged and surfaced inline on the card
+  // (via failedRatingIds) so the user knows to retry, rather than the local
+  // "saved" checkmark quietly lying about what's actually in the database.
+  async function postRating(questionId: string, rating: QuestionRating) {
+    try {
+      const res = await fetch("/api/interview-rating", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ questionId, rating }),
-      }).catch(() => {});
+      });
+      if (!res.ok) {
+        console.error("[interview-rating] Save failed:", res.status);
+        setFailedRatingIds((prev) => new Set(prev).add(questionId));
+        return;
+      }
+      setFailedRatingIds((prev) => {
+        if (!prev.has(questionId)) return prev;
+        const next = new Set(prev);
+        next.delete(questionId);
+        return next;
+      });
+    } catch (error) {
+      console.error("[interview-rating] Network error:", error);
+      setFailedRatingIds((prev) => new Set(prev).add(questionId));
     }
+  }
+
+  function handleRate(questionId: string, rating: QuestionRating) {
+    setRatings((prev) => ({ ...prev, [questionId]: rating }));
+    if (isLoggedIn) void postRating(questionId, rating);
     // Fire the completion POST the moment the last unrated question is rated.
     // Computed from the pre-update snapshot + this id so we never depend on an
     // effect (the fire-once ref keeps re-rates from double-posting).
@@ -179,6 +204,7 @@ export function ConceptInterview({
             question={question}
             rating={ratings[question.id]}
             onRate={(rating) => handleRate(question.id, rating)}
+            saveFailed={failedRatingIds.has(question.id)}
           />
         ))}
       </div>

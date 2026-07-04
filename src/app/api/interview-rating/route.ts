@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { auth } from "@/lib/auth/server";
 import { ratelimit } from "@/lib/upstash";
 import { db } from "@/lib/db";
+import { getPostgresErrorCode } from "@/lib/dbErrors";
 import { userInterviewReviews } from "@/lib/schema";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -65,7 +66,8 @@ export async function POST(req: Request) {
           lastReviewedAt: new Date(),
         },
       });
-  } catch {
+  } catch (error) {
+    console.error("[interview-rating] DB write failed:", getPostgresErrorCode(error));
     return Response.json({ error: "Could not save rating" }, { status: 500 });
   }
 

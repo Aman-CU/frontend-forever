@@ -307,6 +307,7 @@ export const XP_EVENT_TYPES = [
   'concept_challenge',
   'concept_interview',
   'concept_build',
+  'concept_completed', // +50 first-time-fully-completed bonus — added Feature 27
   'challenge_solved',
   'interview_answered',
   'streak_bonus',

@@ -127,7 +127,10 @@
 │   ├── components/                      ← Truly shared UI — used across multiple features
 │   │   ├── ui/                          ← shadcn/ui components (never modify these directly)
 │   │   ├── layout/
-│   │   │   ├── Navbar.tsx               ← Handles both logged-out and logged-in states
+│   │   │   ├── Navbar.tsx               ← Logged-out variant
+│   │   │   ├── AppNavbar.tsx            ← Logged-in variant (Feature 17) — real streak/XP as of Feature 27, orchestration only post-split
+│   │   │   ├── AppNavbarStats.tsx       ← The XP+streak pair, shared by AppNavbar's desktop + mobile clusters — split out of AppNavbar.tsx in a Feature 27 /review follow-up (200-line file limit)
+│   │   │   ├── AppNavLinks.tsx          ← AppNavLink/AppMobileNavLink — same split as above
 │   │   │   ├── Footer.tsx
 │   │   │   └── LearnSidebar.tsx
 │   │   └── shared/
@@ -145,6 +148,8 @@
 │   │   │   ├── server.ts                ← betterAuth() instance — Postgres adapter, Google/GitHub social providers, session config, databaseHooks
 │   │   │   └── client.ts                ← createAuthClient() — browser React client ("use client"; signIn.social, signOut, useSession)
 │   │   ├── db.ts                        ← Shared Drizzle instance (over a `pg` Pool) — direct Postgres access for both Better-Auth's adapter and app queries
+│   │   ├── dbErrors.ts                  ← getPostgresErrorCode(error) — safe-to-log Postgres error code extraction (never logs the raw error, which can embed a full insert payload — see lib/auth/provisionProfile.ts); added Feature 27 /review follow-up, used by api/progress and api/interview-rating
+│   │   ├── profile.ts                   ← getProfileSummary(userId) — { xp, streakCurrent }, cache()-wrapped; feeds AppNavbar's real streak/XP (Feature 27)
 │   │   ├── env.ts                       ← Typed env var wrapper (`import "server-only"` — prevents accidental client-bundle inclusion)
 │   │   ├── schema/                      ← Drizzle table definitions (app tables + Better-Auth's generated user/session/account/verification tables)
 │   │   ├── sandbox/                     ← Browser code-execution engine (runInSandbox, buildSandboxDoc, types) — promoted from features/practice/ in Feature 26 so features/build can use it too (features never import features)
