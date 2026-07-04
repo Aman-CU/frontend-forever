@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import type { ComponentType } from "react";
 
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Code2 } from "lucide-react";
 
 import type { SimulatorRootProps } from "@/components/shared/simulator-chrome/types";
@@ -37,6 +38,7 @@ export function ConceptSimulator({
   isLoggedIn,
   initialCompleted,
 }: Props) {
+  const router = useRouter();
   const Simulator = SIMULATOR_BY_SLUG[conceptSlug];
   const [completed, setCompleted] = useState(initialCompleted);
   // Guards the POST so a single play-through (and every replay after) only writes
@@ -79,6 +81,9 @@ export function ConceptSimulator({
         return;
       }
       setCompleted(true);
+      // Refreshes server-rendered data on this route (in particular AppNavbar's
+      // XP/streak) so it doesn't stay stale until the next full navigation.
+      router.refresh();
     } catch {
       hasPostedRef.current = false;
     }

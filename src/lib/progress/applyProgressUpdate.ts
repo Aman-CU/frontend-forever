@@ -52,9 +52,23 @@ export async function applyProgressUpdate(tx: Tx, userId: string, conceptId: str
   const flagKey = TAB_FLAG_KEY[tab];
   const flagUpdate = COMPLETED_SET[tab];
 
-  // Lock this user's progress row (if any) for the duration of the
-  // transaction so two concurrent completions of the same tab can't both
-  // observe "not yet completed" and double-award XP.
+  // Ensure the row exists before locking it. `SELECT ... FOR UPDATE` only
+  // locks rows that already exist — on a user's very first-ever action on
+  // this concept there's nothing to lock, so two truly concurrent first
+  // completions could both read "no row" and both award XP. This insert is
+  // itself the synchronization point: Postgres serializes concurrent inserts
+  // that target the same unique (userId, conceptId) key, so by the time the
+  // SELECT below runs, the row is guaranteed to exist.
+  await tx
+    .insert(userConceptProgress)
+    .values({ userId, conceptId })
+    .onConflictDoNothing({
+      target: [userConceptProgress.userId, userConceptProgress.conceptId],
+    });
+
+  // Lock this user's progress row for the duration of the transaction so two
+  // concurrent completions of the same tab can't both observe "not yet
+  // completed" and double-award XP.
   const [existingProgress] = await tx
     .select()
     .from(userConceptProgress)

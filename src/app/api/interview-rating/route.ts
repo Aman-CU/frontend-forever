@@ -25,8 +25,10 @@ export async function POST(req: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Rate limit
-  const { success } = await ratelimit.limit(session.user.id);
+  // 2. Rate limit — namespaced so this route has its own bucket, separate
+  // from /api/progress (they used to share session.user.id as the bare key,
+  // so heavy use of one endpoint could exhaust the other's quota).
+  const { success } = await ratelimit.limit(`interview-rating:${session.user.id}`);
   if (!success) {
     return Response.json(
       { error: "You're doing that too fast. Please wait a moment." },

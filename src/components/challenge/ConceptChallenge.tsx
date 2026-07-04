@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, Play, RotateCcw } from "lucide-react";
 
 import { ChallengeDescription } from "@/features/practice/components/ChallengeDescription";
@@ -63,6 +64,7 @@ function ChallengeWorkspace({
   isLoggedIn: boolean;
   initialCompleted: boolean;
 }) {
+  const router = useRouter();
   const tests = getTestSpec(challenge.slug);
   const { status, result, run } = useSandbox();
   const [code, setCode] = useState(challenge.starterCode);
@@ -110,6 +112,9 @@ function ChallengeWorkspace({
         return;
       }
       setCompleted(true);
+      // Refreshes server-rendered data on this route (in particular AppNavbar's
+      // XP/streak) so it doesn't stay stale until the next full navigation.
+      router.refresh();
     } catch {
       hasPostedRef.current = false;
     }

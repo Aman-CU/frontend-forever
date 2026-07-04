@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Users } from "lucide-react";
 
 import { MoreInterviewPrepCta } from "@/features/interview-prep/components/MoreInterviewPrepCta";
@@ -37,6 +38,7 @@ export function ConceptInterview({
   initialCompleted,
   initialRatings,
 }: Props) {
+  const router = useRouter();
   const [ratings, setRatings] = useState<Record<string, QuestionRating>>(initialRatings);
   const [completed, setCompleted] = useState(initialCompleted);
   // Questions whose rating failed to persist server-side (surfaced inline on
@@ -79,6 +81,9 @@ export function ConceptInterview({
         return;
       }
       setCompleted(true);
+      // Refreshes server-rendered data on this route (in particular AppNavbar's
+      // XP/streak) so it doesn't stay stale until the next full navigation.
+      router.refresh();
     } catch {
       hasPostedRef.current = false;
     }
