@@ -1862,9 +1862,13 @@ Once this passes, imagine wiring it up to a real app's dev-mode logger that reco
     slug: "classify-dom-vs-bom",
     conceptSlug: "dom-vs-bom",
     title: "Classify DOM vs. BOM References",
-    description: `Given a JavaScript API reference as a string, classify it as \`'dom'\` (the page's content tree) or \`'bom'\` (the browser's own objects).
+    description: `Build the classifier behind a "what am I actually touching" linter rule — given a JavaScript API reference as a string, decide whether it's DOM or BOM.
 
-## The rule
+## The problem
+
+\`document\` and \`window\` get used interchangeably in casual code (\`window.document.title\` vs. \`document.title\`), which hides a real distinction: one reference touches page *content*, the other touches the *browser environment* around it. A linter or debug tool that wants to flag "you're reaching into browser state here, not page content" needs a reliable way to tell the two apart from the reference string alone.
+
+## The idea
 
 - Anything reached through \`document\` — with or without a leading \`window.\` — is the **DOM**.
 - Anything reached through \`window\`'s other properties — \`location\`, \`navigator\`, \`history\`, \`screen\` — with or without the \`window.\` prefix, is the **BOM**.
@@ -1899,9 +1903,13 @@ Write \`classifyApi(reference)\` that returns \`'dom'\` or \`'bom'\` for a refer
     slug: "event-propagation-order",
     conceptSlug: "event-delegation-bubbling-capturing",
     title: "Compute Event Propagation Order",
-    description: `Given a DOM path from root to target and a set of registered listeners, compute the exact order those listeners fire in.
+    description: `Build the logic behind a browser DevTools-style "event listener trace" — given a DOM path and a set of registered listeners, compute the exact order they actually fire in.
 
-## The rule
+## The problem
+
+"Why did my outside-click handler run before the button's own onClick?" is a question every frontend engineer eventually has to debug by hand — and the answer always comes down to which phase each listener was registered for, not just where it sits in the tree.
+
+## The idea
 
 An event travels in three phases:
 
@@ -1964,9 +1972,15 @@ Write \`getEventOrder(path, listeners)\` — \`path\` is an array of ids from ro
     slug: "pick-storage-mechanism",
     conceptSlug: "storage-apis",
     title: "Build a Storage Mechanism Chooser",
-    description: `Given a set of requirements, decide which client-side storage mechanism actually fits.
+    description: `Build the decision logic behind a "which storage API should I use" helper — the kind of function a team lints for instead of relying on every developer remembering the tradeoffs.
 
-## The rule, in priority order
+## The problem
+
+Four different client-side storage mechanisms exist, and picking the wrong one is rarely a crash — it's a silent correctness or performance bug (a synchronous \`localStorage\` write janking the page, or a cookie leaking a large token onto every image request).
+
+## The idea
+
+Given a set of requirements, decide which mechanism actually fits, in priority order:
 
 1. If the data must be sent with every request automatically → **cookie**
 2. Else if it shouldn't outlive the current tab → **sessionStorage**
@@ -2020,9 +2034,13 @@ Write \`pickStorage(requirements)\` — given \`{ persistAcrossSessions, capacit
     slug: "classify-style-change",
     conceptSlug: "browser-rendering-pipeline",
     title: "Classify a CSS Property's Pipeline Cost",
-    description: `Given a CSS property name, classify which rendering pipeline stage changing it triggers: \`'layout'\`, \`'paint'\`, or \`'composite'\`.
+    description: `Build the classifier behind a "why is my animation janky" audit tool — given a CSS property name, determine which rendering pipeline stage changing it actually triggers.
 
-## The rule
+## The problem
+
+Not every CSS property costs the same to animate. Animating \`top\` and animating \`transform\` look similar in code but have wildly different performance profiles — one re-triggers layout on every frame, the other doesn't. Telling them apart programmatically is the first step to catching a janky animation before it ships.
+
+## The idea
 
 - **Layout** properties change geometry — \`width\`, \`height\`, \`top\`, \`left\`, \`margin\`, \`font-size\`, \`display\`
 - **Paint** properties change appearance without moving anything — \`color\`, \`background\`, \`box-shadow\`, \`visibility\`
@@ -2030,7 +2048,7 @@ Write \`pickStorage(requirements)\` — given \`{ persistAcrossSessions, capacit
 
 ## Your task
 
-Write \`classifyStyleChange(property)\` returning the cheapest accurate classification.`,
+Write \`classifyStyleChange(property)\` returning the cheapest accurate classification: \`'layout'\`, \`'paint'\`, or \`'composite'\`.`,
     difficulty: "medium",
     starterCode: `function classifyStyleChange(property) {
   // return 'layout' | 'paint' | 'composite'
@@ -2061,9 +2079,13 @@ Write \`classifyStyleChange(property)\` returning the cheapest accurate classifi
     slug: "evaluate-cors-request",
     conceptSlug: "cors-same-origin-policy",
     title: "Build a CORS Request Evaluator",
-    description: `Given a request and a server's CORS configuration, determine whether a preflight is required and whether the request is ultimately allowed.
+    description: `Build the logic a browser DevTools "why did my request fail CORS" panel would need — given a request and a server's CORS configuration, work out whether a preflight happens and whether the request ultimately succeeds.
 
-## The rule
+## The problem
+
+"CORS error" in the console rarely explains *why* — was it a missing header on the server's allow-list, a method that needed a preflight, or the origin itself never being allowed? Reproducing the browser's actual decision logic is the only way to answer that with certainty instead of guessing.
+
+## The idea
 
 - A request needs a **preflight** if its method isn't \`GET\`/\`HEAD\`/\`POST\`, or it carries any header outside the simple set (\`accept\`, \`accept-language\`, \`content-language\`, \`content-type\`).
 - The request is **allowed** only if the origin matches the server's \`allowOrigin\` (or it's \`'*'\`) — and, when a preflight is required, only if the method and every header are also on the server's allow-lists.
@@ -2136,9 +2158,15 @@ Write \`evaluateCorsRequest(request, serverConfig)\` returning \`{ preflightRequ
     slug: "sanitize-html-input",
     conceptSlug: "web-security-fundamentals",
     title: "Build an HTML Sanitizer",
-    description: `Write a sanitizer that strips the three most common XSS injection vectors from an HTML string, before it's ever rendered.
+    description: `Build the sanitizer that sits between untrusted user input and \`innerHTML\` — the last line of defense before a comment, bio, or markdown field becomes an XSS vector.
 
-## What to strip
+## The problem
+
+Any feature that renders user-submitted content as HTML (rich-text comments, profile bios) is one \`innerHTML\` call away from executing whatever an attacker typed — a \`<script>\` tag, an \`onerror\` attribute, a \`javascript:\` link. Stripping just one of these isn't enough; all three are common, real injection vectors on their own.
+
+## The idea
+
+Strip the three most common XSS vectors from an HTML string, before it's ever rendered:
 
 1. \`<script>...</script>\` blocks entirely
 2. Any \`on*\` event handler attribute (\`onerror\`, \`onclick\`, ...)
@@ -2193,9 +2221,13 @@ Write \`sanitizeHtml(input)\` returning the cleaned string, leaving already-safe
     slug: "trace-connection-steps",
     conceptSlug: "the-network-stack",
     title: "Trace the Steps of a Network Connection",
-    description: `Given the state of a connection attempt, return the ordered list of steps the browser actually performs before sending its HTTP request.
+    description: `Build the logic behind a "why is this request slow" waterfall explainer — given the state of a connection attempt, trace exactly which setup steps the browser performs before it can send the actual HTTP request.
 
-## The rule
+## The problem
+
+Two requests to the same domain can have wildly different latency for reasons that never show up in the request itself — one pays for a fresh DNS lookup and TLS handshake, the other reuses an already-open connection. Explaining *why* a request was slow means reconstructing which of these steps actually ran.
+
+## The idea
 
 1. \`"dns-lookup"\` — skipped if DNS is already cached
 2. \`"tcp-handshake"\` — skipped if an existing connection is being reused (keep-alive)
@@ -2252,9 +2284,13 @@ Write \`getConnectionSteps(options)\` — given \`{ isHttps, dnsCached, connecti
     slug: "stale-while-revalidate",
     conceptSlug: "service-workers-caching-strategies",
     title: "Implement Stale-While-Revalidate",
-    description: `Build the stale-while-revalidate caching strategy: respond from the cache immediately if present, while refreshing the cache in the background for next time.
+    description: `Build one of the three real caching strategies a service worker's \`fetch\` handler chooses between — the one that trades a little staleness for instant responses.
 
-## The rule
+## The problem
+
+Cache-first can go stale forever; network-first blocks every response on a round trip even when a perfectly good cached value already exists. Neither is right for content that changes occasionally but shouldn't make the user wait — a middle ground is needed that responds instantly *and* stays fresh over time.
+
+## The idea
 
 1. If the cache has a value, return it **immediately** — do not wait on the network.
 2. Regardless of a cache hit or miss, kick off a network fetch that updates the cache once it resolves.
@@ -2316,9 +2352,13 @@ Write \`staleWhileRevalidate(key, cache, network)\` — \`cache\` exposes async 
     slug: "clone-worker-message",
     conceptSlug: "web-workers-concurrency",
     title: "Simulate postMessage's Structured Clone",
-    description: `Web Workers can't share memory with the main thread — every value passed via \`postMessage\` is deep-cloned, not referenced. Simulate that cloning behavior yourself.
+    description: `Build the piece of the worker messaging contract that trips people up the first time they hit it: not everything can cross the boundary between a worker and the main thread.
 
-## The rule
+## The problem
+
+Web Workers can't share memory with the main thread — every value passed via \`postMessage\` is deep-cloned, not referenced. That's usually invisible until someone tries to pass a value containing a function (a callback, a class instance with methods) and gets a cryptic \`DataCloneError\` instead of the message they expected.
+
+## The idea
 
 - Primitives pass through unchanged.
 - Arrays and plain objects are cloned **deeply** — nested structures must not share references with the original.
@@ -5132,11 +5172,13 @@ Once this passes, wire it to a real paginated endpoint and render items into an 
 
 A real debug panel collects raw \`{ name, value }\` pairs from all over the codebase — some from the DOM, some from the BOM — and needs to present them grouped correctly, not as one flat undifferentiated list.
 
+## The idea
+
+Reuse the same classification rule as the DOM vs. BOM Challenge — strip a leading \`window.\` first, then anything rooted at \`document\` is DOM, everything else is BOM — and bucket each entry under the right group instead of just classifying one reference at a time.
+
 ## Your task
 
 Write \`buildEnvironmentReport(entries)\` — given an array of \`{ name, value }\` objects where \`name\` is a reference string like \`"document.title"\` or \`"window.location.href"\`, return \`{ dom: {...}, bom: {...} }\` with each entry placed under the correct bucket, keyed by its original \`name\`.
-
-Reuse the same classification rule as the DOM vs. BOM Challenge: a leading \`window.\` is stripped first, then anything rooted at \`document\` is DOM — everything else is BOM.
 
 Once this passes, imagine wiring it to real values collected via \`document.title\`, \`navigator.userAgent\`, etc., and rendering the two groups as separate panel sections.`,
     starterCode: `function buildEnvironmentReport(entries) {
@@ -5183,6 +5225,10 @@ Once this passes, imagine wiring it to real values collected via \`document.titl
 ## The problem
 
 A real delegated handler walks from the clicked element up toward the container, checking each ancestor's class list against a table of registered routes, and invokes the *nearest* match — exactly like \`element.closest()\` does, but data-driven.
+
+## The idea
+
+Walk the path from the target outward toward the root, one level at a time, and invoke the first registered route found along the way — the target's own classes are checked before any ancestor's, so a closer match always wins over a farther one.
 
 ## Your task
 
@@ -5240,6 +5286,10 @@ Once this passes, imagine feeding it a real \`path\` built by walking \`element.
 
 Plain storage APIs have no concept of "this value is only good for 5 minutes" — that has to be layered on top, by storing an expiration timestamp alongside the value and checking it on every read.
 
+## The idea
+
+Store each value together with an expiration timestamp computed from an injectable clock. On every read, compare the current time against that timestamp — past it, the value is treated as gone, exactly as if it were never set.
+
 ## Your task
 
 Write \`createTTLStore(now)\` — \`now\` is an injectable clock function (so tests don't need real timers). It returns a store with:
@@ -5295,6 +5345,10 @@ Once this passes, imagine swapping the injected clock for \`Date.now\` and the i
 
 CORS itself is enforced by the browser reading the server's response headers — by the time that happens, the request has already gone out. A client-side allowlist can't replace that, but it *can* stop your own app's code from ever attempting a call to an origin it wasn't meant to talk to, failing fast with a clear error instead of a confusing network-level CORS rejection.
 
+## The idea
+
+Check the origin against an allowlist *before* the request function ever runs — if the origin isn't on the list, refuse immediately and never invoke the caller's request logic at all.
+
 ## Your task
 
 Write \`createOriginGuard(allowedOrigins)\` — returns an object with:
@@ -5346,6 +5400,10 @@ Once this passes, imagine wiring \`requestFn\` to a real \`fetch\` call, so a ty
 
 Hand-writing a CSP header string is error-prone at scale — a real app assembles it from a config object (often merged from multiple sources) and needs the exact directive syntax the browser expects, every time.
 
+## The idea
+
+Format each directive as its name followed by its space-separated values, then join every directive with \`"; "\` — the exact syntax the \`Content-Security-Policy\` header expects, preserving whatever order the directives were defined in.
+
 ## Your task
 
 Write \`buildCspHeader(directives)\` — given an object like \`{ "script-src": ["'self'", "https://cdn.com"], "object-src": ["'none'"] }\`, return the formatted header string: each directive as \`"name value1 value2"\`, joined with \`"; "\`, preserving the object's key order.
@@ -5389,6 +5447,10 @@ Once this passes, imagine setting the result directly as the \`Content-Security-
 ## The problem
 
 Not every step in the network stack costs the same number of round trips — a TLS handshake alone typically costs twice what a plain TCP handshake does. A cost estimator needs a per-step weight table, not a flat "steps × one round trip" assumption.
+
+## The idea
+
+Look up each step's weight in round trips, multiply by the measured round-trip time, and sum across every step that actually ran — steps that were skipped (cached DNS, a reused connection) simply aren't in the list, so they contribute nothing.
 
 ## Your task
 
@@ -5434,6 +5496,10 @@ Once this passes, imagine feeding it the real steps produced by \`getConnectionS
 
 A service worker intercepts every request the page makes — static assets, API calls, and page navigations all pass through the same \`fetch\` handler, but each needs a different strategy. Hardcoding one strategy for everything is exactly the mistake that causes either stale API data or unnecessarily slow static assets.
 
+## The idea
+
+Route on the shape of the URL: a recognizable static asset extension means cache-first is safe, an \`/api/\` path means the data is live enough to need network-first, and everything else falls back to stale-while-revalidate as the reasonable default.
+
 ## Your task
 
 Write \`pickCachingStrategy(request)\` — given \`{ url }\`, return which strategy name should handle it:
@@ -5474,6 +5540,10 @@ Once this passes, imagine wiring the result directly into the \`cacheFirst\`/\`n
 ## The problem
 
 Spinning up one worker per task defeats the purpose (thread creation itself isn't free); spinning up a single worker serializes everything. A worker *pool* needs a dispatcher that spreads incoming tasks evenly across a fixed number of workers.
+
+## The idea
+
+Cycle through worker indices round-robin — each call to \`dispatch()\` hands out the next index in sequence, wrapping back to \`0\` after the last worker, while a running count per worker tracks exactly how much load it's been given.
 
 ## Your task
 

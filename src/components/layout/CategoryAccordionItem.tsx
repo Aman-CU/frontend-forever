@@ -14,6 +14,7 @@ type Props = {
   category: CategorySummary;
   meta: CategoryMeta;
   pathname: string;
+  isPremiumUser: boolean;
 };
 
 const ICON_BG: Record<ColorKey, string> = {
@@ -34,7 +35,7 @@ const ICON_TEXT: Record<ColorKey, string> = {
   xp: "text-xp",
 };
 
-export function CategoryAccordionItem({ category, meta, pathname }: Props) {
+export function CategoryAccordionItem({ category, meta, pathname, isPremiumUser }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const { icon: Icon, label, colorKey, badge, badgeStyle } = meta;
 
@@ -124,7 +125,7 @@ export function CategoryAccordionItem({ category, meta, pathname }: Props) {
 
                       <span className="flex-1 truncate">{concept.title}</span>
 
-                      {concept.isPremium && !isActive && (
+                      {concept.isPremium && !isPremiumUser && !isActive && (
                         <Lock className="h-3 w-3 shrink-0 text-text-muted" aria-label="Premium" />
                       )}
                     </Link>
