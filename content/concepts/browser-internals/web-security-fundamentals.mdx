@@ -24,6 +24,8 @@ element.textContent = userComment;
 
 Once a script runs inside your page, it has full access to that page's DOM, cookies (unless `HttpOnly`), and any tokens visible to JavaScript — it *is* your page, as far as the browser is concerned. The defense is always the same principle: never let user-controlled content be interpreted as markup or code. Escape on output, sanitize if you must allow some HTML (e.g. a rich-text field), and prefer `textContent` over `innerHTML` whenever the content isn't meant to be markup.
 
+**Sanitizing HTML always means a real library (e.g. DOMPurify), never a hand-rolled regex.** Regex can't reliably parse HTML — malformed tags, unusual nesting, and encoding tricks all give an attacker room to slip past a pattern that looked complete in testing.
+
 ## Cross-Site Request Forgery (CSRF)
 
 CSRF exploits the fact that cookies are attached to a request automatically, regardless of which site triggered that request. A malicious page can submit a form (or fire a `fetch`) to your bank's API, and the browser will happily attach your bank's session cookie — the request looks legitimate to the server because the cookie is valid, even though you never intended to send it.

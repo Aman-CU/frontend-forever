@@ -2174,7 +2174,9 @@ Strip the three most common XSS vectors from an HTML string, before it's ever re
 
 ## Your task
 
-Write \`sanitizeHtml(input)\` returning the cleaned string, leaving already-safe markup untouched.`,
+Write \`sanitizeHtml(input)\` returning the cleaned string, leaving already-safe markup untouched.
+
+> **This is a teaching exercise, not a production sanitizer.** Regex can't reliably parse HTML — malformed tags, unusual nesting, and encoding tricks can all slip past a hand-rolled pattern like this one. A real app should sanitize untrusted HTML with a battle-tested library (e.g. DOMPurify), never a regex like the one you're about to write.`,
     difficulty: "hard",
     starterCode: `function sanitizeHtml(input) {
   // strip <script> blocks, on* attributes, and javascript: URLs
