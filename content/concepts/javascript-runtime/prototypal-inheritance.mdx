@@ -1,0 +1,60 @@
+---
+title: "Prototypal Inheritance"
+description: "See how every object links to a prototype via [[Prototype]], how property lookup walks that chain, and what class/extends really compile down to."
+category: "javascript-runtime"
+difficulty: "intermediate"
+order: 7
+whatsHappening: "Every object has an internal [[Prototype]] link to another object (or null). Reading a property that isn't found directly on the object triggers a walk up this prototype chain until the property is found or the chain ends."
+keyInsight: "class and extends aren't a different inheritance model bolted onto JavaScript — they're syntax over the same [[Prototype]] chain that Object.create sets up directly."
+memoryHook: "Can't find it here? Check the prototype. Still can't find it? Check its prototype. The chain ends at null — that's when a lookup finally returns undefined."
+inRealLife: "Like asking a coworker a question, and if they don't know, they ask their manager, who asks their manager — the chain of 'who do I ask next' is exactly the prototype chain, and it stops once you reach the top with no answer."
+---
+
+## The [[Prototype]] link
+
+Every JavaScript object has a hidden internal link — `[[Prototype]]` — to another object, or to `null` if the chain ends. You can read (but shouldn't usually set) this link via `Object.getPrototypeOf(obj)`, and the widely-supported (if informally-named) `obj.__proto__` accessor exposes the same thing.
+
+## How property lookup actually works
+
+When you read `obj.property`, the engine doesn't just check `obj` itself:
+
+1. Look for `property` directly on `obj` (an "own" property).
+2. If not found, look on `obj`'s `[[Prototype]]`.
+3. Keep walking up the chain until the property is found, or the chain reaches `null`.
+
+```js
+const animal = { eats: true };
+const rabbit = Object.create(animal); // rabbit's [[Prototype]] is animal
+rabbit.hops = true;
+
+rabbit.hops; // true — own property
+rabbit.eats; // true — found on the prototype, not rabbit itself
+rabbit.hasOwnProperty("eats"); // false — it's inherited, not own
+```
+
+`Object.create(proto)` is the direct way to build this link — it creates a new, empty object whose `[[Prototype]]` is exactly the object you passed in.
+
+## What class/extends really is
+
+`class` and `extends` are syntax over this exact mechanism — no separate inheritance model exists underneath:
+
+```js
+class Animal {
+  constructor(name) { this.name = name; }
+  speak() { return `${this.name} makes a sound.`; }
+}
+
+class Dog extends Animal {
+  speak() { return `${this.name} barks.`; }
+}
+
+const d = new Dog("Rex");
+d.speak();          // "Rex barks." — Dog's own method wins
+d instanceof Animal; // true — Dog.prototype's [[Prototype]] is Animal.prototype
+```
+
+`extends` links `Dog.prototype`'s `[[Prototype]]` to `Animal.prototype`, and `super()` calls `Animal`'s constructor with the new instance as `this`. Method lookup on a `Dog` instance walks `Dog.prototype` → `Animal.prototype` → `Object.prototype` → `null`, exactly like the `rabbit`/`animal` example above.
+
+## Why this explains other behavior
+
+Understanding the prototype chain explains things that otherwise look like separate rules: why `instanceof` works (it checks whether an object appears anywhere in the chain), why methods are shared across every instance instead of copied onto each one (they live once, on the prototype, not per-instance), and what `hasOwnProperty` is actually distinguishing (own vs. inherited).

@@ -1,0 +1,59 @@
+---
+title: "Callbacks & Higher-Order Functions"
+description: "Learn how functions that accept or return other functions power async APIs, event handlers, and the array methods you use every day."
+category: "javascript-runtime"
+difficulty: "beginner"
+order: 4
+whatsHappening: "Because functions are values in JavaScript, they can be passed into other functions (as callbacks) or returned from them. A function that takes or returns another function is a higher-order function — map, filter, and reduce are all higher-order functions built around this idea."
+keyInsight: "A callback isn't a special syntax — it's just a function value passed as an argument, called later by whoever received it. Once that clicks, async APIs, array methods, and event listeners all turn out to be the same pattern."
+memoryHook: "Higher-order function = a function that treats other functions as data — it can take one in, hand one back, or both."
+inRealLife: "Like handing a chef a recipe card (the callback) instead of cooking yourself — you don't do the work, you describe what should happen when it's time, and someone else calls it at the right moment."
+---
+
+## Functions as values
+
+In JavaScript, a function is just a value — it can be stored in a variable, passed as an argument, or returned from another function, the same as a number or a string. This one fact is the foundation for callbacks, array methods, and most of the language's async model.
+
+## Callbacks
+
+A **callback** is a function passed into another function, to be called later — either synchronously (right away) or asynchronously (once some work finishes).
+
+```js
+function greet(name, onDone) {
+  console.log(`Hello, ${name}`);
+  onDone();
+}
+
+greet("Ada", () => console.log("greeted!"));
+```
+
+Async APIs use the exact same pattern — `setTimeout(callback, delay)` and `addEventListener('click', callback)` both just call the function you handed them once the relevant moment arrives.
+
+## Higher-order functions
+
+A **higher-order function** is any function that takes a function as an argument, returns a function, or both. `greet` above is one (it takes `onDone`). So is anything that returns a new function:
+
+```js
+function multiplyBy(factor) {
+  return (n) => n * factor;
+}
+
+const double = multiplyBy(2);
+double(5); // 10
+```
+
+## Where this shows up every day
+
+The array methods you already reach for constantly are higher-order functions built on exactly this idea:
+
+```js
+[1, 2, 3].map((n) => n * 2);           // [2, 4, 6]
+[1, 2, 3].filter((n) => n % 2 === 0);  // [2]
+[1, 2, 3].reduce((sum, n) => sum + n, 0); // 6
+```
+
+Each one takes a callback and calls it for you — `map` calls it once per item and collects the results, `filter` calls it once per item and keeps the ones where it returns `true`, `reduce` calls it once per item while carrying an accumulator forward.
+
+## Why this is foundational
+
+Callbacks and higher-order functions are the prerequisite for almost everything else in the JS Runtime category — Promises exist to solve callback-based async code's readability problems, and `map`/`filter`/`reduce` (covered next) are the callback pattern applied specifically to arrays. Understanding "a function is just a value you can pass around" is what makes all of that click instead of feeling like separate, unrelated syntax.

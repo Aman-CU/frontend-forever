@@ -1,0 +1,62 @@
+---
+title: "Function Composition & Currying"
+description: "See how composing small functions together and transforming multi-argument functions into chained single-argument calls leads to more reusable, pipeline-style code."
+category: "javascript-runtime"
+difficulty: "advanced"
+order: 12
+whatsHappening: "Composition combines small, single-purpose functions into a pipeline where each one's output feeds the next one's input. Currying transforms a function that takes multiple arguments into a chain of functions that each take one argument, returning the next function until all arguments are supplied."
+keyInsight: "Currying isn't just a syntax trick — a curried function is what makes partial application easy, because calling it with fewer arguments than it needs returns a new, more specific function instead of an error."
+memoryHook: "Compose = snap small functions together into a pipeline. Curry = turn add(a, b, c) into add(a)(b)(c), unlocking one-argument-at-a-time reuse."
+inRealLife: "Compose is an assembly line — each station does one small thing and passes the result to the next. Currying is a coffee order built up one choice at a time — size, then milk, then flavor — where each partial choice is still a valid, reusable order-in-progress."
+---
+
+## Composition
+
+**Function composition** builds a new function by chaining smaller ones together — the output of one becomes the input of the next, right to left (matching how you'd write `f(g(x))` by hand):
+
+```js
+const compose = (...fns) => (x) => fns.reduceRight((acc, fn) => fn(acc), x);
+
+const trim = (s) => s.trim();
+const lower = (s) => s.toLowerCase();
+const slugify = (s) => s.replace(/\s+/g, "-");
+
+const cleanSlug = compose(slugify, lower, trim);
+cleanSlug("  Hello World  "); // "hello-world"
+```
+
+Each function does exactly one thing, and the pipeline reads as a description of the transformation as a whole, rather than one large function doing everything at once.
+
+## Currying
+
+**Currying** transforms a function that takes multiple arguments into a sequence of functions that each take a single argument:
+
+```js
+function add(a, b, c) {
+  return a + b + c;
+}
+
+function curriedAdd(a) {
+  return (b) => (c) => a + b + c;
+}
+
+curriedAdd(1)(2)(3); // 6
+```
+
+The curried version isn't just a different calling convention — calling it with only some of its arguments returns a new, reusable function that remembers what's already been supplied.
+
+## Why currying enables partial application
+
+```js
+const addTax = (rate) => (price) => price * (1 + rate);
+
+const addSalesTax = addTax(0.08); // partially applied — rate is fixed
+addSalesTax(100); // 108
+addSalesTax(50);  // 54
+```
+
+`addTax(0.08)` doesn't run the whole calculation — it returns a new function with `rate` already baked in via closure, ready to be reused across many prices. This is exactly the same closure mechanism covered earlier in this category, applied specifically to building reusable, partially-configured functions.
+
+## Where this shows up in real code
+
+Composition and currying are the backbone of functional-style utility libraries (Ramda, lodash/fp) and appear constantly in middleware patterns — Redux middleware and Express middleware are both, at their core, a composed pipeline of functions each transforming a request/action and passing it to the next. Recognizing the pattern makes those APIs far less mysterious: they're just composition and currying applied to a specific domain.

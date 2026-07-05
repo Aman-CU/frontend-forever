@@ -1,0 +1,68 @@
+---
+title: "Generators & Iterators"
+description: "Learn how function* and yield produce values lazily on demand, and how the iterator protocol powers for...of and the spread operator."
+category: "javascript-runtime"
+difficulty: "advanced"
+order: 14
+whatsHappening: "A generator function (function*) runs only up to its next yield, then pauses — handing control back to whoever's consuming it — and resumes exactly where it left off on the next call. This makes it produce values lazily, one at a time, instead of computing them all upfront."
+keyInsight: "A generator is a function that can pause itself. Every call to .next() resumes execution from the last yield, runs until the next one, and returns { value, done } — the same shape for...of already knows how to consume."
+memoryHook: "yield = 'here's one value, pause me here.' The generator doesn't know or care who's asking — it just resumes exactly where it left off each time .next() is called."
+inRealLife: "Like a vending machine that dispenses one item per press instead of dumping the whole stock on you at once — it remembers exactly where it left off between presses, and never does more work than the one item you just asked for."
+---
+
+## The iterator protocol
+
+Before generators make sense, the underlying protocol they implement is worth seeing directly. An **iterator** is any object with a `.next()` method that returns `{ value, done }` — `done: false` while there are more values, `done: true` once exhausted. `for...of`, the spread operator, and destructuring all work by calling this protocol, which is why they work on arrays, strings, `Map`, `Set`, and anything else that implements it.
+
+## Generator functions
+
+A **generator function** (`function*`) is the easy way to build something that implements the iterator protocol. Each `yield` pauses execution and hands a value out; calling `.next()` again resumes exactly where it paused.
+
+```js
+function* range(start, end) {
+  for (let i = start; i <= end; i++) {
+    yield i;
+  }
+}
+
+const it = range(1, 3);
+it.next(); // { value: 1, done: false }
+it.next(); // { value: 2, done: false }
+it.next(); // { value: 3, done: false }
+it.next(); // { value: undefined, done: true }
+```
+
+Because a generator object itself implements the iterator protocol, it works directly with `for...of` and the spread operator without any extra glue code:
+
+```js
+for (const n of range(1, 3)) console.log(n); // 1, 2, 3
+[...range(1, 3)]; // [1, 2, 3]
+```
+
+## Why laziness matters
+
+A generator only computes the next value when `.next()` is actually called — nothing is computed ahead of time. This makes generators the natural fit for sequences that are expensive, infinite, or unknown in length upfront:
+
+```js
+function* naturalNumbers() {
+  let n = 1;
+  while (true) yield n++; // infinite — but never actually a problem
+}
+
+function take(iterable, count) {
+  const result = [];
+  for (const value of iterable) {
+    if (result.length >= count) break;
+    result.push(value);
+  }
+  return result;
+}
+
+take(naturalNumbers(), 5); // [1, 2, 3, 4, 5]
+```
+
+`naturalNumbers()` never runs an infinite loop to completion — `take` only pulls exactly as many values as it needs, and the generator pauses between each one. An array-based version of the same idea would have to generate every value upfront, which is impossible for an infinite sequence.
+
+## Where this shows up
+
+Generators back a surprising amount of everyday JavaScript once you know to look: `Map`/`Set`'s built-in iteration, libraries implementing custom `Symbol.iterator` for their own data structures, and — historically — early async-flow libraries used generators plus a driver function to simulate what `async`/`await` now does natively. Understanding the iterator protocol underneath is what makes all of `for...of`, spread, and destructuring feel like one consistent mechanism instead of several unrelated language features.

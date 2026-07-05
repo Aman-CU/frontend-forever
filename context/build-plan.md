@@ -638,6 +638,8 @@ Each simulator tracks `simulate_completed` when the user plays through all steps
 
 ### 38 Premium Content Gating
 
+> **Note (added during Feature 41, before this feature started):** the user proposed a platform-wide rule while authoring Feature 41's content — beginner concepts fully free across all 5 tabs, intermediate/advanced concepts fully locked across all 5 tabs, for every category — and it was deliberately deferred here rather than built ahead of schedule (see `progress-tracker.md` → Decisions Made, Feature 41 entry, for the full reasoning). Today only the Build tab has real premium lock/unlock UI (`BuildPremiumLocked`); Understand, Simulate, Challenge, and Interview have no concept-level gate at all. This feature should add that gating to the remaining 4 tabs and apply the beginner-free/intermediate+-locked rule platform-wide, across all 8 categories — not just per-item `isPremium` flags on individual Challenges/Project briefs the way Phase 10's content features have used so far.
+
 **UI:**
 
 - Premium content shows a blur overlay + "Unlock with Premium" CTA
@@ -819,9 +821,9 @@ Existing: **Frontend Architecture Patterns** (advanced). Expand to 7 concepts, i
 Each category feature follows the same per-concept checklist, mirroring the pattern already proven once per category:
 
 - **Understand:** MDX guide, following Feature 22's frontmatter contract (`whatsHappening`/`keyInsight`/`memoryHook`/`inRealLife`)
-- **Challenge:** a Practice challenge with executable tests where the concept supports one, linked via `conceptSlug` (Feature 24's pattern) — not mandatory for every concept, but most should get one
+- **Challenge:** a Practice challenge with executable tests where the concept supports one, linked via `conceptSlug` (Feature 24's pattern) — not mandatory for every concept, but most should get one. **Two-part, not one:** a `CHALLENGES` row in `scripts/seed.ts` (title/description/starter/solution/display test_cases) *and* a matching `SandboxTest[]` entry in `src/features/practice/sandbox/testSpecs.ts`, keyed by slug — the seed row's `test_cases` are display labels only; the real `assert`/`assertEqual`/`delay` assertions Run Tests actually checks live in that separate code file (missed during Feature 41's planning — every new Challenge silently showed "coming soon" until this was caught and fixed after the fact).
 - **Interview:** 5–8 seeded questions linked via `conceptSlug` (Feature 25's pattern)
-- **Build:** a project brief once Feature 26's system exists (it ships before this phase starts, so this is available from Feature 41 onward)
+- **Build:** a project brief once Feature 26's system exists (it ships before this phase starts, so this is available from Feature 41 onward). **Same two-part pattern as Challenge:** a `PROJECT_BRIEFS` row in `scripts/seed.ts` *and* a matching `SandboxTest[]` entry in `src/features/build/data/testSpecs.ts`, keyed by slug.
 - **Simulate:** out of scope — see below
 
 ### Simulator Backlog (ongoing, not feature-numbered)

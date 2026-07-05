@@ -1,0 +1,44 @@
+---
+title: "Equality & Type Coercion"
+description: "Learn how JavaScript's == operator coerces types before comparing, why === avoids the surprises, and the handful of coercion rules worth memorizing."
+category: "javascript-runtime"
+difficulty: "beginner"
+order: 2
+whatsHappening: "== converts both operands to a common type before comparing them, following a fixed set of coercion rules. === skips that conversion entirely and compares value and type together."
+keyInsight: "There's really only one == result worth using on purpose: null == undefined. Every other loose-equality quirk (0 == false, '' == 0) is a trap, not a feature."
+memoryHook: "=== asks 'are these the same, no questions asked?' == asks 'can I convert these into being the same?' — and JavaScript's conversion rules are not the ones you'd guess."
+inRealLife: "Like comparing '5' (a price tag written on paper) to 5 (the number in your wallet) — == says close enough and lets you pay, === demands you convert one to match the other first."
+---
+
+## Two kinds of equality
+
+JavaScript has two equality operators that look almost identical but behave very differently:
+
+- **`===` (strict equality)** — compares value and type together. No conversion happens. `1 === '1'` is `false` because a number and a string are never the same type.
+- **`==` (loose equality)** — converts operands to a common type first, then compares. `1 == '1'` is `true` because `'1'` is coerced to the number `1` before comparing.
+
+## The coercion rules that actually get used
+
+You don't need to memorize the full abstract equality algorithm — a handful of rules cover almost every real case:
+
+- **Number vs. string**: the string is converted to a number.
+- **Boolean vs. anything**: the boolean is converted to a number first (`true` → `1`, `false` → `0`), then that result is compared using the rule above.
+- **`null` vs. `undefined`**: they're loosely equal to each other and to nothing else. `null == undefined` is `true`; `null == 0` is `false`.
+- **Object vs. primitive**: the object is converted to a primitive (via `valueOf`/`toString`) before comparing.
+
+## Where this goes wrong
+
+```js
+0 == false;       // true  — false → 0
+'' == false;      // true  — '' → 0, false → 0
+[] == false;      // true  — [] → '' → 0, false → 0
+'0' == false;     // true  — '0' → 0, false → 0
+null == undefined; // true — the one legitimate case
+null == 0;         // false — null only loosely equals undefined
+```
+
+Each of these "passes" for a reason that has nothing to do with the values being conceptually equal — they just happen to coerce to the same number.
+
+## The practical rule
+
+Default to `===` everywhere. The only place `==` earns its keep is an explicit, intentional check for "either `null` or `undefined`" — `value == null` reads cleanly and is the one case where loose equality's behavior is exactly what you want, since it's `true` for both `null` and `undefined` and `false` for everything else, including `0`, `''`, and `false`.

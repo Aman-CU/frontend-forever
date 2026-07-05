@@ -1,0 +1,56 @@
+---
+title: "Closures"
+description: "Understand how a function retains access to its defining scope's variables even after that scope has returned, and where closures show up in real code."
+category: "javascript-runtime"
+difficulty: "beginner"
+order: 3
+whatsHappening: "When a function is created, it keeps a live reference to the scope it was defined in — not a snapshot of the values at that moment. That reference stays alive as long as the function itself does, even after the outer function has already returned."
+keyInsight: "A closure doesn't copy variables — it keeps the actual variable binding alive. If two closures share the same outer scope, they see each other's updates to that scope's variables."
+memoryHook: "A function 'closes over' its birthplace and carries it around forever, like a phone that never loses signal back to the room it was made in."
+inRealLife: "Like a hotel key card that still opens your room even after you've left the front desk — the card doesn't carry a copy of the room, it keeps a live link to it."
+---
+
+## The core mechanism
+
+Every function in JavaScript forms a **closure** — it remembers the scope in which it was defined, and can still read and write variables from that scope even after the outer function has finished running and returned. Normally you'd expect a function's local variables to disappear once it returns, but if an inner function still references them, the JavaScript engine keeps them alive for as long as that inner function exists.
+
+```js
+function makeCounter() {
+  let count = 0;
+  return function () {
+    count += 1;
+    return count;
+  };
+}
+
+const counter = makeCounter();
+counter(); // 1
+counter(); // 2
+```
+
+`makeCounter` has already returned, but the inner function still has access to `count` — because it closed over the scope where `count` lives.
+
+## Where closures show up in real code
+
+- **Private state** — the module pattern hides variables inside a closure so only specifically-returned functions can touch them, simulating private fields.
+- **Memoization** — a cache object lives in the closure, shared across every call to the memoized function.
+- **Event handlers** — a handler closes over whatever state was relevant when it was set up, so it "remembers" the right context later.
+- **Partial application / currying** — baking some arguments into a function by returning a new function that closes over them.
+
+## The classic loop gotcha
+
+```js
+for (var i = 0; i < 3; i++) {
+  setTimeout(() => console.log(i), 0); // logs 3, 3, 3
+}
+
+for (let j = 0; j < 3; j++) {
+  setTimeout(() => console.log(j), 0); // logs 0, 1, 2
+}
+```
+
+`var` has one shared binding for the whole loop, so all three closures end up reading the same final value of `i` once the loop finishes. `let` creates a **new binding per iteration**, so each closure captures its own snapshot of `j`. This single difference is why `let` replaced `var` as the default in loops.
+
+## Why it matters
+
+Closures aren't a special feature you opt into — they're just how functions and scope already work in JavaScript. Understanding them explains a surprising amount of "weird" behavior elsewhere: stale state in a `setTimeout` callback, why a memoized function shares one cache across calls, and why the loop example above trips up almost everyone at least once.
