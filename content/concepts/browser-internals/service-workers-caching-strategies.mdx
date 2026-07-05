@@ -1,0 +1,73 @@
+---
+title: "Service Workers & Caching Strategies"
+description: "See how a service worker intercepts network requests to enable offline support, and compare cache-first, network-first, and stale-while-revalidate strategies."
+category: "browser-internals"
+difficulty: "advanced"
+order: 8
+whatsHappening: "A service worker is a script that runs separately from any page, sitting between the browser and the network — every request the page makes can be intercepted in a `fetch` event handler, letting the service worker decide whether to answer from a cache, from the network, or some mix of both, even when there's no network at all."
+keyInsight: "There is no single 'right' caching strategy — the correct choice depends entirely on how often a resource changes and how tolerant the app is of showing stale data. Static assets want cache-first; live data wants network-first; something in between wants stale-while-revalidate."
+memoryHook: "Cache-first: ask the cabinet before the store. Network-first: ask the store before the cabinet. Stale-while-revalidate: hand over what's in the cabinet right now, but restock it in the background for next time."
+inRealLife: "Like deciding whether to check your pantry or drive to the store: for a can of beans that never changes, check the pantry first (cache-first). For today's newspaper, always get a fresh one (network-first). For a recipe you use often, use the copy on your fridge right now, but grab an updated version next time you're at the store anyway (stale-while-revalidate)."
+---
+
+## Intercepting requests
+
+A registered service worker listens for every request the page makes:
+
+```js
+self.addEventListener("fetch", (event) => {
+  event.respondWith(handleRequest(event.request));
+});
+```
+
+`event.respondWith()` lets the service worker fully control what response the page receives — from an actual network fetch, from a pre-populated `Cache` object, or a mix of both. This interception is also what makes offline support possible: if the network fetch fails, the service worker can fall back to whatever's cached instead of the page showing a browser error.
+
+## Three caching strategies
+
+**Cache-first** — check the cache; only hit the network on a miss. Best for assets that rarely change (versioned JS/CSS bundles, fonts, icons):
+
+```js
+async function cacheFirst(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  const cache = await caches.open("v1");
+  cache.put(request, response.clone());
+  return response;
+}
+```
+
+**Network-first** — always try the network; fall back to cache only if the network fails. Best for data that must be fresh whenever possible (a live feed, account balance):
+
+```js
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    const cache = await caches.open("v1");
+    cache.put(request, response.clone());
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    throw new Error("No network and no cache available");
+  }
+}
+```
+
+**Stale-while-revalidate** — respond from cache immediately (fast, possibly stale), then fetch from the network in the background to update the cache for next time. Best for content that changes occasionally but shouldn't block the current view (a news list, a settings page):
+
+```js
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open("v1");
+  const cached = await cache.match(request);
+  const networkFetch = fetch(request).then((response) => {
+    cache.put(request, response.clone());
+    return response;
+  });
+  return cached || networkFetch;
+}
+```
+
+## Why it matters
+
+Choosing the wrong strategy causes real user-facing bugs: cache-first on an API that returns live data means users see stale numbers indefinitely; network-first on a large static bundle means every load is blocked on a network round trip that was entirely avoidable. The strategy should be chosen resource-by-resource, not applied uniformly to every request a service worker intercepts.

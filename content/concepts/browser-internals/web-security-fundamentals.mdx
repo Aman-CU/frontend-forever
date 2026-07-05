@@ -1,0 +1,52 @@
+---
+title: "Web Security Fundamentals (XSS, CSRF, CSP)"
+description: "Learn the three attacks every frontend has to defend against — XSS, CSRF, and clickjacking — and how CSP, sanitization, and same-site cookies stop them."
+category: "browser-internals"
+difficulty: "advanced"
+order: 6
+whatsHappening: "XSS injects attacker-controlled script into your page so it runs with your page's own privileges. CSRF tricks a logged-in user's browser into sending a request they never intended, using cookies the browser attaches automatically. Both exploit trust — XSS exploits the page trusting its own content, CSRF exploits the server trusting the browser's cookies."
+keyInsight: "XSS and CSRF are solved by completely different defenses because they exploit different trust relationships: XSS is stopped by never trusting rendered content (sanitize/escape), CSRF is stopped by never trusting a cookie alone as proof of intent (SameSite cookies, CSRF tokens)."
+memoryHook: "XSS: attacker's script runs *as* your page. CSRF: attacker forges a request *from* your user, using cookies the browser sends automatically. CSP is the page's own bouncer, deciding what's allowed to run or load at all."
+inRealLife: "XSS is a forged memo slipped onto your own letterhead that your office then treats as official. CSRF is someone signing your name on a form using your already-unlocked office door (the cookie) while you weren't looking. CSP is the rule that no memo gets accepted unless it comes from an approved list of senders."
+---
+
+## Cross-Site Scripting (XSS)
+
+XSS happens when attacker-controlled input ends up executed as script in your page's context — most commonly by rendering unsanitized user input as HTML:
+
+```js
+// Vulnerable: renders raw HTML, including any <script> the input contains
+element.innerHTML = userComment;
+
+// Safe: renders as plain text, no HTML/script interpretation
+element.textContent = userComment;
+```
+
+Once a script runs inside your page, it has full access to that page's DOM, cookies (unless `HttpOnly`), and any tokens visible to JavaScript — it *is* your page, as far as the browser is concerned. The defense is always the same principle: never let user-controlled content be interpreted as markup or code. Escape on output, sanitize if you must allow some HTML (e.g. a rich-text field), and prefer `textContent` over `innerHTML` whenever the content isn't meant to be markup.
+
+## Cross-Site Request Forgery (CSRF)
+
+CSRF exploits the fact that cookies are attached to a request automatically, regardless of which site triggered that request. A malicious page can submit a form (or fire a `fetch`) to your bank's API, and the browser will happily attach your bank's session cookie — the request looks legitimate to the server because the cookie is valid, even though you never intended to send it.
+
+Defenses:
+
+- **`SameSite` cookies** (`SameSite=Strict` or `Lax`) — the browser simply won't attach the cookie to a cross-site request in the first place
+- **CSRF tokens** — a unique, unpredictable token embedded in the legitimate form/page that must be sent back with the request; an attacker's forged request can't know it
+
+## Content Security Policy (CSP)
+
+CSP is a response header that tells the browser exactly what's allowed to load or execute on the page — a whitelist enforced by the browser itself, as a second line of defense even if an XSS bug slips through:
+
+```
+Content-Security-Policy: script-src 'self' https://trusted-cdn.com; object-src 'none'
+```
+
+This blocks inline `<script>` tags and any script from a domain not on the list — so even if an attacker manages to inject `<script>` tags via an XSS bug, the browser refuses to execute them.
+
+## Clickjacking
+
+An attacker overlays your page in an invisible iframe on top of their own, tricking users into clicking something they can't see. Defended with `X-Frame-Options: DENY` or CSP's `frame-ancestors 'none'` — telling the browser to refuse to render your page inside any frame at all.
+
+## Why it matters
+
+These three are the baseline every frontend engineer is expected to reason about, because they're browser-enforced problems, not framework-solved ones — a framework's auto-escaping helps with XSS but doesn't stop a developer from calling `dangerouslySetInnerHTML`/`innerHTML` directly, and no framework sets your CSRF or CSP headers for you.

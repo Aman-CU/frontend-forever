@@ -1,0 +1,37 @@
+---
+title: "The Network Stack (DNS → TCP → TLS → HTTP)"
+description: "Trace what actually happens between typing a URL and seeing a page: DNS resolution, the TCP handshake, TLS negotiation, and the HTTP request/response itself."
+category: "browser-internals"
+difficulty: "advanced"
+order: 7
+whatsHappening: "Before a single byte of your page's HTML arrives, the browser has to complete three separate round trips: resolve the hostname to an IP address (DNS), establish a reliable connection to that IP (TCP handshake), and — for HTTPS — negotiate an encrypted channel (TLS handshake). Only after all three succeed does the actual HTTP request go out."
+keyInsight: "Every one of these steps can be skipped on a repeat visit — cached DNS, a kept-alive TCP connection, a resumed TLS session — which is exactly why the second request to the same host is dramatically faster than the first. Performance optimization at this layer is almost entirely about avoiding repeated handshakes."
+memoryHook: "DNS finds the address. TCP knocks and confirms someone's home. TLS whispers a shared secret before anyone talks business. HTTP is the actual conversation."
+inRealLife: "Like calling a business for the first time: you look up their number (DNS), the line rings and connects (TCP), you both confirm you're speaking a secure line before discussing anything sensitive (TLS), and only then do you actually state your request (HTTP). Call them again minutes later and you skip straight to the conversation because the number's memorized and the line's still open."
+---
+
+## The four steps, in order
+
+1. **DNS resolution** — translate `example.com` into an IP address. The browser checks its own cache, then the OS cache, then queries a DNS resolver (often the ISP's or a public one like `1.1.1.1`) if neither has it.
+2. **TCP handshake** — a three-way handshake (`SYN` → `SYN-ACK` → `ACK`) establishes a reliable, ordered connection to that IP address. This is one full round trip before any data flows.
+3. **TLS handshake** — for HTTPS, the client and server negotiate an encryption algorithm and exchange keys to establish a secure channel. This adds one to two more round trips on a fresh connection.
+4. **HTTP request/response** — only now does the browser send the actual `GET /` request and receive HTML back.
+
+```
+DNS lookup  ──▶  TCP handshake  ──▶  TLS handshake  ──▶  HTTP request/response
+ (1 trip)          (1 trip)            (1-2 trips)             (1 trip)
+```
+
+On a slow connection, each round trip can cost real time — a fresh HTTPS connection to a brand-new host can be 3-4 round trips deep before a single byte of the actual page arrives.
+
+## What gets skipped on a repeat visit
+
+- **DNS is cached** — the OS/browser remembers the IP for the DNS record's TTL, skipping the lookup entirely
+- **TCP connections are reused (keep-alive)** — HTTP/1.1 and later keep the same TCP connection open across multiple requests to the same host, avoiding a fresh handshake each time
+- **TLS sessions can resume** — a session ticket lets the client and server skip the full key negotiation on a reconnect
+
+This is exactly why the *first* request to a new domain is so much slower than every request after it, and why techniques like `<link rel="preconnect">` exist — they let the browser do the DNS + TCP + TLS handshake for a domain **before** the resource that actually needs it is discovered, hiding that latency behind other work.
+
+## Why it matters
+
+Every frontend performance conversation about "why is the first request slow" or "why does adding a third-party script tank my load time" traces back to this stack — each new origin a page depends on means a brand new DNS + TCP + TLS cost, not just an HTTP request. Reducing the number of distinct origins a page talks to is one of the highest-leverage performance wins available, precisely because it removes whole handshakes, not just bytes.

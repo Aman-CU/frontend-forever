@@ -498,6 +498,353 @@ const FIND_LEAKED_LISTENERS_TESTS: SandboxTest[] = [
   },
 ];
 
+// Phase 10 (Feature 42) — Browser Internals
+
+const CLASSIFY_DOM_VS_BOM_TESTS: SandboxTest[] = [
+  {
+    label: "A direct document reference is DOM",
+    source: `
+      assert(typeof classifyApi === "function", "classifyApi is not defined");
+      assertEqual(classifyApi("document.querySelector"), "dom");
+    `,
+  },
+  {
+    label: "window.document is still DOM, not BOM",
+    source: `assertEqual(classifyApi("window.document.body"), "dom");`,
+  },
+  {
+    label: "window.location is BOM",
+    source: `assertEqual(classifyApi("window.location"), "bom");`,
+  },
+  {
+    label: "A direct navigator reference is BOM",
+    source: `assertEqual(classifyApi("navigator.userAgent"), "bom");`,
+  },
+  {
+    label: "A direct history reference is BOM",
+    source: `assertEqual(classifyApi("history.pushState"), "bom");`,
+  },
+];
+
+const EVENT_PROPAGATION_ORDER_TESTS: SandboxTest[] = [
+  {
+    label: "All-bubble listeners fire target-first, then bottom-up",
+    source: `
+      assert(typeof getEventOrder === "function", "getEventOrder is not defined");
+      assertEqual(
+        getEventOrder(["document", "list", "item"], { document: "bubble", list: "bubble", item: "bubble" }),
+        ["item", "list", "document"],
+      );
+    `,
+  },
+  {
+    label: "A capture listener on an ancestor fires before the target",
+    source: `
+      assertEqual(
+        getEventOrder(["document", "list", "item"], { document: "capture", item: "bubble" }),
+        ["document", "item"],
+      );
+    `,
+  },
+  {
+    label: "Among bubble ancestors, the deepest fires before the shallower one",
+    source: `
+      assertEqual(
+        getEventOrder(["document", "section", "list", "item"], { section: "bubble", list: "bubble", item: "bubble" }),
+        ["item", "list", "section"],
+      );
+    `,
+  },
+  {
+    label: "A target with no listener of its own contributes nothing, but ancestors still fire correctly",
+    source: `
+      assertEqual(
+        getEventOrder(["document", "app", "button"], { app: "capture", document: "bubble" }),
+        ["app", "document"],
+      );
+    `,
+  },
+];
+
+const PICK_STORAGE_MECHANISM_TESTS: SandboxTest[] = [
+  {
+    label: "Anything the server needs on every request is a cookie, regardless of other fields",
+    source: `
+      assert(typeof pickStorage === "function", "pickStorage is not defined");
+      assertEqual(
+        pickStorage({ persistAcrossSessions: true, capacityKB: 1, sendWithEveryRequest: true }),
+        "cookie",
+      );
+    `,
+  },
+  {
+    label: "Data that shouldn't outlive the tab is sessionStorage",
+    source: `
+      assertEqual(
+        pickStorage({ persistAcrossSessions: false, capacityKB: 10, sendWithEveryRequest: false }),
+        "sessionStorage",
+      );
+    `,
+  },
+  {
+    label: "Small persistent data is localStorage",
+    source: `
+      assertEqual(
+        pickStorage({ persistAcrossSessions: true, capacityKB: 100, sendWithEveryRequest: false }),
+        "localStorage",
+      );
+    `,
+  },
+  {
+    label: "Large persistent data is indexedDB",
+    source: `
+      assertEqual(
+        pickStorage({ persistAcrossSessions: true, capacityKB: 20000, sendWithEveryRequest: false }),
+        "indexedDB",
+      );
+    `,
+  },
+];
+
+const CLASSIFY_STYLE_CHANGE_TESTS: SandboxTest[] = [
+  {
+    label: "width triggers layout",
+    source: `
+      assert(typeof classifyStyleChange === "function", "classifyStyleChange is not defined");
+      assertEqual(classifyStyleChange("width"), "layout");
+    `,
+  },
+  { label: "display triggers layout", source: `assertEqual(classifyStyleChange("display"), "layout");` },
+  { label: "color is paint-only", source: `assertEqual(classifyStyleChange("color"), "paint");` },
+  {
+    label: "visibility is paint-only, unlike display",
+    source: `assertEqual(classifyStyleChange("visibility"), "paint");`,
+  },
+  { label: "transform is composite-only", source: `assertEqual(classifyStyleChange("transform"), "composite");` },
+  { label: "opacity is composite-only", source: `assertEqual(classifyStyleChange("opacity"), "composite");` },
+];
+
+const EVALUATE_CORS_REQUEST_TESTS: SandboxTest[] = [
+  {
+    label: "A simple GET with a wildcard origin needs no preflight and is allowed",
+    source: `
+      assert(typeof evaluateCorsRequest === "function", "evaluateCorsRequest is not defined");
+      assertEqual(
+        evaluateCorsRequest(
+          { method: "GET", headers: [], origin: "https://app.com" },
+          { allowOrigin: "*", allowMethods: [], allowHeaders: [] },
+        ),
+        { preflightRequired: false, allowed: true },
+      );
+    `,
+  },
+  {
+    label: "A PUT request needs a preflight, and is allowed when the method is on the allow-list",
+    source: `
+      assertEqual(
+        evaluateCorsRequest(
+          { method: "PUT", headers: [], origin: "https://app.com" },
+          { allowOrigin: "https://app.com", allowMethods: ["PUT"], allowHeaders: [] },
+        ),
+        { preflightRequired: true, allowed: true },
+      );
+    `,
+  },
+  {
+    label: "Needing a preflight isn't enough — the method must actually be on the allow-list",
+    source: `
+      assertEqual(
+        evaluateCorsRequest(
+          { method: "PUT", headers: [], origin: "https://app.com" },
+          { allowOrigin: "https://app.com", allowMethods: ["GET"], allowHeaders: [] },
+        ),
+        { preflightRequired: true, allowed: false },
+      );
+    `,
+  },
+  {
+    label: "A mismatched origin is blocked even for a simple request",
+    source: `
+      assertEqual(
+        evaluateCorsRequest(
+          { method: "GET", headers: [], origin: "https://evil.com" },
+          { allowOrigin: "https://app.com", allowMethods: [], allowHeaders: [] },
+        ),
+        { preflightRequired: false, allowed: false },
+      );
+    `,
+  },
+  {
+    label: "A custom header forces a preflight even on a GET request",
+    source: `
+      assertEqual(
+        evaluateCorsRequest(
+          { method: "GET", headers: ["Authorization"], origin: "https://app.com" },
+          { allowOrigin: "https://app.com", allowMethods: ["GET"], allowHeaders: ["Authorization"] },
+        ),
+        { preflightRequired: true, allowed: true },
+      );
+    `,
+  },
+];
+
+const SANITIZE_HTML_INPUT_TESTS: SandboxTest[] = [
+  {
+    // Built via concatenation so this file never contains the literal
+    // contiguous text "</script>", which would otherwise prematurely close
+    // the sandbox's own <script> tag when this source is embedded in the
+    // generated iframe document (see buildSandboxDoc.ts).
+    label: "Strips a <script> block entirely",
+    source: `
+      assert(typeof sanitizeHtml === "function", "sanitizeHtml is not defined");
+      var CLOSE_SCRIPT = "</scr" + "ipt>";
+      var dangerous = "<p>Hello</p><script>alert(1)" + CLOSE_SCRIPT;
+      assertEqual(sanitizeHtml(dangerous), "<p>Hello</p>");
+    `,
+  },
+  {
+    label: "Strips an on* event handler attribute",
+    source: `assertEqual(sanitizeHtml('<img src="x" onerror="alert(1)">'), '<img src="x">');`,
+  },
+  {
+    label: "Neutralizes a javascript: URL",
+    source: `
+      assertEqual(
+        sanitizeHtml('<a href="javascript:alert(1)">click</a>'),
+        '<a href="#">click</a>',
+      );
+    `,
+  },
+  {
+    label: "Leaves already-safe markup completely unchanged",
+    source: `assertEqual(sanitizeHtml("<p>Safe text</p>"), "<p>Safe text</p>");`,
+  },
+];
+
+const TRACE_CONNECTION_STEPS_TESTS: SandboxTest[] = [
+  {
+    label: "A brand-new HTTPS connection performs all four steps",
+    source: `
+      assert(typeof getConnectionSteps === "function", "getConnectionSteps is not defined");
+      assertEqual(
+        getConnectionSteps({ isHttps: true, dnsCached: false, connectionReused: false }),
+        ["dns-lookup", "tcp-handshake", "tls-handshake", "http-request"],
+      );
+    `,
+  },
+  {
+    label: "Cached DNS and plain HTTP skip both the lookup and the TLS handshake",
+    source: `
+      assertEqual(
+        getConnectionSteps({ isHttps: false, dnsCached: true, connectionReused: false }),
+        ["tcp-handshake", "http-request"],
+      );
+    `,
+  },
+  {
+    label: "A fully reused keep-alive connection skips straight to the request",
+    source: `
+      assertEqual(
+        getConnectionSteps({ isHttps: true, dnsCached: true, connectionReused: true }),
+        ["http-request"],
+      );
+    `,
+  },
+  {
+    label: "A fresh TCP connection over HTTPS still needs its own TLS handshake, even with DNS cached",
+    source: `
+      assertEqual(
+        getConnectionSteps({ isHttps: true, dnsCached: true, connectionReused: false }),
+        ["tcp-handshake", "tls-handshake", "http-request"],
+      );
+    `,
+  },
+];
+
+const STALE_WHILE_REVALIDATE_TESTS: SandboxTest[] = [
+  {
+    label: "Returns a cache hit immediately",
+    source: `
+      assert(typeof staleWhileRevalidate === "function", "staleWhileRevalidate is not defined");
+      var store = new Map([["user", "cached-value"]]);
+      var cache = { get: async function (k) { return store.get(k); }, set: async function (k, v) { store.set(k, v); } };
+      var network = async function () { await delay(50); return "fresh-value"; };
+      var result = await staleWhileRevalidate("user", cache, network);
+      assertEqual(result, "cached-value", "should return the cached value immediately when present");
+    `,
+  },
+  {
+    label: "Falls back to the network value on a cache miss",
+    source: `
+      var store = new Map();
+      var cache = { get: async function (k) { return store.get(k); }, set: async function (k, v) { store.set(k, v); } };
+      var network = async function () { return "fresh-value"; };
+      var result = await staleWhileRevalidate("user", cache, network);
+      assertEqual(result, "fresh-value", "should return the network value when nothing is cached");
+    `,
+  },
+  {
+    label: "Updates the cache with the fresh value in the background",
+    source: `
+      var store = new Map([["user", "cached-value"]]);
+      var cache = { get: async function (k) { return store.get(k); }, set: async function (k, v) { store.set(k, v); } };
+      var network = async function () { await delay(20); return "fresh-value"; };
+      await staleWhileRevalidate("user", cache, network);
+      await delay(60);
+      assertEqual(store.get("user"), "fresh-value", "the cache should be updated with the fresh value in the background");
+    `,
+  },
+  {
+    label: "A background network failure doesn't affect an already-returned cache hit",
+    source: `
+      var store = new Map([["user", "cached-value"]]);
+      var cache = { get: async function (k) { return store.get(k); }, set: async function (k, v) { store.set(k, v); } };
+      var network = async function () { throw new Error("offline"); };
+      var result = await staleWhileRevalidate("user", cache, network);
+      assertEqual(result, "cached-value", "a background network failure should not affect the cached response");
+      await delay(20);
+    `,
+  },
+];
+
+const CLONE_WORKER_MESSAGE_TESTS: SandboxTest[] = [
+  {
+    label: "Deep-clones a nested array without sharing a reference to the original's nested array",
+    source: `
+      assert(typeof cloneMessage === "function", "cloneMessage is not defined");
+      var original = { a: 1, b: [1, 2, 3] };
+      var clone = cloneMessage(original);
+      assertEqual(clone, original);
+      assert(clone.b !== original.b, "the nested array must be a genuine copy, not the same reference");
+    `,
+  },
+  {
+    label: "A primitive passes through unchanged",
+    source: `assertEqual(cloneMessage(42), 42);`,
+  },
+  {
+    label: "A function anywhere in the value throws instead of cloning",
+    source: `
+      var threw = false;
+      try {
+        cloneMessage({ fn: function () {} });
+      } catch (e) {
+        threw = true;
+      }
+      assert(threw, "cloneMessage should throw when the value contains a function");
+    `,
+  },
+  {
+    label: "Nested objects are cloned independently at every level",
+    source: `
+      var original = { nested: { deep: [1, { x: 2 }] } };
+      var clone = cloneMessage(original);
+      clone.nested.deep[1].x = 999;
+      assertEqual(original.nested.deep[1].x, 2, "mutating the clone must never affect the original");
+    `,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "implement-debounce": DEBOUNCE_TESTS,
   "specificity-calculator": SPECIFICITY_TESTS,
@@ -514,6 +861,15 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "implement-curry": IMPLEMENT_CURRY_TESTS,
   "implement-take": IMPLEMENT_TAKE_TESTS,
   "find-leaked-listeners": FIND_LEAKED_LISTENERS_TESTS,
+  "classify-dom-vs-bom": CLASSIFY_DOM_VS_BOM_TESTS,
+  "event-propagation-order": EVENT_PROPAGATION_ORDER_TESTS,
+  "pick-storage-mechanism": PICK_STORAGE_MECHANISM_TESTS,
+  "classify-style-change": CLASSIFY_STYLE_CHANGE_TESTS,
+  "evaluate-cors-request": EVALUATE_CORS_REQUEST_TESTS,
+  "sanitize-html-input": SANITIZE_HTML_INPUT_TESTS,
+  "trace-connection-steps": TRACE_CONNECTION_STEPS_TESTS,
+  "stale-while-revalidate": STALE_WHILE_REVALIDATE_TESTS,
+  "clone-worker-message": CLONE_WORKER_MESSAGE_TESTS,
 };
 
 export function getTestSpec(slug: string): SandboxTest[] | null {

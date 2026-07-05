@@ -1,0 +1,53 @@
+---
+title: "DOM vs. BOM"
+description: "Distinguish the DOM (the page's content tree) from the BOM (the browser's own objects like window, location, and navigator) and what each actually exposes."
+category: "browser-internals"
+difficulty: "beginner"
+order: 1
+whatsHappening: "The browser hands JavaScript two separate object trees: the DOM, which represents the HTML document itself, and the BOM, which represents the browser window around that document. `window` is the BOM's root — and every DOM API you use (`document`, `document.querySelector`) is actually reached through `window.document`."
+keyInsight: "There is no formal BOM specification the way there is a DOM standard — `window`, `navigator`, `location`, and `history` are just conventions browsers agreed on. The DOM is standardized by the W3C/WHATWG; the BOM is standardized by precedent."
+memoryHook: "DOM is the page. BOM is the browser around the page. The page lives inside the browser, so `document` lives inside `window`."
+inRealLife: "Like a book (the DOM — pages, paragraphs, words you can edit) sitting on a desk (the BOM — the desk's position, the room's lighting, the door to the hallway). Editing a sentence in the book doesn't move the desk; moving the desk doesn't rewrite the book."
+---
+
+## Two trees, one global
+
+Every browser tab gives JavaScript access to two distinct object models:
+
+- **The DOM (Document Object Model)** — a tree representing the HTML document: elements, attributes, text nodes. `document.querySelector`, `element.appendChild`, `element.classList` all operate on this tree.
+- **The BOM (Browser Object Model)** — objects representing the browser itself, outside the page's content: `window`, `navigator`, `location`, `history`, `screen`.
+
+```js
+window.document; // the DOM root — the page's content tree
+window.location; // the BOM — current URL, part of the browser chrome
+window.navigator; // the BOM — info about the browser/OS
+```
+
+`document` is technically a property of `window`, which is why `document.title` and `window.document.title` are identical — but conceptually the two trees answer very different questions. The DOM answers "what's on this page?" The BOM answers "what browser is this page running in, and what's its state?"
+
+## What each actually exposes
+
+**DOM** — content and structure:
+
+```js
+document.querySelector(".card");
+document.createElement("div");
+document.getElementById("app");
+```
+
+**BOM** — the browser environment:
+
+```js
+location.href; // current URL
+location.reload(); // reload the page
+navigator.userAgent; // browser/OS string
+navigator.onLine; // network connectivity
+history.pushState({}, "", "/new-path"); // manipulate browser history
+screen.width; // physical screen dimensions
+```
+
+## Why the distinction matters
+
+Mixing these up causes real bugs. `history.pushState` changes the URL bar without touching the DOM at all — if you expect the page content to update automatically, it won't; that's what client-side routers listen for `popstate` and manually re-render the DOM in response to. Conversely, `document.title` changes the tab's label (a BOM-visible effect) by mutating a DOM node — proof the two systems interact constantly even though they represent different things.
+
+There's no standards body that defines "the BOM" the way the WHATWG defines the DOM — `window`, `navigator`, and `location` exist because every browser vendor converged on the same shape informally. That's also why BOM APIs vary more across browsers than DOM APIs do.
