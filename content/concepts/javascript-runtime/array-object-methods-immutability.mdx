@@ -4,7 +4,7 @@ description: "Master map, filter, reduce, and their object equivalents, and why 
 category: "javascript-runtime"
 difficulty: "beginner"
 order: 5
-whatsHappening: "map, filter, and reduce each take a callback and produce a new array without touching the original. Their object equivalents (spread, Object.entries, Object.keys) follow the same non-mutating pattern for plain objects."
+whatsHappening: "map, filter, and reduce each take a callback and produce a new array without touching the original. Spread copies a plain object the same non-mutating way; Object.entries and Object.keys don't copy the object at all — they just inspect it, returning a new array of its entries or keys without ever touching the original."
 keyInsight: "Mutating methods (push, splice, sort) change the original in place and return something other than a fresh copy; non-mutating methods (map, filter, concat, spread) always return a brand-new array or object, leaving the original untouched."
 memoryHook: "If it hands you back a new array/object, it's safe. If it changes the one you already had, check the docs before you reach for it."
 inRealLife: "Like editing a photocopy instead of the original document — you can hand out the new version everywhere without worrying that someone else's copy of the original just silently changed underneath them."
