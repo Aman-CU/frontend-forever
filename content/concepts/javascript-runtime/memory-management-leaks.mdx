@@ -1,0 +1,51 @@
+---
+title: "Memory Management & Leaks"
+description: "Understand how JavaScript's garbage collector reclaims unreachable objects, and the common patterns — stray closures, detached DOM nodes, forgotten listeners — that leak memory anyway."
+category: "javascript-runtime"
+difficulty: "advanced"
+order: 13
+whatsHappening: "JavaScript's garbage collector automatically frees memory for objects that are no longer reachable from anywhere the running code can still access. A memory leak happens when something keeps an object reachable — usually accidentally — long after it's actually needed."
+keyInsight: "The garbage collector only frees memory that's unreachable. It has no concept of 'unused' — a huge object that's technically still referenced by a forgotten event listener or a stale closure will never be collected, no matter how obviously dead it looks to you."
+memoryHook: "Reachable, not 'wanted', is the only thing that keeps memory alive. If nothing points to it anymore, it's collected — if something still does, even by accident, it isn't."
+inRealLife: "Like a storage unit you keep paying for because one forgotten autopay reference to it still exists somewhere — the unit doesn't get cleared just because you don't need what's inside anymore; something still has to actively let go of it."
+---
+
+## How garbage collection actually works
+
+JavaScript's garbage collector uses **reachability**, not usage, as its rule: an object is kept alive if it can still be reached by following references starting from the "roots" (global variables, the current call stack, active closures). Once nothing reachable points to an object anymore, it becomes eligible for collection and its memory is eventually freed. The engine does this automatically — you never call `free()` yourself.
+
+## Why leaks happen anyway
+
+A **memory leak** in JavaScript isn't a bug in the garbage collector — it's a reference you didn't realize you were still holding, keeping something reachable long after you actually stopped needing it. Four patterns account for most real leaks:
+
+- **Forgotten event listeners** — `addEventListener` without a matching `removeEventListener` keeps the listener's closure (and everything it references) alive as long as the element it's attached to exists.
+- **Detached DOM nodes** — removing an element from the page doesn't free it if a JavaScript variable still references it; the whole subtree stays in memory, detached but reachable.
+- **Stray closures** — a long-lived closure (e.g. a `setInterval` callback) that references large data it no longer needs keeps that data alive for as long as the closure exists.
+- **Uncleared timers/intervals** — a `setInterval` that's never `clearInterval`'d keeps running (and keeps its closure's references alive) even after the component or feature that created it is gone.
+
+```js
+function attachHandler(bigData) {
+  document.getElementById("btn").addEventListener("click", () => {
+    console.log(bigData.length); // bigData stays reachable as long as this listener exists
+  });
+}
+```
+
+If `attachHandler` runs repeatedly (say, once per render) without ever removing the previous listener, each call's `bigData` closure stays alive — a slow, cumulative leak.
+
+## The React-specific version
+
+The most common frontend instance of this pattern is a `useEffect` that subscribes to something (an event listener, a `setInterval`, a WebSocket) without returning a cleanup function:
+
+```js
+useEffect(() => {
+  const id = setInterval(poll, 5000);
+  return () => clearInterval(id); // without this, the interval outlives the component
+}, []);
+```
+
+Every unmounted-but-still-polling interval is a leak of exactly the kind described above — the closure over `poll` (and whatever it references) stays reachable through the still-running timer, long after the component that created it is gone.
+
+## Finding leaks
+
+DevTools' Memory panel is the practical tool: take a heap snapshot, perform the suspected-leaky action several times, take another snapshot, and compare — objects whose count keeps growing across repeated actions (detached DOM nodes are a distinctive category the tool flags directly) point at exactly the reference you forgot to release.

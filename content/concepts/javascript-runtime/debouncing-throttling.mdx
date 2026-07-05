@@ -1,0 +1,60 @@
+---
+title: "Debouncing & Throttling"
+description: "Learn the two standard fixes for handlers that fire too often — debounce waits for a pause, throttle caps the rate — and when to reach for each."
+category: "javascript-runtime"
+difficulty: "intermediate"
+order: 11
+whatsHappening: "Debounce delays running a function until a pause in calls; every new call resets the timer, so only the final call in a burst actually runs. Throttle runs the function at most once per fixed interval, regardless of how many calls come in during that window."
+keyInsight: "Debounce answers 'has the user stopped?' — great for search-as-you-type. Throttle answers 'how long since I last ran?' — great for scroll/resize handlers that must keep firing at a steady rate."
+memoryHook: "Debounce: wait for quiet. Throttle: run on a schedule no matter how noisy."
+inRealLife: "Debounce is an elevator door that resets its close-timer every time someone new steps in. Throttle is a bus that leaves every 10 minutes on the dot, no matter how many people are waiting."
+---
+
+## The shared problem
+
+Some browser events — `input`, `scroll`, `resize`, `mousemove` — can fire dozens or hundreds of times per second. Running expensive work (an API call, a layout calculation, a re-render) on every single event either floods the network or drops frames. Debounce and throttle are the two standard fixes, and they solve slightly different problems.
+
+## Debounce: wait for a pause
+
+A debounced function delays running until `delay` milliseconds have passed with **no new calls**. Every new call resets the timer.
+
+```js
+function debounce(fn, delay) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
+const search = debounce((query) => fetchResults(query), 300);
+search("i"); search("in"); search("ind"); // only "ind" runs, 300ms after the last call
+```
+
+This is the right tool when only the *final* state matters — a search box, form validation, autosave. Firing on every keystroke wastes work; firing once after the user pauses is exactly what's needed.
+
+## Throttle: cap the rate
+
+A throttled function runs at most once every `interval` milliseconds, no matter how many times it's called — extra calls during the window are dropped (or queued for the next window, depending on implementation).
+
+```js
+function throttle(fn, interval) {
+  let lastRun = 0;
+  return (...args) => {
+    const now = Date.now();
+    if (now - lastRun >= interval) {
+      lastRun = now;
+      fn(...args);
+    }
+  };
+}
+
+const onScroll = throttle(() => updateScrollProgress(), 100);
+window.addEventListener("scroll", onScroll); // runs at most every 100ms
+```
+
+This is the right tool for handlers that need to keep responding continuously — scroll progress bars, resize-driven layout recalculation, drag handlers — where the *last* value alone isn't enough; you want steady updates throughout.
+
+## Choosing between them
+
+Ask what the handler actually needs: if only the end state matters once activity settles, debounce. If the handler needs to keep firing at a predictable rate throughout continuous activity, throttle. Search-as-you-type is debounce; an infinite-scroll "load more" trigger on scroll is throttle — it needs to keep checking the scroll position continuously, not just once the user stops scrolling.

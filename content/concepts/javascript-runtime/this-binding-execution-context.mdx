@@ -1,0 +1,69 @@
+---
+title: "this Binding & Execution Context"
+description: "Trace how this is determined at call time by regular calls, method calls, constructors, and explicit binding — and why arrow functions are the exception."
+category: "javascript-runtime"
+difficulty: "intermediate"
+order: 6
+whatsHappening: "this isn't fixed when a function is defined — it's determined by how the function is called. The same function can have a different this each time it's invoked, depending on which of four call patterns (or arrow functions, which opt out entirely) was used."
+keyInsight: "Arrow functions have no this of their own — they capture this lexically from whatever scope they were defined in, and never rebind it no matter how they're later called."
+memoryHook: "Ask 'what's to the left of the dot when this function is called?' — that's usually this. No dot at all, in non-strict mode, means the global object."
+inRealLife: "Like a job title that depends on who's asking — the same person is 'Mom' to one person and 'Dr. Chen' to another, based entirely on who's addressing them, not on anything fixed about the person."
+---
+
+## this is determined at call time
+
+Unlike most languages where `this`-equivalents are fixed by where a method is defined, JavaScript decides `this` fresh **every time a function is called**, based on how it was called. The same function can produce a different `this` on every invocation.
+
+## The four call patterns
+
+```js
+function show() {
+  console.log(this);
+}
+
+show();                    // 1. Regular call → globalThis (or undefined in strict mode)
+
+const obj = { show };
+obj.show();                 // 2. Method call → this is obj
+
+new show();                 // 3. Constructor call → this is the new instance
+
+show.call({ id: 1 });       // 4. Explicit binding → this is { id: 1 }
+show.apply({ id: 1 });      // same, arguments passed as an array
+const bound = show.bind({ id: 1 });
+bound();                    // permanently bound to { id: 1 }
+```
+
+- **Regular call** — no object before the dot, so `this` falls back to the global object (or `undefined` in strict mode/modules).
+- **Method call** — `this` is whatever object is directly to the left of the dot at call time.
+- **Constructor call** — `new Fn()` creates a fresh object and sets it as `this` inside `Fn`.
+- **Explicit binding** — `.call()`/`.apply()` set `this` for a single call; `.bind()` returns a new function permanently locked to that `this`.
+
+## The arrow function exception
+
+Arrow functions don't participate in any of this. They have **no `this` of their own** — they capture `this` lexically from the scope they were *defined* in, and that binding never changes, no matter how the arrow function is later called or assigned.
+
+```js
+const timer = {
+  seconds: 0,
+  start() {
+    setInterval(() => {
+      this.seconds++; // arrow function — `this` is the timer object,
+                       // inherited from `start`'s method-call `this`
+    }, 1000);
+  },
+};
+```
+
+If `start` used a regular `function` for the `setInterval` callback instead, that callback would be a plain function call (no object before the dot), so `this` would be `undefined`/`globalThis` — losing the reference to `timer` entirely. This is exactly why arrow functions are the default choice for callbacks that need to keep the surrounding `this`.
+
+## The common bug this explains
+
+Passing a method as a bare reference detaches it from its object:
+
+```js
+const btn = { label: "Save", onClick() { console.log(this.label); } };
+element.addEventListener("click", btn.onClick); // this is the button, not btn — logs undefined
+```
+
+The fix is `.bind(btn)` or wrapping it in an arrow function (`() => btn.onClick()`) so the method call pattern is preserved instead of becoming a bare function reference.

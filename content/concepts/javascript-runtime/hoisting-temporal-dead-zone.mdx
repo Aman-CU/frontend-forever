@@ -1,0 +1,39 @@
+---
+title: "Hoisting & the Temporal Dead Zone"
+description: "See how var, let, const, and function declarations are hoisted differently, and why accessing a let/const before its declaration throws inside the temporal dead zone."
+category: "javascript-runtime"
+difficulty: "beginner"
+order: 1
+whatsHappening: "Before any code runs, the engine scans the current scope and registers every declaration. var and function declarations are hoisted with a usable value; let and const are hoisted too, but stay uninitialized until their declaration line actually executes."
+keyInsight: "let and const aren't 'not hoisted' — they're hoisted into a temporal dead zone (TDZ) where touching them throws a ReferenceError, instead of silently returning undefined like a hoisted var would."
+memoryHook: "var says 'undefined, ask again later.' let/const say 'don't ask at all — not yet.' Function declarations say 'I'm ready before you even start reading.'"
+inRealLife: "Like a package that's been shipped (hoisted) but is still in transit — the tracking number exists, but scanning it too early tells you nothing useful yet, not that the package doesn't exist."
+---
+
+## What hoisting actually is
+
+Before executing a scope's code line by line, the JavaScript engine does a pass over it and registers every `var`, `let`, `const`, and function declaration it finds — regardless of where in the scope they appear. This registration step is what people call **hoisting**. It's not that the code physically moves to the top; the *declaration* is known upfront, even though the *assignment* still happens where you wrote it.
+
+## Three different hoisting behaviors
+
+- **Function declarations** (`function foo() {}`) are hoisted fully — both the name and the function body are available from the very top of the scope. You can call a function declaration before its line in the file.
+- **`var`** declarations are hoisted and initialized to `undefined` immediately. Reading a `var` before its assignment line gives you `undefined`, not an error.
+- **`let`/`const`** declarations are hoisted too, but not initialized — they exist in the scope but are unusable until the engine actually reaches their declaration line.
+
+## The temporal dead zone
+
+The span between the start of a scope and a `let`/`const`'s actual declaration line is called the **temporal dead zone (TDZ)**. Any attempt to read or write the variable while inside its TDZ throws a `ReferenceError`, even though the engine already knows the variable will exist.
+
+```js
+console.log(a); // undefined — var is hoisted and pre-initialized
+var a = 1;
+
+console.log(b); // ReferenceError: Cannot access 'b' before initialization
+let b = 2;
+```
+
+`b` isn't "not hoisted" — it's hoisted into the TDZ, which is a stricter, safer behavior than `var`'s silent `undefined`.
+
+## Why this matters in practice
+
+The TDZ turns a class of bugs that `var` hides into errors you see immediately. A `var` typo-order bug (using a variable before you meant to define it) quietly returns `undefined` and fails somewhere downstream, far from the real cause. The same mistake with `let`/`const` throws right at the point of the actual mistake, which is exactly why modern code defaults to `let`/`const` and treats `var` as legacy.

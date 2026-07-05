@@ -1,0 +1,70 @@
+---
+title: "Promises & Async/Await"
+description: "Understand how Promises model a future value through pending/fulfilled/rejected states, and how async/await is syntax over that same mechanism."
+category: "javascript-runtime"
+difficulty: "intermediate"
+order: 10
+whatsHappening: "A Promise represents a value that isn't available yet — it starts pending, then settles exactly once into either fulfilled (with a value) or rejected (with a reason). async/await is syntax that lets you write code that consumes a Promise as if it were synchronous, without actually blocking."
+keyInsight: "await doesn't block the thread — it suspends the async function and lets everything else keep running, resuming the function's own body as a microtask once the awaited Promise settles."
+memoryHook: "A Promise is a receipt for a value that isn't ready yet. .then() and await are both just ways of saying 'run this once the receipt is redeemed.'"
+inRealLife: "Like a coat-check ticket — you don't get your coat immediately, but the ticket is a guarantee you'll get either the coat (fulfilled) or an apology because it was lost (rejected), and you can go do other things while you wait."
+---
+
+## What a Promise actually is
+
+A **Promise** is an object representing a value that will be available later. It exists in exactly one of three states:
+
+- **pending** — not yet settled
+- **fulfilled** — settled successfully, with a value
+- **rejected** — settled with a failure reason
+
+Once a Promise settles (fulfilled or rejected), it stays that way forever — it can't go back to pending or settle a second time.
+
+```js
+const promise = new Promise((resolve, reject) => {
+  setTimeout(() => resolve("done"), 1000);
+});
+
+promise.then((value) => console.log(value)); // "done", after ~1s
+```
+
+## Chaining and combining
+
+`.then()` returns a *new* Promise, which is what makes chaining work — each `.then()` can return a plain value or another Promise, and the chain waits for it either way:
+
+```js
+fetchUser(id)
+  .then((user) => fetchPosts(user.id))
+  .then((posts) => console.log(posts))
+  .catch((err) => console.error(err));
+```
+
+For running multiple Promises together, the static combinators each answer a different question: `Promise.all` waits for every one to fulfill (rejects immediately if any rejects), `Promise.allSettled` waits for every one regardless of outcome, `Promise.race` settles as soon as the first one settles, and `Promise.any` fulfills as soon as the first one fulfills.
+
+## async/await is syntax over Promises
+
+`async`/`await` doesn't replace Promises — every `async function` returns a Promise, and `await` is just a different way of consuming one:
+
+```js
+async function loadUser(id) {
+  const user = await fetchUser(id);   // pauses here until fetchUser's promise settles
+  const posts = await fetchPosts(user.id);
+  return posts;
+}
+```
+
+This reads like synchronous code, but nothing is actually blocked — `await` suspends only the `async function` itself, hands control back to whatever called it, and resumes the function's remaining body as a microtask once the awaited Promise settles (the event loop concept covers exactly how that scheduling works).
+
+## Error handling
+
+`.catch()` on a Promise chain and `try/catch` around `await` handle the same thing — a rejected Promise:
+
+```js
+try {
+  const user = await fetchUser(id);
+} catch (err) {
+  console.error("failed to load user:", err);
+}
+```
+
+A rejected Promise with no `.catch()`/`try-catch` anywhere in its chain surfaces as an "unhandled promise rejection," which most runtimes log loudly — always give every async operation a path to handle failure.

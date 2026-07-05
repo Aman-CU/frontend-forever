@@ -1,0 +1,50 @@
+---
+title: "Modules: ESM vs. CommonJS"
+description: "Compare ES Modules' static import/export syntax to CommonJS's dynamic require, and why the difference matters for tree-shaking and interop."
+category: "javascript-runtime"
+difficulty: "intermediate"
+order: 8
+whatsHappening: "ES Modules (import/export) are resolved statically, at parse time, before any code runs. CommonJS (require/module.exports) resolves dynamically, at runtime, as each require() call executes."
+keyInsight: "Because ESM imports/exports are static and known before execution, bundlers can analyze them ahead of time and delete anything unused — tree-shaking. CommonJS's runtime require() can't be analyzed the same way, so it can't be tree-shaken nearly as effectively."
+memoryHook: "ESM: the whole module map is known before a single line runs. CommonJS: you find out what a module needs as you execute it, one require() at a time."
+inRealLife: "Like a printed table of contents (ESM) that lists every chapter before you open the book, versus finding out what's in a choose-your-own-adventure book (CommonJS) only as you turn each page."
+---
+
+## Two module systems
+
+JavaScript has run with two competing module systems for most of its history:
+
+- **CommonJS (CJS)** — Node.js's original module system. `require()` and `module.exports`.
+- **ES Modules (ESM)** — the language's own standardized system. `import` and `export`.
+
+```js
+// CommonJS
+const { readFile } = require("fs");
+module.exports = { doThing };
+
+// ES Modules
+import { readFile } from "fs";
+export function doThing() { /* ... */ }
+```
+
+## Static vs. dynamic resolution
+
+The difference that matters most isn't the syntax — it's **when** each system figures out what depends on what:
+
+- **ESM's `import`/`export` are static.** They must appear at the top level of a module (never inside an `if` or a function), so a tool can read the entire dependency graph just by parsing the file — before executing a single line.
+- **CommonJS's `require()` is a normal function call**, so it can appear anywhere, including conditionally: `if (condition) { const x = require("./x"); }`. What a module actually needs is only knowable by running the code.
+
+## Why this matters for tree-shaking
+
+Because a bundler can see an ESM module's full import/export graph without running anything, it can prove that a given export is never imported anywhere and safely delete it — this is **tree-shaking**. CommonJS's dynamic `require()` calls can't be analyzed with the same confidence (a `require()` might be conditional, or its target computed at runtime), so CommonJS bundles are typically larger — everything a module *might* need gets included.
+
+## Interop between the two
+
+Node and modern bundlers support both, which creates real friction:
+
+- Importing a CommonJS module from ESM works, but only its `module.exports` object is available as the "default" export — named exports are approximated by Node inspecting the CJS module's shape, which doesn't always succeed perfectly.
+- Importing an ESM module from CommonJS `require()` doesn't work directly at all — ESM modules are asynchronous to load, and `require()` is synchronous. You need a dynamic `import()` (which returns a Promise) instead.
+
+## The practical takeaway
+
+Modern frontend code should default to ESM `import`/`export` — it's the language standard, every current bundler optimizes around it, and it's what enables tree-shaking. CommonJS still shows up constantly in older Node packages and `.cjs` config files, which is why understanding both — and why they don't mix seamlessly — matters even in an ESM-first codebase.

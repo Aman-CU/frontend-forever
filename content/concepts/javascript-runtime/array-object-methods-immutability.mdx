@@ -1,0 +1,55 @@
+---
+title: "Array & Object Methods, Immutability"
+description: "Master map, filter, reduce, and their object equivalents, and why returning new data instead of mutating in place keeps state predictable."
+category: "javascript-runtime"
+difficulty: "beginner"
+order: 5
+whatsHappening: "map, filter, and reduce each take a callback and produce a new array without touching the original. Spread copies a plain object the same non-mutating way; Object.entries and Object.keys don't copy the object at all — they just inspect it, returning a new array of its entries or keys without ever touching the original."
+keyInsight: "Mutating methods (push, splice, sort) change the original in place and return something other than a fresh copy; non-mutating methods (map, filter, concat, spread) always return a brand-new array or object, leaving the original untouched."
+memoryHook: "If it hands you back a new array/object, it's safe. If it changes the one you already had, check the docs before you reach for it."
+inRealLife: "Like editing a photocopy instead of the original document — you can hand out the new version everywhere without worrying that someone else's copy of the original just silently changed underneath them."
+---
+
+## The core array methods
+
+- **`map`** — transforms every item, returns a new array of the same length.
+- **`filter`** — keeps only the items matching a condition, returns a new (possibly shorter) array.
+- **`reduce`** — folds the array down to a single accumulated value, running the callback once per item.
+
+```js
+const prices = [10, 20, 30];
+
+const withTax = prices.map((p) => p * 1.1);
+const expensive = prices.filter((p) => p > 15);
+const total = prices.reduce((sum, p) => sum + p, 0);
+
+prices; // [10, 20, 30] — completely unchanged by any of the above
+```
+
+None of these three ever touch `prices` itself — each one returns a new array built from it.
+
+## Mutating vs. non-mutating
+
+Not every array method is this well-behaved. Some **mutate** the array in place instead of returning a new one:
+
+- **Mutating**: `push`, `pop`, `splice`, `sort`, `reverse` — change the original array and often return something other than the new array (`push` returns the new length, not the array).
+- **Non-mutating**: `map`, `filter`, `concat`, `slice`, spread (`[...arr]`) — always return a fresh array, original untouched.
+
+This distinction is exactly why `array.sort()` surprises people — it looks like it should return a new sorted array, but it sorts the original in place and returns a reference to that same array.
+
+## Objects follow the same rule
+
+```js
+const user = { name: "Ada", age: 30 };
+
+const older = { ...user, age: user.age + 1 };
+
+user;  // { name: "Ada", age: 30 } — unchanged
+older; // { name: "Ada", age: 31 }
+```
+
+The spread operator (`...`) copies an object's own properties into a new object, letting you override specific keys without mutating the source — the object equivalent of `map`'s "return something new" pattern.
+
+## Why immutability matters
+
+Returning new data instead of mutating in place keeps state predictable: nothing else holding a reference to the original array or object gets silently surprised by a change it didn't expect. This matters even more once state lives in a UI framework — React's rendering model (covered in the React category) relies on comparing an old reference to a new one, which only works correctly if state updates always produce new objects instead of mutating existing ones.
