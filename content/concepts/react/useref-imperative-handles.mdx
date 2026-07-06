@@ -1,0 +1,56 @@
+---
+title: "useRef & Imperative Handles"
+description: "Understand how useRef holds a mutable value across renders without triggering one, and how useImperativeHandle exposes an imperative API from a child component."
+category: "react"
+difficulty: "intermediate"
+order: 4
+whatsHappening: "useRef returns a single mutable object, `{ current: value }`, that persists across renders — but changing `.current` never schedules a re-render the way a state setter does. When that ref is attached to a JSX element (`ref={myRef}`), React sets `.current` to the real DOM node after commit, giving you an imperative escape hatch to something React itself doesn't model as state."
+keyInsight: "useRef and useState solve opposite problems that look similar. useState is for anything the UI should reflect. useRef is for anything that needs to persist across renders *without* the UI reacting to it — a timer id, a previous value, a DOM node, a flag that shouldn't cause a re-render when it flips."
+memoryHook: "useState: change it, and the screen should update. useRef: change it, and nothing on screen should update — it's just a box that remembers."
+inRealLife: "Like a sticky note on your monitor (useRef) versus a number on a public scoreboard (useState). Writing on the sticky note doesn't make an announcement to anyone — you just look at it later when you need it. Changing the scoreboard number is the whole point of it being visible."
+---
+
+## A mutable box that survives renders
+
+```jsx
+function StopwatchLabel() {
+  const renderCount = useRef(0);
+  renderCount.current += 1; // mutating this does NOT trigger a re-render
+  return <p>Rendered {renderCount.current} times</p>;
+}
+```
+
+Unlike a plain variable declared inside the component function, `renderCount.current` keeps its value between renders — React doesn't reset it the way it would a local `let`. But unlike `useState`, incrementing it never schedules a new render on its own; you'd only see the updated count the next time something *else* causes a re-render.
+
+## Attaching a ref to a DOM node
+
+```jsx
+function AutoFocusInput() {
+  const inputRef = useRef(null);
+  useEffect(() => { inputRef.current.focus(); }, []);
+  return <input ref={inputRef} />;
+}
+```
+
+After React commits this element to the DOM, it sets `inputRef.current` to the real `<input>` element — giving direct, imperative access to `.focus()`, `.scrollIntoView()`, `.getBoundingClientRect()`, and anything else the declarative props/JSX layer doesn't expose.
+
+## useImperativeHandle: controlling what a parent sees
+
+By default, forwarding a ref to a custom component exposes its entire underlying DOM node. `useImperativeHandle` lets a component hand back a *curated* API instead:
+
+```jsx
+const VideoPlayer = forwardRef((props, ref) => {
+  const videoRef = useRef(null);
+  useImperativeHandle(ref, () => ({
+    play: () => videoRef.current.play(),
+    pause: () => videoRef.current.pause(),
+  }));
+  return <video ref={videoRef} src={props.src} />;
+});
+```
+
+The parent calling `playerRef.current.play()` never gets access to the raw `<video>` element — only the two methods this component chose to expose.
+
+## Why it matters
+
+Reaching for a ref instead of state is the right call surprisingly often — but only for things the UI genuinely doesn't need to reflect. Storing a value that *should* affect what renders in a ref instead of state is a common source of "I set it but the screen didn't update" bugs, since mutating `.current` is invisible to React's render scheduler.

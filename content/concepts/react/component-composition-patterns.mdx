@@ -1,0 +1,63 @@
+---
+title: "Component Composition Patterns"
+description: "Compare render props, children, and compound components — three patterns for sharing behavior between components without prop drilling or inheritance."
+category: "react"
+difficulty: "intermediate"
+order: 7
+whatsHappening: "React has no class inheritance for sharing UI behavior between components — composition is the only mechanism. `props.children` lets a parent render arbitrary content a child provides; render props let a component share stateful logic while leaving the rendering to the caller; compound components (like `<Tabs><Tabs.Panel /></Tabs>`) share implicit state between a family of components via Context, without the caller wiring any props between them."
+keyInsight: "All three patterns solve the same underlying problem — sharing behavior without forcing a rigid shape onto the consumer's markup — they just trade off differently between explicitness and flexibility. Children is the most flexible and least explicit; compound components are the most ergonomic to use but require the most internal plumbing (Context) to build."
+memoryHook: "Children: 'render whatever you hand me.' Render props: 'here's the data, you decide what to render with it.' Compound components: 'we share hidden state through Context, so you can write it like plain nested JSX.'"
+inRealLife: "Like a picture frame (children) that displays whatever photo you insert, versus a photographer (render prop) who hands you the raw shot and lets you decide how to crop and caption it, versus a home entertainment system's remote paired invisibly to the TV (compound components) — you just press buttons on separate pieces and they coordinate without you wiring anything."
+---
+
+## `props.children`: the simplest composition
+
+```jsx
+function Card({ children }) {
+  return <div className="card">{children}</div>;
+}
+<Card><h2>Title</h2><p>Body text</p></Card>
+```
+
+`Card` has no idea what it's rendering inside — it just provides a container. This is composition's most basic form: a parent supplies structure, the caller supplies content.
+
+## Render props: sharing logic, not markup
+
+```jsx
+function MouseTracker({ render }) {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  return (
+    <div onMouseMove={(e) => setPos({ x: e.clientX, y: e.clientY })}>
+      {render(pos)}
+    </div>
+  );
+}
+<MouseTracker render={(pos) => <p>{pos.x}, {pos.y}</p>} />
+```
+
+`MouseTracker` owns the stateful logic (tracking the mouse) but has no opinion on what the coordinates are rendered as — the caller's function decides. Most render-prop use cases today are handled by custom hooks instead (the next concept in this path), which don't require wrapping output in an extra component.
+
+## Compound components: implicit shared state
+
+```jsx
+<Tabs defaultValue="profile">
+  <Tabs.List>
+    <Tabs.Trigger value="profile">Profile</Tabs.Trigger>
+    <Tabs.Trigger value="settings">Settings</Tabs.Trigger>
+  </Tabs.List>
+  <Tabs.Panel value="profile">...</Tabs.Panel>
+  <Tabs.Panel value="settings">...</Tabs.Panel>
+</Tabs>
+```
+
+`Tabs` provides a Context holding the active tab; `Tabs.Trigger` and `Tabs.Panel` both read from it. The caller never passes `activeTab`/`onTabChange` between siblings manually — the components coordinate through Context internally, while the JSX still reads like plain markup.
+
+## Choosing between them
+
+- **Children** — when a component is purely a layout/container with no shared state to coordinate.
+- **Render props** (or a custom hook) — when a component owns stateful *logic* but the caller should fully control the rendering.
+- **Compound components** — when several components need to share hidden state and you want the calling code to read like natural nested markup (most component libraries' `Select`, `Tabs`, `Accordion` APIs use this).
+
+## Why it matters
+
+Reaching for prop drilling or a giant configuration-object prop when one of these three patterns fits better is one of the most common signs of unfamiliarity with idiomatic React composition — interviewers often ask "how would you design this component's API" specifically to see which of these three you reach for.

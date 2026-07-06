@@ -1,0 +1,48 @@
+---
+title: "Render Performance: memo, useMemo, useCallback"
+description: "Learn how React.memo, useMemo, and useCallback skip unnecessary re-renders and recalculations — and why profiling before adding them matters more than the APIs themselves."
+category: "react"
+difficulty: "advanced"
+order: 10
+whatsHappening: "By default, a re-rendering parent re-renders every child underneath it, and every render re-runs every calculation and re-creates every function inside the component from scratch. `React.memo` skips re-calling a component's function when its props are shallow-equal to last time; `useMemo` skips recomputing a value when its inputs haven't changed; `useCallback` skips creating a new function reference when its inputs haven't changed — all three exist purely to make something equal, so a later comparison downstream can skip work."
+keyInsight: "All three of these are pure optimizations with real overhead of their own — a shallow comparison, extra memory to hold the cached value, extra code the JS engine has to run on every render. Adding them before confirming (via the Profiler) that a specific re-render is actually slow is the single most common React performance mistake — the cost of an unmeasured `useMemo` can exceed the cost of the recalculation it was meant to avoid."
+memoryHook: "memo skips re-rendering a *component*. useMemo skips recomputing a *value*. useCallback skips recreating a *function*. All three exist to make the next comparison come back 'equal' — usually so memo further down the tree actually has a chance to skip something."
+inRealLife: "Like laminating a document (memo) so you don't have to reprint it if nothing changed — but laminating every single page 'just in case' costs real time and plastic. It only pays off for the specific pages that are expensive to reprint and rarely change."
+---
+
+## React.memo: skip re-rendering a component
+
+```jsx
+const ExpensiveRow = React.memo(function ExpensiveRow({ item }) {
+  return <tr>{item.name}</tr>;
+});
+```
+
+Wrapped in `memo`, `ExpensiveRow` only re-runs its render if `item` (compared shallowly, by reference for objects) is different from last time — even if its parent re-renders. Passing a brand-new object or inline function as a prop every render defeats this entirely, since a new reference always fails the shallow-equality check.
+
+## useMemo: skip recomputing a value
+
+```jsx
+const sortedItems = useMemo(
+  () => [...items].sort((a, b) => a.price - b.price),
+  [items],
+);
+```
+
+Without `useMemo`, this sort re-runs on *every* render of the component, even ones triggered by something totally unrelated (like a sibling's state). `useMemo` re-runs the calculation only when `items` changes.
+
+## useCallback: skip recreating a function
+
+```jsx
+const handleClick = useCallback(() => onSelect(item.id), [onSelect, item.id]);
+```
+
+Every render normally creates a brand-new function — harmless on its own, but a problem if that function is passed as a prop to a `memo`-wrapped child: a new function reference makes the child's shallow-equality check fail every time, defeating its memoization. `useCallback` keeps the same function reference across renders until its dependencies change.
+
+## The profiling-first rule
+
+These three APIs only pay off when: (1) the wrapped component/calculation is actually expensive, and (2) it re-renders/recalculates often with props/inputs that are actually the same. Adding them everywhere "to be safe" adds real overhead (extra comparisons, extra memory) to every render, for optimizations that often never pay off — the React team's own guidance is to reach for the Profiler first, find an actual slow re-render, and only then memoize the specific thing causing it.
+
+## Why it matters
+
+An interviewer asking "would you add useMemo here?" is rarely testing whether you know the syntax — they're testing whether you'd measure first. The correct answer to "should everything be memoized" is almost always no.

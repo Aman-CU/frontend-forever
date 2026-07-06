@@ -974,6 +974,344 @@ const WORKER_TASK_DISPATCHER_TESTS: SandboxTest[] = [
   },
 ];
 
+const MINI_JSX_RENDERER_TESTS: SandboxTest[] = [
+  {
+    label: "An empty children array renders as an empty tag",
+    source: `
+      assert(typeof render === "function", "render is not defined");
+      assertEqual(render({ type: "div", props: { children: [] } }), "<div></div>");
+    `,
+  },
+  {
+    label: "Attributes and a single text child both render correctly",
+    source: `
+      assertEqual(
+        render({ type: "button", props: { className: "primary", children: "Save" } }),
+        '<button className="primary">Save</button>',
+      );
+    `,
+  },
+  {
+    label: "false/null children from conditional rendering are skipped entirely",
+    source: `assertEqual(render({ type: "div", props: { children: [false, "a", null] } }), "<div>a</div>");`,
+  },
+  {
+    label: "Nested vnodes render recursively",
+    source: `
+      assertEqual(
+        render({ type: "div", props: { children: { type: "span", props: { children: "hi" } } } }),
+        "<div><span>hi</span></div>",
+      );
+    `,
+  },
+];
+
+const AUTOSAVE_DIRTY_FIELDS_TESTS: SandboxTest[] = [
+  {
+    label: "Only the field that actually changed is flagged dirty",
+    source: `
+      assert(typeof getDirtyFields === "function", "getDirtyFields is not defined");
+      assertEqual(
+        getDirtyFields({ name: "Ana", email: "a@x.com" }, { name: "Ana", email: "b@x.com" }),
+        ["email"],
+      );
+    `,
+  },
+  {
+    label: "Identical values produce no dirty fields",
+    source: `assertEqual(getDirtyFields({ name: "Ana" }, { name: "Ana" }), []);`,
+  },
+  {
+    label: "A brand-new field not present in the initial snapshot counts as dirty",
+    source: `assertEqual(getDirtyFields({ name: "Ana" }, { name: "Ana", phone: "555" }), ["phone"]);`,
+  },
+  {
+    label: "Object.is treats NaN as equal to itself, so it is not flagged dirty",
+    source: `assertEqual(getDirtyFields({ age: NaN }, { age: NaN }), []);`,
+  },
+];
+
+const MULTI_STEP_FORM_VALIDATOR_TESTS: SandboxTest[] = [
+  {
+    label: "A missing required field fails validation",
+    source: `
+      assert(typeof validateStep === "function", "validateStep is not defined");
+      assertEqual(validateStep({ email: { required: true } }, { email: "" }), ["email"]);
+    `,
+  },
+  {
+    label: "A missing optional field never fails validation",
+    source: `assertEqual(validateStep({ nickname: { required: false } }, {}), []);`,
+  },
+  {
+    label: "A present value that fails its pattern is flagged",
+    source: `assertEqual(validateStep({ zip: { required: true, pattern: /^\\d{5}$/ } }, { zip: "abc" }), ["zip"]);`,
+  },
+  {
+    label: "A fully valid step returns no errors",
+    source: `
+      assertEqual(
+        validateStep(
+          { email: { required: true }, zip: { required: true, pattern: /^\\d{5}$/ } },
+          { email: "a@x.com", zip: "94107" },
+        ),
+        [],
+      );
+    `,
+  },
+];
+
+const FOCUS_TRAP_ELEMENTS_TESTS: SandboxTest[] = [
+  {
+    label: "A disabled element is excluded even though its tag is naturally focusable",
+    source: `
+      assert(typeof getFocusableElements === "function", "getFocusableElements is not defined");
+      assertEqual(
+        getFocusableElements([{ id: "btn", tag: "button", disabled: false }, { id: "input", tag: "input", disabled: true }]),
+        ["btn"],
+      );
+    `,
+  },
+  {
+    label: "A div with an explicit non-negative tabIndex is focusable",
+    source: `assertEqual(getFocusableElements([{ id: "custom", tag: "div", tabIndex: 0 }]), ["custom"]);`,
+  },
+  {
+    label: "tabIndex -1 removes an otherwise-focusable element from the tab order",
+    source: `assertEqual(getFocusableElements([{ id: "removed", tag: "button", tabIndex: -1 }]), []);`,
+  },
+  {
+    label: "Order is preserved, and non-focusable plain tags are dropped",
+    source: `
+      assertEqual(
+        getFocusableElements([{ id: "a", tag: "input" }, { id: "b", tag: "div" }, { id: "c", tag: "a" }]),
+        ["a", "c"],
+      );
+    `,
+  },
+];
+
+const RESOLVE_THEME_VALUE_TESTS: SandboxTest[] = [
+  {
+    label: "The nearest provider's value wins when both define the key",
+    source: `
+      assert(typeof resolveThemeValue === "function", "resolveThemeValue is not defined");
+      assertEqual(resolveThemeValue([{ accent: "blue" }, { accent: "red", bg: "white" }], "accent"), "blue");
+    `,
+  },
+  {
+    label: "Falls through to a farther provider for a key the nearer one never set",
+    source: `assertEqual(resolveThemeValue([{ accent: "blue" }, { accent: "red", bg: "white" }], "bg"), "white");`,
+  },
+  {
+    label: "Returns undefined when no provider in the stack defines the key",
+    source: `assertEqual(resolveThemeValue([{ accent: "blue" }], "font"), undefined);`,
+  },
+  {
+    label: "Skips a nearer provider that doesn't define the key at all",
+    source: `assertEqual(resolveThemeValue([{}, { accent: "red" }], "accent"), "red");`,
+  },
+];
+
+const ACCORDION_TOGGLE_STATE_TESTS: SandboxTest[] = [
+  {
+    label: "Multiple-open mode adds a newly clicked section",
+    source: `
+      assert(typeof toggleAccordionItem === "function", "toggleAccordionItem is not defined");
+      assertEqual(toggleAccordionItem(["a"], "b", true), ["a", "b"]);
+    `,
+  },
+  {
+    label: "Multiple-open mode removes an already-open section when clicked again",
+    source: `assertEqual(toggleAccordionItem(["a", "b"], "a", true), ["b"]);`,
+  },
+  {
+    label: "Single-open mode replaces the open section with the newly clicked one",
+    source: `assertEqual(toggleAccordionItem(["a"], "b", false), ["b"]);`,
+  },
+  {
+    label: "Single-open mode closes everything when the already-open section is clicked again",
+    source: `assertEqual(toggleAccordionItem(["a"], "a", false), []);`,
+  },
+];
+
+const USE_UNDO_REDUCER_TESTS: SandboxTest[] = [
+  {
+    label: "SET pushes the current present into past and clears future",
+    source: `
+      assert(typeof undoReducer === "function", "undoReducer is not defined");
+      assertEqual(
+        undoReducer({ past: [], present: "a", future: [] }, { type: "SET", payload: "b" }),
+        { past: ["a"], present: "b", future: [] },
+      );
+    `,
+  },
+  {
+    label: "UNDO restores the previous value and moves the current one into future",
+    source: `
+      assertEqual(
+        undoReducer({ past: ["a"], present: "b", future: [] }, { type: "UNDO" }),
+        { past: [], present: "a", future: ["b"] },
+      );
+    `,
+  },
+  {
+    label: "REDO restores the next future value and pushes the current one back into past",
+    source: `
+      assertEqual(
+        undoReducer({ past: [], present: "a", future: ["b"] }, { type: "REDO" }),
+        { past: ["a"], present: "b", future: [] },
+      );
+    `,
+  },
+  {
+    label: "UNDO with no history is a no-op",
+    source: `
+      assertEqual(
+        undoReducer({ past: [], present: "a", future: [] }, { type: "UNDO" }),
+        { past: [], present: "a", future: [] },
+      );
+    `,
+  },
+];
+
+const RESOLVE_ERROR_FALLBACK_TESTS: SandboxTest[] = [
+  {
+    label: "A mapped error name resolves to its specific fallback",
+    source: `
+      assert(typeof getFallbackForError === "function", "getFallbackForError is not defined");
+      assertEqual(
+        getFallbackForError({ name: "NetworkError" }, { NetworkError: "retry-banner", default: "generic-error" }),
+        "retry-banner",
+      );
+    `,
+  },
+  {
+    label: "An unmapped error name falls back to the default entry",
+    source: `
+      assertEqual(
+        getFallbackForError({ name: "TypeError" }, { NetworkError: "retry-banner", default: "generic-error" }),
+        "generic-error",
+      );
+    `,
+  },
+  {
+    label: "With no default entry, an unmapped error resolves to undefined",
+    source: `assertEqual(getFallbackForError({ name: "TypeError" }, { NetworkError: "retry-banner" }), undefined);`,
+  },
+  {
+    label: "Different widgets' maps can route the same kind of error to different fallbacks",
+    source: `
+      assertEqual(
+        getFallbackForError(
+          { name: "AuthError" },
+          { NetworkError: "retry-banner", AuthError: "login-prompt", default: "generic-error" },
+        ),
+        "login-prompt",
+      );
+    `,
+  },
+];
+
+const DIFF_CHANGED_ROWS_TESTS: SandboxTest[] = [
+  {
+    label: "An unchanged row is not reported as changed",
+    source: `
+      assert(typeof getChangedRows === "function", "getChangedRows is not defined");
+      assertEqual(getChangedRows([{ id: "1", price: 10 }], [{ id: "1", price: 10 }]), []);
+    `,
+  },
+  {
+    label: "A row with a changed field is reported",
+    source: `assertEqual(getChangedRows([{ id: "1", price: 10 }], [{ id: "1", price: 12 }]), ["1"]);`,
+  },
+  {
+    label: "A brand-new row (no match in prevRows) is always reported",
+    source: `
+      assertEqual(
+        getChangedRows([{ id: "1", price: 10 }], [{ id: "1", price: 10 }, { id: "2", price: 5 }]),
+        ["2"],
+      );
+    `,
+  },
+  {
+    label: "Only the actually-changed row is reported, not every row",
+    source: `
+      assertEqual(
+        getChangedRows(
+          [{ id: "1", price: 10 }, { id: "2", price: 5 }],
+          [{ id: "1", price: 11 }, { id: "2", price: 5 }],
+        ),
+        ["1"],
+      );
+    `,
+  },
+];
+
+const MERGE_TRANSITION_RESULTS_TESTS: SandboxTest[] = [
+  {
+    label: "While pending, the previous results are kept and marked stale",
+    source: `
+      assert(typeof mergeTransitionResults === "function", "mergeTransitionResults is not defined");
+      assertEqual(mergeTransitionResults(["a", "b"], ["c"], true), { results: ["a", "b"], stale: true });
+    `,
+  },
+  {
+    label: "Once resolved, the incoming results replace the previous ones",
+    source: `assertEqual(mergeTransitionResults(["a", "b"], ["c"], false), { results: ["c"], stale: false });`,
+  },
+  {
+    label: "An empty previous result set stays empty while pending, rather than showing incoming results early",
+    source: `assertEqual(mergeTransitionResults([], ["c"], true), { results: [], stale: true });`,
+  },
+  {
+    label: "Resolving to identical results still clears the stale flag",
+    source: `assertEqual(mergeTransitionResults(["a"], ["a"], false), { results: ["a"], stale: false });`,
+  },
+];
+
+const MEMOIZED_SELECTOR_TESTS: SandboxTest[] = [
+  {
+    label: "Calling with the same arguments returns the cached result without recomputing",
+    source: `
+      assert(typeof createSelector === "function", "createSelector is not defined");
+      let calls = 0;
+      const selector = createSelector((items) => { calls++; return items.length; });
+      const sameArray = [1, 2, 3];
+      selector(sameArray);
+      selector(sameArray);
+      assertEqual(calls, 1, "the underlying selector should only run once for repeated identical arguments");
+    `,
+  },
+  {
+    label: "Calling with different arguments recomputes and returns the new result",
+    source: `
+      let calls = 0;
+      const selector = createSelector((items) => { calls++; return items.length; });
+      selector([1, 2]);
+      selector([1, 2, 3]);
+      assertEqual(calls, 2, "different argument references should recompute");
+    `,
+  },
+  {
+    label: "The memoized selector still returns the selector function's real result",
+    source: `
+      const selectCartTotal = createSelector((items) => items.reduce((sum, i) => sum + i.price, 0));
+      assertEqual(selectCartTotal([{ price: 10 }, { price: 5 }]), 15);
+    `,
+  },
+  {
+    label: "A different argument order counts as different arguments",
+    source: `
+      let calls = 0;
+      const selector = createSelector((a, b) => { calls++; return a + b; });
+      selector(1, 2);
+      selector(2, 1);
+      assertEqual(calls, 2, "swapping argument order should be treated as a different call");
+    `,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "kanban-board": KANBAN_BOARD_TESTS,
   "async-task-runner": ASYNC_TASK_RUNNER_TESTS,
@@ -1000,6 +1338,17 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "connection-cost-estimator": CONNECTION_COST_ESTIMATOR_TESTS,
   "caching-strategy-picker": CACHING_STRATEGY_PICKER_TESTS,
   "worker-task-dispatcher": WORKER_TASK_DISPATCHER_TESTS,
+  "mini-jsx-renderer": MINI_JSX_RENDERER_TESTS,
+  "autosave-dirty-fields": AUTOSAVE_DIRTY_FIELDS_TESTS,
+  "multi-step-form-validator": MULTI_STEP_FORM_VALIDATOR_TESTS,
+  "focus-trap-elements": FOCUS_TRAP_ELEMENTS_TESTS,
+  "resolve-theme-value": RESOLVE_THEME_VALUE_TESTS,
+  "accordion-toggle-state": ACCORDION_TOGGLE_STATE_TESTS,
+  "use-undo-reducer": USE_UNDO_REDUCER_TESTS,
+  "resolve-error-fallback": RESOLVE_ERROR_FALLBACK_TESTS,
+  "diff-changed-rows": DIFF_CHANGED_ROWS_TESTS,
+  "merge-transition-results": MERGE_TRANSITION_RESULTS_TESTS,
+  "memoized-selector": MEMOIZED_SELECTOR_TESTS,
 };
 
 export function getBuildTestSpec(slug: string): SandboxTest[] | null {

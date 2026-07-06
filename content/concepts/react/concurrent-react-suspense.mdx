@@ -1,0 +1,51 @@
+---
+title: "Concurrent React & Suspense"
+description: "Understand how Concurrent React lets rendering be interrupted and resumed, and how Suspense boundaries show a fallback while a component waits on data."
+category: "react"
+difficulty: "advanced"
+order: 11
+whatsHappening: "Before React 18, rendering was synchronous and uninterruptible — once started, a render ran to completion even if something more urgent (a keystroke) arrived mid-way. Concurrent React lets React start rendering an update, pause it if something more urgent comes in, and either resume or discard it — rendering becomes interruptible instead of all-or-nothing. Suspense lets a component 'pause' by throwing a Promise, showing a fallback until that Promise resolves, and transitions let you mark an update as low-priority so urgent updates (like typing) can interrupt it."
+keyInsight: "Concurrent features are opt-in through specific APIs (`useTransition`, `startTransition`, Suspense), not an automatic behavior change — a component that doesn't use them renders exactly as it did before React 18. Suspense doesn't make code asynchronous; it gives React a standard signal ('I'm not ready yet') that a data-fetching library can throw, so React knows to show a fallback instead of rendering half-ready UI."
+memoryHook: "Concurrent = renders can be interrupted and resumed, not always run start-to-finish. Suspense = 'not ready yet, show the fallback.' Transitions = 'this update can wait behind anything more urgent.'"
+inRealLife: "Like a chef (React) who can pause chopping vegetables for a lower-priority dish (a transition) the instant a more urgent order comes in (a keystroke), finish the urgent one first, then resume exactly where the vegetables were left off — instead of being forced to finish every dish start-to-finish in the order it was started."
+---
+
+## Suspense: a standard way to say "not ready yet"
+
+```jsx
+const ProfilePage = React.lazy(() => import("./ProfilePage"));
+
+<Suspense fallback={<Spinner />}>
+  <ProfilePage />
+</Suspense>
+```
+
+`React.lazy` throws a Promise while the module is still downloading. The nearest `<Suspense>` ancestor catches it, renders `fallback` instead, and automatically retries rendering `ProfilePage` once the Promise resolves. Data-fetching libraries (Relay, React Query's Suspense mode) use the same mechanism for data, not just code-split components.
+
+## useTransition: marking an update as low-priority
+
+```jsx
+function SearchPage() {
+  const [isPending, startTransition] = useTransition();
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+
+  function handleChange(e) {
+    setQuery(e.target.value); // urgent: keep the input responsive
+    startTransition(() => {
+      setResults(searchSync(e.target.value)); // low-priority: can be interrupted
+    });
+  }
+  return <>{isPending && <Spinner />}<input value={query} onChange={handleChange} /></>;
+}
+```
+
+Without `startTransition`, a slow `setResults` update would block the input from visually updating until it finished — every keystroke would feel laggy. Wrapping it marks that update as interruptible: if the user types again before it finishes, React abandons the stale in-progress render and starts fresh with the latest input, while the input itself stays instantly responsive throughout.
+
+## Why this needed a new rendering model
+
+None of this is possible with a synchronous, uninterruptible renderer — once a render started, React had no way to check "did something more urgent just arrive?" partway through. Concurrent React restructures the render phase so it *can* pause, check, and either resume or restart, which is also what makes streaming SSR (rendering and sending HTML in chunks as data becomes ready) possible.
+
+## Why it matters
+
+These features solve a specific, real problem — expensive updates making an app feel unresponsive during rapid input — rather than being a general "turn on for more performance" switch. Interviewers asking about Suspense/transitions are usually checking whether you can identify *when* interruptibility actually helps, not whether you've memorized the hook names.

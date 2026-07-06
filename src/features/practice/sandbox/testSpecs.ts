@@ -845,6 +845,349 @@ const CLONE_WORKER_MESSAGE_TESTS: SandboxTest[] = [
   },
 ];
 
+const CREATE_ELEMENT_TESTS: SandboxTest[] = [
+  {
+    label: "No children folds to an empty array",
+    source: `
+      assert(typeof createElement === "function", "createElement is not defined");
+      assertEqual(createElement("div", null), { type: "div", props: { children: [] } });
+    `,
+  },
+  {
+    label: "A single child is stored directly, not wrapped in an array",
+    source: `
+      assertEqual(
+        createElement("button", { className: "primary" }, "Save"),
+        { type: "button", props: { className: "primary", children: "Save" } },
+      );
+    `,
+  },
+  {
+    label: "Multiple children are stored as an array",
+    source: `assertEqual(createElement("ul", null, "a", "b"), { type: "ul", props: { children: ["a", "b"] } });`,
+  },
+  {
+    label: "Children can themselves be vnode objects, nested arbitrarily deep",
+    source: `
+      const vnode = createElement("div", null, createElement("span", null, "hi"));
+      assertEqual(vnode.props.children, { type: "span", props: { children: "hi" } });
+    `,
+  },
+];
+
+const SHOULD_RUN_EFFECT_TESTS: SandboxTest[] = [
+  {
+    label: "First render (mount) always runs",
+    source: `
+      assert(typeof shouldRunEffect === "function", "shouldRunEffect is not defined");
+      assertEqual(shouldRunEffect(null, [1]), true);
+    `,
+  },
+  { label: "Unchanged dependency skips the effect", source: `assertEqual(shouldRunEffect([1], [1]), false);` },
+  { label: "A changed dependency re-runs the effect", source: `assertEqual(shouldRunEffect([1], [2]), true);` },
+  {
+    label: "Object.is treats NaN as equal to itself, unlike ===",
+    source: `assertEqual(shouldRunEffect([NaN], [NaN]), false);`,
+  },
+  { label: "No dependency array always runs", source: `assertEqual(shouldRunEffect([1, 2], undefined), true);` },
+];
+
+const DETECT_CONTROLLED_SWITCH_TESTS: SandboxTest[] = [
+  {
+    label: "Uncontrolled to controlled is a switch",
+    source: `
+      assert(typeof isSwitchingControlled === "function", "isSwitchingControlled is not defined");
+      assertEqual(isSwitchingControlled(undefined, "abc"), true);
+    `,
+  },
+  { label: "Empty string is still controlled", source: `assertEqual(isSwitchingControlled("abc", ""), false);` },
+  {
+    label: "Controlled to uncontrolled is also a switch",
+    source: `assertEqual(isSwitchingControlled("abc", undefined), true);`,
+  },
+  {
+    label: "Uncontrolled the whole time is not a switch",
+    source: `assertEqual(isSwitchingControlled(undefined, undefined), false);`,
+  },
+  {
+    label: "null counts as uncontrolled, same as undefined",
+    source: `assertEqual(isSwitchingControlled(null, "x"), true);`,
+  },
+];
+
+const MERGE_REFS_TESTS: SandboxTest[] = [
+  {
+    label: "Updates both a function ref and an object ref",
+    source: `
+      assert(typeof mergeRefs === "function", "mergeRefs is not defined");
+      let fnRefValue = null;
+      const objRef = { current: null };
+      const merged = mergeRefs((node) => { fnRefValue = node; }, objRef);
+      merged("node-1");
+      assertEqual(fnRefValue, "node-1");
+      assertEqual(objRef.current, "node-1");
+    `,
+  },
+  {
+    label: "Skips null/undefined refs safely",
+    source: `
+      const objRef2 = { current: null };
+      const merged2 = mergeRefs(null, objRef2, undefined);
+      merged2("node-2");
+      assertEqual(objRef2.current, "node-2");
+    `,
+  },
+  {
+    label: "Clears all refs when called with null (on unmount)",
+    source: `
+      const objRef3 = { current: "node-3" };
+      const merged3 = mergeRefs(objRef3);
+      merged3(null);
+      assertEqual(objRef3.current, null);
+    `,
+  },
+  {
+    label: "Supports more than two refs",
+    source: `
+      const r1 = { current: null }, r2 = { current: null }, r3 = { current: null };
+      const merged4 = mergeRefs(r1, r2, r3);
+      merged4("shared-node");
+      assert(r1.current === "shared-node" && r2.current === "shared-node" && r3.current === "shared-node", "all three refs should point at the same node");
+    `,
+  },
+];
+
+const CONTEXT_STORE_TESTS: SandboxTest[] = [
+  {
+    label: "getValue returns the initial value",
+    source: `
+      assert(typeof createStore === "function", "createStore is not defined");
+      const store1 = createStore("dark");
+      assertEqual(store1.getValue(), "dark");
+    `,
+  },
+  {
+    label: "setValue notifies subscribed listeners",
+    source: `
+      const store2 = createStore(0);
+      let received = null;
+      store2.subscribe((v) => { received = v; });
+      store2.setValue(42);
+      assertEqual(received, 42);
+    `,
+  },
+  {
+    label: "The function returned by subscribe removes that listener",
+    source: `
+      const store3 = createStore(0);
+      let calls = 0;
+      const unsubscribe = store3.subscribe(() => { calls++; });
+      unsubscribe();
+      store3.setValue(1);
+      assertEqual(calls, 0);
+    `,
+  },
+  {
+    label: "Supports multiple simultaneous subscribers",
+    source: `
+      const store4 = createStore(0);
+      let a = null, b = null;
+      store4.subscribe((v) => { a = v; });
+      store4.subscribe((v) => { b = v; });
+      store4.setValue(7);
+      assertEqual(a, 7);
+      assertEqual(b, 7);
+    `,
+  },
+];
+
+const MAP_CHILDREN_TESTS: SandboxTest[] = [
+  {
+    label: "null children maps to an empty array",
+    source: `
+      assert(typeof mapChildren === "function", "mapChildren is not defined");
+      assertEqual(mapChildren(null, (c, i) => [c, i]), []);
+    `,
+  },
+  {
+    label: "A single non-array child is treated as a one-item list",
+    source: `assertEqual(mapChildren("only child", (c, i) => [c, i]), [["only child", 0]]);`,
+  },
+  {
+    label: "Falsy conditional-rendering entries are dropped, and indices reflect only surviving children",
+    source: `assertEqual(mapChildren(["a", null, "b", false], (c, i) => [c, i]), [["a", 0], ["b", 1]]);`,
+  },
+  {
+    label: "A plain array of children maps in order",
+    source: `assertEqual(mapChildren(["a", "b", "c"], (c, i) => [c, i]), [["a", 0], ["b", 1], ["c", 2]]);`,
+  },
+];
+
+const CONDITIONAL_HOOK_CALL_TESTS: SandboxTest[] = [
+  {
+    label: "Matching sequences every render means no violation",
+    source: `
+      assert(typeof findHookOrderViolation === "function", "findHookOrderViolation is not defined");
+      assertEqual(findHookOrderViolation([["useState","useEffect"], ["useState","useEffect"]]), -1);
+    `,
+  },
+  {
+    label: "A render that skips a hook is flagged at its own index",
+    source: `assertEqual(findHookOrderViolation([["useState","useEffect"], ["useState"]]), 1);`,
+  },
+  {
+    label: "A render with hooks in a different order is a violation, even with the same count",
+    source: `assertEqual(findHookOrderViolation([["useState"], ["useState"], ["useEffect","useState"]]), 2);`,
+  },
+  {
+    label: "No renders at all means nothing to violate",
+    source: `assertEqual(findHookOrderViolation([]), -1);`,
+  },
+];
+
+const FIND_ERROR_BOUNDARY_TESTS: SandboxTest[] = [
+  {
+    label: "Finds a distant ancestor boundary when nothing closer exists",
+    source: `
+      assert(typeof findErrorBoundary === "function", "findErrorBoundary is not defined");
+      const tree1 = { id: "root", isBoundary: true, children: [{ id: "mid", isBoundary: false, children: [{ id: "leaf", isBoundary: false, children: [] }] }] };
+      assertEqual(findErrorBoundary(tree1, "leaf"), "root");
+    `,
+  },
+  {
+    label: "The nearest boundary wins over an outer one",
+    source: `
+      const tree2 = { id: "root", isBoundary: true, children: [{ id: "section", isBoundary: true, children: [{ id: "leaf", isBoundary: false, children: [] }] }] };
+      assertEqual(findErrorBoundary(tree2, "leaf"), "section");
+    `,
+  },
+  {
+    label: "Returns null when no ancestor boundary exists",
+    source: `
+      const tree3 = { id: "root", isBoundary: false, children: [{ id: "leaf", isBoundary: false, children: [] }] };
+      assertEqual(findErrorBoundary(tree3, "leaf"), null);
+    `,
+  },
+  {
+    label: "A node never catches its own thrown error",
+    source: `
+      const tree4 = { id: "root", isBoundary: true, children: [{ id: "leaf", isBoundary: true, children: [] }] };
+      assertEqual(findErrorBoundary(tree4, "leaf"), "root");
+    `,
+  },
+];
+
+const SHALLOW_EQUAL_TESTS: SandboxTest[] = [
+  {
+    label: "Same own keys and values are shallow-equal",
+    source: `
+      assert(typeof shallowEqual === "function", "shallowEqual is not defined");
+      assertEqual(shallowEqual({ a: 1 }, { a: 1 }), true);
+    `,
+  },
+  {
+    label: "A different value for the same key is not equal",
+    source: `assertEqual(shallowEqual({ a: 1 }, { a: 2 }), false);`,
+  },
+  {
+    label:
+      "Nested objects are compared by reference, not recursively — two different inner objects are unequal",
+    source: `assertEqual(shallowEqual({ a: { x: 1 } }, { a: { x: 1 } }), false);`,
+  },
+  {
+    label: "The identical reference is always equal",
+    source: `
+      const shared = { a: 1 };
+      assertEqual(shallowEqual(shared, shared), true);
+    `,
+  },
+  {
+    label: "A different number of keys is never shallow-equal",
+    source: `assertEqual(shallowEqual({ a: 1 }, { a: 1, b: 2 }), false);`,
+  },
+];
+
+const SCHEDULE_UPDATES_TESTS: SandboxTest[] = [
+  {
+    label: "Urgent updates move first while relative order within each group is preserved",
+    source: `
+      assert(typeof scheduleUpdates === "function", "scheduleUpdates is not defined");
+      assertEqual(
+        scheduleUpdates([{ id: "a", priority: "transition" }, { id: "b", priority: "urgent" }, { id: "c", priority: "transition" }, { id: "d", priority: "urgent" }]),
+        ["b", "d", "a", "c"],
+      );
+    `,
+  },
+  {
+    label: "All-urgent input is returned unchanged",
+    source: `assertEqual(scheduleUpdates([{ id: "a", priority: "urgent" }, { id: "b", priority: "urgent" }]), ["a", "b"]);`,
+  },
+  {
+    label: "All-transition input is returned unchanged",
+    source: `assertEqual(scheduleUpdates([{ id: "a", priority: "transition" }, { id: "b", priority: "transition" }]), ["a", "b"]);`,
+  },
+  {
+    label: "An empty batch schedules to an empty array",
+    source: `assertEqual(scheduleUpdates([]), []);`,
+  },
+];
+
+const FIND_SHARED_STATE_ANCESTOR_TESTS: SandboxTest[] = [
+  {
+    label: "Siblings' lowest common ancestor is their direct parent",
+    source: `
+      assert(typeof findLowestCommonAncestor === "function", "findLowestCommonAncestor is not defined");
+      const tree = {
+        id: "app",
+        children: [
+          { id: "sidebar", children: [{ id: "nav-item-1", children: [] }, { id: "nav-item-2", children: [] }] },
+          { id: "content", children: [{ id: "header", children: [] }, { id: "body", children: [{ id: "deep-leaf", children: [] }] }] },
+        ],
+      };
+      assertEqual(findLowestCommonAncestor(tree, "nav-item-1", "nav-item-2"), "sidebar");
+    `,
+  },
+  {
+    label: "When one node is an ancestor of the other, it is its own answer",
+    source: `
+      const tree = {
+        id: "app",
+        children: [
+          { id: "sidebar", children: [{ id: "nav-item-1", children: [] }, { id: "nav-item-2", children: [] }] },
+          { id: "content", children: [{ id: "header", children: [] }, { id: "body", children: [{ id: "deep-leaf", children: [] }] }] },
+        ],
+      };
+      assertEqual(findLowestCommonAncestor(tree, "content", "deep-leaf"), "content");
+    `,
+  },
+  {
+    label: "Finds the correct ancestor in a deeper, unbalanced tree",
+    source: `
+      const tree = {
+        id: "app",
+        children: [
+          { id: "sidebar", children: [{ id: "nav-item-1", children: [] }, { id: "nav-item-2", children: [] }] },
+          { id: "content", children: [{ id: "header", children: [] }, { id: "body", children: [{ id: "deep-leaf", children: [] }] }] },
+        ],
+      };
+      assertEqual(findLowestCommonAncestor(tree, "nav-item-2", "deep-leaf"), "app");
+    `,
+  },
+  {
+    label: "Returns null if either id isn't found",
+    source: `
+      const tree = {
+        id: "app",
+        children: [
+          { id: "sidebar", children: [{ id: "nav-item-1", children: [] }, { id: "nav-item-2", children: [] }] },
+          { id: "content", children: [{ id: "header", children: [] }, { id: "body", children: [{ id: "deep-leaf", children: [] }] }] },
+        ],
+      };
+      assertEqual(findLowestCommonAncestor(tree, "content", "ghost"), null);
+    `,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "implement-debounce": DEBOUNCE_TESTS,
   "specificity-calculator": SPECIFICITY_TESTS,
@@ -870,6 +1213,17 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "trace-connection-steps": TRACE_CONNECTION_STEPS_TESTS,
   "stale-while-revalidate": STALE_WHILE_REVALIDATE_TESTS,
   "clone-worker-message": CLONE_WORKER_MESSAGE_TESTS,
+  "build-create-element": CREATE_ELEMENT_TESTS,
+  "should-run-effect": SHOULD_RUN_EFFECT_TESTS,
+  "detect-controlled-switch": DETECT_CONTROLLED_SWITCH_TESTS,
+  "implement-merge-refs": MERGE_REFS_TESTS,
+  "implement-context-store": CONTEXT_STORE_TESTS,
+  "implement-map-children": MAP_CHILDREN_TESTS,
+  "detect-conditional-hook-call": CONDITIONAL_HOOK_CALL_TESTS,
+  "find-error-boundary": FIND_ERROR_BOUNDARY_TESTS,
+  "implement-shallow-equal": SHALLOW_EQUAL_TESTS,
+  "schedule-updates-by-priority": SCHEDULE_UPDATES_TESTS,
+  "find-shared-state-ancestor": FIND_SHARED_STATE_ANCESTOR_TESTS,
 };
 
 export function getTestSpec(slug: string): SandboxTest[] | null {

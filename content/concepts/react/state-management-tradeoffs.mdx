@@ -1,0 +1,64 @@
+---
+title: "State Management Tradeoffs"
+description: "Compare local state, Context, and external stores (Redux, Zustand, Jotai) for where shared state should live, and the tradeoffs of each as an app scales."
+category: "react"
+difficulty: "advanced"
+order: 12
+whatsHappening: "Every piece of state has a natural 'home' — the lowest component that needs it. As more distant components need to read or update the same value, that home has to move up the tree ('lifting state up') until it reaches their common ancestor. Context and external stores (Redux, Zustand, Jotai) exist to avoid that ancestor becoming a single component holding — and re-rendering for — state most of its subtree doesn't actually use."
+keyInsight: "The real tradeoff isn't 'Context vs. Redux' — it's how each option controls *which components re-render* when state changes. Local state and Context both cause every consumer to re-render on any change to the value they read; external stores (via selectors) let a component subscribe to just the one slice of a larger state tree it actually needs, re-rendering only when that slice changes."
+memoryHook: "Local state: lives where it's used. Lifted state: moved up to the nearest shared ancestor. Context: broadcasts a value to a subtree, all-or-nothing per Provider. External store + selectors: subscribe to exactly the slice you need, nothing more."
+inRealLife: "Like a household junk drawer (local state, useful until three different rooms need the same scissors) that gets moved to a shared hallway closet (lifted state) — and once the whole house needs to find things in it, a labeled shelving system with a lookup index (a store with selectors) beats everyone rummaging through one drawer just to grab their own item."
+---
+
+## Local state: the default
+
+```jsx
+function SearchBox() {
+  const [query, setQuery] = useState("");
+  return <input value={query} onChange={(e) => setQuery(e.target.value)} />;
+}
+```
+
+State that only one component (and its own children, via props) needs should stay exactly there. Reaching for Context or a global store before anything actually needs to share this value adds indirection with no benefit yet.
+
+## Lifting state up
+
+The moment a sibling component needs the same value, it moves to their nearest common ancestor, passed down as props to both:
+
+```jsx
+function SearchPage() {
+  const [query, setQuery] = useState("");
+  return (
+    <>
+      <SearchBox query={query} onQueryChange={setQuery} />
+      <ResultsCount query={query} />
+    </>
+  );
+}
+```
+
+This works cleanly for a couple of levels — it becomes prop drilling (the earlier concept in this path) once several layers of components in between don't use the value themselves.
+
+## Context: broadcast, but all-or-nothing
+
+Context solves the drilling problem but re-renders every consumer whenever the Provider's value changes, regardless of which part of it a given consumer reads — fine for state that changes rarely (theme, locale, the logged-in user), risky for state that changes often (a live cart total, real-time cursor positions).
+
+## External stores: subscribe to a slice
+
+```js
+const useCartStore = create((set) => ({
+  items: [],
+  addItem: (item) => set((s) => ({ items: [...s.items, item] })),
+}));
+
+function CartCount() {
+  const count = useCartStore((s) => s.items.length); // only re-renders when this changes
+  return <span>{count}</span>;
+}
+```
+
+A store paired with selectors (Zustand, Redux + `useSelector`, Jotai's atoms) lets `CartCount` subscribe to just `items.length` — a change to some other field in the store never re-renders it. This is the main advantage over Context at scale: re-render granularity down to the exact slice a component reads, not the whole Provider value.
+
+## Why it matters
+
+"Would you reach for Redux here?" is really asking whether you evaluate state's actual sharing radius and update frequency before picking a tool — not whether you can recite each library's API. Most real over-engineering in this area is introducing a global store for state that was never going to leave one component's subtree.

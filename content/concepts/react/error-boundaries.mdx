@@ -1,0 +1,56 @@
+---
+title: "Error Boundaries"
+description: "See how an Error Boundary component catches render-time errors in its subtree and shows a fallback UI instead of crashing the whole app."
+category: "react"
+difficulty: "advanced"
+order: 9
+whatsHappening: "An uncaught error thrown during rendering unmounts the entire component tree by default — React treats a broken UI as worse than no UI at all. An Error Boundary is a component (must be a class, since the lifecycle methods it needs have no hook equivalent) that catches errors thrown by its descendants during render and shows a fallback UI instead of taking down everything above it."
+keyInsight: "Error Boundaries only catch errors thrown during rendering, in lifecycle methods, or in constructors of components below them — not errors in event handlers, async code (a `setTimeout` callback, a rejected fetch `.then()`), server-side rendering, or errors thrown in the boundary itself. Those all need a regular try/catch at the source instead."
+memoryHook: "Error Boundaries catch crashes in the *render tree*, not crashes in *your event handlers or async code* — those need their own try/catch."
+inRealLife: "Like a circuit breaker for one room in a house — if a fault in that room's wiring causes a short, the breaker trips and cuts power to just that room, not the whole building. But it won't do anything about a fire started by something plugged into an outlet after the breaker (an event handler) — that needs its own extinguisher."
+---
+
+## Catching errors with a class component
+
+```jsx
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+  static getDerivedStateFromError(error) {
+    return { hasError: true }; // triggers the fallback render
+  }
+  componentDidCatch(error, info) {
+    logErrorToService(error, info); // side effect: reporting
+  }
+  render() {
+    if (this.state.hasError) return this.props.fallback;
+    return this.props.children;
+  }
+}
+
+<ErrorBoundary fallback={<p>Something went wrong.</p>}>
+  <Dashboard />
+</ErrorBoundary>
+```
+
+If any component inside `<Dashboard />` throws during render, React unmounts that whole subtree and renders `fallback` in its place — everything outside the boundary keeps working normally.
+
+## What it does and doesn't catch
+
+**Catches:**
+- Errors thrown during rendering
+- Errors in lifecycle methods (`componentDidMount`, etc.)
+- Errors in constructors of the tree below it
+
+**Does not catch:**
+- Errors inside event handlers (`onClick`, `onChange`) — these need a plain `try/catch` at the call site
+- Errors in asynchronous code (`setTimeout`, promises) — the error boundary has no way to associate a later-firing callback with the render it interrupted
+- Errors during server-side rendering
+- Errors thrown in the error boundary component itself (a parent boundary would need to catch those)
+
+## Granularity is a design decision
+
+Wrapping the entire app in one boundary means any single widget's crash blanks the whole page. Wrapping each independent section (a dashboard's individual widgets, a feed's individual posts) in its own boundary means one broken widget shows its own fallback while everything else keeps rendering normally — a resilience tradeoff made by *where* boundaries are placed, not by how they're implemented.
+
+## Why it matters
+
+"Why did my error boundary not catch this" is one of the most common React support questions, and it's almost always one of the two exclusions above — an event handler or an async callback. Recognizing which kind of error you're looking at is the actual skill being tested, not memorizing the class component syntax.
