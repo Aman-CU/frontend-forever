@@ -1,0 +1,48 @@
+---
+title: "Custom Properties & Theming"
+description: "See how CSS custom properties (--variables) cascade and can be redefined per scope, powering runtime theming without a CSS-in-JS build step."
+category: "css"
+difficulty: "intermediate"
+order: 8
+whatsHappening: "A custom property (--name) is a regular CSS declaration that gets inherited and cascaded exactly like any other property, but instead of being consumed directly it's read back out with var(--name). Because it's resolved by the browser at render time rather than compiled away, redefining it on any element instantly retheme every descendant that reads it — with zero JavaScript and zero rebuild."
+keyInsight: "A custom property's value is resolved by walking up the cascade from wherever var() is used, not from wherever it's declared — so the same --accent-color variable can resolve to a different actual value in two different parts of the page, simply because a closer ancestor redefined it. This is fundamentally different from a Sass variable, which is a compile-time text substitution with no runtime awareness of where it ends up."
+memoryHook: "Custom properties cascade and inherit like any other CSS property. Sass/LESS variables are compile-time find-and-replace, gone before the browser ever sees them. Only one of the two can be changed live, at runtime, with a single class toggle."
+inRealLife: "A CSS custom property is like a company-wide policy that individual departments can override for their own floor — walk from floor to floor and the effective policy can differ, even though everyone's reading the same policy name. A Sass variable is like a memo that got photocopied and distributed before anyone could change it — every copy says the same fixed thing forever, because the substitution already happened."
+---
+
+## Declaring and reading a custom property
+
+```css
+:root {
+  --accent-color: teal;
+  --spacing-unit: 8px;
+}
+
+.button {
+  background: var(--accent-color);
+  padding: calc(var(--spacing-unit) * 2);
+}
+```
+
+`var(--accent-color)` resolves at render time by looking up the cascade from the element using it — checking that element, then its ancestors, until it finds a matching `--accent-color` declaration (or falls back to the second `var()` argument, if provided: `var(--accent-color, blue)`).
+
+## Runtime theming with scoped overrides
+
+Because custom properties genuinely cascade, redefining one on a more specific ancestor overrides it for every descendant beneath that point — without touching the components' own CSS at all:
+
+```css
+.theme-dark {
+  --accent-color: cyan;
+  --surface-bg: #111;
+}
+```
+
+Toggling a single class (`document.documentElement.classList.toggle("theme-dark")`) instantly reflows every component reading `--accent-color`, because the browser re-resolves the cascade for each one — no re-render, no JavaScript re-styling logic, no rebuild step.
+
+## Why this can't be done with Sass/LESS variables
+
+A preprocessor variable (`$accent-color`) is substituted with its literal value **before the browser ever receives the CSS** — by the time a stylesheet ships, every `$accent-color` reference has already been replaced with a fixed string. There's no runtime mechanism left to change it; doing so requires shipping an entirely new stylesheet (or a duplicate one per theme). Custom properties instead ship the *variable itself* to the browser, which is what makes live, JS-free theme switching possible in the first place.
+
+## Why it matters
+
+Runtime theming (dark mode, white-labeling, user-customizable accent colors) is one of the clearest places where "compiles to CSS" and "is CSS" stop being the same thing — and interviewers use this concept to check whether a candidate understands that distinction, not just that both syntaxes use a variable-looking token.

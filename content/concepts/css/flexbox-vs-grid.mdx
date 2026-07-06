@@ -1,0 +1,51 @@
+---
+title: "Flexbox vs. Grid"
+description: "Compare Flexbox's one-dimensional alignment model to Grid's two-dimensional layout system, and how to pick the right tool for a given layout."
+category: "css"
+difficulty: "beginner"
+order: 5
+whatsHappening: "Flexbox and Grid are both layout systems that replaced float/table hacks, but they solve different shaped problems. Flexbox distributes space along a single axis (row or column) and is content-driven — items grow or shrink based on their own size. Grid defines both rows and columns at once and is container-driven — you declare the structure up front and place items into it."
+keyInsight: "Flexbox asks 'how should these items share the space along one line?' — it's the right tool when content size should drive layout (a nav bar, a button group, a card's internal header/body/footer stack). Grid asks 'what's the overall structure, and where does each piece go within it?' — it's the right tool when you're defining a layout shape first and fitting content into it (a page shell, a photo gallery, a dashboard)."
+memoryHook: "Flexbox = one line, content-first. Grid = a full grid, structure-first. If you're arguing about a single row or column, reach for Flex. If you're arguing about rows AND columns together, reach for Grid."
+inRealLife: "Flexbox is like people lining up at a counter — they naturally take up only as much space as they need along that one line, and the line adjusts as people join or leave. Grid is like assigned seating at a wedding — the table layout (rows and columns) is decided first, and every guest is placed into a specific seat within it, independent of how tall or short they are."
+---
+
+## Flexbox: one-dimensional, content-driven
+
+A flex container lays its children out along a single main axis (`flex-direction: row` or `column`), and each item's final size is computed from three properties:
+
+- **`flex-grow`** — how much of the *extra* space (beyond every item's base size) this item claims, relative to its siblings' `flex-grow` values
+- **`flex-shrink`** — how much this item gives up when the container is *too small* to fit every item's base size
+- **`flex-basis`** — the item's starting size before growing or shrinking is applied
+
+```css
+.item { flex: 1 1 200px; } /* grow: 1, shrink: 1, basis: 200px */
+```
+
+`justify-content` aligns items along the main axis; `align-items` aligns them along the cross axis. Because Flexbox only manages one axis at a time, wrapping (`flex-wrap: wrap`) treats each wrapped line as its own independent flex line — items in one row don't align with items in the row below unless you reach for Grid.
+
+## Grid: two-dimensional, structure-driven
+
+A grid container defines explicit rows and columns up front with `grid-template-columns`/`grid-template-rows`, and children are placed into cells — by default in source order, or explicitly with `grid-column`/`grid-row`:
+
+```css
+.page {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "sidebar header"
+    "sidebar main"
+    "sidebar footer";
+}
+```
+
+Because rows and columns are both declared as part of the same structure, Grid can align content across both axes simultaneously — a photo gallery's rows all stay aligned to the same column grid, something Flexbox's independent wrapped lines can't guarantee.
+
+## Picking one (or both)
+
+Most real layouts use **both**: Grid for the page-level or component-level structural shell (sidebar + header + main), and Flexbox for the one-dimensional arrangements nested inside each cell (a horizontal button row inside the header, a vertical stack inside a card). Reaching for Grid to solve a single row, or nesting nine levels of Flexbox to fake a two-axis grid, is usually a sign the wrong tool was picked.
+
+## Why it matters
+
+Interviewers ask "Flexbox or Grid?" specifically to see whether a candidate reasons about layouts by *dimensionality* rather than by memorized property lists — the right answer is almost always "it depends which axis (or axes) I actually need to control."

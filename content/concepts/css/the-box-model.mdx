@@ -1,0 +1,57 @@
+---
+title: "The Box Model"
+description: "Understand how every element's content, padding, border, and margin combine into its rendered box, and why box-sizing: border-box changes the math."
+category: "css"
+difficulty: "beginner"
+order: 1
+whatsHappening: "Every element on the page is a rectangular box made of four layers stacked outward from the center: content, padding, border, and margin. The box model is simply the arithmetic the browser uses to turn a width/height plus those layers into the final rendered size."
+keyInsight: "By default (content-box), width and height only describe the content layer — padding and border are added on top, so a 200px-wide box with 20px padding and a 2px border actually occupies 244px. box-sizing: border-box flips this so width/height describe the outer edge instead, and padding/border are subtracted from the content area rather than added to it."
+memoryHook: "Content → Padding → Border → Margin, reading outward like the layers of an onion. content-box measures from the inside out; border-box measures from the outside in."
+inRealLife: "Like a framed photo on a wall: the photo is the content, the mat around it is padding, the frame itself is the border, and the empty wall space you leave around the frame is the margin. Buy a bigger mat or frame without shrinking the photo, and the whole thing takes up more wall space — exactly like content-box growing past its declared width."
+---
+
+## The four layers
+
+Every box is built from the inside out:
+
+1. **Content** — where text and child elements actually render, sized by `width`/`height`.
+2. **Padding** — transparent space between the content and the border; it's part of the element itself and shares its background color.
+3. **Border** — a visible (or invisible) line drawn around the padding.
+4. **Margin** — transparent space *outside* the border, separating this box from its neighbors. Margin never has a background — it's pure separation.
+
+```
+┌─────────────── margin ───────────────┐
+│ ┌──────────── border ──────────────┐ │
+│ │ ┌──────── padding ─────────────┐ │ │
+│ │ │        content (w × h)        │ │ │
+│ │ └──────────────────────────────┘ │ │
+│ └───────────────────────────────────┘ │
+└─────────────────────────────────────────┘
+```
+
+## content-box vs. border-box
+
+The `box-sizing` property decides what `width`/`height` actually measure:
+
+- **`content-box`** (the CSS default) — `width` is the content only. Padding and border are added *on top*, so the box grows larger than its declared width the moment you add either.
+- **`border-box`** — `width` is the content + padding + border combined. Adding padding or border shrinks the content area instead of growing the box, so the element's outer size stays exactly what you declared.
+
+```css
+.card {
+  width: 200px;
+  padding: 20px;
+  border: 2px solid;
+}
+/* content-box (default): rendered width = 200 + 20*2 + 2*2 = 244px */
+/* border-box:            rendered width = 200px, content area = 156px */
+```
+
+This is why almost every real-world CSS reset includes `*, *::before, *::after { box-sizing: border-box; }` — it makes declared sizes predictable regardless of how much padding or border gets added later.
+
+## Margin collapsing
+
+Vertical margins between adjacent block-level siblings **collapse** into a single margin equal to the larger of the two, rather than adding together. A paragraph with `margin-bottom: 20px` followed by one with `margin-top: 30px` ends up with 30px of space between them, not 50px. Horizontal margins never collapse, and margin collapsing only happens in normal document flow — it doesn't apply inside a flex or grid container.
+
+## Why it matters
+
+Every layout bug that looks like "this element is bigger than I told it to be" traces back to the box model — either a missing `box-sizing: border-box`, or forgetting that margin sits outside the border and doesn't count toward the element's own width.

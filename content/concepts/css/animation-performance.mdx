@@ -1,0 +1,45 @@
+---
+title: "Animation Performance"
+description: "Understand why transform and opacity animate on the GPU compositor while properties like width or top trigger layout and paint, and cost far more."
+category: "css"
+difficulty: "advanced"
+order: 10
+whatsHappening: "Every animated frame runs through some subset of the browser's rendering pipeline — Layout, Paint, Composite — and which stages actually re-run depends entirely on which CSS property is changing. transform and opacity are the only two properties that can skip both Layout and Paint and go straight to Composite, which is why they're the only properties that reliably hit 60fps on complex pages."
+keyInsight: "Animating width or top forces the browser to recompute geometry for the animated element and potentially its siblings (Layout), then re-rasterize pixels (Paint), then recomposite — on every single frame. Animating transform: translateX() or opacity instead reuses the already-painted layer and only asks the GPU to reposition or fade it — Layout and Paint never run again after the first frame."
+memoryHook: "Layout-triggering properties (width, top, margin) = re-measure the whole page. Paint-only properties (color, box-shadow) = re-draw pixels, skip re-measuring. Composite-only properties (transform, opacity) = just move/fade an already-drawn layer on the GPU — the cheapest possible frame."
+inRealLife: "Animating top is like redrawing an entire blueprint every time you want to move a piece of furniture one inch — the whole floor plan gets re-measured. Animating transform is like sliding that same piece of furniture across the floor on wheels — the furniture itself never needs to be redrawn, it's just repositioned."
+---
+
+## The three cost tiers
+
+Every CSS property that can change falls into one of three tiers, based on the earliest pipeline stage it forces the browser to re-run:
+
+1. **Layout-triggering** — `width`, `height`, `top`/`left` (on a positioned element), `margin`, `font-size`. Changing any of these forces Layout → Paint → Composite, because the element's geometry changed and that can ripple to siblings and ancestors.
+2. **Paint-only** — `color`, `background-color`, `box-shadow`, `border-color` (on an element whose geometry isn't changing). These skip Layout but still force Paint → Composite, since pixels have to be redrawn even though nothing moved.
+3. **Composite-only** — `transform`, `opacity`. These skip *both* Layout and Paint. The browser can hand the already-painted layer straight to the GPU and just reposition, scale, rotate, or fade it.
+
+## Why `transform`/`opacity` are cheap
+
+Modern browsers can promote an animated element onto its own **compositor layer** — essentially a pre-rasterized bitmap the GPU can move independently of the rest of the page. Once that layer exists, animating `transform`/`opacity` never touches the CPU-bound Layout/Paint stages again; every subsequent frame is pure GPU work. Animating `top` has no equivalent shortcut — the browser has no way to know the new geometry without actually recomputing Layout.
+
+```css
+/* expensive: forces Layout + Paint on every frame */
+.box { transition: top 300ms, left 300ms; }
+
+/* cheap: Composite only, GPU-accelerated */
+.box { transition: transform 300ms, opacity 300ms; }
+```
+
+```css
+/* the standard fix: animate transform instead of position */
+.box.is-open { transform: translateX(0); }
+.box           { transform: translateX(-100%); transition: transform 300ms; }
+```
+
+## Diagnosing jank
+
+DevTools' Performance panel makes this concrete: a janky animation shows repeated purple (Layout) and green (Paint) bars on every frame, while a smooth 60fps one shows almost nothing but a thin composite step. `will-change: transform` can hint the browser to pre-promote an element to its own layer before an animation starts, avoiding a layer-creation cost on the very first frame — but overusing it on many elements trades memory for that benefit, so it's a targeted fix, not a default to sprinkle everywhere.
+
+## Why it matters
+
+"Why is this animation janky on lower-end devices" almost always has the same root cause: something in the transition list is a Layout- or Paint-triggering property. The fix is nearly always the same too — re-express the same visual change in terms of `transform`/`opacity` instead.

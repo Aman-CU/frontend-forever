@@ -1,0 +1,47 @@
+---
+title: "CSS Specificity"
+description: "Learn how browsers resolve competing CSS rules using the [id, class, element] specificity scoring system."
+category: "css"
+difficulty: "beginner"
+order: 4
+whatsHappening: "When two rules of the same origin and importance target the same element and property, the browser scores each selector and lets the higher score win. Specificity is that score — a three-part tuple counting IDs, classes, and elements in the selector, compared column by column rather than summed."
+keyInsight: "Specificity columns are compared left to right, never added together — [1,0,0] (one ID) always beats [0,99,0] (ninety-nine classes), because the comparison stops at the first column where they differ. That's exactly why an ID selector is so hard to override without another ID or an !important."
+memoryHook: "[id, class, element] — score most-powerful column first. One ID always outweighs any number of classes; one class always outweighs any number of elements."
+inRealLife: "Like a courtroom hierarchy: a Supreme Court ruling (ID) overrides any number of state court rulings (classes), and a state court ruling overrides any number of local ordinances (elements) — no amount of local ordinances can outvote a single higher-court ruling."
+---
+
+## The three-part score
+
+Every selector gets scored into a tuple — **[id, class, element]** — counting from most to least powerful:
+
+- **id** — `#cta` — one point per ID selector
+- **class** — `.btn`, `[type="text"]`, `:hover` — one point per class, attribute, or pseudo-class selector
+- **element** — `button`, `::before` — one point per type selector or pseudo-element
+
+The universal selector (`*`) and combinators (`>`, `+`, `~`, whitespace) contribute nothing to any column.
+
+```css
+#cta               /* [1, 0, 0] */
+.btn.primary       /* [0, 2, 0] */
+button#cta.btn      /* [1, 1, 1] */
+nav ul li a         /* [0, 0, 4] */
+```
+
+## Columns compare, they don't sum
+
+Comparison happens **left to right**, and the first column that differs decides the winner — the remaining columns are never even considered:
+
+```
+[1, 0, 0]  vs  [0, 99, 0]   →  [1,0,0] wins (first column: 1 > 0)
+[0, 2, 0]  vs  [0, 1, 5]    →  [0,2,0] wins (first column ties at 0, second: 2 > 1)
+```
+
+This is the single most common CSS misconception — developers often assume "more classes should eventually out-muscle an ID," but no number of classes ever moves the needle on the ID column.
+
+## Ties and `!important`
+
+If specificity ties exactly, **source order** breaks the tie — whichever rule appears later (in the same stylesheet, or in a later-loaded one) wins. `!important` skips this whole calculation entirely: it jumps to an earlier stage of the cascade (see The Cascade & Inheritance), which is why the only way to beat one `!important` is another `!important` — a fight specificity was never actually deciding.
+
+## Why it matters
+
+"Why isn't my style applying?" is almost always a specificity question. Reaching for `!important` treats the symptom; reading the competing selectors' scores finds the actual cause — usually a leftover ID selector or an overly-nested descendant chain from years-old CSS.
