@@ -26,8 +26,15 @@ Every render, the input's displayed text is exactly `value` — nothing else can
 ```jsx
 function UncontrolledInput() {
   const inputRef = useRef(null);
-  const handleSubmit = () => console.log(inputRef.current.value);
-  return <input ref={inputRef} defaultValue="" onSubmit={handleSubmit} />;
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(inputRef.current.value);
+  };
+  return (
+    <form onSubmit={handleSubmit}>
+      <input ref={inputRef} defaultValue="" />
+    </form>
+  );
 }
 ```
 

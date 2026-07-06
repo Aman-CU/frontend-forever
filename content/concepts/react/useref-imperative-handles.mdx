@@ -51,6 +51,8 @@ const VideoPlayer = forwardRef((props, ref) => {
 
 The parent calling `playerRef.current.play()` never gets access to the raw `<video>` element — only the two methods this component chose to expose.
 
+As of React 19, `ref` can be received as a regular prop, so `forwardRef` is no longer required for a component like this — `function VideoPlayer({ src, ref }) { ... }` works the same way without the wrapper. The `forwardRef` version above is still common in existing codebases and worth recognizing, but new code can drop it.
+
 ## Why it matters
 
 Reaching for a ref instead of state is the right call surprisingly often — but only for things the UI genuinely doesn't need to reflect. Storing a value that *should* affect what renders in a ref instead of state is a common source of "I set it but the screen didn't update" bugs, since mutating `.current` is invisible to React's render scheduler.
