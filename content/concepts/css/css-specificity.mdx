@@ -40,7 +40,7 @@ This is the single most common CSS misconception — developers often assume "mo
 
 ## Ties and `!important`
 
-If specificity ties exactly, **source order** breaks the tie — whichever rule appears later (in the same stylesheet, or in a later-loaded one) wins. `!important` skips this whole calculation entirely: it jumps to an earlier stage of the cascade (see The Cascade & Inheritance), which is why the only way to beat one `!important` is another `!important` — a fight specificity was never actually deciding.
+If specificity ties exactly, **source order** breaks the tie — whichever rule appears later (in the same stylesheet, or in a later-loaded one) wins. `!important` doesn't skip this tiebreak process — it moves a declaration into an entirely higher-priority tier of the cascade (see The Cascade & Inheritance) *before* specificity is ever consulted. Two competing `!important` declarations still resolve by specificity, then source order, exactly like two normal declarations would — `!important` only decides which tier a declaration competes in, not how ties within that tier get broken.
 
 ## Why it matters
 
