@@ -1,0 +1,45 @@
+---
+title: "Positioning & Stacking Contexts"
+description: "Trace how position: relative/absolute/fixed/sticky place elements, and how z-index only compares within the same stacking context."
+category: "css"
+difficulty: "intermediate"
+order: 6
+whatsHappening: "The position property takes an element partly or fully out of normal document flow and controls what it's positioned relative to. Separately, z-index doesn't compare globally across the whole page — it only compares elements within the same stacking context, a grouping the browser creates whenever certain properties are set."
+keyInsight: "z-index: 9999 can still render behind a sibling with z-index: 1 if that sibling (or one of its ancestors) established a new stacking context — because 9999 is then only being compared against other elements inside its own context, not against the whole page. 'Just add a higher z-index' only works if both elements are actually competing in the same context to begin with."
+memoryHook: "static → in flow, no offsets. relative → in flow, but nudged from its own original spot. absolute → out of flow, positioned from its nearest positioned ancestor. fixed → out of flow, positioned from the viewport, ignores scrolling. sticky → in flow until a scroll threshold, then acts fixed."
+inRealLife: "Stacking contexts are like separate stacks of transparent sheets on different desks — sheet #50 on desk A doesn't automatically sit above sheet #1 on desk B; each desk's stack is judged independently, and it's the desks themselves (not the sheets) that get compared to decide which whole stack shows on top."
+---
+
+## The five position values
+
+- **`static`** (default) — normal document flow; `top`/`left`/`z-index` have no effect.
+- **`relative`** — stays in normal flow (its original space is preserved), but can be visually nudged with `top`/`left`/`right`/`bottom`, offset *from its own default position*.
+- **`absolute`** — removed from flow entirely; positioned relative to its **nearest ancestor with a `position` other than `static`** (or the initial containing block if none exists).
+- **`fixed`** — removed from flow; positioned relative to the **viewport**, so it stays put while the page scrolls (unless an ancestor uses `transform`/`filter`/`will-change`, which creates its own containing block and traps the fixed element inside it).
+- **`sticky`** — behaves like `relative` until the scroll position crosses a defined threshold (`top: 0`, etc.), then behaves like `fixed` within its containing block's bounds.
+
+## What creates a new stacking context
+
+A stacking context is created by the root element, and also by any element with:
+
+- `position: relative`/`absolute` **plus** a `z-index` other than `auto`
+- `position: fixed` or `sticky` (always, `z-index` or not)
+- `opacity` less than 1
+- `transform`, `filter`, `will-change`, or `contain` set to certain values
+
+Once created, **every descendant's `z-index` is scoped to compete only within that context** — no descendant can ever be painted above an element outside the context, regardless of how high its own `z-index` goes.
+
+```html
+<div class="a" style="position: relative; z-index: 1;">
+  <div style="position: relative; z-index: 9999;">high z-index, trapped in .a's context</div>
+</div>
+<div class="b" style="position: relative; z-index: 2;">renders above the 9999, because .a (z-index: 1) loses to .b (z-index: 2) as whole contexts</div>
+```
+
+## Why "just raise the z-index" so often fails
+
+The inner `9999` never actually competes against `.b` — it competes against other elements inside `.a`'s own stacking context. What decides the outcome on screen is `.a` vs. `.b`'s z-index (1 vs. 2), one level up. Fixing this means either raising `.a`'s z-index (moving the whole context, not just one descendant), or removing whatever accidentally created the extra context in the first place.
+
+## Why it matters
+
+"Z-index isn't working" is one of the most common CSS debugging dead ends, precisely because the mental model most people have — one single global stacking order — isn't how the browser actually decides paint order at all.

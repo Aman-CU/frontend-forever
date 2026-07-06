@@ -1,0 +1,40 @@
+---
+title: "The Cascade & Inheritance"
+description: "Learn how the browser resolves competing styles through source order, specificity, and origin — the cascade — and which properties inherit from parent to child by default."
+category: "css"
+difficulty: "beginner"
+order: 3
+whatsHappening: "When more than one rule could apply to the same element and property, the browser has to pick exactly one declared value to actually use — that resolution process is the cascade. Separately, some properties (mostly text-related ones) automatically pass their computed value down to children that don't set their own — that's inheritance, a completely different mechanism."
+keyInsight: "The cascade resolves in this order, most-important first: origin & importance (a user's !important beats an author's !important, which beats a normal author rule, which beats the browser's default) → specificity → source order. Specificity is only ever the tiebreaker *within* the same origin and importance tier — it never lets an author rule beat a user's !important one."
+memoryHook: "Cascade = 'which rule wins the fight.' Inheritance = 'what a child gets for free if no rule fights over it at all.' Two separate questions — a property can lose the cascade fight and still fall back to an inherited value."
+inRealLife: "Like a company dress code: corporate policy (user-agent styles) sets a baseline, HR's memo (author styles) can override it for a specific team, and an individual's signed exception (!important) can override HR — but only if it's a bigger exception than any other exception already on file. Meanwhile, a new hire without any specific instructions just does what their manager does by default — that's inheritance, not a directive from any policy at all."
+---
+
+## The cascade's real resolution order
+
+When the browser has to choose one winning declaration for an element/property pair, it goes through these stages **in order**, only moving to the next when the current one ties:
+
+1. **Origin & importance** — user-agent (browser default) styles lose to author (your CSS) styles, which lose to a user's own styles, and `!important` flips each of those pairs in reverse. A user's `!important` rule beats *everything*, including an author's `!important`.
+2. **Specificity** — within the same origin/importance tier, the higher-scoring selector wins (see the CSS Specificity concept for the full `[id, class, element]` scoring).
+3. **Source order** — if specificity also ties, the declaration that appears later in the stylesheet (or in a later-loaded stylesheet) wins.
+
+This is why `!important` is so easy to misuse: it doesn't just raise specificity, it jumps to an entirely earlier stage of the cascade — which is also why the only clean way to override it is another `!important`, escalating a fight that specificity alone could never have caused.
+
+## Inheritance
+
+Separately from the cascade, some CSS properties automatically compute to the **same value as their parent** if nothing else sets them — no rule has to "win" anything for this to happen:
+
+- **Inherited by default:** `color`, `font-family`, `font-size`, `line-height`, `visibility`, `list-style` — mostly text and typography properties, because it's rarely useful to reset every nested `<span>`'s font individually.
+- **Not inherited by default:** `margin`, `padding`, `border`, `width`, `height`, `background` — box-model and layout properties, because a child having its own independent box is almost always what you want.
+
+Any property can be forced either way with the `inherit` (take the parent's value) or `initial` (reset to the property's spec-defined default) keywords, regardless of whether it inherits naturally.
+
+```css
+.parent { color: navy; }
+.child { /* color: navy — inherited, no rule needed */ }
+.child--reset { color: initial; } /* explicitly opts out of inheritance */
+```
+
+## Why it matters
+
+"Why is this text the wrong color" is almost always an inheritance question ("what did it compute to, with no matching rule?"), while "why did my rule not apply" is almost always a cascade question ("what beat it, and at which stage?"). Knowing which question you're actually asking cuts debugging time in half.

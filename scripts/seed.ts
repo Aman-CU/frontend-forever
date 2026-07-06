@@ -499,6 +499,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Trace how position: relative/absolute/fixed/sticky place elements, and how z-index only compares within the same stacking context.",
     category: "css",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 6,
   },
   {
@@ -508,6 +509,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how media queries respond to the viewport while container queries respond to a component's own size — and why the latter makes components truly reusable.",
     category: "css",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 7,
   },
   {
@@ -517,6 +519,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how CSS custom properties (--variables) cascade and can be redefined per scope, powering runtime theming without a CSS-in-JS build step.",
     category: "css",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 8,
   },
   {
@@ -526,6 +529,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Compare pseudo-classes like :hover/:nth-child to pseudo-elements like ::before, and see how :has() finally lets CSS select a parent based on its children.",
     category: "css",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 9,
   },
   {
@@ -535,6 +539,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Understand why transform and opacity animate on the GPU compositor while properties like width or top trigger layout and paint, and cost far more.",
     category: "css",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 10,
   },
 
@@ -3056,6 +3061,552 @@ Write \`findLowestCommonAncestor(tree, idA, idB)\`, where each tree node is \`{ 
     isPremium: true,
     orderIndex: 35,
   },
+  // ── Phase 10 (Feature 44) — CSS Concepts ──────────────────────────────────
+  {
+    slug: "rendered-box-width",
+    conceptSlug: "the-box-model",
+    title: "Compute a rendered box's width",
+    description: `**box-sizing** decides what \`width\` actually measures — and getting it wrong is why elements mysteriously grow past their declared size.
+
+## The problem
+
+A 200px-wide box with 20px padding and a 2px border renders at 244px under the CSS default (\`content-box\`) — but exactly 200px under \`border-box\`. Same declared width, two different rendered sizes, depending entirely on one property most developers set once in a reset and forget about.
+
+## The idea
+
+Under \`content-box\`, \`width\` describes the content only — padding and border are added on top. Under \`border-box\`, \`width\` already includes padding and border, so the rendered size never changes no matter how much padding is added.
+
+## Your task
+
+Write \`renderedWidth(box, boxSizing)\`, where \`box = { width, padding, border }\` (single-sided values, applied to both left and right):
+
+\`\`\`js
+renderedWidth({ width: 200, padding: 20, border: 2 }, "content-box") // 244
+renderedWidth({ width: 200, padding: 20, border: 2 }, "border-box")  // 200
+\`\`\`
+
+> **One line, system-wide effect.** This is exactly why \`* { box-sizing: border-box; }\` is in almost every CSS reset — it makes every element's declared width the actual rendered width, regardless of how much padding or border gets added later.`,
+    difficulty: "easy",
+    starterCode: `function renderedWidth(box, boxSizing) {
+  // box = { width, padding, border } — padding/border apply to both sides
+}`,
+    solutionCode: `function renderedWidth(box, boxSizing) {
+  const { width, padding, border } = box;
+  if (boxSizing === "border-box") return width;
+  return width + padding * 2 + border * 2;
+}`,
+    testCases: [
+      { input: "{ width: 200, padding: 20, border: 2 }, content-box", expected: "244", label: "content-box adds padding and border on top of width" },
+      { input: "{ width: 200, padding: 20, border: 2 }, border-box", expected: "200", label: "border-box keeps the declared width regardless of padding/border" },
+      { input: "{ width: 100, padding: 0, border: 0 }, content-box", expected: "100", label: "zero padding/border renders at the declared width either way" },
+    ],
+    hints: [
+      "content-box: width is content-only, so padding and border get added on top of it.",
+      "border-box: width already includes padding and border, so it never changes.",
+      "Padding and border are applied to both sides of the box — double each before adding.",
+    ],
+    isPremium: false,
+    orderIndex: 36,
+  },
+  {
+    slug: "resolve-css-length",
+    conceptSlug: "units-sizing",
+    title: "Resolve a CSS length to pixels",
+    description: `Every relative CSS unit ultimately resolves to a pixel value — the only question is *what it's relative to*.
+
+## The problem
+
+\`rem\`, \`em\`, and \`vw\` all look similar on the page, but each resolves against a completely different reference: the root font-size, the parent's font-size, or the viewport width. Mixing them up is why a component that looks right standalone breaks the moment it's nested somewhere else.
+
+## The idea
+
+- \`rem\` → value × the root (\`<html>\`) font-size, always — no compounding, no matter how deeply nested.
+- \`em\` → value × the parent element's font-size — compounds through nested elements.
+- \`vw\`/\`vh\` → value% of the viewport's width/height.
+- \`px\` → the value itself, unchanged.
+
+## Your task
+
+Write \`resolveLength(value, unit, context)\`, where \`context = { rootFontSize, parentFontSize, viewportWidth, viewportHeight }\`:
+
+\`\`\`js
+resolveLength(1.5, "rem", { rootFontSize: 16 })          // 24
+resolveLength(2, "em", { parentFontSize: 20 })            // 40
+resolveLength(50, "vw", { viewportWidth: 1000 })          // 500
+resolveLength(10, "px", {})                                // 10
+\`\`\`
+
+> **Why \`rem\` wins for design systems:** because it's always relative to one flat reference (the root), rescaling an entire type/spacing scale is a single line — \`html { font-size: 112.5%; }\`. \`em\`'s compounding makes that same rescale unpredictable.`,
+    difficulty: "easy",
+    starterCode: `function resolveLength(value, unit, context) {
+  // context = { rootFontSize, parentFontSize, viewportWidth, viewportHeight }
+}`,
+    solutionCode: `function resolveLength(value, unit, context) {
+  switch (unit) {
+    case "px": return value;
+    case "rem": return value * context.rootFontSize;
+    case "em": return value * context.parentFontSize;
+    case "vw": return (value / 100) * context.viewportWidth;
+    case "vh": return (value / 100) * context.viewportHeight;
+    default: throw new Error(\`Unknown unit: \${unit}\`);
+  }
+}`,
+    testCases: [
+      { input: "1.5, rem, { rootFontSize: 16 }", expected: "24", label: "rem resolves against the root font-size" },
+      { input: "2, em, { parentFontSize: 20 }", expected: "40", label: "em resolves against the parent's font-size" },
+      { input: "50, vw, { viewportWidth: 1000 }", expected: "500", label: "vw resolves against 1% of viewport width" },
+      { input: "10, px, {}", expected: "10", label: "px passes through unchanged" },
+    ],
+    hints: [
+      "rem always multiplies against rootFontSize, regardless of nesting depth.",
+      "em multiplies against the parent's font-size, not the root's — that's the compounding difference.",
+      "vw/vh are percentages of the viewport, so divide by 100 before multiplying.",
+    ],
+    isPremium: false,
+    orderIndex: 37,
+  },
+  {
+    slug: "resolve-cascade-winner",
+    conceptSlug: "the-cascade-inheritance",
+    title: "Resolve which declaration wins the cascade",
+    description: `When multiple rules target the same element and property, the cascade picks exactly one winner — through a fixed, ordered set of tiebreaks.
+
+## The problem
+
+"Which rule wins?" isn't answered by specificity alone — \`!important\` overrides specificity entirely, and if specificity ties too, source order decides. Getting the order of these tiebreaks wrong is why \`!important\` fights so often escalate.
+
+## The idea
+
+Compare declarations in this order, stopping at the first difference:
+
+1. **Importance** — an \`!important\` declaration always beats a normal one, regardless of specificity.
+2. **Specificity** — among declarations of equal importance, the higher \`[id, class, element]\` score wins.
+3. **Source order** — if specificity also ties, the later declaration wins.
+
+## Your task
+
+Write \`resolveCascade(declarations)\`, where each declaration is \`{ value, important, specificity: [id, class, element], order }\`. Return the winning \`value\`.
+
+\`\`\`js
+resolveCascade([
+  { value: "blue", important: false, specificity: [0, 2, 0], order: 0 },
+  { value: "red", important: true, specificity: [0, 0, 1], order: 1 },
+])
+// → "red" — !important wins even with lower specificity
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function resolveCascade(declarations) {
+  // each declaration: { value, important, specificity: [id, class, element], order }
+}`,
+    solutionCode: `function compareSpecificity(a, b) {
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
+}
+
+function resolveCascade(declarations) {
+  return declarations.reduce((winner, d) => {
+    if (!winner) return d;
+    if (d.important !== winner.important) return d.important ? d : winner;
+    const cmp = compareSpecificity(d.specificity, winner.specificity);
+    if (cmp !== 0) return cmp > 0 ? d : winner;
+    return d.order >= winner.order ? d : winner;
+  }, null).value;
+}`,
+    testCases: [
+      {
+        input: "[{color, spec:[0,2,0]}, {red, spec:[0,0,1], important:true}]",
+        expected: "red",
+        label: "!important wins even against higher specificity",
+      },
+      {
+        input: "[{blue, spec:[0,1,0]}, {green, spec:[1,0,0]}]",
+        expected: "green",
+        label: "Without !important, higher specificity wins",
+      },
+      {
+        input: "[{blue, spec:[0,1,0], order:0}, {green, spec:[0,1,0], order:1}]",
+        expected: "green",
+        label: "Equal specificity — the later declaration (source order) wins",
+      },
+    ],
+    hints: [
+      "Compare importance first — it overrides specificity entirely, not just adds to it.",
+      "Only fall through to specificity comparison when importance ties.",
+      "Only fall through to source order when specificity also ties exactly.",
+    ],
+    isPremium: false,
+    orderIndex: 38,
+  },
+  {
+    slug: "distribute-flex-space",
+    conceptSlug: "flexbox-vs-grid",
+    title: "Distribute space across flex items",
+    description: `Flexbox's \`flex-grow\`/\`flex-shrink\`/\`flex-basis\` decide each item's final size — the same three numbers the browser itself computes on every layout pass.
+
+## The problem
+
+"Why did this item grow more than that one" almost always comes down to their relative \`flex-grow\` values, not their absolute size — a common source of confusion since the numbers look like fixed sizes but actually work as ratios.
+
+## The idea
+
+Each item starts at its \`flex-basis\`. If there's leftover space in the container, it's distributed proportionally to each item's \`flex-grow\` (relative to the total grow across all items). If items overflow the container instead, each item shrinks proportionally to \`flex-shrink × flex-basis\`.
+
+## Your task
+
+Write \`distributeFlexSpace(items, containerWidth)\`, where each item is \`{ basis, grow, shrink }\`. Return an array of final widths.
+
+\`\`\`js
+distributeFlexSpace([
+  { basis: 100, grow: 1, shrink: 1 },
+  { basis: 100, grow: 1, shrink: 1 },
+], 300)
+// → [150, 150] — 100 extra px split evenly (equal grow)
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function distributeFlexSpace(items, containerWidth) {
+  // items: [{ basis, grow, shrink }]
+}`,
+    solutionCode: `function distributeFlexSpace(items, containerWidth) {
+  const totalBasis = items.reduce((sum, i) => sum + i.basis, 0);
+  const extra = containerWidth - totalBasis;
+
+  if (extra >= 0) {
+    const totalGrow = items.reduce((sum, i) => sum + i.grow, 0);
+    if (totalGrow === 0) return items.map((i) => i.basis);
+    return items.map((i) => i.basis + (i.grow / totalGrow) * extra);
+  }
+
+  const totalShrinkFactor = items.reduce((sum, i) => sum + i.shrink * i.basis, 0);
+  if (totalShrinkFactor === 0) return items.map((i) => i.basis);
+  return items.map((i) => i.basis - (i.shrink * i.basis / totalShrinkFactor) * -extra);
+}`,
+    testCases: [
+      { input: "[{100,1,1},{100,1,1}], 300", expected: "[150, 150]", label: "Equal grow splits extra space evenly" },
+      { input: "[{100,1,1},{100,0,1}], 300", expected: "[200, 100]", label: "grow: 0 gets no extra space at all" },
+      { input: "[{100,1,1},{100,1,1}], 150", expected: "[75, 75]", label: "Overflow shrinks items proportionally to basis × shrink" },
+      { input: "[{100,1,1},{100,1,1}], 200", expected: "[100, 100]", label: "Container exactly matching total basis distributes nothing" },
+    ],
+    hints: [
+      "Compute total basis first — the sign of containerWidth minus that decides growing vs. shrinking.",
+      "Growing distributes extra space by each item's share of the total grow factor.",
+      "Shrinking weights each item's shrink factor by its own basis, not just the raw shrink number.",
+    ],
+    isPremium: false,
+    orderIndex: 39,
+  },
+  {
+    slug: "resolve-stacking-order",
+    conceptSlug: "positioning-stacking-contexts",
+    title: "Find the topmost element across nested stacking contexts",
+    description: `\`z-index: 9999\` can still lose to a sibling's \`z-index: 2\` — if that 9999 is trapped inside its own ancestor's stacking context.
+
+## The problem
+
+z-index doesn't compare globally across the page. It only compares within the same stacking context — so a descendant's z-index, no matter how high, can never let it escape past whatever beats its own containing context.
+
+## The idea
+
+Think of each element's z-index path from the root down to itself as a tuple — much like CSS specificity's \`[id, class, element]\`. Compare two elements' paths level by level: the first level where they differ decides the winner, and a much higher number several levels deep can never make up for losing at an earlier, shared level.
+
+## Your task
+
+Write \`resolveTopmost(elements)\`, where each element is \`{ id, zIndex, parentId }\` (\`parentId: null\` means top-level). Return the \`id\` of the element that renders on top.
+
+\`\`\`js
+resolveTopmost([
+  { id: "a", zIndex: 1, parentId: null },
+  { id: "a-inner", zIndex: 9999, parentId: "a" },
+  { id: "b", zIndex: 2, parentId: null },
+])
+// → "b" — a-inner's 9999 is trapped inside "a" (zIndex 1), which already loses to "b" (zIndex 2)
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function resolveTopmost(elements) {
+  // elements: [{ id, zIndex, parentId }]
+}`,
+    solutionCode: `function resolveTopmost(elements) {
+  const byId = Object.fromEntries(elements.map((el, index) => [el.id, { ...el, index }]));
+
+  function pathOf(id) {
+    const el = byId[id];
+    const parentPath = el.parentId != null ? pathOf(el.parentId) : [];
+    return [...parentPath, el.zIndex];
+  }
+
+  function comparePaths(a, b) {
+    const len = Math.min(a.length, b.length);
+    for (let i = 0; i < len; i++) {
+      if (a[i] !== b[i]) return a[i] - b[i];
+    }
+    return a.length - b.length;
+  }
+
+  const withPaths = elements.map((el) => ({ id: el.id, path: pathOf(el.id), index: byId[el.id].index }));
+  return withPaths.reduce((winner, el) => {
+    const cmp = comparePaths(el.path, winner.path);
+    if (cmp > 0) return el;
+    if (cmp === 0 && el.index > winner.index) return el;
+    return winner;
+  }).id;
+}`,
+    testCases: [
+      {
+        input: "a(z:1) > a-inner(z:9999), sibling b(z:2)",
+        expected: "b",
+        label: "A high z-index trapped in a lower-context ancestor cannot beat a sibling context",
+      },
+      { input: "two top-level siblings, zIndex 1 and 5", expected: "the one with zIndex 5", label: "Among top-level siblings, the higher zIndex wins directly" },
+      { input: "two top-level siblings, equal zIndex", expected: "the later one in the array", label: "Equal zIndex at the same level falls back to source order" },
+      {
+        input: "x(z:5) > x-inner(z:1), sibling y(z:3) > y-inner(z:100)",
+        expected: "y-inner",
+        label: "A descendant under the higher-ranked ancestor wins, even with a lower zIndex than the other branch's descendant",
+      },
+    ],
+    hints: [
+      "Build each element's full zIndex path from the root down to itself, like a specificity tuple.",
+      "Compare paths level by level — the first level that differs decides the winner outright.",
+      "Only fall back to array order (source order) when two paths are identical at every shared level.",
+    ],
+    isPremium: true,
+    orderIndex: 40,
+  },
+  {
+    slug: "resolve-container-query",
+    conceptSlug: "responsive-design-container-queries",
+    title: "Resolve the matching container query",
+    description: `A container query asks "how wide is *this component's own container*?" — not the viewport. Matching one is just finding the right breakpoint for a given width.
+
+## The problem
+
+Media queries only ever see the full viewport width, so a component styled with one breaks the moment it's reused somewhere narrower than the whole page. Container queries fix this by resolving against the component's actual container.
+
+## The idea
+
+Given a set of \`min-width\` breakpoints, the matching one is always the **largest breakpoint that's still ≤ the container's current width** — mirroring how \`min-width\` container/media queries stack in real CSS.
+
+## Your task
+
+Write \`resolveContainerValue(containerWidth, queries)\`, where each query is \`{ minWidth, value }\` (in any order). Return the \`value\` of the matching breakpoint.
+
+\`\`\`js
+const queries = [
+  { minWidth: 0, value: "compact" },
+  { minWidth: 400, value: "comfortable" },
+  { minWidth: 700, value: "wide" },
+];
+resolveContainerValue(500, queries) // "comfortable"
+resolveContainerValue(300, queries) // "compact"
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function resolveContainerValue(containerWidth, queries) {
+  // queries: [{ minWidth, value }], in any order
+}`,
+    solutionCode: `function resolveContainerValue(containerWidth, queries) {
+  const sorted = [...queries].sort((a, b) => a.minWidth - b.minWidth);
+  let match = sorted[0];
+  for (const q of sorted) {
+    if (q.minWidth <= containerWidth) match = q;
+    else break;
+  }
+  return match.value;
+}`,
+    testCases: [
+      { input: "500, [{0,compact},{400,comfortable},{700,wide}]", expected: "comfortable", label: "Matches the largest minWidth that's still ≤ the container width" },
+      { input: "300, [{0,compact},{400,comfortable},{700,wide}]", expected: "compact", label: "Falls back to the smallest breakpoint below the container width" },
+      { input: "1000, [{0,compact},{400,comfortable},{700,wide}]", expected: "wide", label: "Matches the largest breakpoint when the container is wide enough" },
+      { input: "500, [{700,wide},{0,compact},{400,comfortable}]", expected: "comfortable", label: "Works regardless of the input queries' order" },
+    ],
+    hints: [
+      "Sort by minWidth first — the input order isn't guaranteed to be ascending.",
+      "The correct match is the largest minWidth that doesn't exceed the container width.",
+      "Every query set should include a minWidth: 0 fallback, matching real CSS's mobile-first convention.",
+    ],
+    isPremium: true,
+    orderIndex: 41,
+  },
+  {
+    slug: "resolve-custom-property",
+    conceptSlug: "custom-properties-theming",
+    title: "Resolve a custom property through the cascade",
+    description: `A custom property resolves by walking up from wherever \`var()\` is used — not from wherever \`--name\` was declared. That's what makes runtime theming possible.
+
+## The problem
+
+Unlike a Sass variable (a compile-time text substitution), a CSS custom property is resolved live, by checking the element itself, then its ancestors, until a matching declaration is found.
+
+## The idea
+
+Given an element and a property name, walk from that element up through its ancestor chain. The first ancestor (including the element itself) that declares the property wins — closer always beats farther, regardless of where in the file it was declared.
+
+## Your task
+
+Write \`resolveVar(elementId, propName, tree, declarations, fallback)\`, where \`tree\` is \`{ id, parentId }[]\` and \`declarations\` is \`{ [elementId]: { [propName]: value } }\`. Return the resolved value, or \`fallback\` if no ancestor declares it.
+
+\`\`\`js
+resolveVar("card", "--accent", tree, {
+  root: { "--accent": "teal" },
+  "theme-dark": { "--accent": "cyan" },
+}, "black")
+// → "cyan" if "theme-dark" is an ancestor of "card" closer than "root"
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function resolveVar(elementId, propName, tree, declarations, fallback) {
+  // tree: { id, parentId }[], declarations: { [elementId]: { [propName]: value } }
+}`,
+    solutionCode: `function resolveVar(elementId, propName, tree, declarations, fallback) {
+  const byId = Object.fromEntries(tree.map((n) => [n.id, n]));
+  let current = elementId;
+  while (current != null) {
+    const decl = declarations[current];
+    if (decl && propName in decl) return decl[propName];
+    current = byId[current]?.parentId ?? null;
+  }
+  return fallback;
+}`,
+    testCases: [
+      {
+        input: "card declares --accent itself",
+        expected: "card's own value",
+        label: "A declaration on the element itself wins immediately",
+      },
+      {
+        input: "card has no declaration, its parent theme-dark does",
+        expected: "theme-dark's value",
+        label: "Falls back to the nearest ancestor that declares the property",
+      },
+      {
+        input: "both theme-dark (closer) and root (farther) declare --accent",
+        expected: "theme-dark's value",
+        label: "The closer ancestor wins over a farther one, regardless of declaration order",
+      },
+      { input: "no element in the chain declares the property", expected: "the fallback value", label: "Returns the fallback when nothing in the chain declares it" },
+    ],
+    hints: [
+      "Start the walk at the element itself — a declaration there wins before checking any ancestor.",
+      "Walk strictly upward via parentId until you hit a declaration or run out of ancestors.",
+      "Only return the fallback once the walk reaches the root with nothing found.",
+    ],
+    isPremium: true,
+    orderIndex: 42,
+  },
+  {
+    slug: "implement-has-matcher",
+    conceptSlug: "pseudo-classes-pseudo-elements-has",
+    title: "Implement a simplified :has() matcher",
+    description: `Every CSS combinator before \`:has()\` only reached downward or sideways. \`:has()\` is the first one that lets a selector match a parent based on its children.
+
+## The problem
+
+\`form:has(:invalid)\` selects the \`<form>\` itself, driven entirely by whether some descendant input is currently invalid — something no earlier selector could express, since they could never look "inward" to decide an outward match.
+
+## The idea
+
+Checking whether an element ":has" a matching descendant means recursively searching every node beneath it (not the element itself) for one that satisfies a given condition.
+
+## Your task
+
+Write \`hasDescendantMatching(node, predicate)\`, where \`node = { id, tag, children: [] }\`. Return \`true\` if **any descendant** (not the node itself) satisfies \`predicate(descendant)\`.
+
+\`\`\`js
+const form = {
+  id: "f1", tag: "form",
+  children: [{ id: "i1", tag: "input", valid: true }, { id: "i2", tag: "input", valid: false }],
+};
+hasDescendantMatching(form, (n) => n.valid === false) // true — i2 is invalid
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function hasDescendantMatching(node, predicate) {
+  // node: { id, tag, children: [] } — check descendants only, not node itself
+}`,
+    solutionCode: `function hasDescendantMatching(node, predicate) {
+  for (const child of node.children || []) {
+    if (predicate(child)) return true;
+    if (hasDescendantMatching(child, predicate)) return true;
+  }
+  return false;
+}`,
+    testCases: [
+      { input: "form with one invalid input among its children", expected: "true", label: "Matches when a direct child satisfies the predicate" },
+      { input: "form with only valid inputs", expected: "false", label: "Returns false when no descendant matches" },
+      { input: "invalid input nested three levels deep inside fieldsets", expected: "true", label: "Matches a deeply nested descendant, not just direct children" },
+      { input: "the node itself satisfies the predicate, but it has no children", expected: "false", label: "The node itself is never checked — only its descendants" },
+    ],
+    hints: [
+      "The element being checked itself must never satisfy its own :has() — only descendants count.",
+      "Recurse into every child, not just the direct children — :has() looks arbitrarily deep.",
+      "Short-circuit and return true as soon as any descendant matches — no need to keep searching.",
+    ],
+    isPremium: true,
+    orderIndex: 43,
+  },
+  {
+    slug: "classify-animation-cost",
+    conceptSlug: "animation-performance",
+    title: "Classify the cost of an animated property list",
+    description: `Not every animated CSS property costs the same — and animating just one expensive property drags the whole frame down, even if every other property is cheap.
+
+## The problem
+
+\`transform\`/\`opacity\` skip Layout and Paint entirely (Composite-only), \`color\`/\`box-shadow\` skip Layout but still repaint, and \`width\`/\`top\`/\`margin\` force the full pipeline. Animating a mix of these only ever costs as much as the *most expensive* one in the list.
+
+## The idea
+
+Look up each property's tier, then return the worst (most expensive) tier found across the whole list — one Layout-triggering property makes the entire animation as expensive as if every property were Layout-triggering.
+
+## Your task
+
+Write \`classifyAnimationCost(properties)\`, returning \`"compositor"\`, \`"paint"\`, or \`"layout"\` — whichever is worst among the given properties.
+
+\`\`\`js
+classifyAnimationCost(["transform", "opacity"])  // "compositor"
+classifyAnimationCost(["transform", "top"])       // "layout" — top drags the whole thing down
+classifyAnimationCost(["color", "box-shadow"])    // "paint"
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function classifyAnimationCost(properties) {
+  // return the worst ("layout" > "paint" > "compositor") tier among the properties
+}`,
+    solutionCode: `const TIERS = {
+  transform: "compositor",
+  opacity: "compositor",
+  color: "paint",
+  "background-color": "paint",
+  "box-shadow": "paint",
+  "border-color": "paint",
+  width: "layout",
+  height: "layout",
+  top: "layout",
+  left: "layout",
+  margin: "layout",
+  "font-size": "layout",
+};
+const RANK = { compositor: 0, paint: 1, layout: 2 };
+
+function classifyAnimationCost(properties) {
+  let worst = "compositor";
+  for (const prop of properties) {
+    const tier = TIERS[prop] ?? "layout";
+    if (RANK[tier] > RANK[worst]) worst = tier;
+  }
+  return worst;
+}`,
+    testCases: [
+      { input: "['transform', 'opacity']", expected: "compositor", label: "Both properties are Composite-only — the cheapest possible tier" },
+      { input: "['transform', 'top']", expected: "layout", label: "A single layout-triggering property drags the whole list down to 'layout'" },
+      { input: "['color', 'box-shadow']", expected: "paint", label: "Paint-only properties skip Layout but still cost more than Composite-only" },
+      { input: "['width']", expected: "layout", label: "A lone layout-triggering property is classified as 'layout'" },
+    ],
+    hints: [
+      "Look up each property's own tier, then track the worst one seen so far across the whole list.",
+      "Rank the tiers numerically (compositor < paint < layout) so 'worse' is just a bigger number.",
+      "Default unknown properties to 'layout' — the safe, conservative assumption.",
+    ],
+    isPremium: true,
+    orderIndex: 44,
+  },
 ];
 
 // ── Interview questions (5 per collection, plus concept-linked top-ups) ────────
@@ -5114,6 +5665,457 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     difficulty: "hard",
     companies: ["Meta", "Airbnb"],
     orderIndex: 38,
+  },
+  // Phase 10 (Feature 44) — CSS Concepts, 5 flagship questions per new concept
+  {
+    collection: "ff-75",
+    conceptSlug: "the-box-model",
+    question: "What's the difference between content-box and border-box, and why do most CSS resets set box-sizing: border-box globally?",
+    answer:
+      "content-box (the default) has width/height describe only the content — padding and border are added on top, so the rendered box grows larger than its declared size. border-box has width/height describe the outer edge instead, so adding padding or border shrinks the content area rather than growing the box. Resets set border-box globally so a declared width stays the actual rendered width no matter how much padding gets added later — without it, every padding change would require recalculating the width by hand.",
+    difficulty: "easy",
+    companies: ["Google", "Amazon"],
+    orderIndex: 88,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-box-model",
+    question: "Do margin and padding both add to an element's rendered width the same way?",
+    answer:
+      "No. Padding is inside the border and is part of the element itself — it's included in border-box's width calculation and shares the element's background. Margin is outside the border, is always excluded from box-sizing's width calculation regardless of content-box or border-box, and is transparent with no background of its own. An element's total footprint on the page is its rendered box (affected by box-sizing) plus its margin on top, always added, never absorbed.",
+    difficulty: "easy",
+    companies: ["Meta"],
+    orderIndex: 89,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-box-model",
+    question: "What is margin collapsing, and when does it not apply?",
+    answer:
+      "Vertical margins between adjacent block-level siblings in normal flow collapse into a single margin equal to the larger of the two, rather than summing. It doesn't apply to horizontal margins, to elements inside a flex or grid container, or across elements with padding/border/a clearfix between them (anything that breaks the two margins from being directly adjacent).",
+    difficulty: "medium",
+    companies: ["Microsoft"],
+    orderIndex: 90,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-box-model",
+    question: "A button mysteriously overflows its 100px-wide parent — what's the first CSS property you'd check?",
+    answer:
+      "box-sizing. If the button has a declared width close to 100px plus any padding or border under the default content-box, that padding/border pushes the rendered width past the parent's 100px. Setting box-sizing: border-box on the button (or globally) makes the declared width the actual rendered width, resolving the overflow without changing the padding.",
+    difficulty: "easy",
+    companies: ["Airbnb", "Stripe"],
+    orderIndex: 91,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-box-model",
+    question: "Does box-sizing: border-box affect how margin is calculated?",
+    answer:
+      "No. box-sizing only changes whether width/height includes padding and border — margin is never part of that calculation under either mode. Margin always sits outside the border and is always added on top of the rendered box, regardless of box-sizing.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 92,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "units-sizing",
+    question: "What's the difference between em and rem, and why does it matter for nested components?",
+    answer:
+      "em is relative to the current element's own font-size (or the parent's, when used to set font-size itself), so it compounds through nested elements — three nested 1.2em elements multiply to roughly 1.73× the root size. rem is always relative to the root <html> element's font-size, with no compounding regardless of nesting depth. This matters for nested components because an em-based value can silently grow or shrink depending on how deep it's nested, while a rem-based value stays predictable everywhere.",
+    difficulty: "medium",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 93,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "units-sizing",
+    question: "When would you reach for vh/vw instead of a percentage?",
+    answer:
+      "Percentage is relative to the containing block's own size, which only exists if that ancestor has a defined size in the same dimension — a height: 50% on a child with no explicitly-sized parent resolves to nothing. vh/vw are always relative to the viewport itself, independent of any ancestor's size, which makes them the right choice for things like a full-screen hero section that should size off the browser window regardless of what wraps it.",
+    difficulty: "medium",
+    companies: ["Stripe"],
+    orderIndex: 94,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "units-sizing",
+    question: "Why can 100vh behave inconsistently on mobile browsers?",
+    answer:
+      "Mobile browsers show and hide their own UI chrome (address bar, tab bar) as the user scrolls, which changes the actual visible viewport height in real time — but vh is computed against the layout viewport, which some browsers keep fixed at the largest possible height. The result is a 100vh element that's taller than what's actually visible on first load, or that jumps size as the chrome shows/hides. Newer units like dvh (dynamic viewport height) were introduced specifically to track the real, currently-visible viewport instead.",
+    difficulty: "hard",
+    companies: ["Airbnb", "Microsoft"],
+    orderIndex: 95,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "units-sizing",
+    question: "What are vmin and vmax used for?",
+    answer:
+      "vmin resolves to 1% of whichever viewport dimension (width or height) is currently smaller; vmax resolves to 1% of whichever is larger. They're useful for sizing something relative to 'whichever direction is tightest' — a square avatar or icon sized in vmin never overflows either axis, regardless of whether the viewport is in portrait or landscape orientation.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 96,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "units-sizing",
+    question: "Why is rem generally preferred over em for a design system's spacing and type scale?",
+    answer:
+      "Because rem always resolves against one flat reference (the root font-size) with no compounding, a single change — html { font-size: 112.5%; } — rescales an entire spacing and typography system proportionally and predictably. em-based systems can't do this safely, since a root-level change ripples unpredictably through however many levels of nested compounding exist across the app.",
+    difficulty: "medium",
+    companies: ["Meta"],
+    orderIndex: 97,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-cascade-inheritance",
+    question: "What's the actual order the cascade uses to resolve competing rules?",
+    answer:
+      "First by origin and importance — user-agent defaults lose to author styles, which lose to a user's own styles, and !important flips each of those pairs, with a user's !important beating an author's !important. Within the same origin/importance tier, specificity decides. If specificity also ties, source order decides — the later declaration wins.",
+    difficulty: "medium",
+    companies: ["Amazon", "Google"],
+    orderIndex: 98,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-cascade-inheritance",
+    question: "Which CSS properties inherit from parent to child by default, and why those specifically?",
+    answer:
+      "Mostly text and typography properties — color, font-family, font-size, line-height, visibility, list-style — because it's rarely useful to have to reset every nested element's font individually. Box-model and layout properties (margin, padding, border, width, background) don't inherit by default, because a child having its own independent box is almost always what's wanted.",
+    difficulty: "easy",
+    companies: ["Microsoft"],
+    orderIndex: 99,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-cascade-inheritance",
+    question: "How do you force a non-inherited property to inherit, or force an inherited one to reset?",
+    answer:
+      "The inherit keyword forces any property to take its parent's computed value, regardless of whether it inherits by default. The initial keyword resets any property to its spec-defined default, regardless of whether it would otherwise inherit — useful for explicitly opting a subtree out of an ancestor's styling.",
+    difficulty: "medium",
+    companies: ["Stripe"],
+    orderIndex: 100,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-cascade-inheritance",
+    question: "Why is !important considered a jump to an earlier cascade stage rather than just a specificity boost?",
+    answer:
+      "Specificity is only ever compared within the same origin/importance tier — !important moves a declaration to an entirely different, higher-priority tier before specificity is ever considered. That's why raising a normal rule's specificity can never beat an !important rule, and why the only way to override one is another !important, escalating a fight that specificity was never actually deciding.",
+    difficulty: "hard",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 101,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-cascade-inheritance",
+    question: "What's the practical difference between the cascade and inheritance as two CSS concepts?",
+    answer:
+      "The cascade decides which of several competing declared rules wins for a given element and property. Inheritance is a separate fallback mechanism: if no rule at all applies to a property on a given element, some properties automatically take their parent's computed value instead of the browser's built-in default. A property can lose every cascade fight and still resolve correctly purely through inheritance.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 102,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "flexbox-vs-grid",
+    question: "When would you reach for Flexbox over Grid, and vice versa?",
+    answer:
+      "Flexbox fits one-dimensional, content-driven layouts — a nav bar, a button group, a card's internal stack — where item sizes should drive how space is shared along a single axis. Grid fits two-dimensional, structure-driven layouts — a page shell, a photo gallery, a dashboard — where rows and columns are defined as a shape first and content is placed into it. Most real layouts use Grid for the outer structural shell and Flexbox for the one-dimensional arrangements nested inside each cell.",
+    difficulty: "easy",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 103,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "flexbox-vs-grid",
+    question: "Explain flex-grow, flex-shrink, and flex-basis.",
+    answer:
+      "flex-basis is an item's starting size before any growing or shrinking. flex-grow decides how much of the container's leftover space this item claims, relative to its siblings' flex-grow values — a value of 0 means it never grows. flex-shrink decides how much this item gives up when the container is too small to fit every item's basis, again relative to siblings, weighted by their basis too.",
+    difficulty: "medium",
+    companies: ["Google", "Microsoft"],
+    orderIndex: 104,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "flexbox-vs-grid",
+    question: "How does flex-wrap change alignment across multiple lines?",
+    answer:
+      "Without flex-wrap, all items are forced onto a single line, shrinking as needed to fit. With flex-wrap: wrap, items that don't fit spill onto a new line, and each wrapped line becomes its own independent flex line — items in one row don't align with items in the row below unless a two-dimensional system like Grid is used, since Flexbox only ever manages alignment within a single line at a time.",
+    difficulty: "medium",
+    companies: ["Stripe"],
+    orderIndex: 105,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "flexbox-vs-grid",
+    question: "How would you build a typical page shell (sidebar + header + main) — Flexbox, Grid, or both?",
+    answer:
+      "Grid is the natural fit for the outer shell, since it needs to define both a row structure (header, main, footer) and a column structure (sidebar, content) at once — something Flexbox can't do in a single container. Flexbox is then used inside individual cells for one-dimensional arrangements, like a horizontal row of icons inside the header or a vertical stack inside a card in the main area.",
+    difficulty: "medium",
+    companies: ["Airbnb"],
+    orderIndex: 106,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "flexbox-vs-grid",
+    question: "What's the difference between justify-content and align-items in Flexbox?",
+    answer:
+      "justify-content aligns items along the main axis (the direction set by flex-direction — typically horizontal for row). align-items aligns items along the cross axis, perpendicular to the main axis. Swapping flex-direction from row to column swaps which axis each property actually controls, since 'main axis' is direction-relative, not always horizontal.",
+    difficulty: "easy",
+    companies: ["Meta"],
+    orderIndex: 107,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "positioning-stacking-contexts",
+    question: "What's the difference between position: absolute, fixed, and sticky?",
+    answer:
+      "absolute removes an element from flow and positions it relative to its nearest ancestor with a position other than static. fixed removes it from flow and positions it relative to the viewport, so it stays put while the page scrolls (unless an ancestor's transform/filter/will-change creates its own containing block and traps it). sticky behaves like relative until a scroll threshold is crossed, then behaves like fixed within its containing block's bounds.",
+    difficulty: "medium",
+    companies: ["Google", "Amazon"],
+    orderIndex: 108,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "positioning-stacking-contexts",
+    question: "What creates a new stacking context?",
+    answer:
+      "The root element always creates one. Beyond that: position: relative/absolute combined with a z-index other than auto; position: fixed or sticky, always, regardless of z-index; opacity less than 1; and certain values of transform, filter, will-change, or contain. Once created, every descendant's z-index only ever competes within that context, never against elements outside it.",
+    difficulty: "hard",
+    companies: ["Meta", "Microsoft"],
+    orderIndex: 109,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "positioning-stacking-contexts",
+    question: "Why can z-index: 9999 still lose to a sibling with z-index: 2?",
+    answer:
+      "z-index only ever compares within the same stacking context — if the 9999 element's ancestor created its own stacking context with a lower z-index than the sibling's context, the 9999 is trapped inside that losing context and never actually competes against the sibling at all. What decides the outcome on screen is the two ancestor contexts' own z-index values, one level up, not the descendant's.",
+    difficulty: "hard",
+    companies: ["Stripe", "Airbnb"],
+    orderIndex: 110,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "positioning-stacking-contexts",
+    question: "What determines the containing block for an absolutely positioned element?",
+    answer:
+      "Its nearest ancestor whose position is anything other than static — relative, absolute, fixed, or sticky. If no such ancestor exists, it falls back to the initial containing block (effectively the viewport). This is exactly why a common pattern is position: relative on a wrapper with no offsets at all — just to give an absolutely positioned child something to anchor to.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 111,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "positioning-stacking-contexts",
+    question: "Why might position: fixed unexpectedly stop working as expected?",
+    answer:
+      "A fixed element is normally positioned relative to the viewport — but if any ancestor has a transform, filter, perspective, or will-change value set, that ancestor creates its own containing block, and the fixed element becomes positioned relative to that ancestor instead of the viewport. The element still behaves as 'fixed' locally, but no longer stays put relative to the actual browser window.",
+    difficulty: "hard",
+    companies: ["Meta"],
+    orderIndex: 112,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "responsive-design-container-queries",
+    question: "What's the difference between a media query and a container query?",
+    answer:
+      "A media query can only ever read the browser viewport's dimensions, regardless of where the styled element actually sits on the page. A container query instead reads the size of a specific containing element, so the same component can respond correctly whether it's rendered in a full-width column or a narrow sidebar.",
+    difficulty: "easy",
+    companies: ["Amazon", "Google"],
+    orderIndex: 113,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "responsive-design-container-queries",
+    question: "What does container-type do, and why is it required for container queries to work?",
+    answer:
+      "container-type: inline-size (or size) opts an ancestor element into being a queryable container, establishing size containment on it. It's required because an element can't query its own size from within its own rules — that size might depend on the very rules being evaluated, a circular dependency — so the containment boundary always has to be declared on a parent, one level up from the element actually being styled.",
+    difficulty: "medium",
+    companies: ["Meta", "Stripe"],
+    orderIndex: 114,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "responsive-design-container-queries",
+    question: "Why do container queries make components more genuinely reusable than media queries?",
+    answer:
+      "A component styled with a media query has no way to know how wide the space it's actually rendering into is — only how wide the whole viewport is — so it silently breaks the moment it's reused somewhere narrower than the full page. A container query lets the component ask its own container's width instead, so the exact same component styles correctly no matter which layout context it's dropped into.",
+    difficulty: "medium",
+    companies: ["Airbnb"],
+    orderIndex: 115,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "responsive-design-container-queries",
+    question: "Can a container query read the size of the exact element it's styling?",
+    answer:
+      "No — the query always reads an ancestor's size, never the element's own. A rule can't safely depend on the size of the very element whose styles it's helping determine, since that would be circular; the queried container has to be declared on a parent via container-type, one or more levels above the element the @container rule actually styles.",
+    difficulty: "hard",
+    companies: ["Microsoft"],
+    orderIndex: 116,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "responsive-design-container-queries",
+    question: "What's a common real-world use case for container queries?",
+    answer:
+      "A card component that needs to switch from a stacked to a side-by-side layout once it has enough room — correctly, whether it's placed in a full-width feed, a two-column grid, or a narrow sidebar widget. Before container queries, this required either JavaScript with a ResizeObserver, or accepting that the component would only look right in one specific layout context.",
+    difficulty: "easy",
+    companies: ["Google"],
+    orderIndex: 117,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "custom-properties-theming",
+    question: "What's the difference between a CSS custom property and a Sass/LESS variable?",
+    answer:
+      "A Sass variable is a compile-time text substitution — by the time the stylesheet ships, every reference has already been replaced with a fixed value, with no runtime awareness left. A CSS custom property ships to the browser as-is and is resolved live at render time by walking up the cascade from wherever var() is used, which means redefining it on any ancestor can retheme every descendant instantly, with no rebuild.",
+    difficulty: "medium",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 118,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "custom-properties-theming",
+    question: "How does var(--name) actually resolve at render time?",
+    answer:
+      "It's resolved by walking up the cascade from the element using var(), not from wherever --name happens to be declared in the file — checking that element first, then its ancestors, until a matching declaration is found. This is exactly like inheritance's lookup, which is why the same variable name can resolve to different actual values in different parts of the page.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 119,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "custom-properties-theming",
+    question: "How would you implement a dark mode toggle using custom properties, without a JavaScript re-render?",
+    answer:
+      "Define the theme's custom properties (--accent-color, --surface-bg, etc.) at :root, and redefine them under a .theme-dark class scope. Toggling that single class on the <html> or <body> element (via classList.toggle, no React re-render needed) makes the browser re-resolve every var() reference beneath that point automatically, since custom properties genuinely cascade like any other CSS property.",
+    difficulty: "medium",
+    companies: ["Stripe", "Airbnb"],
+    orderIndex: 120,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "custom-properties-theming",
+    question: "What happens if you reference a custom property that was never declared?",
+    answer:
+      "var() accepts an optional second argument as a fallback — var(--accent-color, blue) resolves to blue if --accent-color isn't declared anywhere in the element's ancestor chain. Without a fallback, an undefined custom property makes the property it's used in behave as if it were unset (its inherited or initial value), rather than causing an error.",
+    difficulty: "easy",
+    companies: ["Meta"],
+    orderIndex: 121,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "custom-properties-theming",
+    question: "Can custom properties be read and changed from JavaScript?",
+    answer:
+      "Yes — element.style.setProperty('--accent-color', 'cyan') sets it, and getComputedStyle(element).getPropertyValue('--accent-color') reads its resolved value. This is what makes custom properties useful for values JavaScript needs to drive dynamically, like a draggable slider's live position, without needing to rewrite an entire class's worth of styles imperatively.",
+    difficulty: "medium",
+    companies: ["Microsoft"],
+    orderIndex: 122,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "pseudo-classes-pseudo-elements-has",
+    question: "What's the difference between a pseudo-class and a pseudo-element?",
+    answer:
+      "A pseudo-class (single colon, like :hover or :nth-child) selects a real element in the DOM that happens to be in a particular state, position, or relationship. A pseudo-element (double colon, like ::before or ::first-line) targets a sub-part of an element's rendered content that has no corresponding node in the DOM at all — it's generated or implied by rendering, not a real element you could otherwise select.",
+    difficulty: "easy",
+    companies: ["Amazon", "Google"],
+    orderIndex: 123,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "pseudo-classes-pseudo-elements-has",
+    question: "How does :has() differ from every other CSS combinator?",
+    answer:
+      "Every other combinator (descendant, child >, sibling ~/+) only lets a selector reach downward or sideways from where it's anchored. :has() is the first selector that lets an element match based on its descendants — form:has(:invalid) selects the <form> itself, driven by whether some input inside it is currently invalid, effectively acting as a 'parent selector' that nothing in CSS could express before.",
+    difficulty: "hard",
+    companies: ["Meta", "Stripe"],
+    orderIndex: 124,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "pseudo-classes-pseudo-elements-has",
+    question: "Give an example of something :has() lets you do in pure CSS that used to require JavaScript.",
+    answer:
+      "Highlighting a form as invalid whenever any of its fields are invalid — form:has(:invalid) { border-color: red; } — previously required a JavaScript event listener toggling a class based on each field's validity. Similarly, .card:has(img) can style a card differently only when it actually contains an image, without a conditional class from a component's render logic.",
+    difficulty: "medium",
+    companies: ["Airbnb"],
+    orderIndex: 125,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "pseudo-classes-pseudo-elements-has",
+    question: "What's the difference between :nth-child() and :nth-of-type()?",
+    answer:
+      ":nth-child(n) counts an element's position among all its siblings, regardless of tag name — so li:nth-child(2) only matches if the <li> is literally the second child overall. :nth-of-type(n) counts an element's position only among siblings of the same tag name, ignoring any other elements interspersed between them.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 126,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "pseudo-classes-pseudo-elements-has",
+    question: "What do :is() and :where() do, and how do they differ in specificity?",
+    answer:
+      "Both let you group several selectors into one, shorter rule — :is(header, footer) nav matches a nav inside either a header or a footer. The difference is specificity: :is() takes on the specificity of its most specific argument, while :where() always contributes zero specificity, regardless of what's inside it — useful for writing overridable base styles that shouldn't fight with more specific component rules later.",
+    difficulty: "hard",
+    companies: ["Microsoft", "Meta"],
+    orderIndex: 127,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "animation-performance",
+    question: "Why do transform and opacity animate more smoothly than width or top?",
+    answer:
+      "transform and opacity are Composite-only properties — the browser can hand an already-painted layer straight to the GPU and just reposition or fade it, skipping Layout and Paint entirely on every frame. width and top are layout-triggering — changing either forces the browser to recompute geometry (Layout), re-rasterize pixels (Paint), and then recomposite, on every single frame, which is far more expensive at 60fps.",
+    difficulty: "medium",
+    companies: ["Google", "Amazon"],
+    orderIndex: 128,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "animation-performance",
+    question: "What's a compositor layer, and how does will-change relate to it?",
+    answer:
+      "A compositor layer is a separately rasterized bitmap the GPU can move, scale, or fade independently of the rest of the page, which is what makes transform/opacity animations cheap. will-change: transform hints the browser to pre-promote an element onto its own layer before an animation starts, avoiding a layer-creation cost on the very first frame — but it should be used sparingly, since promoting many elements trades memory for that benefit.",
+    difficulty: "hard",
+    companies: ["Meta", "Stripe"],
+    orderIndex: 129,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "animation-performance",
+    question: "How would you diagnose a janky animation using browser DevTools?",
+    answer:
+      "The Performance panel's frame-by-frame breakdown shows purple bars for Layout and green bars for Paint on each frame — a janky animation shows repeated purple/green activity on every frame, while a smooth 60fps one shows almost nothing but a thin composite step. Seeing repeated Layout/Paint work points directly at which animated property is the culprit.",
+    difficulty: "medium",
+    companies: ["Airbnb"],
+    orderIndex: 130,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "animation-performance",
+    question: "Why might overusing will-change actually hurt performance?",
+    answer:
+      "Every element with will-change gets promoted to its own compositor layer, and each layer consumes GPU memory. Applying it broadly (or leaving it on elements that aren't actively animating) can create far more layers than the device can comfortably manage, trading away the memory budget it was meant to save time with — it's a targeted, temporary hint for elements about to animate, not a default optimization to sprinkle everywhere.",
+    difficulty: "hard",
+    companies: ["Google"],
+    orderIndex: 131,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "animation-performance",
+    question: "What rendering pipeline stages does each property tier skip when animated?",
+    answer:
+      "Layout-triggering properties (width, top, margin) skip nothing — Layout, Paint, and Composite all re-run every frame. Paint-only properties (color, box-shadow) skip Layout but still re-run Paint and Composite. Composite-only properties (transform, opacity) skip both Layout and Paint, running only Composite — the cheapest possible path, and the only one that reliably holds 60fps under load.",
+    difficulty: "medium",
+    companies: ["Microsoft", "Meta"],
+    orderIndex: 132,
   },
 ];
 
@@ -7433,6 +8435,629 @@ Wire this into a real cart: create a \`selectCartTotal = createSelector((items) 
     ],
     isPremium: true,
     orderIndex: 33,
+  },
+  // ── Phase 10 (Feature 44) — CSS Concepts ──────────────────────────────────
+  {
+    slug: "box-model-inspector",
+    conceptSlug: "the-box-model",
+    title: "Build a Box Model Inspector",
+    description: `Build the calculation behind a browser DevTools-style box model panel — given a declared size and box-sizing mode, report every layer's actual dimensions.
+
+## The problem
+
+DevTools' box model overlay shows content, padding, border, and margin as separate numbers, worked out from whatever mix of \`width\`, padding, and border was actually declared — the exact math depends on \`box-sizing\`.
+
+## The idea
+
+Under \`content-box\`, the declared width IS the content width, and padding/border are added on top to get the rendered width. Under \`border-box\`, the declared width IS the rendered width, and the content width is what's left over after subtracting padding and border.
+
+## Your task
+
+Write \`computeBoxDimensions({ width, height, padding, border, boxSizing })\`. Return \`{ contentWidth, contentHeight, renderedWidth, renderedHeight }\` (padding/border apply to both sides of each axis).
+
+\`\`\`js
+computeBoxDimensions({ width: 200, height: 100, padding: 20, border: 2, boxSizing: "border-box" })
+// → { contentWidth: 156, contentHeight: 56, renderedWidth: 200, renderedHeight: 100 }
+\`\`\`
+
+Once this passes, imagine wiring it up to a live overlay that redraws the four nested boxes to scale as a user edits the inputs — exactly what a DevTools box model panel does.`,
+    starterCode: `function computeBoxDimensions({ width, height, padding, border, boxSizing }) {
+  // return { contentWidth, contentHeight, renderedWidth, renderedHeight }
+}`,
+    solutionCode: `function computeBoxDimensions({ width, height, padding, border, boxSizing }) {
+  const extra = (padding + border) * 2;
+  if (boxSizing === "border-box") {
+    return {
+      contentWidth: width - extra,
+      contentHeight: height - extra,
+      renderedWidth: width,
+      renderedHeight: height,
+    };
+  }
+  return {
+    contentWidth: width,
+    contentHeight: height,
+    renderedWidth: width + extra,
+    renderedHeight: height + extra,
+  };
+}`,
+    testCases: [
+      {
+        input: "{ width:200, height:100, padding:20, border:2, boxSizing:'border-box' }",
+        expected: "{ contentWidth:156, contentHeight:56, renderedWidth:200, renderedHeight:100 }",
+        label: "border-box: rendered size matches the declared width/height exactly",
+      },
+      {
+        input: "{ width:200, height:100, padding:20, border:2, boxSizing:'content-box' }",
+        expected: "{ contentWidth:200, contentHeight:100, renderedWidth:244, renderedHeight:144 }",
+        label: "content-box: rendered size grows beyond the declared width/height",
+      },
+      {
+        input: "{ width:100, height:100, padding:0, border:0, boxSizing:'content-box' }",
+        expected: "{ contentWidth:100, contentHeight:100, renderedWidth:100, renderedHeight:100 }",
+        label: "Zero padding/border renders identically under either mode",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 34,
+  },
+  {
+    slug: "responsive-style-resolver",
+    conceptSlug: "units-sizing",
+    title: "Build a Responsive Style Resolver",
+    description: `Build the resolver behind a "computed styles" panel — given a component's declared styles in mixed units, resolve every value to a final pixel number for a given context.
+
+## The problem
+
+A component's styles might mix \`rem\` (root-relative), \`em\` (parent-relative), and \`vw\` (viewport-relative) — each resolves differently depending on where the component actually renders, which is exactly why "it works standalone but breaks nested" bugs happen.
+
+## The idea
+
+Parse each declared value into a number and a unit, then resolve it against the right piece of context: \`rootFontSize\` for \`rem\`, \`parentFontSize\` for \`em\`, \`viewportWidth\`/\`viewportHeight\` for \`vw\`/\`vh\`, and pass \`px\` straight through.
+
+## Your task
+
+Write \`resolveStyles(styleMap, context)\`, where \`styleMap\` is \`{ [property]: "<number><unit>" }\` (e.g. \`"1.5rem"\`) and \`context = { rootFontSize, parentFontSize, viewportWidth, viewportHeight }\`. Return an object with the same keys, each resolved to a plain pixel number.
+
+\`\`\`js
+resolveStyles({ padding: "1rem", fontSize: "1.2em", width: "50vw" }, { rootFontSize: 16, parentFontSize: 20, viewportWidth: 1000 })
+// → { padding: 16, fontSize: 24, width: 500 }
+\`\`\`
+
+Once this passes, imagine feeding it a component's real declared styles plus its live rendering context, to power a "computed styles" panel that always shows accurate pixel values regardless of how deeply the component is nested.`,
+    starterCode: `function resolveStyles(styleMap, context) {
+  // styleMap: { [property]: "<number><unit>" }
+}`,
+    solutionCode: `function resolveLength(value, unit, context) {
+  switch (unit) {
+    case "px": return value;
+    case "rem": return value * context.rootFontSize;
+    case "em": return value * context.parentFontSize;
+    case "vw": return (value / 100) * context.viewportWidth;
+    case "vh": return (value / 100) * context.viewportHeight;
+    default: throw new Error(\`Unknown unit: \${unit}\`);
+  }
+}
+
+function resolveStyles(styleMap, context) {
+  const result = {};
+  for (const [prop, declared] of Object.entries(styleMap)) {
+    const match = declared.match(/^(-?[\\d.]+)([a-z%]+)$/);
+    const [, num, unit] = match;
+    result[prop] = resolveLength(parseFloat(num), unit, context);
+  }
+  return result;
+}`,
+    testCases: [
+      {
+        input: "{ padding:'1rem', fontSize:'1.2em', width:'50vw' }, { rootFontSize:16, parentFontSize:20, viewportWidth:1000 }",
+        expected: "{ padding:16, fontSize:24, width:500 }",
+        label: "Resolves a mixed rem/em/vw style object against the given context",
+      },
+      {
+        input: "{ margin:'8px' }, {}",
+        expected: "{ margin:8 }",
+        label: "px values pass through unchanged, independent of context",
+      },
+      {
+        input: "{ height:'2rem' }, { rootFontSize:10 }",
+        expected: "{ height:20 }",
+        label: "Multiple rem values all resolve against the same root font-size",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 35,
+  },
+  {
+    slug: "computed-style-engine",
+    conceptSlug: "the-cascade-inheritance",
+    title: "Build a Computed Style Engine",
+    description: `Build the two-step lookup a browser actually performs to answer "what's this element's computed value for this property?" — cascade first, inheritance second.
+
+## The problem
+
+If no rule at all targets an element for a given property, the browser doesn't just give up — inheritable properties fall back to the parent's own computed value, walking up until either a rule wins or the root's initial value is reached.
+
+## The idea
+
+First, resolve the cascade among any rules that directly target this element (importance → specificity → source order, same as the CSS Specificity concept). If nothing targets it and the property is inheritable, recurse upward to the parent. If nothing targets it anywhere in the chain, fall back to the property's initial value.
+
+## Your task
+
+Write \`computedValue(elementId, property, tree, declarationsByElement, inheritable, initialValue)\`, where \`tree\` is \`{ id, parentId }[]\` and \`declarationsByElement[elementId][property]\` is an array of \`{ value, important, specificity, order }\`.
+
+\`\`\`js
+computedValue("child", "color", tree, { root: { color: [{ value: "navy", important: false, specificity: [0,0,1], order: 0 }] } }, true, "black")
+// → "navy" — no rule targets "child" directly, so it inherits from "root"
+\`\`\``,
+    starterCode: `function computedValue(elementId, property, tree, declarationsByElement, inheritable, initialValue) {
+  // tree: { id, parentId }[]
+}`,
+    solutionCode: `function compareSpecificity(a, b) {
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
+}
+
+function resolveCascade(declarations) {
+  return declarations.reduce((winner, d) => {
+    if (!winner) return d;
+    if (d.important !== winner.important) return d.important ? d : winner;
+    const cmp = compareSpecificity(d.specificity, winner.specificity);
+    if (cmp !== 0) return cmp > 0 ? d : winner;
+    return d.order >= winner.order ? d : winner;
+  }, null).value;
+}
+
+function computedValue(elementId, property, tree, declarationsByElement, inheritable, initialValue) {
+  const byId = Object.fromEntries(tree.map((n) => [n.id, n]));
+  const own = declarationsByElement[elementId]?.[property];
+  if (own && own.length > 0) return resolveCascade(own);
+
+  const parentId = byId[elementId]?.parentId;
+  if (inheritable && parentId != null) {
+    return computedValue(parentId, property, tree, declarationsByElement, inheritable, initialValue);
+  }
+  return initialValue;
+}`,
+    testCases: [
+      {
+        input: "'child' has no color rule, its parent 'root' does, color is inheritable",
+        expected: "root's resolved color",
+        label: "Falls back to the nearest ancestor's computed value when inheritable",
+      },
+      {
+        input: "'child' has its own color rule",
+        expected: "child's own resolved value",
+        label: "An element's own cascade-won rule always wins before inheritance is considered",
+      },
+      {
+        input: "no element in the chain has a margin rule, margin is not inheritable",
+        expected: "the initial value",
+        label: "A non-inheritable property with no matching rule falls back to its initial value, not the parent's",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 36,
+  },
+  {
+    slug: "flex-line-layout-engine",
+    conceptSlug: "flexbox-vs-grid",
+    title: "Build a Flex Line Layout Engine",
+    description: `Extend a flex distribution calculator to handle \`flex-wrap: wrap\` — splitting items across multiple lines and distributing space independently per line.
+
+## The problem
+
+Without wrapping, items simply shrink to fit one line. With \`flex-wrap: wrap\`, items that don't fit spill onto a new line instead — and each line then distributes its own leftover space independently, with no awareness of the other lines.
+
+## The idea
+
+Walk the items in order, accumulating basis widths onto the current line. Once adding the next item's basis would overflow the container (and the line isn't empty), start a new line. Once every line is built, distribute each line's own leftover space across its own items by \`flex-grow\`, exactly like a non-wrapping flex container would.
+
+## Your task
+
+Write \`layoutFlexLines(items, containerWidth)\`, where each item is \`{ basis, grow }\`. Return an array of lines, each an array of that line's items' final widths.
+
+\`\`\`js
+layoutFlexLines([{ basis: 150, grow: 1 }, { basis: 150, grow: 1 }, { basis: 150, grow: 1 }], 300)
+// → [[150, 150], [300]] — the first two fill line one exactly, the third wraps alone and grows to fill its own line
+\`\`\`
+
+Once this passes, imagine feeding it a real card grid's item widths and container size to preview exactly how many cards fit per row before a single pixel is rendered.`,
+    starterCode: `function layoutFlexLines(items, containerWidth) {
+  // items: [{ basis, grow }]
+}`,
+    solutionCode: `function layoutFlexLines(items, containerWidth) {
+  const lines = [];
+  let currentLine = [];
+  let currentBasisTotal = 0;
+
+  for (const item of items) {
+    if (currentLine.length > 0 && currentBasisTotal + item.basis > containerWidth) {
+      lines.push(currentLine);
+      currentLine = [];
+      currentBasisTotal = 0;
+    }
+    currentLine.push(item);
+    currentBasisTotal += item.basis;
+  }
+  if (currentLine.length > 0) lines.push(currentLine);
+
+  return lines.map((line) => {
+    const totalBasis = line.reduce((sum, i) => sum + i.basis, 0);
+    const totalGrow = line.reduce((sum, i) => sum + i.grow, 0);
+    const extra = containerWidth - totalBasis;
+    if (totalGrow === 0 || extra <= 0) return line.map((i) => i.basis);
+    return line.map((i) => i.basis + (i.grow / totalGrow) * extra);
+  });
+}`,
+    testCases: [
+      {
+        input: "[{150,1},{150,1},{150,1}], 300",
+        expected: "[[150, 150], [300]]",
+        label: "Items that don't fit wrap onto a new line, which grows independently",
+      },
+      {
+        input: "[{100,1},{100,1}], 300",
+        expected: "[[150, 150]]",
+        label: "Items that all fit on one line never wrap, and share leftover space together",
+      },
+      {
+        input: "[{200,0},{200,0},{200,0}], 400",
+        expected: "[[200, 200], [200]]",
+        label: "grow: 0 items still wrap correctly, they just never expand past their basis",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 37,
+  },
+  {
+    slug: "full-paint-order-resolver",
+    conceptSlug: "positioning-stacking-contexts",
+    title: "Build a Full Paint-Order Resolver",
+    description: `Extend a "topmost element" check into a full paint-order resolver — the same tool a DevTools "3D view" of stacking contexts is built on.
+
+## The problem
+
+Knowing which single element is on top isn't enough to debug a real layering bug — you need the *entire* back-to-front order, so you can see exactly where an unexpected element sits relative to everything else.
+
+## The idea
+
+Every element's position in the final paint order is decided by its full z-index path from the root down to itself, compared level by level — exactly like specificity tuples. Sorting all elements by that path (with array position breaking any exact tie) produces the complete bottom-to-top order in one pass.
+
+## Your task
+
+Write \`paintOrder(elements)\`, where each element is \`{ id, zIndex, parentId }\`. Return an array of every \`id\`, sorted from bottom (painted first) to top (painted last).
+
+\`\`\`js
+paintOrder([
+  { id: "a", zIndex: 1, parentId: null },
+  { id: "a-inner", zIndex: 9999, parentId: "a" },
+  { id: "b", zIndex: 2, parentId: null },
+])
+// → ["a", "a-inner", "b"] — a-inner paints above a (its own context), but the whole "a" branch stays below "b"
+\`\`\`
+
+Once this passes, imagine rendering each id as a labeled layer in a 3D stack view, exactly matching what a real stacking-context DevTools panel visualizes.`,
+    starterCode: `function paintOrder(elements) {
+  // elements: [{ id, zIndex, parentId }]
+}`,
+    solutionCode: `function paintOrder(elements) {
+  const byId = Object.fromEntries(elements.map((el, index) => [el.id, { ...el, index }]));
+
+  function pathOf(id) {
+    const el = byId[id];
+    const parentPath = el.parentId != null ? pathOf(el.parentId) : [];
+    return [...parentPath, el.zIndex];
+  }
+
+  function comparePaths(a, b) {
+    const len = Math.min(a.length, b.length);
+    for (let i = 0; i < len; i++) {
+      if (a[i] !== b[i]) return a[i] - b[i];
+    }
+    return a.length - b.length;
+  }
+
+  return elements
+    .map((el) => ({ id: el.id, path: pathOf(el.id), index: byId[el.id].index }))
+    .sort((a, b) => comparePaths(a.path, b.path) || a.index - b.index)
+    .map((el) => el.id);
+}`,
+    testCases: [
+      {
+        input: "a(z:1) > a-inner(z:9999), sibling b(z:2)",
+        expected: "['a', 'a-inner', 'b']",
+        label: "A trapped high z-index still paints above its own ancestor, but the whole branch stays below the sibling context",
+      },
+      {
+        input: "three top-level siblings with zIndex 3, 1, 2",
+        expected: "the one with zIndex 1 first, then 2, then 3",
+        label: "Top-level siblings sort purely by their own zIndex",
+      },
+      {
+        input: "two top-level siblings with equal zIndex",
+        expected: "the earlier one in the input array first",
+        label: "Equal zIndex at the same level preserves source order",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 38,
+  },
+  {
+    slug: "multi-container-style-resolver",
+    conceptSlug: "responsive-design-container-queries",
+    title: "Build a Multi-Container Style Resolver",
+    description: `Extend a single-container breakpoint matcher to a whole page's worth of independently-sized containers at once — the same lookup a container-query-aware style engine performs on every render.
+
+## The problem
+
+A real page has multiple named containers — a sidebar, a main column, a card grid — each with its own independent width, and each one's components need their own breakpoint resolved independently of the others.
+
+## The idea
+
+Given a map of container widths and a matching map of each container's breakpoint queries, resolve each container's matching value separately using the same "largest minWidth ≤ containerWidth" rule as a single container query.
+
+## Your task
+
+Write \`resolveComponentStyles(containerWidths, queriesByContainer)\`, where \`containerWidths = { [name]: width }\` and \`queriesByContainer = { [name]: { minWidth, value }[] }\`. Return \`{ [name]: resolvedValue }\`.
+
+\`\`\`js
+resolveComponentStyles(
+  { sidebar: 280, main: 900 },
+  {
+    sidebar: [{ minWidth: 0, value: "compact" }, { minWidth: 300, value: "wide" }],
+    main: [{ minWidth: 0, value: "compact" }, { minWidth: 700, value: "wide" }],
+  },
+)
+// → { sidebar: "compact", main: "wide" } — same query set, different result per container's own width
+\`\`\``,
+    starterCode: `function resolveComponentStyles(containerWidths, queriesByContainer) {
+  // containerWidths: { [name]: width }, queriesByContainer: { [name]: { minWidth, value }[] }
+}`,
+    solutionCode: `function resolveContainerValue(containerWidth, queries) {
+  const sorted = [...queries].sort((a, b) => a.minWidth - b.minWidth);
+  let match = sorted[0];
+  for (const q of sorted) {
+    if (q.minWidth <= containerWidth) match = q;
+    else break;
+  }
+  return match.value;
+}
+
+function resolveComponentStyles(containerWidths, queriesByContainer) {
+  const result = {};
+  for (const [name, width] of Object.entries(containerWidths)) {
+    result[name] = resolveContainerValue(width, queriesByContainer[name]);
+  }
+  return result;
+}`,
+    testCases: [
+      {
+        input: "{sidebar:280, main:900}, matching per-container query sets",
+        expected: "{ sidebar: 'compact', main: 'wide' }",
+        label: "The same query shape resolves differently per container, based on each one's own width",
+      },
+      {
+        input: "a single container below every breakpoint's minWidth",
+        expected: "the minWidth: 0 fallback value",
+        label: "Falls back to the smallest breakpoint when a container is narrower than every other one",
+      },
+      {
+        input: "three independent containers with three different widths",
+        expected: "three independently correct resolved values",
+        label: "Each container in the map is resolved independently of the others",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 39,
+  },
+  {
+    slug: "multi-property-theme-resolver",
+    conceptSlug: "custom-properties-theming",
+    title: "Build a Multi-Property Theme Resolver",
+    description: `Extend a single custom-property lookup into a full theme resolver — computing every themed value a component actually needs in one call.
+
+## The problem
+
+A real themed component doesn't read just one custom property — it reads several (\`--accent-color\`, \`--surface-bg\`, \`--text-color\`), each independently walking up the same cascade to find its nearest declaration.
+
+## The idea
+
+Resolving a whole theme for a component is just resolving each property name independently, using the same "check this element, then walk up ancestors" lookup — bundled into a single call that returns every requested property's resolved value at once.
+
+## Your task
+
+Write \`resolveTheme(elementId, propNames, tree, declarationsByElement, fallbacks)\`, where \`tree\` is \`{ id, parentId }[]\`, \`declarationsByElement[elementId]\` is \`{ [propName]: value }\`, and \`fallbacks\` is \`{ [propName]: value }\`. Return \`{ [propName]: resolvedValue }\` for every name in \`propNames\`.
+
+\`\`\`js
+resolveTheme("card", ["--accent", "--surface-bg"], tree, declarations, { "--accent": "black", "--surface-bg": "white" })
+// → { "--accent": "cyan", "--surface-bg": "white" } — one resolved, one falls back
+\`\`\``,
+    starterCode: `function resolveTheme(elementId, propNames, tree, declarationsByElement, fallbacks) {
+  // tree: { id, parentId }[]
+}`,
+    solutionCode: `function resolveVar(elementId, propName, tree, declarationsByElement, fallback) {
+  const byId = Object.fromEntries(tree.map((n) => [n.id, n]));
+  let current = elementId;
+  while (current != null) {
+    const decl = declarationsByElement[current];
+    if (decl && propName in decl) return decl[propName];
+    current = byId[current]?.parentId ?? null;
+  }
+  return fallback;
+}
+
+function resolveTheme(elementId, propNames, tree, declarationsByElement, fallbacks) {
+  const result = {};
+  for (const propName of propNames) {
+    result[propName] = resolveVar(elementId, propName, tree, declarationsByElement, fallbacks[propName]);
+  }
+  return result;
+}`,
+    testCases: [
+      {
+        input: "'card' asking for --accent (declared on an ancestor) and --surface-bg (declared nowhere)",
+        expected: "{ '--accent': ancestor's value, '--surface-bg': the fallback }",
+        label: "Resolves each requested property independently, mixing found and fallback results",
+      },
+      {
+        input: "'card' declares --accent itself, an ancestor also declares it",
+        expected: "card's own value wins for --accent",
+        label: "The element's own declaration takes priority over any ancestor's, per property",
+      },
+      {
+        input: "no propNames requested",
+        expected: "{}",
+        label: "Requesting zero properties returns an empty result object",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 40,
+  },
+  {
+    slug: "form-validity-watcher",
+    conceptSlug: "pseudo-classes-pseudo-elements-has",
+    title: "Build a Form Validity Watcher",
+    description: `Extend a \`:has()\`-style descendant check into a real utility — scanning every form on a page and flagging the ones that need attention.
+
+## The problem
+
+\`form:has(:invalid)\` is a single-form check — a real page-level validity watcher needs to scan every form at once and report which ones currently have an invalid field somewhere inside them.
+
+## The idea
+
+Run the same "any descendant matching a predicate" check across a whole list of forms, collecting only the ids of the ones that match — exactly what a page-wide validation summary needs to highlight.
+
+## Your task
+
+Write \`formsNeedingAttention(forms)\`, where each form is \`{ id, tag: "form", children: [] }\` (children may nest arbitrarily deep, e.g. through fieldsets). Return the \`id\`s of every form containing at least one descendant with \`valid: false\`.
+
+\`\`\`js
+formsNeedingAttention([
+  { id: "signup", tag: "form", children: [{ id: "email", valid: false }] },
+  { id: "search", tag: "form", children: [{ id: "query", valid: true }] },
+])
+// → ["signup"]
+\`\`\`
+
+Once this passes, imagine wiring it to re-run on every input's blur event, highlighting exactly which forms on the page currently need the user's attention.`,
+    starterCode: `function formsNeedingAttention(forms) {
+  // forms: [{ id, tag: "form", children: [] }]
+}`,
+    solutionCode: `function hasDescendantMatching(node, predicate) {
+  for (const child of node.children || []) {
+    if (predicate(child)) return true;
+    if (hasDescendantMatching(child, predicate)) return true;
+  }
+  return false;
+}
+
+function formsNeedingAttention(forms) {
+  return forms
+    .filter((form) => hasDescendantMatching(form, (n) => n.valid === false))
+    .map((form) => form.id);
+}`,
+    testCases: [
+      {
+        input: "one form with an invalid field, one form fully valid",
+        expected: "['signup']",
+        label: "Only forms with at least one invalid descendant are returned",
+      },
+      {
+        input: "a form with an invalid field nested inside two levels of fieldsets",
+        expected: "that form's id is included",
+        label: "Detects an invalid field regardless of nesting depth",
+      },
+      {
+        input: "no forms have any invalid descendants",
+        expected: "[]",
+        label: "Returns an empty array when every form is fully valid",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 41,
+  },
+  {
+    slug: "animation-cost-linter",
+    conceptSlug: "animation-performance",
+    title: "Build an Animation Cost Linter",
+    description: `Extend a single animation-cost classifier into a linter that scans a whole stylesheet's transition rules and flags the expensive ones before they ship.
+
+## The problem
+
+A single \`transition: top 300ms, transform 300ms\` rule looks harmless at a glance, but the \`top\` alone is enough to force Layout on every frame — exactly the kind of rule a linter should catch automatically, before it causes jank on a lower-end device.
+
+## The idea
+
+Classify every rule's animated properties using the same worst-tier logic as the single-property classifier, then report only the rules whose worst tier is \`"layout"\` — the ones actually worth flagging.
+
+## Your task
+
+Write \`lintAnimatedRules(rules)\`, where each rule is \`{ selector, properties: string[] }\`. Return the \`selector\`s of every rule classified as \`"layout"\`.
+
+\`\`\`js
+lintAnimatedRules([
+  { selector: ".modal", properties: ["transform", "opacity"] },
+  { selector: ".drawer", properties: ["left", "opacity"] },
+])
+// → [".drawer"] — .modal is Composite-only, .drawer's "left" forces Layout
+\`\`\`
+
+Once this passes, imagine running it as a build-time check across a real stylesheet's \`transition\` declarations, failing CI on any rule that would force Layout on every animated frame.`,
+    starterCode: `function lintAnimatedRules(rules) {
+  // rules: [{ selector, properties: string[] }]
+}`,
+    solutionCode: `const TIERS = {
+  transform: "compositor",
+  opacity: "compositor",
+  color: "paint",
+  "background-color": "paint",
+  "box-shadow": "paint",
+  "border-color": "paint",
+  width: "layout",
+  height: "layout",
+  top: "layout",
+  left: "layout",
+  margin: "layout",
+  "font-size": "layout",
+};
+const RANK = { compositor: 0, paint: 1, layout: 2 };
+
+function classifyAnimationCost(properties) {
+  let worst = "compositor";
+  for (const prop of properties) {
+    const tier = TIERS[prop] ?? "layout";
+    if (RANK[tier] > RANK[worst]) worst = tier;
+  }
+  return worst;
+}
+
+function lintAnimatedRules(rules) {
+  return rules
+    .filter((rule) => classifyAnimationCost(rule.properties) === "layout")
+    .map((rule) => rule.selector);
+}`,
+    testCases: [
+      {
+        input: "[{'.modal',['transform','opacity']}, {'.drawer',['left','opacity']}]",
+        expected: "['.drawer']",
+        label: "Only the rule with a layout-triggering property is flagged",
+      },
+      {
+        input: "every rule only animates transform/opacity",
+        expected: "[]",
+        label: "Returns an empty array when nothing in the stylesheet forces Layout",
+      },
+      {
+        input: "a rule animating color and box-shadow only",
+        expected: "not included in the result",
+        label: "Paint-only rules are not flagged — only 'layout'-tier rules are",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 42,
   },
 ];
 

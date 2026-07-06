@@ -1188,6 +1188,309 @@ const FIND_SHARED_STATE_ANCESTOR_TESTS: SandboxTest[] = [
   },
 ];
 
+const RENDERED_BOX_WIDTH_TESTS: SandboxTest[] = [
+  {
+    label: "content-box adds padding and border on top of width",
+    source: `
+      assert(typeof renderedWidth === "function", "renderedWidth is not defined");
+      assertEqual(renderedWidth({ width: 200, padding: 20, border: 2 }, "content-box"), 244);
+    `,
+  },
+  {
+    label: "border-box keeps the declared width regardless of padding/border",
+    source: `assertEqual(renderedWidth({ width: 200, padding: 20, border: 2 }, "border-box"), 200);`,
+  },
+  {
+    label: "zero padding/border renders at the declared width either way",
+    source: `assertEqual(renderedWidth({ width: 100, padding: 0, border: 0 }, "content-box"), 100);`,
+  },
+];
+
+const RESOLVE_CSS_LENGTH_TESTS: SandboxTest[] = [
+  {
+    label: "rem resolves against the root font-size",
+    source: `
+      assert(typeof resolveLength === "function", "resolveLength is not defined");
+      assertEqual(resolveLength(1.5, "rem", { rootFontSize: 16 }), 24);
+    `,
+  },
+  {
+    label: "em resolves against the parent's font-size",
+    source: `assertEqual(resolveLength(2, "em", { parentFontSize: 20 }), 40);`,
+  },
+  {
+    label: "vw resolves against 1% of viewport width",
+    source: `assertEqual(resolveLength(50, "vw", { viewportWidth: 1000 }), 500);`,
+  },
+  {
+    label: "px passes through unchanged",
+    source: `assertEqual(resolveLength(10, "px", {}), 10);`,
+  },
+];
+
+const RESOLVE_CASCADE_WINNER_TESTS: SandboxTest[] = [
+  {
+    label: "!important wins even against higher specificity",
+    source: `
+      assert(typeof resolveCascade === "function", "resolveCascade is not defined");
+      assertEqual(
+        resolveCascade([
+          { value: "blue", important: false, specificity: [0, 2, 0], order: 0 },
+          { value: "red", important: true, specificity: [0, 0, 1], order: 1 },
+        ]),
+        "red",
+      );
+    `,
+  },
+  {
+    label: "Without !important, higher specificity wins",
+    source: `
+      assertEqual(
+        resolveCascade([
+          { value: "blue", important: false, specificity: [0, 1, 0], order: 0 },
+          { value: "green", important: false, specificity: [1, 0, 0], order: 1 },
+        ]),
+        "green",
+      );
+    `,
+  },
+  {
+    label: "Equal specificity — the later declaration (source order) wins",
+    source: `
+      assertEqual(
+        resolveCascade([
+          { value: "blue", important: false, specificity: [0, 1, 0], order: 0 },
+          { value: "green", important: false, specificity: [0, 1, 0], order: 1 },
+        ]),
+        "green",
+      );
+    `,
+  },
+];
+
+const DISTRIBUTE_FLEX_SPACE_TESTS: SandboxTest[] = [
+  {
+    label: "Equal grow splits extra space evenly",
+    source: `
+      assert(typeof distributeFlexSpace === "function", "distributeFlexSpace is not defined");
+      assertEqual(
+        distributeFlexSpace([{ basis: 100, grow: 1, shrink: 1 }, { basis: 100, grow: 1, shrink: 1 }], 300),
+        [150, 150],
+      );
+    `,
+  },
+  {
+    label: "grow: 0 gets no extra space at all",
+    source: `
+      assertEqual(
+        distributeFlexSpace([{ basis: 100, grow: 1, shrink: 1 }, { basis: 100, grow: 0, shrink: 1 }], 300),
+        [200, 100],
+      );
+    `,
+  },
+  {
+    label: "Overflow shrinks items proportionally to basis × shrink",
+    source: `
+      assertEqual(
+        distributeFlexSpace([{ basis: 100, grow: 1, shrink: 1 }, { basis: 100, grow: 1, shrink: 1 }], 150),
+        [75, 75],
+      );
+    `,
+  },
+  {
+    label: "Container exactly matching total basis distributes nothing",
+    source: `
+      assertEqual(
+        distributeFlexSpace([{ basis: 100, grow: 1, shrink: 1 }, { basis: 100, grow: 1, shrink: 1 }], 200),
+        [100, 100],
+      );
+    `,
+  },
+];
+
+const RESOLVE_STACKING_ORDER_TESTS: SandboxTest[] = [
+  {
+    label: "A high z-index trapped in a lower-context ancestor cannot beat a sibling context",
+    source: `
+      assert(typeof resolveTopmost === "function", "resolveTopmost is not defined");
+      assertEqual(
+        resolveTopmost([
+          { id: "a", zIndex: 1, parentId: null },
+          { id: "a-inner", zIndex: 9999, parentId: "a" },
+          { id: "b", zIndex: 2, parentId: null },
+        ]),
+        "b",
+      );
+    `,
+  },
+  {
+    label: "Among top-level siblings, the higher zIndex wins directly",
+    source: `
+      assertEqual(
+        resolveTopmost([
+          { id: "a", zIndex: 1, parentId: null },
+          { id: "b", zIndex: 5, parentId: null },
+        ]),
+        "b",
+      );
+    `,
+  },
+  {
+    label: "Equal zIndex at the same level falls back to source order",
+    source: `
+      assertEqual(
+        resolveTopmost([
+          { id: "a", zIndex: 3, parentId: null },
+          { id: "b", zIndex: 3, parentId: null },
+        ]),
+        "b",
+      );
+    `,
+  },
+  {
+    label: "A descendant under the higher-ranked ancestor wins, even with a lower zIndex than the other branch's descendant",
+    source: `
+      assertEqual(
+        resolveTopmost([
+          { id: "x", zIndex: 5, parentId: null },
+          { id: "x-inner", zIndex: 1, parentId: "x" },
+          { id: "y", zIndex: 3, parentId: null },
+          { id: "y-inner", zIndex: 100, parentId: "y" },
+        ]),
+        "x-inner",
+      );
+    `,
+  },
+];
+
+const RESOLVE_CONTAINER_QUERY_TESTS: SandboxTest[] = [
+  {
+    label: "Matches the largest minWidth that's still ≤ the container width",
+    source: `
+      assert(typeof resolveContainerValue === "function", "resolveContainerValue is not defined");
+      const queries = [{ minWidth: 0, value: "compact" }, { minWidth: 400, value: "comfortable" }, { minWidth: 700, value: "wide" }];
+      assertEqual(resolveContainerValue(500, queries), "comfortable");
+    `,
+  },
+  {
+    label: "Falls back to the smallest breakpoint below the container width",
+    source: `
+      const queries = [{ minWidth: 0, value: "compact" }, { minWidth: 400, value: "comfortable" }, { minWidth: 700, value: "wide" }];
+      assertEqual(resolveContainerValue(300, queries), "compact");
+    `,
+  },
+  {
+    label: "Matches the largest breakpoint when the container is wide enough",
+    source: `
+      const queries = [{ minWidth: 0, value: "compact" }, { minWidth: 400, value: "comfortable" }, { minWidth: 700, value: "wide" }];
+      assertEqual(resolveContainerValue(1000, queries), "wide");
+    `,
+  },
+  {
+    label: "Works regardless of the input queries' order",
+    source: `
+      const queries = [{ minWidth: 700, value: "wide" }, { minWidth: 0, value: "compact" }, { minWidth: 400, value: "comfortable" }];
+      assertEqual(resolveContainerValue(500, queries), "comfortable");
+    `,
+  },
+];
+
+const RESOLVE_CUSTOM_PROPERTY_TESTS: SandboxTest[] = [
+  {
+    label: "A declaration on the element itself wins immediately",
+    source: `
+      assert(typeof resolveVar === "function", "resolveVar is not defined");
+      const tree = [{ id: "root", parentId: null }, { id: "card", parentId: "root" }];
+      const declarations = { root: { "--accent": "teal" }, card: { "--accent": "gold" } };
+      assertEqual(resolveVar("card", "--accent", tree, declarations, "black"), "gold");
+    `,
+  },
+  {
+    label: "Falls back to the nearest ancestor that declares the property",
+    source: `
+      const tree = [{ id: "root", parentId: null }, { id: "card", parentId: "root" }];
+      const declarations = { root: { "--accent": "teal" } };
+      assertEqual(resolveVar("card", "--accent", tree, declarations, "black"), "teal");
+    `,
+  },
+  {
+    label: "The closer ancestor wins over a farther one, regardless of declaration order",
+    source: `
+      const tree = [
+        { id: "root", parentId: null },
+        { id: "theme-dark", parentId: "root" },
+        { id: "card", parentId: "theme-dark" },
+      ];
+      const declarations = { root: { "--accent": "teal" }, "theme-dark": { "--accent": "cyan" } };
+      assertEqual(resolveVar("card", "--accent", tree, declarations, "black"), "cyan");
+    `,
+  },
+  {
+    label: "Returns the fallback when nothing in the chain declares it",
+    source: `
+      const tree = [{ id: "root", parentId: null }, { id: "card", parentId: "root" }];
+      assertEqual(resolveVar("card", "--accent", tree, {}, "black"), "black");
+    `,
+  },
+];
+
+const IMPLEMENT_HAS_MATCHER_TESTS: SandboxTest[] = [
+  {
+    label: "Matches when a direct child satisfies the predicate",
+    source: `
+      assert(typeof hasDescendantMatching === "function", "hasDescendantMatching is not defined");
+      const form = { id: "f1", tag: "form", children: [{ id: "i1", tag: "input", valid: true }, { id: "i2", tag: "input", valid: false }] };
+      assertEqual(hasDescendantMatching(form, (n) => n.valid === false), true);
+    `,
+  },
+  {
+    label: "Returns false when no descendant matches",
+    source: `
+      const form = { id: "f1", tag: "form", children: [{ id: "i1", tag: "input", valid: true }] };
+      assertEqual(hasDescendantMatching(form, (n) => n.valid === false), false);
+    `,
+  },
+  {
+    label: "Matches a deeply nested descendant, not just direct children",
+    source: `
+      const form = {
+        id: "f1", tag: "form",
+        children: [{ id: "fs1", tag: "fieldset", children: [{ id: "fs2", tag: "fieldset", children: [{ id: "i1", tag: "input", valid: false }] }] }],
+      };
+      assertEqual(hasDescendantMatching(form, (n) => n.valid === false), true);
+    `,
+  },
+  {
+    label: "The node itself is never checked — only its descendants",
+    source: `
+      const leaf = { id: "i1", tag: "input", valid: false, children: [] };
+      assertEqual(hasDescendantMatching(leaf, (n) => n.valid === false), false);
+    `,
+  },
+];
+
+const CLASSIFY_ANIMATION_COST_TESTS: SandboxTest[] = [
+  {
+    label: "Both properties are Composite-only — the cheapest possible tier",
+    source: `
+      assert(typeof classifyAnimationCost === "function", "classifyAnimationCost is not defined");
+      assertEqual(classifyAnimationCost(["transform", "opacity"]), "compositor");
+    `,
+  },
+  {
+    label: "A single layout-triggering property drags the whole list down to 'layout'",
+    source: `assertEqual(classifyAnimationCost(["transform", "top"]), "layout");`,
+  },
+  {
+    label: "Paint-only properties skip Layout but still cost more than Composite-only",
+    source: `assertEqual(classifyAnimationCost(["color", "box-shadow"]), "paint");`,
+  },
+  {
+    label: "A lone layout-triggering property is classified as 'layout'",
+    source: `assertEqual(classifyAnimationCost(["width"]), "layout");`,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "implement-debounce": DEBOUNCE_TESTS,
   "specificity-calculator": SPECIFICITY_TESTS,
@@ -1224,6 +1527,15 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "implement-shallow-equal": SHALLOW_EQUAL_TESTS,
   "schedule-updates-by-priority": SCHEDULE_UPDATES_TESTS,
   "find-shared-state-ancestor": FIND_SHARED_STATE_ANCESTOR_TESTS,
+  "rendered-box-width": RENDERED_BOX_WIDTH_TESTS,
+  "resolve-css-length": RESOLVE_CSS_LENGTH_TESTS,
+  "resolve-cascade-winner": RESOLVE_CASCADE_WINNER_TESTS,
+  "distribute-flex-space": DISTRIBUTE_FLEX_SPACE_TESTS,
+  "resolve-stacking-order": RESOLVE_STACKING_ORDER_TESTS,
+  "resolve-container-query": RESOLVE_CONTAINER_QUERY_TESTS,
+  "resolve-custom-property": RESOLVE_CUSTOM_PROPERTY_TESTS,
+  "implement-has-matcher": IMPLEMENT_HAS_MATCHER_TESTS,
+  "classify-animation-cost": CLASSIFY_ANIMATION_COST_TESTS,
 };
 
 export function getTestSpec(slug: string): SandboxTest[] | null {

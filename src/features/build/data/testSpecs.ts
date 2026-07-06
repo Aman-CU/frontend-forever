@@ -1312,6 +1312,296 @@ const MEMOIZED_SELECTOR_TESTS: SandboxTest[] = [
   },
 ];
 
+const BOX_MODEL_INSPECTOR_TESTS: SandboxTest[] = [
+  {
+    label: "border-box: rendered size matches the declared width/height exactly",
+    source: `
+      assert(typeof computeBoxDimensions === "function", "computeBoxDimensions is not defined");
+      assertEqual(
+        computeBoxDimensions({ width: 200, height: 100, padding: 20, border: 2, boxSizing: "border-box" }),
+        { contentWidth: 156, contentHeight: 56, renderedWidth: 200, renderedHeight: 100 },
+      );
+    `,
+  },
+  {
+    label: "content-box: rendered size grows beyond the declared width/height",
+    source: `
+      assertEqual(
+        computeBoxDimensions({ width: 200, height: 100, padding: 20, border: 2, boxSizing: "content-box" }),
+        { contentWidth: 200, contentHeight: 100, renderedWidth: 244, renderedHeight: 144 },
+      );
+    `,
+  },
+  {
+    label: "Zero padding/border renders identically under either mode",
+    source: `
+      assertEqual(
+        computeBoxDimensions({ width: 100, height: 100, padding: 0, border: 0, boxSizing: "content-box" }),
+        { contentWidth: 100, contentHeight: 100, renderedWidth: 100, renderedHeight: 100 },
+      );
+    `,
+  },
+];
+
+const RESPONSIVE_STYLE_RESOLVER_TESTS: SandboxTest[] = [
+  {
+    label: "Resolves a mixed rem/em/vw style object against the given context",
+    source: `
+      assert(typeof resolveStyles === "function", "resolveStyles is not defined");
+      assertEqual(
+        resolveStyles({ padding: "1rem", fontSize: "1.2em", width: "50vw" }, { rootFontSize: 16, parentFontSize: 20, viewportWidth: 1000 }),
+        { padding: 16, fontSize: 24, width: 500 },
+      );
+    `,
+  },
+  {
+    label: "px values pass through unchanged, independent of context",
+    source: `assertEqual(resolveStyles({ margin: "8px" }, {}), { margin: 8 });`,
+  },
+  {
+    label: "Multiple rem values all resolve against the same root font-size",
+    source: `assertEqual(resolveStyles({ height: "2rem" }, { rootFontSize: 10 }), { height: 20 });`,
+  },
+];
+
+const COMPUTED_STYLE_ENGINE_TESTS: SandboxTest[] = [
+  {
+    label: "Falls back to the nearest ancestor's computed value when inheritable",
+    source: `
+      assert(typeof computedValue === "function", "computedValue is not defined");
+      const tree = [{ id: "root", parentId: null }, { id: "child", parentId: "root" }];
+      const declarations = { root: { color: [{ value: "navy", important: false, specificity: [0, 0, 1], order: 0 }] } };
+      assertEqual(computedValue("child", "color", tree, declarations, true, "black"), "navy");
+    `,
+  },
+  {
+    label: "An element's own cascade-won rule always wins before inheritance is considered",
+    source: `
+      const tree = [{ id: "root", parentId: null }, { id: "child", parentId: "root" }];
+      const declarations = {
+        root: { color: [{ value: "navy", important: false, specificity: [0, 0, 1], order: 0 }] },
+        child: { color: [{ value: "gold", important: false, specificity: [0, 1, 0], order: 0 }] },
+      };
+      assertEqual(computedValue("child", "color", tree, declarations, true, "black"), "gold");
+    `,
+  },
+  {
+    label: "A non-inheritable property with no matching rule falls back to its initial value, not the parent's",
+    source: `
+      const tree = [{ id: "root", parentId: null }, { id: "child", parentId: "root" }];
+      const declarations = { root: { margin: [{ value: "10px", important: false, specificity: [0, 0, 1], order: 0 }] } };
+      assertEqual(computedValue("child", "margin", tree, declarations, false, "0px"), "0px");
+    `,
+  },
+];
+
+const FLEX_LINE_LAYOUT_ENGINE_TESTS: SandboxTest[] = [
+  {
+    label: "Items that don't fit wrap onto a new line, which grows independently",
+    source: `
+      assert(typeof layoutFlexLines === "function", "layoutFlexLines is not defined");
+      assertEqual(
+        layoutFlexLines([{ basis: 150, grow: 1 }, { basis: 150, grow: 1 }, { basis: 150, grow: 1 }], 300),
+        [[150, 150], [300]],
+      );
+    `,
+  },
+  {
+    label: "Items that all fit on one line never wrap, and share leftover space together",
+    source: `
+      assertEqual(
+        layoutFlexLines([{ basis: 100, grow: 1 }, { basis: 100, grow: 1 }], 300),
+        [[150, 150]],
+      );
+    `,
+  },
+  {
+    label: "grow: 0 items still wrap correctly, they just never expand past their basis",
+    source: `
+      assertEqual(
+        layoutFlexLines([{ basis: 200, grow: 0 }, { basis: 200, grow: 0 }, { basis: 200, grow: 0 }], 400),
+        [[200, 200], [200]],
+      );
+    `,
+  },
+];
+
+const FULL_PAINT_ORDER_RESOLVER_TESTS: SandboxTest[] = [
+  {
+    label: "A trapped high z-index still paints above its own ancestor, but the whole branch stays below the sibling context",
+    source: `
+      assert(typeof paintOrder === "function", "paintOrder is not defined");
+      assertEqual(
+        paintOrder([
+          { id: "a", zIndex: 1, parentId: null },
+          { id: "a-inner", zIndex: 9999, parentId: "a" },
+          { id: "b", zIndex: 2, parentId: null },
+        ]),
+        ["a", "a-inner", "b"],
+      );
+    `,
+  },
+  {
+    label: "Top-level siblings sort purely by their own zIndex",
+    source: `
+      assertEqual(
+        paintOrder([
+          { id: "x", zIndex: 3, parentId: null },
+          { id: "y", zIndex: 1, parentId: null },
+          { id: "z", zIndex: 2, parentId: null },
+        ]),
+        ["y", "z", "x"],
+      );
+    `,
+  },
+  {
+    label: "Equal zIndex at the same level preserves source order",
+    source: `
+      assertEqual(
+        paintOrder([
+          { id: "a", zIndex: 1, parentId: null },
+          { id: "b", zIndex: 1, parentId: null },
+        ]),
+        ["a", "b"],
+      );
+    `,
+  },
+];
+
+const MULTI_CONTAINER_STYLE_RESOLVER_TESTS: SandboxTest[] = [
+  {
+    label: "The same query shape resolves differently per container, based on each one's own width",
+    source: `
+      assert(typeof resolveComponentStyles === "function", "resolveComponentStyles is not defined");
+      assertEqual(
+        resolveComponentStyles(
+          { sidebar: 280, main: 900 },
+          {
+            sidebar: [{ minWidth: 0, value: "compact" }, { minWidth: 300, value: "wide" }],
+            main: [{ minWidth: 0, value: "compact" }, { minWidth: 700, value: "wide" }],
+          },
+        ),
+        { sidebar: "compact", main: "wide" },
+      );
+    `,
+  },
+  {
+    label: "Falls back to the smallest breakpoint when a container is narrower than every other one",
+    source: `
+      assertEqual(
+        resolveComponentStyles({ aside: 100 }, { aside: [{ minWidth: 0, value: "compact" }, { minWidth: 400, value: "wide" }] }),
+        { aside: "compact" },
+      );
+    `,
+  },
+  {
+    label: "Each container in the map is resolved independently of the others",
+    source: `
+      assertEqual(
+        resolveComponentStyles(
+          { a: 50, b: 500, c: 900 },
+          {
+            a: [{ minWidth: 0, value: "s" }, { minWidth: 300, value: "m" }, { minWidth: 800, value: "l" }],
+            b: [{ minWidth: 0, value: "s" }, { minWidth: 300, value: "m" }, { minWidth: 800, value: "l" }],
+            c: [{ minWidth: 0, value: "s" }, { minWidth: 300, value: "m" }, { minWidth: 800, value: "l" }],
+          },
+        ),
+        { a: "s", b: "m", c: "l" },
+      );
+    `,
+  },
+];
+
+const MULTI_PROPERTY_THEME_RESOLVER_TESTS: SandboxTest[] = [
+  {
+    label: "Resolves each requested property independently, mixing found and fallback results",
+    source: `
+      assert(typeof resolveTheme === "function", "resolveTheme is not defined");
+      const tree = [{ id: "root", parentId: null }, { id: "card", parentId: "root" }];
+      const declarations = { root: { "--accent": "cyan" } };
+      assertEqual(
+        resolveTheme("card", ["--accent", "--surface-bg"], tree, declarations, { "--accent": "black", "--surface-bg": "white" }),
+        { "--accent": "cyan", "--surface-bg": "white" },
+      );
+    `,
+  },
+  {
+    label: "The element's own declaration takes priority over any ancestor's, per property",
+    source: `
+      const tree = [{ id: "root", parentId: null }, { id: "card", parentId: "root" }];
+      const declarations = { root: { "--accent": "cyan" }, card: { "--accent": "gold" } };
+      assertEqual(resolveTheme("card", ["--accent"], tree, declarations, { "--accent": "black" }), { "--accent": "gold" });
+    `,
+  },
+  {
+    label: "Requesting zero properties returns an empty result object",
+    source: `
+      const tree = [{ id: "root", parentId: null }, { id: "card", parentId: "root" }];
+      assertEqual(resolveTheme("card", [], tree, {}, {}), {});
+    `,
+  },
+];
+
+const FORM_VALIDITY_WATCHER_TESTS: SandboxTest[] = [
+  {
+    label: "Only forms with at least one invalid descendant are returned",
+    source: `
+      assert(typeof formsNeedingAttention === "function", "formsNeedingAttention is not defined");
+      assertEqual(
+        formsNeedingAttention([
+          { id: "signup", tag: "form", children: [{ id: "email", valid: false }] },
+          { id: "search", tag: "form", children: [{ id: "query", valid: true }] },
+        ]),
+        ["signup"],
+      );
+    `,
+  },
+  {
+    label: "Detects an invalid field regardless of nesting depth",
+    source: `
+      assertEqual(
+        formsNeedingAttention([
+          { id: "checkout", tag: "form", children: [{ id: "fs1", children: [{ id: "fs2", children: [{ id: "card", valid: false }] }] }] },
+        ]),
+        ["checkout"],
+      );
+    `,
+  },
+  {
+    label: "Returns an empty array when every form is fully valid",
+    source: `
+      assertEqual(
+        formsNeedingAttention([{ id: "search", tag: "form", children: [{ id: "query", valid: true }] }]),
+        [],
+      );
+    `,
+  },
+];
+
+const ANIMATION_COST_LINTER_TESTS: SandboxTest[] = [
+  {
+    label: "Only the rule with a layout-triggering property is flagged",
+    source: `
+      assert(typeof lintAnimatedRules === "function", "lintAnimatedRules is not defined");
+      assertEqual(
+        lintAnimatedRules([
+          { selector: ".modal", properties: ["transform", "opacity"] },
+          { selector: ".drawer", properties: ["left", "opacity"] },
+        ]),
+        [".drawer"],
+      );
+    `,
+  },
+  {
+    label: "Returns an empty array when nothing in the stylesheet forces Layout",
+    source: `assertEqual(lintAnimatedRules([{ selector: ".a", properties: ["transform"] }, { selector: ".b", properties: ["opacity"] }]), []);`,
+  },
+  {
+    label: "Paint-only rules are not flagged — only 'layout'-tier rules are",
+    source: `assertEqual(lintAnimatedRules([{ selector: ".toast", properties: ["color", "box-shadow"] }]), []);`,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "kanban-board": KANBAN_BOARD_TESTS,
   "async-task-runner": ASYNC_TASK_RUNNER_TESTS,
@@ -1349,6 +1639,15 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "diff-changed-rows": DIFF_CHANGED_ROWS_TESTS,
   "merge-transition-results": MERGE_TRANSITION_RESULTS_TESTS,
   "memoized-selector": MEMOIZED_SELECTOR_TESTS,
+  "box-model-inspector": BOX_MODEL_INSPECTOR_TESTS,
+  "responsive-style-resolver": RESPONSIVE_STYLE_RESOLVER_TESTS,
+  "computed-style-engine": COMPUTED_STYLE_ENGINE_TESTS,
+  "flex-line-layout-engine": FLEX_LINE_LAYOUT_ENGINE_TESTS,
+  "full-paint-order-resolver": FULL_PAINT_ORDER_RESOLVER_TESTS,
+  "multi-container-style-resolver": MULTI_CONTAINER_STYLE_RESOLVER_TESTS,
+  "multi-property-theme-resolver": MULTI_PROPERTY_THEME_RESOLVER_TESTS,
+  "form-validity-watcher": FORM_VALIDITY_WATCHER_TESTS,
+  "animation-cost-linter": ANIMATION_COST_LINTER_TESTS,
 };
 
 export function getBuildTestSpec(slug: string): SandboxTest[] | null {

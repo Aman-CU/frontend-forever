@@ -1,0 +1,37 @@
+---
+title: "Units & Sizing"
+description: "Compare absolute units like px against relative ones like %, em, rem, vh/vw, and when each keeps layouts predictable and responsive."
+category: "css"
+difficulty: "beginner"
+order: 2
+whatsHappening: "CSS lengths are either absolute (always the same physical size, like px) or relative (computed from something else — a parent's size, the root font-size, or the viewport). Every relative unit resolves to a pixel value at render time, but which reference it resolves against is what makes each one useful for a different job."
+keyInsight: "em is relative to the current element's own font-size (and compounds through nested elements, which is exactly why it can surprise you), while rem is always relative to the root (<html>) font-size, no matter how deeply nested it is. That single difference is why most design systems standardize on rem for spacing and typography — it gives every element the same reference point."
+memoryHook: "em = 'my parent's/my own font-size' (compounds). rem = 'root's font-size' (one flat reference, no matter how deep). vh/vw = 'viewport height/width, sliced into 100 pieces'."
+inRealLife: "Like giving directions as 'two blocks from here' (em — relative to wherever you're currently standing, so it compounds as you walk) versus 'two blocks from the courthouse' (rem — always the same fixed landmark, no matter where you started)."
+---
+
+## Absolute units
+
+**`px`** is the only length most projects use as absolute — it's a fixed CSS pixel that doesn't scale with anything else on the page (though it does scale with the user's browser/OS zoom level, which is why px isn't truly "immutable," just non-relative to other CSS).
+
+## Relative units
+
+- **`%`** — relative to the corresponding dimension of the containing block. A `width: 50%` child is half its parent's content-box width; `height: 50%` only works if the parent has an explicitly defined height.
+- **`em`** — relative to the *current element's* computed `font-size`. Used for `font-size` itself, it's relative to the *parent's* font-size instead, and nested elements each multiply the one before — three nested `1.2em` elements compound to `1.2 × 1.2 × 1.2 ≈ 1.73×` the root size.
+- **`rem`** — relative to the root `<html>` element's `font-size`, always, regardless of nesting depth. No compounding, one reference point for the whole page.
+- **`vh` / `vw`** — 1% of the viewport's height/width. `100vh` is exactly the visible viewport height — useful for full-screen sections, but notoriously inconsistent on mobile browsers whose UI chrome resizes the viewport as the user scrolls.
+- **`vmin` / `vmax`** — 1% of whichever viewport dimension is currently smaller/larger. Useful for sizing something relative to "whichever direction is tightest," like a square avatar that should never overflow either axis.
+
+## Why rem wins for spacing and type scale
+
+Because `rem` always resolves against the root font-size and never compounds, changing one line — `html { font-size: 112.5%; }` — rescales an entire design system's spacing and typography proportionally. `em`-based systems can't do this safely, since a change at the root ripples unpredictably through every nested compounding.
+
+```css
+html { font-size: 16px; }        /* 1rem = 16px, everywhere */
+.card { padding: 1.5rem; }        /* always 24px, regardless of nesting */
+.card__title { font-size: 1.25rem; } /* always 20px */
+```
+
+## Why it matters
+
+Picking the wrong unit is a common source of "this scales weirdly when the user zooms" or "this component looks fine standalone but breaks nested three levels deep" bugs — both symptoms of reaching for `em` (or `px`) where `rem` or `%` would have given a single, predictable reference point.

@@ -1,0 +1,51 @@
+---
+title: "Selectors: Pseudo-classes, Pseudo-elements & :has()"
+description: "Compare pseudo-classes like :hover/:nth-child to pseudo-elements like ::before, and see how :has() finally lets CSS select a parent based on its children."
+category: "css"
+difficulty: "advanced"
+order: 9
+whatsHappening: "Pseudo-classes select real elements that happen to be in a particular state or position (:hover, :nth-child(2)), while pseudo-elements target a sub-part of an element that isn't a real node in the DOM at all (::before, ::first-line). :has() is a pseudo-class, but an unusual one — it's the first CSS selector that lets a rule match a parent based on what's inside it, something selectors could never do before."
+keyInsight: ":has() reverses CSS's normal selection direction. Every other combinator only lets you select downward or sideways — a descendant, a child, a following sibling — never upward. :has() is a 'parent selector' in every practical sense: form:has(:invalid) selects the <form> itself, based purely on whether some descendant input is currently invalid."
+memoryHook: "One colon (:hover, :nth-child) = a real element, just in a particular state. Two colons (::before, ::first-line) = a fake sub-part the browser renders but that isn't a DOM node. :has() = the one pseudo-class that looks inward at descendants to decide whether the outer element matches."
+inRealLife: "A pseudo-class is like describing a real person by a temporary condition — 'the person who is currently standing' (:hover) or 'the second person in line' (:nth-child). A pseudo-element is like referring to a shadow cast by a real object — there's no separate physical 'shadow' object, but you can still point at it and describe it. :has() is like identifying a house by peeking inside it first — 'the house that has a red car in the driveway' — deciding from the inside what to select from the outside."
+---
+
+## Pseudo-classes: real elements, particular states
+
+A pseudo-class (single colon) selects an actual element in the DOM that satisfies some condition — a state, a position, or a relationship:
+
+- **State-based:** `:hover`, `:focus`, `:checked`, `:disabled`, `:invalid`
+- **Position-based:** `:nth-child(n)`, `:first-child`, `:last-of-type`
+- **Relational:** `:not(...)`, `:is(...)`, `:where(...)`
+
+```css
+input:invalid { border-color: red; }
+li:nth-child(odd) { background: var(--surface-muted); }
+```
+
+## Pseudo-elements: sub-parts that aren't DOM nodes
+
+A pseudo-element (double colon, by modern convention) styles a portion of an element's content or box that has no corresponding element in the DOM tree at all:
+
+- **`::before` / `::after`** — inject generated content (via the `content` property) before/after an element's real children, without adding a node to the markup.
+- **`::first-line` / `::first-letter`** — target a rendered fragment of text that depends on line-wrapping, not on any actual markup boundary.
+
+```css
+.quote::before { content: "\201C"; }  /* a generated opening quote mark, no extra <span> needed */
+```
+
+## `:has()` — the parent-selector pseudo-class
+
+Every combinator CSS had before `:has()` only reaches downward or sideways — `.card .title` (descendant), `.card > .title` (child), `.card ~ .footer` (sibling). None of them could select an *ancestor* based on its *descendants*. `:has()` is the exception:
+
+```css
+form:has(:invalid) { border-color: red; }        /* style the form, not the input */
+.card:has(img) { grid-template-columns: 1fr 2fr; } /* only cards that contain an image */
+li:has(> input:checked) { text-decoration: line-through; }
+```
+
+`form:has(:invalid)` reads as "select any `<form>` that contains an invalid input anywhere inside it" — the match happens on the outer `form`, driven entirely by what's nested within.
+
+## Why it matters
+
+`:has()` closed one of CSS's longest-standing gaps — "parent selectors" were a running joke in the spec community for over a decade because engines couldn't evaluate them efficiently. Its arrival (alongside `:is()`/`:where()`) means a growing number of layouts that used to require JavaScript to toggle a class based on child state can now be expressed as pure CSS.

@@ -1,0 +1,46 @@
+---
+title: "Responsive Design & Container Queries"
+description: "Learn how media queries respond to the viewport while container queries respond to a component's own size — and why the latter makes components truly reusable."
+category: "css"
+difficulty: "intermediate"
+order: 7
+whatsHappening: "Media queries have been the only way to make CSS conditional on size for decades, but they can only ever read the viewport's dimensions — never a specific element's. Container queries introduce a second axis of conditional CSS: rules that respond to the size of a named containing element instead, regardless of where that element sits on the page or how wide the viewport is."
+keyInsight: "A component styled with a media query breaks the moment it's reused somewhere narrower than the full viewport — a card that looks right at 1200px viewport width has no way of knowing it's actually rendering inside a 300px sidebar. A container query fixes this by asking the component's own container how wide *it* is, making the component's styling correct anywhere it's dropped."
+memoryHook: "Media query = 'how big is the browser window?' Container query = 'how big is the box I'm actually sitting in?' A component only truly knows how to style itself with the second question."
+inRealLife: "A media query is like choosing your outfit based on the weather forecast for the whole city — useful, but it says nothing about the specific room you'll actually be in. A container query is like choosing your outfit based on the temperature of the exact room you're standing in, which is what actually determines whether you're dressed correctly, regardless of what the city-wide forecast says."
+---
+
+## Media queries: viewport-driven
+
+```css
+@media (min-width: 768px) {
+  .card { flex-direction: row; }
+}
+```
+
+This rule only ever asks "is the browser viewport at least 768px wide?" — it has no awareness of the `.card`'s actual rendered width. A `.card` inside a 300px sidebar on a 1400px-wide viewport still gets the row layout, even though 300px is nowhere near wide enough for it to look right.
+
+## Container queries: element-driven
+
+Container queries flip the question to "how wide is *this component's own container*?" — first, opt an ancestor into being a query container:
+
+```css
+.card-slot {
+  container-type: inline-size;
+  container-name: card-slot;
+}
+
+@container card-slot (min-width: 400px) {
+  .card { flex-direction: row; }
+}
+```
+
+Now `.card` switches to a row layout whenever *its own container* is at least 400px wide — correctly, whether that container is the full page, a 400px-wide main column, or a narrow sidebar that happens to be wide enough. The same `.card` component now behaves correctly in every context it's dropped into, without a single media-query breakpoint tied to the whole page's width.
+
+## Why container queries need `container-type`
+
+A container query can only measure an ancestor that has explicitly opted in via `container-type` (`inline-size` for width-only, or `size` for both dimensions) — CSS can't query an element's own size from *within its own rules*, since that size might depend on the very rules being evaluated (a circular dependency). That's why the containment boundary always has to be a parent, one level up from the element being styled.
+
+## Why it matters
+
+Media queries answer "how should the *page* adapt?" — the right tool for top-level layout shells. Container queries answer "how should *this component* adapt, wherever it ends up?" — the right tool for genuinely reusable components, which is exactly the gap that made "it works on the full page but breaks in the sidebar" such a common bug before container queries existed.
