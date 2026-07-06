@@ -363,6 +363,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Understand how useRef holds a mutable value across renders without triggering one, and how useImperativeHandle exposes an imperative API from a child component.",
     category: "react",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 4,
   },
   {
@@ -372,6 +373,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how prop drilling forces data through components that don't need it, and how the Context API lets any descendant read shared state directly.",
     category: "react",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 5,
   },
   {
@@ -390,6 +392,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Compare render props, children, and compound components — three patterns for sharing behavior between components without prop drilling or inheritance.",
     category: "react",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 7,
   },
   {
@@ -399,6 +402,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how extracting a use* function lets you share stateful logic between components, and the rules that keep custom hooks composable.",
     category: "react",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 8,
   },
   {
@@ -408,6 +412,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how an Error Boundary component catches render-time errors in its subtree and shows a fallback UI instead of crashing the whole app.",
     category: "react",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 9,
   },
   {
@@ -417,6 +422,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how React.memo, useMemo, and useCallback skip unnecessary re-renders and recalculations — and why profiling before adding them matters more than the APIs themselves.",
     category: "react",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 10,
   },
   {
@@ -426,6 +432,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Understand how Concurrent React lets rendering be interrupted and resumed, and how Suspense boundaries show a fallback while a component waits on data.",
     category: "react",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 11,
   },
   {
@@ -435,6 +442,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Compare local state, Context, and external stores (Redux, Zustand, Jotai) for where shared state should live, and the tradeoffs of each as an app scales.",
     category: "react",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 12,
   },
 
