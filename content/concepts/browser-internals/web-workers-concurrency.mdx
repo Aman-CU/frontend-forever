@@ -1,0 +1,53 @@
+---
+title: "Web Workers & Concurrency"
+description: "Learn how Web Workers run JavaScript on a separate thread to keep expensive computation off the main thread, and how they communicate via postMessage."
+category: "browser-internals"
+difficulty: "advanced"
+order: 9
+whatsHappening: "JavaScript on the main thread shares that thread with rendering, layout, and user input handling — a long-running computation blocks all of it, freezing the page. A Web Worker runs JavaScript on a genuinely separate OS thread, so expensive work no longer blocks the main thread at all. The two threads can't share memory directly; they communicate by passing messages."
+keyInsight: "A worker doesn't get a shortcut around the DOM — it simply has no access to it at all. Workers exist specifically for computation (parsing, sorting, image processing, crypto), not for touching the page, which is why every worker interaction happens through postMessage rather than direct function calls."
+memoryHook: "Main thread: front-of-house, handles the customers (rendering, input). Worker: the back kitchen, does the heavy prep with no customer contact — orders and finished dishes pass through a window (postMessage), never a shared counter."
+inRealLife: "Like hiring a second cook so the first cook can keep taking orders — the second cook can't touch the register or talk to customers directly (no DOM access), they just receive tickets and pass back finished plates through the kitchen window (postMessage)."
+---
+
+## Why the main thread gets blocked
+
+JavaScript's main thread does more than run your code — it also handles rendering, layout, and responding to clicks/scrolls, all on that same single thread. A synchronous computation that takes 2 seconds means the page can't repaint, scroll, or respond to a click for that entire 2 seconds, no matter how the code is written — `async`/`await` doesn't help, because the *computation itself* is still synchronous CPU work occupying the one thread everything else needs.
+
+## Offloading to a worker
+
+A Web Worker runs on a genuinely separate thread, with its own event loop and its own global scope (`self`, not `window` — no DOM access at all):
+
+```js
+// main.js
+const worker = new Worker("worker.js");
+worker.postMessage({ numbers: [1, 2, 3, /* ...huge array */] });
+worker.onmessage = (e) => console.log("Result:", e.data);
+
+// worker.js
+self.onmessage = (e) => {
+  const sum = e.data.numbers.reduce((a, b) => a + b, 0);
+  self.postMessage(sum);
+};
+```
+
+While the worker crunches the array, the main thread keeps rendering, scrolling, and responding to input normally.
+
+## No shared memory, only messages
+
+Workers and the main thread don't share memory (with the narrow exception of `SharedArrayBuffer`, which needs specific cross-origin isolation headers). Every value passed via `postMessage` is **structured-cloned** — copied, not referenced — which means:
+
+- Passing a huge array copies it, which itself costs time proportional to its size
+- `Transferable` objects (like `ArrayBuffer`) can be *transferred* instead of cloned — ownership moves to the worker with zero copy cost, but the sender loses access to it
+
+```js
+worker.postMessage(largeBuffer, [largeBuffer]); // transfer, not clone — near-instant
+```
+
+## What workers can't do
+
+No DOM access, no `document`, no `window` — a worker can't read or write the page directly. If a worker needs to update the UI with its result, it must `postMessage` the result back to the main thread, which then updates the DOM itself. This constraint is deliberate: it's exactly what makes workers safe to run in true parallel — no risk of two threads racing to mutate the same DOM node.
+
+## Why it matters
+
+Any UI freeze during a heavy computation (parsing a large CSV, resizing images, hashing) is a candidate for a worker — moving the computation off the main thread doesn't make it faster, but it stops it from blocking scrolling, clicks, and animation while it runs. The tradeoff is the message-passing overhead and the loss of direct DOM access, which is why workers suit pure computation, not general app logic.

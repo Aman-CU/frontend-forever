@@ -1,0 +1,51 @@
+---
+title: "Event Delegation, Bubbling & Capturing"
+description: "Trace how events bubble up and optionally capture down the DOM tree, and how one listener on a parent can handle events for all its children."
+category: "browser-internals"
+difficulty: "beginner"
+order: 2
+whatsHappening: "When you click an element, the browser doesn't just fire a listener on that element — it dispatches the event in three phases: capturing down from the document to the target, hitting the target, then bubbling back up from the target to the document. Listeners can be registered to run during either the capture phase or the bubble phase."
+keyInsight: "Because events bubble, a single listener on a parent element sees every click that happens on any of its descendants — you don't need a listener per child. That's event delegation, and it's why frameworks and vanilla event handling both lean on it for dynamic lists."
+memoryHook: "Capture goes down like rain (top to bottom), bubbles go up like bubbles in water (bottom to top). The click happens at the very bottom, in between."
+inRealLife: "Like a company memo — it goes from the CEO down through each management layer (capturing) before reaching you, then your reply travels back up through the same chain of managers to the CEO (bubbling), instead of every single employee having a direct line to the top."
+---
+
+## Three phases of one event
+
+Every DOM event that fires on a nested element travels through three phases:
+
+1. **Capturing phase** — starts at `document`, travels down through each ancestor, ending just before the target
+2. **Target phase** — the event reaches the actual element that was interacted with
+3. **Bubbling phase** — travels back up from the target through the same ancestors, ending at `document`
+
+```js
+parent.addEventListener("click", handler, { capture: true }); // fires during capture (top → down)
+parent.addEventListener("click", handler); // fires during bubble (bottom → up) — the default
+```
+
+Most listeners never set `capture: true`, so in practice "capturing" is invisible unless you're specifically intercepting an event before it reaches a deeply nested child (a common use: closing a dropdown on any outside click, registered in the capture phase so it runs before the click's own bubble-phase handlers).
+
+## Event delegation
+
+Because a click on a child bubbles up through every ancestor, one listener on a shared parent can handle clicks for all its children — including children added *after* the listener was attached:
+
+```js
+list.addEventListener("click", (e) => {
+  const item = e.target.closest("li");
+  if (!item) return;
+  console.log("Clicked:", item.textContent);
+});
+```
+
+This single listener on `list` handles clicks on every `<li>` inside it, present and future — no need to re-attach a listener every time an item is added or removed. `e.target` is the actual element clicked (which might be a `<span>` inside the `<li>`); `e.currentTarget` is always the element the listener is attached to (`list`).
+
+## Stopping propagation
+
+- `e.stopPropagation()` — prevents the event from continuing to bubble (or capture) past the current element, but other listeners on the *same* element still run
+- `e.stopImmediatePropagation()` — also prevents any other listener on the same element from running
+
+Both should be used sparingly — they can silently break a parent's delegated listener that was relying on the event reaching it.
+
+## Why it matters
+
+Event delegation is the reason rendering a list of 10,000 rows doesn't mean attaching 10,000 listeners — one listener on the container handles them all, using far less memory and no re-wiring when the list changes. Understanding bubbling is also essential for debugging "why did my modal close when I clicked inside it" — a click handler on `document` meant to close the modal on outside-clicks will also see clicks that bubble up from inside the modal, unless it specifically checks `e.target` or the inner click stops propagation.

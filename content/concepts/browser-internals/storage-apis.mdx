@@ -1,0 +1,43 @@
+---
+title: "Storage APIs"
+description: "Compare localStorage, sessionStorage, cookies, and IndexedDB — their capacity, lifetime, and when each is the right tool for persisting client-side data."
+category: "browser-internals"
+difficulty: "intermediate"
+order: 3
+whatsHappening: "The browser gives you four different places to persist data on the client, and they differ along three axes: how long the data survives, how big it can get, and whether it's automatically sent to the server. Picking the wrong one is rarely a crash — it's a silent correctness or performance bug."
+keyInsight: "Cookies are the only storage mechanism the server can read directly (they're attached to every matching HTTP request automatically) — which is exactly why they're both the right tool for auth sessions and a performance risk if you store anything large in one."
+memoryHook: "Cookies ride along with every request like a stamped passport. localStorage is a filing cabinet that never empties itself. sessionStorage is a notepad that gets thrown out when the tab closes. IndexedDB is the actual warehouse for anything too big for a cabinet drawer."
+inRealLife: "Like choosing between a sticky note (sessionStorage — gone when you leave the room), a filing cabinet (localStorage — persists indefinitely, small documents only), a stamped ID card you show at every checkpoint (cookies — sent automatically, keep it small), and a storage unit (IndexedDB — for the stuff too big or complex for a drawer)."
+---
+
+## The four options
+
+| | Capacity | Lifetime | Sent to server? |
+|---|---|---|---|
+| **Cookies** | ~4KB per cookie | set via `Expires`/`Max-Age`, or session-only | yes, automatically, on every matching request |
+| **sessionStorage** | ~5-10MB | until the tab closes | no |
+| **localStorage** | ~5-10MB | forever, until explicitly cleared | no |
+| **IndexedDB** | hundreds of MB+ (browser-dependent) | forever, until explicitly cleared | no |
+
+```js
+localStorage.setItem("theme", "dark"); // persists across tabs and browser restarts
+sessionStorage.setItem("draftId", "42"); // gone when this tab closes
+document.cookie = "session=abc123; Max-Age=3600; Secure; SameSite=Strict";
+```
+
+## Why cookies are different
+
+Cookies are the only mechanism here that the **server** can read without any extra JavaScript — the browser attaches every cookie matching the request's domain/path automatically. That's exactly why auth sessions traditionally use cookies (the server needs to see them) and exactly why a bloated cookie is a real performance problem: every cookie byte is sent on *every single request* to that domain, including images and stylesheets.
+
+`localStorage`/`sessionStorage`/IndexedDB are the opposite — invisible to the server unless your JavaScript explicitly reads and sends them.
+
+## When each is the right tool
+
+- **Cookies** — anything the server needs on every request: session tokens, auth state. Keep them small.
+- **sessionStorage** — per-tab, ephemeral state that shouldn't survive a reload elsewhere: a multi-step form's in-progress values, a "don't ask again this session" flag.
+- **localStorage** — small settings that should persist indefinitely: theme preference, a dismissed-banner flag. Synchronous API — reading a large value blocks the main thread, which is why it's wrong for anything beyond simple key/value settings.
+- **IndexedDB** — structured or large data: offline caches, a local copy of a user's documents, anything measured in megabytes. Asynchronous by design, so it never blocks rendering the way `localStorage` can.
+
+## Why it matters
+
+The most common real-world mistake is reaching for `localStorage` to store a large JSON blob "because it's easy" — it's synchronous, so a multi-megabyte read/write can visibly jank the page, and it silently fails once you're near the quota. Anything beyond small settings belongs in IndexedDB (usually through a wrapper library), not `localStorage`.

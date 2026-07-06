@@ -1,0 +1,54 @@
+---
+title: "CORS & the Same-Origin Policy"
+description: "Understand why the browser blocks cross-origin requests by default, what a preflight request checks, and how CORS headers opt back in safely."
+category: "browser-internals"
+difficulty: "intermediate"
+order: 5
+whatsHappening: "The browser's Same-Origin Policy blocks a page from reading responses from a different origin by default — this is a browser-enforced rule, not a server-enforced one. CORS is the server's opt-in mechanism: response headers that tell the browser 'it's fine, let the calling page read this.'"
+keyInsight: "CORS doesn't stop the request from being sent — the server still receives it and can still act on it. CORS only controls whether the browser lets the calling JavaScript read the response. This is why CORS is not a security boundary for the server itself; it's a browser-side protection for the user's other tabs."
+memoryHook: "Same-origin policy is the bouncer at the door of your own browser tab, not at the server. CORS headers are the server handing the bouncer a guest list."
+inRealLife: "Like a hotel room (your page) that can only accept deliveries from its own hotel by default (same-origin). CORS is the front desk explicitly telling your room's door 'this delivery from another hotel is pre-approved' (Access-Control-Allow-Origin) — but the delivery still physically arrived at the building regardless."
+---
+
+## An origin is scheme + host + port
+
+Two URLs are the "same origin" only if their protocol, hostname, and port all match exactly:
+
+```
+https://app.example.com:443  vs  http://app.example.com:443   → different (scheme)
+https://app.example.com      vs  https://api.example.com      → different (host)
+https://app.example.com:443  vs  https://app.example.com:8080 → different (port)
+```
+
+Without CORS, JavaScript on `https://app.example.com` cannot read a response from `https://api.example.com` — even though the request itself is sent, the browser blocks the calling script from accessing the response body.
+
+## Simple requests vs. preflight
+
+A **simple request** (`GET`/`HEAD`/`POST` with only a small set of allowed headers/content-types) is sent directly, and the browser just checks the response's `Access-Control-Allow-Origin` header before deciding whether to expose it to JavaScript.
+
+Anything else — a custom header like `Authorization`, a method like `PUT`/`DELETE`, or `Content-Type: application/json` on some setups — triggers a **preflight**: the browser sends an `OPTIONS` request *first*, asking the server "would you allow this actual request?" before sending the real one.
+
+```
+OPTIONS /api/data
+Origin: https://app.example.com
+Access-Control-Request-Method: PUT
+Access-Control-Request-Headers: Content-Type, Authorization
+
+← 204 No Content
+  Access-Control-Allow-Origin: https://app.example.com
+  Access-Control-Allow-Methods: GET, PUT
+  Access-Control-Allow-Headers: Content-Type, Authorization
+```
+
+Only if the preflight response allows the method and headers does the browser send the real `PUT` request.
+
+## The response headers that matter
+
+- `Access-Control-Allow-Origin` — which origin(s) may read the response (`*` or a specific origin)
+- `Access-Control-Allow-Methods` — which HTTP methods are allowed cross-origin
+- `Access-Control-Allow-Headers` — which request headers are allowed
+- `Access-Control-Allow-Credentials` — whether cookies/auth headers can be included; requires an exact origin, never `*`
+
+## Why it matters
+
+CORS errors are one of the most common frontend/backend integration bugs, and the fix is always server-side — a frontend developer can't "work around" a CORS error by changing client code, because the browser is the one enforcing it. Understanding that the request already reached the server (visible in server logs) even when the browser shows a CORS error in the console is the key to not wasting time debugging the wrong side of the request.

@@ -676,6 +676,304 @@ const PAGINATED_DATA_LOADER_TESTS: SandboxTest[] = [
   },
 ];
 
+// Phase 10 (Feature 42) — Browser Internals
+
+const ENVIRONMENT_REPORT_GENERATOR_TESTS: SandboxTest[] = [
+  {
+    label: "Groups a DOM and a BOM entry correctly",
+    source: `
+      assert(typeof buildEnvironmentReport === "function", "buildEnvironmentReport is not defined");
+      assertEqual(
+        buildEnvironmentReport([
+          { name: "document.title", value: "Home" },
+          { name: "navigator.userAgent", value: "Mozilla" },
+        ]),
+        { dom: { "document.title": "Home" }, bom: { "navigator.userAgent": "Mozilla" } },
+      );
+    `,
+  },
+  {
+    label: "Handles an empty entry list",
+    source: `assertEqual(buildEnvironmentReport([]), { dom: {}, bom: {} });`,
+  },
+  {
+    label: "A window.document reference is still DOM",
+    source: `
+      assertEqual(
+        buildEnvironmentReport([{ name: "window.document.body", value: "BODY" }]),
+        { dom: { "window.document.body": "BODY" }, bom: {} },
+      );
+    `,
+  },
+  {
+    label: "Multiple BOM entries are grouped together",
+    source: `
+      assertEqual(
+        buildEnvironmentReport([
+          { name: "window.location.href", value: "https://x.com" },
+          { name: "history.length", value: 3 },
+        ]),
+        { dom: {}, bom: { "window.location.href": "https://x.com", "history.length": 3 } },
+      );
+    `,
+  },
+];
+
+const DELEGATED_CLICK_ROUTER_TESTS: SandboxTest[] = [
+  {
+    label: "A direct target match invokes its own handler",
+    source: `
+      assert(typeof createDelegatedClickHandler === "function", "createDelegatedClickHandler is not defined");
+      const calls = [];
+      const dispatch = createDelegatedClickHandler({
+        item: function () { calls.push("item"); },
+        list: function () { calls.push("list"); },
+      });
+      const result = dispatch([["item", "selected"], ["list"], ["app"]]);
+      assertEqual(result, "item");
+      assertEqual(calls, ["item"]);
+    `,
+  },
+  {
+    label: "Falls back to a matching ancestor",
+    source: `
+      const calls = [];
+      const dispatch = createDelegatedClickHandler({
+        item: function () { calls.push("item"); },
+        list: function () { calls.push("list"); },
+      });
+      const result = dispatch([["row"], ["list"], ["app"]]);
+      assertEqual(result, "list");
+      assertEqual(calls, ["list"]);
+    `,
+  },
+  {
+    label: "Returns null when nothing matches",
+    source: `
+      const calls = [];
+      const dispatch = createDelegatedClickHandler({
+        item: function () { calls.push("item"); },
+      });
+      const result = dispatch([["row"], ["container"], ["app"]]);
+      assertEqual(result, null);
+      assertEqual(calls, []);
+    `,
+  },
+  {
+    label: "The nearest match wins over a farther one",
+    source: `
+      const calls = [];
+      const dispatch = createDelegatedClickHandler({
+        item: function () { calls.push("item"); },
+        list: function () { calls.push("list"); },
+      });
+      const result = dispatch([["item"], ["list"], ["app"]]);
+      assertEqual(result, "item");
+      assertEqual(calls, ["item"]);
+    `,
+  },
+];
+
+const TTL_AWARE_STORAGE_WRAPPER_TESTS: SandboxTest[] = [
+  {
+    label: "Returns a value before it expires",
+    source: `
+      assert(typeof createTTLStore === "function", "createTTLStore is not defined");
+      let now = 0;
+      const store = createTTLStore(function () { return now; });
+      store.set("a", "hello", 100);
+      assertEqual(store.get("a"), "hello");
+    `,
+  },
+  {
+    label: "Returns undefined once the value has expired",
+    source: `
+      let now = 0;
+      const store = createTTLStore(function () { return now; });
+      store.set("a", "hello", 100);
+      now = 150;
+      assertEqual(store.get("a"), undefined);
+    `,
+  },
+  {
+    label: "Keys expire independently of one another",
+    source: `
+      let now = 0;
+      const store = createTTLStore(function () { return now; });
+      store.set("short", "x", 10);
+      store.set("long", "y", 1000);
+      now = 50;
+      assertEqual(store.get("short"), undefined);
+      assertEqual(store.get("long"), "y");
+    `,
+  },
+  {
+    label: "Re-setting a key refreshes its expiration",
+    source: `
+      let now = 0;
+      const store = createTTLStore(function () { return now; });
+      store.set("a", "first", 10);
+      now = 5;
+      store.set("a", "second", 10);
+      now = 12;
+      assertEqual(store.get("a"), "second");
+    `,
+  },
+];
+
+const SAME_ORIGIN_REQUEST_GUARD_TESTS: SandboxTest[] = [
+  {
+    label: "isAllowed is true for a listed origin",
+    source: `
+      assert(typeof createOriginGuard === "function", "createOriginGuard is not defined");
+      const guard = createOriginGuard(["https://app.com"]);
+      assertEqual(guard.isAllowed("https://app.com"), true);
+    `,
+  },
+  {
+    label: "isAllowed is false for an unlisted origin",
+    source: `
+      const guard = createOriginGuard(["https://app.com"]);
+      assertEqual(guard.isAllowed("https://evil.com"), false);
+    `,
+  },
+  {
+    label: "guardedFetch runs requestFn when the origin is allowed",
+    source: `
+      const guard = createOriginGuard(["https://app.com"]);
+      const result = await guard.guardedFetch("https://app.com", async function () { return "data"; });
+      assertEqual(result, "data");
+    `,
+  },
+  {
+    label: "guardedFetch never calls requestFn for a disallowed origin",
+    source: `
+      const guard = createOriginGuard(["https://app.com"]);
+      let called = false;
+      let threw = false;
+      try {
+        await guard.guardedFetch("https://evil.com", async function () { called = true; return "data"; });
+      } catch (e) {
+        threw = true;
+      }
+      assert(threw, "guardedFetch should throw for a disallowed origin");
+      assert(!called, "requestFn must never run for a disallowed origin");
+    `,
+  },
+];
+
+const CSP_HEADER_BUILDER_TESTS: SandboxTest[] = [
+  {
+    label: "Formats a single directive with multiple values",
+    source: `
+      assert(typeof buildCspHeader === "function", "buildCspHeader is not defined");
+      assertEqual(
+        buildCspHeader({ "script-src": ["'self'", "https://cdn.com"] }),
+        "script-src 'self' https://cdn.com",
+      );
+    `,
+  },
+  {
+    label: "Joins multiple directives with '; ', preserving order",
+    source: `
+      assertEqual(
+        buildCspHeader({ "script-src": ["'self'"], "object-src": ["'none'"] }),
+        "script-src 'self'; object-src 'none'",
+      );
+    `,
+  },
+  {
+    label: "An empty directives object produces an empty string",
+    source: `assertEqual(buildCspHeader({}), "");`,
+  },
+  {
+    label: "Formats a single-value directive",
+    source: `assertEqual(buildCspHeader({ "frame-ancestors": ["'none'"] }), "frame-ancestors 'none'");`,
+  },
+];
+
+const CONNECTION_COST_ESTIMATOR_TESTS: SandboxTest[] = [
+  {
+    label: "A full fresh HTTPS connection costs 5 round trips total",
+    source: `
+      assert(typeof estimateLatency === "function", "estimateLatency is not defined");
+      assertEqual(
+        estimateLatency(["dns-lookup", "tcp-handshake", "tls-handshake", "http-request"], 50),
+        250,
+      );
+    `,
+  },
+  {
+    label: "A single reused connection costs one round trip",
+    source: `assertEqual(estimateLatency(["http-request"], 50), 50);`,
+  },
+  {
+    label: "A plain HTTP fresh connection costs 2 round trips",
+    source: `assertEqual(estimateLatency(["tcp-handshake", "http-request"], 100), 200);`,
+  },
+  {
+    label: "No steps means zero estimated latency",
+    source: `assertEqual(estimateLatency([], 50), 0);`,
+  },
+];
+
+const CACHING_STRATEGY_PICKER_TESTS: SandboxTest[] = [
+  {
+    label: "A static JS asset uses cache-first",
+    source: `
+      assert(typeof pickCachingStrategy === "function", "pickCachingStrategy is not defined");
+      assertEqual(pickCachingStrategy({ url: "/assets/app.js" }), "cache-first");
+    `,
+  },
+  {
+    label: "An API route uses network-first",
+    source: `assertEqual(pickCachingStrategy({ url: "/api/users" }), "network-first");`,
+  },
+  {
+    label: "A regular page navigation uses stale-while-revalidate",
+    source: `assertEqual(pickCachingStrategy({ url: "/dashboard" }), "stale-while-revalidate");`,
+  },
+  {
+    label: "A static image asset uses cache-first",
+    source: `assertEqual(pickCachingStrategy({ url: "/images/logo.svg" }), "cache-first");`,
+  },
+];
+
+const WORKER_TASK_DISPATCHER_TESTS: SandboxTest[] = [
+  {
+    label: "Assigns workers round-robin",
+    source: `
+      assert(typeof createWorkerPool === "function", "createWorkerPool is not defined");
+      const pool = createWorkerPool(3);
+      const assignments = [pool.dispatch(), pool.dispatch(), pool.dispatch(), pool.dispatch(), pool.dispatch()];
+      assertEqual(assignments, [0, 1, 2, 0, 1]);
+    `,
+  },
+  {
+    label: "Tracks each worker's task count correctly",
+    source: `
+      const pool = createWorkerPool(3);
+      for (let i = 0; i < 5; i++) pool.dispatch();
+      assertEqual(pool.getLoads(), [2, 2, 1]);
+    `,
+  },
+  {
+    label: "A single-worker pool always assigns index 0",
+    source: `
+      const pool = createWorkerPool(1);
+      assertEqual([pool.dispatch(), pool.dispatch(), pool.dispatch()], [0, 0, 0]);
+    `,
+  },
+  {
+    label: "Splits evenly across an even number of dispatches",
+    source: `
+      const pool = createWorkerPool(2);
+      for (let i = 0; i < 4; i++) pool.dispatch();
+      assertEqual(pool.getLoads(), [2, 2]);
+    `,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "kanban-board": KANBAN_BOARD_TESTS,
   "async-task-runner": ASYNC_TASK_RUNNER_TESTS,
@@ -694,6 +992,14 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "data-transformation-pipeline": DATA_TRANSFORMATION_PIPELINE_TESTS,
   "leak-safe-subscription-manager": LEAK_SAFE_SUBSCRIPTION_MANAGER_TESTS,
   "paginated-data-loader": PAGINATED_DATA_LOADER_TESTS,
+  "environment-report-generator": ENVIRONMENT_REPORT_GENERATOR_TESTS,
+  "delegated-click-router": DELEGATED_CLICK_ROUTER_TESTS,
+  "ttl-aware-storage-wrapper": TTL_AWARE_STORAGE_WRAPPER_TESTS,
+  "same-origin-request-guard": SAME_ORIGIN_REQUEST_GUARD_TESTS,
+  "csp-header-builder": CSP_HEADER_BUILDER_TESTS,
+  "connection-cost-estimator": CONNECTION_COST_ESTIMATOR_TESTS,
+  "caching-strategy-picker": CACHING_STRATEGY_PICKER_TESTS,
+  "worker-task-dispatcher": WORKER_TASK_DISPATCHER_TESTS,
 };
 
 export function getBuildTestSpec(slug: string): SandboxTest[] | null {

@@ -265,6 +265,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Compare localStorage, sessionStorage, cookies, and IndexedDB — their capacity, lifetime, and when each is the right tool for persisting client-side data.",
     category: "browser-internals",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 3,
   },
   {
@@ -283,6 +284,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Understand why the browser blocks cross-origin requests by default, what a preflight request checks, and how CORS headers opt back in safely.",
     category: "browser-internals",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 5,
   },
   {
@@ -292,6 +294,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn the three attacks every frontend has to defend against — XSS, CSRF, and clickjacking — and how CSP, sanitization, and same-site cookies stop them.",
     category: "browser-internals",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 6,
   },
   {
@@ -301,6 +304,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Trace what actually happens between typing a URL and seeing a page: DNS resolution, the TCP handshake, TLS negotiation, and the HTTP request/response itself.",
     category: "browser-internals",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 7,
   },
   {
@@ -310,6 +314,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how a service worker intercepts network requests to enable offline support, and compare cache-first, network-first, and stale-while-revalidate strategies.",
     category: "browser-internals",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 8,
   },
   {
@@ -319,6 +324,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how Web Workers run JavaScript on a separate thread to keep expensive computation off the main thread, and how they communicate via postMessage.",
     category: "browser-internals",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 9,
   },
 
@@ -1850,6 +1856,564 @@ Once this passes, imagine wiring it up to a real app's dev-mode logger that reco
     isPremium: true,
     orderIndex: 15,
   },
+
+  // ── Phase 10 (Feature 42) — Browser Internals ─────────────────────────────
+  {
+    slug: "classify-dom-vs-bom",
+    conceptSlug: "dom-vs-bom",
+    title: "Classify DOM vs. BOM References",
+    description: `Build the classifier behind a "what am I actually touching" linter rule — given a JavaScript API reference as a string, decide whether it's DOM or BOM.
+
+## The problem
+
+\`document\` and \`window\` get used interchangeably in casual code (\`window.document.title\` vs. \`document.title\`), which hides a real distinction: one reference touches page *content*, the other touches the *browser environment* around it. A linter or debug tool that wants to flag "you're reaching into browser state here, not page content" needs a reliable way to tell the two apart from the reference string alone.
+
+## The idea
+
+- Anything reached through \`document\` — with or without a leading \`window.\` — is the **DOM**.
+- Anything reached through \`window\`'s other properties — \`location\`, \`navigator\`, \`history\`, \`screen\` — with or without the \`window.\` prefix, is the **BOM**.
+
+## Your task
+
+Write \`classifyApi(reference)\` that returns \`'dom'\` or \`'bom'\` for a reference like \`"document.querySelector"\` or \`"window.location"\`.`,
+    difficulty: "easy",
+    starterCode: `function classifyApi(reference) {
+  // strip a leading "window." if present, then classify the root object
+}`,
+    solutionCode: `function classifyApi(reference) {
+  const stripped = reference.startsWith("window.") ? reference.slice("window.".length) : reference;
+  const root = stripped.split(".")[0];
+  return root === "document" ? "dom" : "bom";
+}`,
+    testCases: [
+      { input: `"document.querySelector"`, expected: `"dom"`, label: "A direct document reference is DOM" },
+      { input: `"window.document.body"`, expected: `"dom"`, label: "window.document is still DOM, not BOM" },
+      { input: `"window.location"`, expected: `"bom"`, label: "window.location is BOM" },
+      { input: `"navigator.userAgent"`, expected: `"bom"`, label: "A direct navigator reference is BOM" },
+      { input: `"history.pushState"`, expected: `"bom"`, label: "A direct history reference is BOM" },
+    ],
+    hints: [
+      "Strip a leading \"window.\" first, since document/location/navigator/history are equally valid with or without it.",
+      "Only the root object before the first \".\" matters for classification.",
+    ],
+    isPremium: false,
+    orderIndex: 16,
+  },
+  {
+    slug: "event-propagation-order",
+    conceptSlug: "event-delegation-bubbling-capturing",
+    title: "Compute Event Propagation Order",
+    description: `Build the logic behind a browser DevTools-style "event listener trace" — given a DOM path and a set of registered listeners, compute the exact order they actually fire in.
+
+## The problem
+
+"Why did my outside-click handler run before the button's own onClick?" is a question every frontend engineer eventually has to debug by hand — and the answer always comes down to which phase each listener was registered for, not just where it sits in the tree.
+
+## The idea
+
+An event travels in three phases:
+
+1. **Capture** — root to target's parent, only nodes with a \`"capture"\` listener fire, in root-to-parent order
+2. **Target** — the target's own listener fires, if it has one
+3. **Bubble** — target's parent back to root, only nodes with a \`"bubble"\` listener fire, in parent-to-root order
+
+## Your task
+
+Write \`getEventOrder(path, listeners)\` — \`path\` is an array of ids from root to target (target last); \`listeners\` is an object mapping id → \`"capture"\` or \`"bubble"\`. Return the array of ids in the order their listener actually fires.`,
+    difficulty: "easy",
+    starterCode: `function getEventOrder(path, listeners) {
+  // path: [root, ..., target]. listeners: { [id]: "capture" | "bubble" }
+}`,
+    solutionCode: `function getEventOrder(path, listeners) {
+  const target = path[path.length - 1];
+  const ancestors = path.slice(0, -1);
+  const order = [];
+
+  for (const id of ancestors) {
+    if (listeners[id] === "capture") order.push(id);
+  }
+  if (listeners[target]) order.push(target);
+  for (let i = ancestors.length - 1; i >= 0; i--) {
+    if (listeners[ancestors[i]] === "bubble") order.push(ancestors[i]);
+  }
+  return order;
+}`,
+    testCases: [
+      {
+        input: `["document","list","item"], { document: "bubble", list: "bubble", item: "bubble" }`,
+        expected: `["item","list","document"]`,
+        label: "All-bubble listeners fire target-first, then bottom-up",
+      },
+      {
+        input: `["document","list","item"], { document: "capture", item: "bubble" }`,
+        expected: `["document","item"]`,
+        label: "A capture listener on an ancestor fires before the target",
+      },
+      {
+        input: `["document","section","list","item"], { section: "bubble", list: "bubble", item: "bubble" }`,
+        expected: `["item","list","section"]`,
+        label: "Among bubble ancestors, the deepest fires before the shallower one",
+      },
+      {
+        input: `["document","app","button"], { app: "capture", document: "bubble" }`,
+        expected: `["app","document"]`,
+        label: "A target with no listener of its own contributes nothing, but ancestors still fire correctly",
+      },
+    ],
+    hints: [
+      "Split the path into the target (last element) and its ancestors (everything before it).",
+      "Capture-phase ancestors fire root-to-parent order; bubble-phase ancestors fire parent-to-root — the reverse.",
+      "The target's own listener always fires between the capture and bubble phases, regardless of which phase key it's stored under.",
+    ],
+    isPremium: false,
+    orderIndex: 17,
+  },
+  {
+    slug: "pick-storage-mechanism",
+    conceptSlug: "storage-apis",
+    title: "Build a Storage Mechanism Chooser",
+    description: `Build the decision logic behind a "which storage API should I use" helper — the kind of function a team lints for instead of relying on every developer remembering the tradeoffs.
+
+## The problem
+
+Four different client-side storage mechanisms exist, and picking the wrong one is rarely a crash — it's a silent correctness or performance bug (a synchronous \`localStorage\` write janking the page, or a cookie leaking a large token onto every image request).
+
+## The idea
+
+Given a set of requirements, decide which mechanism actually fits, in priority order:
+
+1. If the data must be sent with every request automatically → **cookie**
+2. Else if it shouldn't outlive the current tab → **sessionStorage**
+3. Else if it's small enough for simple key/value storage → **localStorage**
+4. Otherwise (large or needs structured storage) → **indexedDB**
+
+## Your task
+
+Write \`pickStorage(requirements)\` — given \`{ persistAcrossSessions, capacityKB, sendWithEveryRequest }\`, return the mechanism name as a string.`,
+    difficulty: "medium",
+    starterCode: `function pickStorage(requirements) {
+  // { persistAcrossSessions: boolean, capacityKB: number, sendWithEveryRequest: boolean }
+}`,
+    solutionCode: `function pickStorage(requirements) {
+  const { persistAcrossSessions, capacityKB, sendWithEveryRequest } = requirements;
+  if (sendWithEveryRequest) return "cookie";
+  if (!persistAcrossSessions) return "sessionStorage";
+  if (capacityKB > 5000) return "indexedDB";
+  return "localStorage";
+}`,
+    testCases: [
+      {
+        input: `{ persistAcrossSessions: true, capacityKB: 1, sendWithEveryRequest: true }`,
+        expected: `"cookie"`,
+        label: "Anything the server needs on every request is a cookie, regardless of other fields",
+      },
+      {
+        input: `{ persistAcrossSessions: false, capacityKB: 10, sendWithEveryRequest: false }`,
+        expected: `"sessionStorage"`,
+        label: "Data that shouldn't outlive the tab is sessionStorage",
+      },
+      {
+        input: `{ persistAcrossSessions: true, capacityKB: 100, sendWithEveryRequest: false }`,
+        expected: `"localStorage"`,
+        label: "Small persistent data is localStorage",
+      },
+      {
+        input: `{ persistAcrossSessions: true, capacityKB: 20000, sendWithEveryRequest: false }`,
+        expected: `"indexedDB"`,
+        label: "Large persistent data is indexedDB",
+      },
+    ],
+    hints: [
+      "Check sendWithEveryRequest first — it overrides every other consideration.",
+      "5000KB (~5MB) is a reasonable cutoff for what localStorage should hold before indexedDB is the right call.",
+    ],
+    isPremium: true,
+    orderIndex: 18,
+  },
+  {
+    slug: "classify-style-change",
+    conceptSlug: "browser-rendering-pipeline",
+    title: "Classify a CSS Property's Pipeline Cost",
+    description: `Build the classifier behind a "why is my animation janky" audit tool — given a CSS property name, determine which rendering pipeline stage changing it actually triggers.
+
+## The problem
+
+Not every CSS property costs the same to animate. Animating \`top\` and animating \`transform\` look similar in code but have wildly different performance profiles — one re-triggers layout on every frame, the other doesn't. Telling them apart programmatically is the first step to catching a janky animation before it ships.
+
+## The idea
+
+- **Layout** properties change geometry — \`width\`, \`height\`, \`top\`, \`left\`, \`margin\`, \`font-size\`, \`display\`
+- **Paint** properties change appearance without moving anything — \`color\`, \`background\`, \`box-shadow\`, \`visibility\`
+- **Composite** properties are handled entirely by the GPU — \`transform\`, \`opacity\`
+
+## Your task
+
+Write \`classifyStyleChange(property)\` returning the cheapest accurate classification: \`'layout'\`, \`'paint'\`, or \`'composite'\`.`,
+    difficulty: "medium",
+    starterCode: `function classifyStyleChange(property) {
+  // return 'layout' | 'paint' | 'composite'
+}`,
+    solutionCode: `function classifyStyleChange(property) {
+  const LAYOUT = ["width", "height", "top", "left", "right", "bottom", "margin", "font-size", "display"];
+  const COMPOSITE = ["transform", "opacity"];
+  if (COMPOSITE.includes(property)) return "composite";
+  if (LAYOUT.includes(property)) return "layout";
+  return "paint";
+}`,
+    testCases: [
+      { input: `"width"`, expected: `"layout"`, label: "width triggers layout" },
+      { input: `"display"`, expected: `"layout"`, label: "display triggers layout" },
+      { input: `"color"`, expected: `"paint"`, label: "color is paint-only" },
+      { input: `"visibility"`, expected: `"paint"`, label: "visibility is paint-only, unlike display" },
+      { input: `"transform"`, expected: `"composite"`, label: "transform is composite-only" },
+      { input: `"opacity"`, expected: `"composite"`, label: "opacity is composite-only" },
+    ],
+    hints: [
+      "Check the composite-only list first — transform and opacity are the cheapest, so they should never fall through to layout/paint.",
+      "Anything not explicitly layout or composite is safely classified as paint.",
+    ],
+    isPremium: false,
+    orderIndex: 19,
+  },
+  {
+    slug: "evaluate-cors-request",
+    conceptSlug: "cors-same-origin-policy",
+    title: "Build a CORS Request Evaluator",
+    description: `Build the logic a browser DevTools "why did my request fail CORS" panel would need — given a request and a server's CORS configuration, work out whether a preflight happens and whether the request ultimately succeeds.
+
+## The problem
+
+"CORS error" in the console rarely explains *why* — was it a missing header on the server's allow-list, a method that needed a preflight, or the origin itself never being allowed? Reproducing the browser's actual decision logic is the only way to answer that with certainty instead of guessing.
+
+## The idea
+
+- A request needs a **preflight** if its method isn't \`GET\`/\`HEAD\`/\`POST\`, or it carries any header outside the simple set (\`accept\`, \`accept-language\`, \`content-language\`, \`content-type\`).
+- The request is **allowed** only if the origin matches the server's \`allowOrigin\` (or it's \`'*'\`) — and, when a preflight is required, only if the method and every header are also on the server's allow-lists.
+
+## Your task
+
+Write \`evaluateCorsRequest(request, serverConfig)\` returning \`{ preflightRequired, allowed }\`.`,
+    difficulty: "medium",
+    starterCode: `function evaluateCorsRequest(request, serverConfig) {
+  // request: { method, headers: string[], origin }
+  // serverConfig: { allowOrigin, allowMethods: string[], allowHeaders: string[] }
+}`,
+    solutionCode: `function evaluateCorsRequest(request, serverConfig) {
+  const SIMPLE_METHODS = ["GET", "HEAD", "POST"];
+  const SIMPLE_HEADERS = ["accept", "accept-language", "content-language", "content-type"];
+
+  const preflightRequired =
+    !SIMPLE_METHODS.includes(request.method) ||
+    request.headers.some((h) => !SIMPLE_HEADERS.includes(h.toLowerCase()));
+
+  const originAllowed = serverConfig.allowOrigin === "*" || serverConfig.allowOrigin === request.origin;
+  if (!originAllowed) return { preflightRequired, allowed: false };
+
+  if (preflightRequired) {
+    const methodAllowed = serverConfig.allowMethods.includes(request.method);
+    const headersAllowed = request.headers.every((h) =>
+      serverConfig.allowHeaders.some((a) => a.toLowerCase() === h.toLowerCase()),
+    );
+    return { preflightRequired: true, allowed: methodAllowed && headersAllowed };
+  }
+
+  return { preflightRequired: false, allowed: true };
+}`,
+    testCases: [
+      {
+        input: `{method:"GET",headers:[],origin:"https://app.com"}, {allowOrigin:"*",allowMethods:[],allowHeaders:[]}`,
+        expected: `{ preflightRequired: false, allowed: true }`,
+        label: "A simple GET with a wildcard origin needs no preflight and is allowed",
+      },
+      {
+        input: `{method:"PUT",headers:[],origin:"https://app.com"}, {allowOrigin:"https://app.com",allowMethods:["PUT"],allowHeaders:[]}`,
+        expected: `{ preflightRequired: true, allowed: true }`,
+        label: "A PUT request needs a preflight, and is allowed when the method is on the allow-list",
+      },
+      {
+        input: `{method:"PUT",headers:[],origin:"https://app.com"}, {allowOrigin:"https://app.com",allowMethods:["GET"],allowHeaders:[]}`,
+        expected: `{ preflightRequired: true, allowed: false }`,
+        label: "Needing a preflight isn't enough — the method must actually be on the allow-list",
+      },
+      {
+        input: `{method:"GET",headers:[],origin:"https://evil.com"}, {allowOrigin:"https://app.com",allowMethods:[],allowHeaders:[]}`,
+        expected: `{ preflightRequired: false, allowed: false }`,
+        label: "A mismatched origin is blocked even for a simple request",
+      },
+      {
+        input: `{method:"GET",headers:["Authorization"],origin:"https://app.com"}, {allowOrigin:"https://app.com",allowMethods:["GET"],allowHeaders:["Authorization"]}`,
+        expected: `{ preflightRequired: true, allowed: true }`,
+        label: "A custom header forces a preflight even on a GET request",
+      },
+    ],
+    hints: [
+      "Check the origin match first — an origin mismatch blocks the request regardless of method or headers.",
+      "The simple-method and simple-header sets are what determine whether a preflight is needed at all.",
+      "Header comparisons should be case-insensitive, matching real HTTP header semantics.",
+    ],
+    isPremium: true,
+    orderIndex: 20,
+  },
+  {
+    slug: "sanitize-html-input",
+    conceptSlug: "web-security-fundamentals",
+    title: "Build an HTML Sanitizer",
+    description: `Build the sanitizer that sits between untrusted user input and \`innerHTML\` — the last line of defense before a comment, bio, or markdown field becomes an XSS vector.
+
+## The problem
+
+Any feature that renders user-submitted content as HTML (rich-text comments, profile bios) is one \`innerHTML\` call away from executing whatever an attacker typed — a \`<script>\` tag, an \`onerror\` attribute, a \`javascript:\` link. Stripping just one of these isn't enough; all three are common, real injection vectors on their own.
+
+## The idea
+
+Strip the three most common XSS vectors from an HTML string, before it's ever rendered:
+
+1. \`<script>...</script>\` blocks entirely
+2. Any \`on*\` event handler attribute (\`onerror\`, \`onclick\`, ...)
+3. \`javascript:\` URLs in \`href\`/\`src\` attributes — replace with \`"#"\`
+
+## Your task
+
+Write \`sanitizeHtml(input)\` returning the cleaned string, leaving already-safe markup untouched.
+
+> **This is a teaching exercise, not a production sanitizer.** Regex can't reliably parse HTML — malformed tags, unusual nesting, and encoding tricks can all slip past a hand-rolled pattern like this one. A real app should sanitize untrusted HTML with a battle-tested library (e.g. DOMPurify), never a regex like the one you're about to write.`,
+    difficulty: "hard",
+    starterCode: `function sanitizeHtml(input) {
+  // strip <script> blocks, on* attributes, and javascript: URLs
+}`,
+    solutionCode: `function sanitizeHtml(input) {
+  let out = input.replace(/<script[\\s\\S]*?<\\/script>/gi, "");
+  out = out.replace(/\\son\\w+="[^"]*"/gi, "");
+  out = out.replace(/\\son\\w+='[^']*'/gi, "");
+  out = out.replace(/(href|src)\\s*=\\s*"javascript:[^"]*"/gi, '$1="#"');
+  out = out.replace(/(href|src)\\s*=\\s*'javascript:[^']*'/gi, "$1='#'");
+  return out;
+}`,
+    testCases: [
+      {
+        input: `"<p>Hello</p><script>alert(1)</script>"`,
+        expected: `"<p>Hello</p>"`,
+        label: "Strips a <script> block entirely",
+      },
+      {
+        input: `'<img src="x" onerror="alert(1)">'`,
+        expected: `'<img src="x">'`,
+        label: "Strips an on* event handler attribute",
+      },
+      {
+        input: `'<a href="javascript:alert(1)">click</a>'`,
+        expected: `'<a href="#">click</a>'`,
+        label: "Neutralizes a javascript: URL",
+      },
+      {
+        input: `"<p>Safe text</p>"`,
+        expected: `"<p>Safe text</p>"`,
+        label: "Leaves already-safe markup completely unchanged",
+      },
+    ],
+    hints: [
+      "A non-greedy [\\s\\S]*? inside the <script> regex is needed so it doesn't swallow everything between the first and last <script> tag on the page.",
+      "Match the leading space before on* attributes so removing one doesn't leave a stray double space.",
+      "Handle both single- and double-quoted attribute values — real markup uses both.",
+    ],
+    isPremium: true,
+    orderIndex: 21,
+  },
+  {
+    slug: "trace-connection-steps",
+    conceptSlug: "the-network-stack",
+    title: "Trace the Steps of a Network Connection",
+    description: `Build the logic behind a "why is this request slow" waterfall explainer — given the state of a connection attempt, trace exactly which setup steps the browser performs before it can send the actual HTTP request.
+
+## The problem
+
+Two requests to the same domain can have wildly different latency for reasons that never show up in the request itself — one pays for a fresh DNS lookup and TLS handshake, the other reuses an already-open connection. Explaining *why* a request was slow means reconstructing which of these steps actually ran.
+
+## The idea
+
+1. \`"dns-lookup"\` — skipped if DNS is already cached
+2. \`"tcp-handshake"\` — skipped if an existing connection is being reused (keep-alive)
+3. \`"tls-handshake"\` — only for HTTPS, and only alongside a fresh TCP handshake
+4. \`"http-request"\` — always happens last
+
+## Your task
+
+Write \`getConnectionSteps(options)\` — given \`{ isHttps, dnsCached, connectionReused }\`, return the ordered array of steps actually performed.`,
+    difficulty: "hard",
+    starterCode: `function getConnectionSteps(options) {
+  // { isHttps: boolean, dnsCached: boolean, connectionReused: boolean }
+}`,
+    solutionCode: `function getConnectionSteps(options) {
+  const steps = [];
+  if (!options.dnsCached) steps.push("dns-lookup");
+  if (!options.connectionReused) {
+    steps.push("tcp-handshake");
+    if (options.isHttps) steps.push("tls-handshake");
+  }
+  steps.push("http-request");
+  return steps;
+}`,
+    testCases: [
+      {
+        input: `{ isHttps: true, dnsCached: false, connectionReused: false }`,
+        expected: `["dns-lookup","tcp-handshake","tls-handshake","http-request"]`,
+        label: "A brand-new HTTPS connection performs all four steps",
+      },
+      {
+        input: `{ isHttps: false, dnsCached: true, connectionReused: false }`,
+        expected: `["tcp-handshake","http-request"]`,
+        label: "Cached DNS and plain HTTP skip both the lookup and the TLS handshake",
+      },
+      {
+        input: `{ isHttps: true, dnsCached: true, connectionReused: true }`,
+        expected: `["http-request"]`,
+        label: "A fully reused keep-alive connection skips straight to the request",
+      },
+      {
+        input: `{ isHttps: true, dnsCached: true, connectionReused: false }`,
+        expected: `["tcp-handshake","tls-handshake","http-request"]`,
+        label: "A fresh TCP connection over HTTPS still needs its own TLS handshake, even with DNS cached",
+      },
+    ],
+    hints: [
+      "Each step is independently skippable — don't assume DNS caching implies the connection is also reused.",
+      "TLS only ever happens alongside a fresh TCP handshake — a reused connection never needs a new one.",
+    ],
+    isPremium: true,
+    orderIndex: 22,
+  },
+  {
+    slug: "stale-while-revalidate",
+    conceptSlug: "service-workers-caching-strategies",
+    title: "Implement Stale-While-Revalidate",
+    description: `Build one of the three real caching strategies a service worker's \`fetch\` handler chooses between — the one that trades a little staleness for instant responses.
+
+## The problem
+
+Cache-first can go stale forever; network-first blocks every response on a round trip even when a perfectly good cached value already exists. Neither is right for content that changes occasionally but shouldn't make the user wait — a middle ground is needed that responds instantly *and* stays fresh over time.
+
+## The idea
+
+1. If the cache has a value, return it **immediately** — do not wait on the network.
+2. Regardless of a cache hit or miss, kick off a network fetch that updates the cache once it resolves.
+3. If the cache was empty, the function resolves with the network's value instead.
+4. A background network failure must never reject the returned promise if a cached value was already returned.
+
+## Your task
+
+Write \`staleWhileRevalidate(key, cache, network)\` — \`cache\` exposes async \`get(key)\`/\`set(key, value)\`; \`network(key)\` is an async function returning a fresh value.`,
+    difficulty: "hard",
+    starterCode: `async function staleWhileRevalidate(key, cache, network) {
+  // return the cached value immediately if present, but always refresh the cache in the background
+}`,
+    solutionCode: `async function staleWhileRevalidate(key, cache, network) {
+  const cached = await cache.get(key);
+  const refresh = network(key)
+    .then((fresh) => {
+      cache.set(key, fresh);
+      return fresh;
+    })
+    .catch(() => {});
+
+  if (cached !== undefined) {
+    return cached;
+  }
+  return refresh;
+}`,
+    testCases: [
+      {
+        input: "cache already has a value for the key",
+        expected: "the cached value, returned without waiting on the network",
+        label: "Returns a cache hit immediately",
+      },
+      {
+        input: "cache is empty for the key",
+        expected: "the network's value",
+        label: "Falls back to the network value on a cache miss",
+      },
+      {
+        input: "a cache hit, checked again after the background refresh completes",
+        expected: "the cache now holds the fresh network value",
+        label: "Updates the cache with the fresh value in the background",
+      },
+      {
+        input: "a cache hit whose background network call rejects",
+        expected: "the original cached value, no unhandled rejection",
+        label: "A background network failure doesn't affect an already-returned cache hit",
+      },
+    ],
+    hints: [
+      "Don't await the network call before checking the cache — the whole point is returning the cached value without waiting.",
+      "Start the network refresh unconditionally, whether or not there was a cache hit.",
+      "Catch a network rejection on the background refresh so it can't surface as an unhandled promise rejection.",
+    ],
+    isPremium: true,
+    orderIndex: 23,
+  },
+  {
+    slug: "clone-worker-message",
+    conceptSlug: "web-workers-concurrency",
+    title: "Simulate postMessage's Structured Clone",
+    description: `Build the piece of the worker messaging contract that trips people up the first time they hit it: not everything can cross the boundary between a worker and the main thread.
+
+## The problem
+
+Web Workers can't share memory with the main thread — every value passed via \`postMessage\` is deep-cloned, not referenced. That's usually invisible until someone tries to pass a value containing a function (a callback, a class instance with methods) and gets a cryptic \`DataCloneError\` instead of the message they expected.
+
+## The idea
+
+- Primitives pass through unchanged.
+- Arrays and plain objects are cloned **deeply** — nested structures must not share references with the original.
+- A function anywhere in the value cannot be cloned and must throw, mirroring \`postMessage\`'s real \`DataCloneError\`.
+
+## Your task
+
+Write \`cloneMessage(value)\` implementing this behavior.`,
+    difficulty: "hard",
+    starterCode: `function cloneMessage(value) {
+  // deep-clone value; throw if it contains a function anywhere
+}`,
+    solutionCode: `function cloneMessage(value) {
+  if (typeof value === "function") {
+    throw new Error("could not be cloned");
+  }
+  if (Array.isArray(value)) {
+    return value.map(cloneMessage);
+  }
+  if (value !== null && typeof value === "object") {
+    const out = {};
+    for (const key of Object.keys(value)) {
+      out[key] = cloneMessage(value[key]);
+    }
+    return out;
+  }
+  return value;
+}`,
+    testCases: [
+      {
+        input: `{ a: 1, b: [1, 2, 3] }`,
+        expected: "a deep copy with no shared references to the original's nested array",
+        label: "Deep-clones a nested array without sharing a reference",
+      },
+      { input: "42", expected: "42", label: "A primitive passes through unchanged" },
+      {
+        input: `{ fn: () => {} }`,
+        expected: "throws",
+        label: "A function anywhere in the value throws instead of cloning",
+      },
+      {
+        input: `{ nested: { deep: [1, { x: 2 }] } }`,
+        expected: "mutating the clone never affects the original",
+        label: "Nested objects are cloned independently at every level",
+      },
+    ],
+    hints: [
+      "Recurse into both arrays and plain objects — a shallow copy (spread) at the top level still shares references one level down.",
+      "Check for a function before checking for an object, since the recursion needs to throw the moment one is found anywhere in the structure.",
+    ],
+    isPremium: true,
+    orderIndex: 24,
+  },
 ];
 
 // ── Interview questions (5 per collection, plus concept-linked top-ups) ────────
@@ -2937,6 +3501,415 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     difficulty: "medium",
     companies: ["Google", "Stripe", "Amazon"],
     orderIndex: 5,
+  },
+
+  // Phase 10 (Feature 42) — Browser Internals, 5 flagship questions per new concept
+  {
+    collection: "ff-75",
+    conceptSlug: "dom-vs-bom",
+    question: "What is the difference between the DOM and the BOM?",
+    answer:
+      "The **DOM** (Document Object Model) is the standardized tree representing a page's HTML content — elements, attributes, text nodes. The **BOM** (Browser Object Model) represents the browser itself — `window`, `location`, `navigator`, `history`, `screen`.\n\nThere's an important asymmetry: the DOM is formally standardized by the W3C/WHATWG. The BOM has no equivalent spec — `window`, `navigator`, and friends exist because browser vendors converged on the same shape by convention, which is also why BOM APIs vary slightly more across browsers than DOM APIs do.",
+    difficulty: "easy",
+    companies: ["Google", "Meta"],
+    orderIndex: 26,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "dom-vs-bom",
+    question: "Is `document` part of the DOM or the BOM?",
+    answer:
+      "`document` is the **root of the DOM tree** — but it's reached as a property of `window`, the BOM's root (`window.document`). So `document` itself sits at the boundary between the two: it's accessed through the BOM's global object, but the tree it represents (elements, attributes, text) is entirely DOM content, not browser state.",
+    difficulty: "easy",
+    companies: ["Amazon"],
+    orderIndex: 27,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "dom-vs-bom",
+    question: "Why doesn't calling `history.pushState()` update what's rendered on the page?",
+    answer:
+      "`pushState()` only changes the URL and adds a history entry — a purely BOM-level operation. It never touches the DOM, so the page's visible content stays exactly as it was.\n\nThis is exactly why every client-side router has to do extra work: it calls `pushState()` to change the URL, then **manually** re-renders the DOM to match, and listens for the `popstate` event (fired on back/forward navigation) to do the same re-render when the browser — not the app — changes the URL.",
+    difficulty: "medium",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 28,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "dom-vs-bom",
+    question: "Name three BOM objects besides `document`, and what each one exposes.",
+    answer:
+      "- `navigator` — information about the browser and OS (`userAgent`, `onLine`, `language`)\n- `location` — the current URL and methods to navigate (`href`, `reload()`, `assign()`)\n- `history` — the tab's session history (`pushState`, `back()`, `length`)\n- `screen` — the physical display's dimensions (`width`, `height`, `availHeight`)\n\nAll four are reached as properties of `window`, but none of them represent page content — they represent the browser environment the page happens to be running in.",
+    difficulty: "easy",
+    companies: ["Google"],
+    orderIndex: 29,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "dom-vs-bom",
+    question: "Why is there no official standard for \"the BOM\" the way there is for the DOM?",
+    answer:
+      "The DOM is formally specified by the W3C/WHATWG — every browser is expected to implement the same tree structure and API surface. The BOM was never formally standardized this way; `window`, `navigator`, `location`, and `history` exist purely because every browser vendor independently converged on roughly the same shape, largely for backward compatibility with the earliest browsers.\n\nThis is a real, practical consequence: BOM APIs (especially `navigator`) tend to have more cross-browser inconsistencies and quirks than DOM APIs do, precisely because there was never a single spec all vendors were implementing against from day one.",
+    difficulty: "medium",
+    companies: ["Stripe"],
+    orderIndex: 30,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "event-delegation-bubbling-capturing",
+    question: "What are the three phases of DOM event propagation?",
+    answer:
+      "1. **Capturing** — the event travels from `document` down through each ancestor toward the target\n2. **Target** — the event reaches the actual element that was interacted with\n3. **Bubbling** — the event travels back up from the target through the same ancestors to `document`\n\nBy default, `addEventListener` registers for the bubbling phase. Passing `{ capture: true }` registers for the capturing phase instead.",
+    difficulty: "easy",
+    companies: ["Google", "Amazon", "Microsoft"],
+    orderIndex: 31,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "event-delegation-bubbling-capturing",
+    question: "How does event delegation let one listener handle clicks on elements added after the listener was attached?",
+    answer:
+      "Because a click on any descendant bubbles up through every ancestor, a listener on a shared parent (like a list container) sees every click that happens inside it — including on elements that didn't exist yet when the listener was registered:\n\n```js\nlist.addEventListener(\"click\", (e) => {\n  const item = e.target.closest(\"li\");\n  if (item) console.log(\"Clicked:\", item.textContent);\n});\n```\n\nThis single listener keeps working correctly even as `<li>` elements are added or removed dynamically, because it's bubbling — not the specific target element — that the listener depends on.",
+    difficulty: "medium",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 32,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "event-delegation-bubbling-capturing",
+    question: "What's the difference between `e.target` and `e.currentTarget`?",
+    answer:
+      "`e.target` is the actual element the event originated on — the specific element the user clicked, which might be a `<span>` nested deep inside a delegated listener's container.\n\n`e.currentTarget` is always the element the listener is *attached to* — inside a delegated handler on a `<ul>`, `e.currentTarget` is always that `<ul>`, no matter which descendant was actually clicked. This distinction is exactly why delegated handlers use `e.target.closest(...)` to find the specific item that was interacted with.",
+    difficulty: "easy",
+    companies: ["Google"],
+    orderIndex: 33,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "event-delegation-bubbling-capturing",
+    question: "When would you register a listener with `{ capture: true }`?",
+    answer:
+      "When you need to intercept an event **before** it reaches a deeply nested element's own bubble-phase handlers — most commonly to detect an \"outside click\" that should close something (a dropdown, a modal) even if an inner element would otherwise stop the event from bubbling with `stopPropagation()`.\n\nA capture-phase listener on `document` always runs before any bubble-phase listener further down the tree, since capturing happens top-down before the event ever reaches the target.",
+    difficulty: "medium",
+    companies: ["Amazon", "Microsoft"],
+    orderIndex: 34,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "event-delegation-bubbling-capturing",
+    question: "What's the difference between `stopPropagation()` and `stopImmediatePropagation()`?",
+    answer:
+      "`stopPropagation()` prevents the event from continuing to the next phase/ancestor — but other listeners registered on the *same* element still run.\n\n`stopImmediatePropagation()` does that **and** prevents any other listener on the same element from running at all, even ones registered before it.\n\nBoth should be used sparingly: they can silently break a parent's delegated listener that was relying on the event actually reaching it.",
+    difficulty: "medium",
+    companies: ["Meta"],
+    orderIndex: 35,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "storage-apis",
+    question: "Compare localStorage, sessionStorage, and cookies along capacity, lifetime, and server visibility.",
+    answer:
+      "| | Capacity | Lifetime | Sent to server? |\n|---|---|---|---|\n| Cookies | ~4KB | configurable expiry, or session-only | yes, automatically, every matching request |\n| sessionStorage | ~5-10MB | until the tab closes | no |\n| localStorage | ~5-10MB | forever, until cleared | no |\n\nCookies are the only one of the three the server sees without any extra JavaScript — which is exactly why auth sessions traditionally use them, and exactly why a bloated cookie is a real performance cost (it's resent on every request, including images and stylesheets).",
+    difficulty: "medium",
+    companies: ["Google", "Amazon", "Stripe"],
+    orderIndex: 36,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "storage-apis",
+    question: "Why are cookies sent automatically with every request, and why is that both useful and risky?",
+    answer:
+      "The browser attaches every cookie matching a request's domain/path automatically, with no JavaScript involved — which is exactly what makes cookies useful for auth: the server can identify a logged-in user on every request without the client doing anything special.\n\nThe risk is CSRF: because the browser attaches cookies automatically, a malicious page can trigger a request to another site and the browser will still attach that site's session cookie, making the forged request look legitimate. This is why `SameSite` cookie attributes and CSRF tokens exist — to make \"the cookie was present\" insufficient proof that the user actually intended the request.",
+    difficulty: "hard",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 37,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "storage-apis",
+    question: "Why is localStorage a poor choice for storing a large JSON blob?",
+    answer:
+      "`localStorage`'s API is **synchronous** — reading or writing a multi-megabyte value blocks the main thread for however long that read/write takes, which can visibly jank the page. It also silently fails once you're near the browser's storage quota, with no built-in warning.\n\nAnything beyond small key/value settings (a theme preference, a dismissed-banner flag) belongs in IndexedDB instead, which is asynchronous by design and built for exactly this scale of data.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 38,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "storage-apis",
+    question: "When would you reach for IndexedDB instead of localStorage?",
+    answer:
+      "Whenever the data is large (multiple megabytes) or structured (needs querying/indexing, not just flat key/value pairs) — an offline cache of a user's documents, a local copy of a large dataset, anything a simple string-keyed store can't reasonably hold.\n\nIndexedDB is asynchronous, so reading or writing it never blocks rendering the way a large `localStorage` operation can — the tradeoff is a more verbose, callback/promise-based API, which is why most real apps wrap it in a small library rather than using it directly.",
+    difficulty: "medium",
+    companies: ["Amazon", "Microsoft"],
+    orderIndex: 39,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "storage-apis",
+    question: "What's the practical difference in lifetime between localStorage and sessionStorage?",
+    answer:
+      "`localStorage` persists indefinitely — across tab closes, browser restarts, even system reboots — until explicitly cleared by code or the user. `sessionStorage` is scoped to a single tab and is wiped the moment that tab closes; it doesn't even survive being duplicated into a new tab (each tab gets its own separate `sessionStorage`).\n\nThis makes `sessionStorage` the right fit for per-visit ephemeral state (an in-progress multi-step form, a \"don't show again this session\" flag) and `localStorage` the right fit for settings that should genuinely persist (theme, language preference).",
+    difficulty: "easy",
+    companies: ["Google", "Stripe"],
+    orderIndex: 40,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "cors-same-origin-policy",
+    question: "What determines whether two URLs are considered the same origin?",
+    answer:
+      "Three things must all match exactly: **scheme** (http vs. https), **host** (the domain), and **port**. `https://app.example.com:443` and `http://app.example.com:443` are different origins because the scheme differs, even though the host is identical — and `https://app.example.com` and `https://api.example.com` are different origins even though both are `example.com` subdomains.",
+    difficulty: "easy",
+    companies: ["Google", "Meta", "Amazon"],
+    orderIndex: 41,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "cors-same-origin-policy",
+    question: "Does CORS prevent the server from ever receiving a cross-origin request?",
+    answer:
+      "No — the request is still sent, and the server still receives and can act on it. CORS only controls whether the **browser** lets the calling JavaScript **read the response**. This is why CORS is a browser-side protection, not a server-side security boundary: a request blocked by CORS in the browser console still shows up in the server's logs, because it was never actually blocked from arriving.",
+    difficulty: "medium",
+    companies: ["Meta", "Stripe"],
+    orderIndex: 42,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "cors-same-origin-policy",
+    question: "What triggers a CORS preflight request?",
+    answer:
+      "A request needs a preflight (an `OPTIONS` request sent first, asking permission) whenever it isn't a \"simple request\":\n\n- the method isn't `GET`, `HEAD`, or `POST`\n- it carries a header outside the simple set (`Accept`, `Accept-Language`, `Content-Language`, `Content-Type` with a simple value)\n- it uses a custom header like `Authorization`\n\nOnly if the preflight's response allows the actual method and headers does the browser send the real request.",
+    difficulty: "medium",
+    companies: ["Google", "Amazon"],
+    orderIndex: 43,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "cors-same-origin-policy",
+    question: "What does `Access-Control-Allow-Credentials` control, and why can't it be paired with a wildcard origin?",
+    answer:
+      "It controls whether the browser will include cookies/auth headers on a cross-origin request and expose a response that did. Pairing it with `Access-Control-Allow-Origin: *` is disallowed by the spec (and browsers will reject it) because that combination would mean \"any site on the internet may make an authenticated request on this user's behalf and read the result\" — exactly the CSRF-adjacent scenario CORS exists to prevent. An exact origin must be specified whenever credentials are involved.",
+    difficulty: "hard",
+    companies: ["Stripe", "Airbnb"],
+    orderIndex: 44,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "cors-same-origin-policy",
+    question: "If a request fails with a CORS error in the browser console, does that mean the server never received it?",
+    answer:
+      "No — for a simple request (no preflight needed), the request was already sent and the server already processed it; the browser only blocks the *response* from being readable by the page's JavaScript. For a preflighted request, the browser may stop before sending the real request if the preflight itself is rejected — but the preflight `OPTIONS` request still reached the server.\n\nThis is the most common source of wasted debugging time: assuming a CORS error means \"the backend didn't get this,\" when server logs usually show it did.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 45,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "web-security-fundamentals",
+    question: "What is XSS, and why does using `textContent` instead of `innerHTML` prevent it?",
+    answer:
+      "XSS (Cross-Site Scripting) happens when attacker-controlled input is rendered as HTML/script rather than as plain text, letting it execute with the page's own privileges.\n\n`element.innerHTML = userInput` parses `userInput` as markup — any `<script>` tag or event-handler attribute inside it gets interpreted. `element.textContent = userInput` never parses the string as markup at all; it's always rendered literally as visible text, so there's nothing for the browser to execute, no matter what the string contains.",
+    difficulty: "easy",
+    companies: ["Google", "Meta", "Amazon"],
+    orderIndex: 46,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "web-security-fundamentals",
+    question: "How does CSRF exploit cookies, and how does the SameSite attribute defend against it?",
+    answer:
+      "The browser attaches a site's cookies to any request to that site, regardless of which page triggered the request. A malicious page can submit a form or fire a `fetch()` to your bank's API, and the browser dutifully attaches the bank's session cookie — the request looks legitimate to the server purely because the cookie is valid.\n\n`SameSite=Strict` or `SameSite=Lax` tells the browser not to attach the cookie at all on a request originating from a different site, which stops the forged request from ever carrying valid credentials in the first place.",
+    difficulty: "medium",
+    companies: ["Stripe", "Airbnb"],
+    orderIndex: 47,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "web-security-fundamentals",
+    question: "What does a Content-Security-Policy header actually do?",
+    answer:
+      "CSP is a browser-enforced whitelist of what's allowed to load or execute on the page — e.g. `script-src 'self' https://trusted-cdn.com` tells the browser to refuse to run any script not from those origins, including inline `<script>` tags by default.\n\nIt's a second line of defense specifically for XSS: even if an attacker manages to inject a `<script>` tag through an XSS bug elsewhere in the app, a correctly configured CSP means the browser simply won't execute it.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 48,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "web-security-fundamentals",
+    question: "What is clickjacking, and how is it prevented?",
+    answer:
+      "Clickjacking overlays a legitimate page inside an invisible iframe on top of an attacker's own page, tricking the user into clicking something (like a \"confirm transfer\" button) they never saw.\n\nIt's prevented with `X-Frame-Options: DENY` (or `SameOrigin`) or CSP's `frame-ancestors 'none'` — both tell the browser to simply refuse to render the page inside any (or any cross-origin) frame at all.",
+    difficulty: "easy",
+    companies: ["Amazon", "Microsoft"],
+    orderIndex: 49,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "web-security-fundamentals",
+    question: "Why doesn't a framework's auto-escaping fully eliminate XSS risk?",
+    answer:
+      "Auto-escaping (e.g. React escaping interpolated text by default) only protects the specific code path it covers — regular JSX text interpolation. It does nothing to stop a developer who explicitly opts out, such as calling `dangerouslySetInnerHTML` in React or setting `.innerHTML` directly anywhere in the codebase. Auto-escaping reduces the *default* risk, but any deliberate escape hatch reintroduces exactly the same vulnerability the framework was otherwise preventing — which is why sanitizing untrusted HTML remains the developer's responsibility whenever raw HTML rendering is genuinely needed.",
+    difficulty: "hard",
+    companies: ["Meta", "Google"],
+    orderIndex: 50,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "the-network-stack",
+    question: "What are the four steps between typing a URL and the browser receiving a response?",
+    answer:
+      "1. **DNS resolution** — resolve the hostname to an IP address\n2. **TCP handshake** — establish a reliable connection (`SYN` → `SYN-ACK` → `ACK`)\n3. **TLS handshake** — negotiate an encrypted channel, for HTTPS\n4. **HTTP request/response** — the actual request goes out and the response comes back\n\nEach step is a full round trip (or more, for TLS), so a brand-new HTTPS connection can be 3-4 round trips deep before a single byte of the actual page content arrives.",
+    difficulty: "easy",
+    companies: ["Google", "Amazon", "Microsoft"],
+    orderIndex: 51,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-network-stack",
+    question: "Why is the first request to a new domain slower than every request after it?",
+    answer:
+      "The first request pays the full cost of all four stack steps: a fresh DNS lookup, a fresh TCP handshake, and (for HTTPS) a fresh TLS handshake, before the HTTP request can even go out. Subsequent requests to the *same* domain skip most of this — DNS is cached, and the TCP connection is typically kept alive and reused (HTTP/1.1+ keep-alive), so only the HTTP request/response actually needs to happen again.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 52,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-network-stack",
+    question: "What does `<link rel=\"preconnect\">` actually do?",
+    answer:
+      "It tells the browser to perform the DNS lookup, TCP handshake, and TLS handshake for a given origin **before** the browser has actually discovered a resource that needs it — hiding that latency behind other work that's already happening. When the real request for that origin's resource is eventually made, it can skip straight to the HTTP request/response step, since the connection is already fully established.",
+    difficulty: "medium",
+    companies: ["Google", "Stripe"],
+    orderIndex: 53,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-network-stack",
+    question: "Why does adding a third-party script from a new domain have an outsized performance cost?",
+    answer:
+      "Every distinct origin a page depends on means a brand-new DNS + TCP + TLS handshake cost — not just the bytes of the script itself. A single third-party analytics or ad script can silently add multiple full round trips to a page's load time purely from connection setup, on top of whatever the script itself downloads and executes. This is exactly why reducing the number of distinct third-party origins a page talks to is one of the highest-leverage performance wins available.",
+    difficulty: "hard",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 54,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "the-network-stack",
+    question: "What's the difference between DNS caching and TCP connection reuse (keep-alive)?",
+    answer:
+      "**DNS caching** avoids repeating the *hostname → IP address* lookup — the browser/OS remembers the answer for the DNS record's TTL. **Keep-alive** avoids repeating the *TCP handshake itself* — the same already-established connection is reused for multiple HTTP requests instead of tearing it down and reconnecting each time.\n\nThey're independent: a request can have a cached DNS answer but still need a fresh TCP handshake (e.g. the previous connection timed out), or vice versa.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 55,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "service-workers-caching-strategies",
+    question: "How does a service worker intercept a page's network requests?",
+    answer:
+      "A registered service worker listens for the `fetch` event, which fires for every request the page makes. Calling `event.respondWith(promise)` inside that handler lets the service worker fully control what the page actually receives — an actual network response, something pulled from a `Cache` object, or a combination of both — instead of letting the request go straight to the network unmodified.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 56,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "service-workers-caching-strategies",
+    question: "When would you use cache-first vs. network-first?",
+    answer:
+      "**Cache-first** — check the cache before ever hitting the network; only fetch on a miss. Right for resources that rarely change: versioned JS/CSS bundles, fonts, icons.\n\n**Network-first** — always try the network first, falling back to cache only if the network fails. Right for data that must be as fresh as possible whenever there's connectivity: a live feed, an account balance.\n\nUsing the wrong one causes real bugs — cache-first on live data means users see stale numbers indefinitely; network-first on a large static bundle means every load is blocked on an avoidable round trip.",
+    difficulty: "medium",
+    companies: ["Amazon", "Microsoft"],
+    orderIndex: 57,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "service-workers-caching-strategies",
+    question: "What is stale-while-revalidate, and what problem does it solve?",
+    answer:
+      "It responds from the cache **immediately** (possibly stale, but instant), while kicking off a network fetch in the background to refresh the cache for next time. It's the middle ground between cache-first (fast but can go stale forever) and network-first (always fresh but always waits on the network) — right for content that changes occasionally but shouldn't block the current view, like a news list or a settings page.",
+    difficulty: "medium",
+    companies: ["Google", "Stripe"],
+    orderIndex: 58,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "service-workers-caching-strategies",
+    question: "What happens if a cache-first strategy is applied to an API that returns live data?",
+    answer:
+      "Once a response is cached, cache-first will keep serving that same stale response forever (or until the cache entry is explicitly invalidated) — the network is never consulted again for that request, no matter how much the underlying data changes server-side. This is a real, common misconfiguration bug: applying one strategy uniformly to every request a service worker intercepts, instead of choosing per-resource based on how often it actually changes.",
+    difficulty: "hard",
+    companies: ["Meta"],
+    orderIndex: 59,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "service-workers-caching-strategies",
+    question: "What's the role of `event.respondWith()` in a service worker's fetch handler?",
+    answer:
+      "It's how the service worker claims responsibility for a given request's response. Calling it with a promise tells the browser \"wait for this promise instead of hitting the network yourself\" — the promise can resolve with a cached `Response`, a fresh network `Response`, or a constructed one. If `respondWith()` is never called for a given `fetch` event, the browser just proceeds with its normal, un-intercepted network request.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 60,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "web-workers-concurrency",
+    question: "Why does a long-running computation freeze the whole page, even inside an async function?",
+    answer:
+      "JavaScript's main thread handles rendering, layout, and input alongside running your code — there's only one thread. `async`/`await` only helps with *waiting* (I/O, timers, promises); it does nothing for a computation that's actually CPU-bound and synchronous. A 2-second `for` loop doing real work still occupies the main thread for those full 2 seconds, regardless of whether it's wrapped in an `async` function — the event loop simply can't get to rendering or input handling until that synchronous work finishes.",
+    difficulty: "medium",
+    companies: ["Google", "Meta", "Amazon"],
+    orderIndex: 61,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "web-workers-concurrency",
+    question: "What does a Web Worker not have access to, and why?",
+    answer:
+      "A worker has no access to the DOM — no `document`, no `window` (its global scope is `self`, not `window`). This is a deliberate constraint: it's exactly what makes it safe to run a worker on a genuinely separate thread in true parallel, with no risk of two threads racing to read or mutate the same DOM node at once. If a worker needs the UI updated, it must `postMessage` its result back to the main thread, which performs the actual DOM update itself.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 62,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "web-workers-concurrency",
+    question: "How do the main thread and a worker communicate, since they can't share memory?",
+    answer:
+      "Exclusively through `postMessage()` and the `message` event — the main thread posts to the worker via `worker.postMessage(data)`, and the worker posts back via `self.postMessage(result)`. Every value passed this way is **structured-cloned**: deep-copied, not referenced, so mutating the original after sending it has no effect on what the other side received.",
+    difficulty: "easy",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 63,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "web-workers-concurrency",
+    question: "What is a Transferable object, and why is it faster than a normal postMessage?",
+    answer:
+      "A `Transferable` (like an `ArrayBuffer`) can be **transferred** to a worker instead of cloned: ownership of the underlying memory moves to the receiver at essentially zero cost, rather than the browser copying every byte. The tradeoff is that the sender loses access to it entirely once transferred — `worker.postMessage(buffer, [buffer])` empties `buffer` on the sending side. This matters a lot for large binary payloads (images, audio buffers), where a full clone would otherwise be an expensive copy proportional to the data's size.",
+    difficulty: "hard",
+    companies: ["Google", "Stripe"],
+    orderIndex: 64,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "web-workers-concurrency",
+    question: "Why is `async`/`await` alone not enough to keep a CPU-heavy computation from blocking the UI?",
+    answer:
+      "`async`/`await` changes *when* code runs relative to other queued work (it yields at `await` points) — it doesn't change *which thread* the code runs on. A CPU-heavy computation with no `await` inside it (a tight loop doing real work) never yields, so it still monopolizes the single main thread for its entire duration, freezing rendering and input regardless of the `async` keyword. Only moving the computation to a Web Worker — a genuinely separate thread — actually frees the main thread to keep working while it runs.",
+    difficulty: "hard",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 65,
   },
 ];
 
@@ -4188,6 +5161,434 @@ Once this passes, wire it to a real paginated endpoint and render items into an 
     ],
     isPremium: true,
     orderIndex: 14,
+  },
+
+  // ── Phase 10 (Feature 42) — Browser Internals ─────────────────────────────
+  {
+    slug: "environment-report-generator",
+    conceptSlug: "dom-vs-bom",
+    title: "Build an Environment Report Generator",
+    description: `Build the logic behind a "what does this page know about its environment" debug panel — the kind that groups every browser reference by what it actually represents.
+
+## The problem
+
+A real debug panel collects raw \`{ name, value }\` pairs from all over the codebase — some from the DOM, some from the BOM — and needs to present them grouped correctly, not as one flat undifferentiated list.
+
+## The idea
+
+Reuse the same classification rule as the DOM vs. BOM Challenge — strip a leading \`window.\` first, then anything rooted at \`document\` is DOM, everything else is BOM — and bucket each entry under the right group instead of just classifying one reference at a time.
+
+## Your task
+
+Write \`buildEnvironmentReport(entries)\` — given an array of \`{ name, value }\` objects where \`name\` is a reference string like \`"document.title"\` or \`"window.location.href"\`, return \`{ dom: {...}, bom: {...} }\` with each entry placed under the correct bucket, keyed by its original \`name\`.
+
+Once this passes, imagine wiring it to real values collected via \`document.title\`, \`navigator.userAgent\`, etc., and rendering the two groups as separate panel sections.`,
+    starterCode: `function buildEnvironmentReport(entries) {
+  // entries: { name: string, value: unknown }[]
+  // return { dom: Record<string, unknown>, bom: Record<string, unknown> }
+}`,
+    solutionCode: `function buildEnvironmentReport(entries) {
+  const report = { dom: {}, bom: {} };
+  for (const { name, value } of entries) {
+    const stripped = name.startsWith("window.") ? name.slice("window.".length) : name;
+    const root = stripped.split(".")[0];
+    const bucket = root === "document" ? "dom" : "bom";
+    report[bucket][name] = value;
+  }
+  return report;
+}`,
+    testCases: [
+      {
+        input: "a document.title entry and a navigator.userAgent entry",
+        expected: "each placed under its correct bucket",
+        label: "Groups a DOM and a BOM entry correctly",
+      },
+      { input: "an empty entries array", expected: "{ dom: {}, bom: {} }", label: "Handles an empty entry list" },
+      {
+        input: "window.document.body",
+        expected: "placed under dom despite the window. prefix",
+        label: "A window.document reference is still DOM",
+      },
+      {
+        input: "window.location.href and history.length",
+        expected: "both placed under bom",
+        label: "Multiple BOM entries are grouped together",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 15,
+  },
+  {
+    slug: "delegated-click-router",
+    conceptSlug: "event-delegation-bubbling-capturing",
+    title: "Build a Delegated Click Router",
+    description: `Build the routing logic behind a single delegated click listener on a list container — the pattern that lets one listener handle clicks for every row, including rows added later.
+
+## The problem
+
+A real delegated handler walks from the clicked element up toward the container, checking each ancestor's class list against a table of registered routes, and invokes the *nearest* match — exactly like \`element.closest()\` does, but data-driven.
+
+## The idea
+
+Walk the path from the target outward toward the root, one level at a time, and invoke the first registered route found along the way — the target's own classes are checked before any ancestor's, so a closer match always wins over a farther one.
+
+## Your task
+
+Write \`createDelegatedClickHandler(routes)\` — \`routes\` maps a class name to a handler function. It returns a \`dispatch(path)\` function, where \`path\` is an array of class-name arrays ordered from the clicked target outward to the root. \`dispatch\` should invoke the handler for the *first* matching class name found (starting from the target and working outward) and return that class name, or return \`null\` if nothing matched.
+
+Once this passes, imagine feeding it a real \`path\` built by walking \`element.classList\` up through \`element.parentElement\` on an actual click event.`,
+    starterCode: `function createDelegatedClickHandler(routes) {
+  // return dispatch(path) — path: string[][], target-first
+}`,
+    solutionCode: `function createDelegatedClickHandler(routes) {
+  return function dispatch(path) {
+    for (const classNames of path) {
+      for (const className of classNames) {
+        if (routes[className]) {
+          routes[className]();
+          return className;
+        }
+      }
+    }
+    return null;
+  };
+}`,
+    testCases: [
+      {
+        input: "the target itself matches a registered route",
+        expected: "that route's handler runs, its name is returned",
+        label: "A direct target match invokes its own handler",
+      },
+      {
+        input: "the target doesn't match, but an ancestor does",
+        expected: "the ancestor's handler runs (delegation)",
+        label: "Falls back to a matching ancestor",
+      },
+      {
+        input: "no level in the path matches any registered route",
+        expected: "null, no handler invoked",
+        label: "Returns null when nothing matches",
+      },
+      {
+        input: "both the target and an ancestor match different routes",
+        expected: "only the nearest (target) match runs",
+        label: "The nearest match wins over a farther one",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 16,
+  },
+  {
+    slug: "ttl-aware-storage-wrapper",
+    conceptSlug: "storage-apis",
+    title: "Build a TTL-Aware Storage Wrapper",
+    description: `Build a small wrapper that adds automatic expiration on top of a plain key/value store — the kind of utility that sits in front of \`localStorage\` to stop stale cached values from being trusted forever.
+
+## The problem
+
+Plain storage APIs have no concept of "this value is only good for 5 minutes" — that has to be layered on top, by storing an expiration timestamp alongside the value and checking it on every read.
+
+## The idea
+
+Store each value together with an expiration timestamp computed from an injectable clock. On every read, compare the current time against that timestamp — past it, the value is treated as gone, exactly as if it were never set.
+
+## Your task
+
+Write \`createTTLStore(now)\` — \`now\` is an injectable clock function (so tests don't need real timers). It returns a store with:
+
+- \`set(key, value, ttlMs)\` — stores the value along with an expiration computed from \`now() + ttlMs\`
+- \`get(key)\` — returns the value if it hasn't expired yet, or \`undefined\` if it's missing or expired (and should stop returning it from then on)
+
+Once this passes, imagine swapping the injected clock for \`Date.now\` and the internal map for real \`localStorage\` calls.`,
+    starterCode: `function createTTLStore(now) {
+  // return { set(key, value, ttlMs), get(key) }
+}`,
+    solutionCode: `function createTTLStore(now) {
+  const store = new Map();
+  return {
+    set(key, value, ttlMs) {
+      store.set(key, { value, expiresAt: now() + ttlMs });
+    },
+    get(key) {
+      const entry = store.get(key);
+      if (!entry) return undefined;
+      if (now() > entry.expiresAt) {
+        store.delete(key);
+        return undefined;
+      }
+      return entry.value;
+    },
+  };
+}`,
+    testCases: [
+      { input: "a value read before its TTL elapses", expected: "the stored value", label: "Returns a value before it expires" },
+      { input: "a value read after its TTL elapses", expected: "undefined", label: "Returns undefined once the value has expired" },
+      {
+        input: "two keys with different TTLs",
+        expected: "each expires independently",
+        label: "Keys expire independently of one another",
+      },
+      {
+        input: "a key set again before its previous TTL elapses",
+        expected: "the new value, with a freshly reset expiration",
+        label: "Re-setting a key refreshes its expiration",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 17,
+  },
+  {
+    slug: "same-origin-request-guard",
+    conceptSlug: "cors-same-origin-policy",
+    title: "Build a Same-Origin Request Guard",
+    description: `Build a small client-side guard that refuses to even attempt a request to a non-allowed origin — a defensive layer in front of \`fetch\`, not a replacement for real CORS enforcement (which only the server can do).
+
+## The problem
+
+CORS itself is enforced by the browser reading the server's response headers — by the time that happens, the request has already gone out. A client-side allowlist can't replace that, but it *can* stop your own app's code from ever attempting a call to an origin it wasn't meant to talk to, failing fast with a clear error instead of a confusing network-level CORS rejection.
+
+## The idea
+
+Check the origin against an allowlist *before* the request function ever runs — if the origin isn't on the list, refuse immediately and never invoke the caller's request logic at all.
+
+## Your task
+
+Write \`createOriginGuard(allowedOrigins)\` — returns an object with:
+
+- \`isAllowed(origin)\` — \`true\`/\`false\`
+- \`guardedFetch(origin, requestFn)\` — an async function; if \`origin\` isn't allowed, it throws *without ever calling* \`requestFn\`; otherwise it calls and returns \`requestFn()\`'s result
+
+Once this passes, imagine wiring \`requestFn\` to a real \`fetch\` call, so a typo'd or malicious origin never even reaches the network.`,
+    starterCode: `function createOriginGuard(allowedOrigins) {
+  // return { isAllowed(origin), guardedFetch(origin, requestFn) }
+}`,
+    solutionCode: `function createOriginGuard(allowedOrigins) {
+  return {
+    isAllowed(origin) {
+      return allowedOrigins.includes(origin);
+    },
+    async guardedFetch(origin, requestFn) {
+      if (!allowedOrigins.includes(origin)) {
+        throw new Error("Origin not allowed: " + origin);
+      }
+      return requestFn();
+    },
+  };
+}`,
+    testCases: [
+      { input: "a listed origin", expected: "true", label: "isAllowed is true for a listed origin" },
+      { input: "an unlisted origin", expected: "false", label: "isAllowed is false for an unlisted origin" },
+      {
+        input: "guardedFetch with an allowed origin",
+        expected: "requestFn runs and its result is returned",
+        label: "guardedFetch runs requestFn when the origin is allowed",
+      },
+      {
+        input: "guardedFetch with a disallowed origin",
+        expected: "throws, requestFn never runs",
+        label: "guardedFetch never calls requestFn for a disallowed origin",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 18,
+  },
+  {
+    slug: "csp-header-builder",
+    conceptSlug: "web-security-fundamentals",
+    title: "Build a CSP Header Builder",
+    description: `Build the logic that turns a structured policy definition into the actual \`Content-Security-Policy\` header string a server sends.
+
+## The problem
+
+Hand-writing a CSP header string is error-prone at scale — a real app assembles it from a config object (often merged from multiple sources) and needs the exact directive syntax the browser expects, every time.
+
+## The idea
+
+Format each directive as its name followed by its space-separated values, then join every directive with \`"; "\` — the exact syntax the \`Content-Security-Policy\` header expects, preserving whatever order the directives were defined in.
+
+## Your task
+
+Write \`buildCspHeader(directives)\` — given an object like \`{ "script-src": ["'self'", "https://cdn.com"], "object-src": ["'none'"] }\`, return the formatted header string: each directive as \`"name value1 value2"\`, joined with \`"; "\`, preserving the object's key order.
+
+Once this passes, imagine setting the result directly as the \`Content-Security-Policy\` response header in a real server.`,
+    starterCode: `function buildCspHeader(directives) {
+  // directives: Record<string, string[]>
+}`,
+    solutionCode: `function buildCspHeader(directives) {
+  return Object.entries(directives)
+    .map(([name, values]) => name + " " + values.join(" "))
+    .join("; ");
+}`,
+    testCases: [
+      {
+        input: `{ "script-src": ["'self'", "https://cdn.com"] }`,
+        expected: `"script-src 'self' https://cdn.com"`,
+        label: "Formats a single directive with multiple values",
+      },
+      {
+        input: `{ "script-src": ["'self'"], "object-src": ["'none'"] }`,
+        expected: `"script-src 'self'; object-src 'none'"`,
+        label: "Joins multiple directives with '; ', preserving order",
+      },
+      { input: "{}", expected: `""`, label: "An empty directives object produces an empty string" },
+      {
+        input: `{ "frame-ancestors": ["'none'"] }`,
+        expected: `"frame-ancestors 'none'"`,
+        label: "Formats a single-value directive",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 19,
+  },
+  {
+    slug: "connection-cost-estimator",
+    conceptSlug: "the-network-stack",
+    title: "Build a Connection Cost Estimator",
+    description: `Build the logic behind a "why is this request slow" estimator — given the steps a connection actually performs, compute the total round-trip cost.
+
+## The problem
+
+Not every step in the network stack costs the same number of round trips — a TLS handshake alone typically costs twice what a plain TCP handshake does. A cost estimator needs a per-step weight table, not a flat "steps × one round trip" assumption.
+
+## The idea
+
+Look up each step's weight in round trips, multiply by the measured round-trip time, and sum across every step that actually ran — steps that were skipped (cached DNS, a reused connection) simply aren't in the list, so they contribute nothing.
+
+## Your task
+
+Write \`estimateLatency(steps, roundTripMs)\` — given an ordered array of step names (the same ones \`getConnectionSteps\` from the Challenge produces: \`"dns-lookup"\`, \`"tcp-handshake"\`, \`"tls-handshake"\`, \`"http-request"\`) and a single round-trip time in ms, return the total estimated latency using this per-step weight table:
+
+- \`dns-lookup\`: 1 round trip
+- \`tcp-handshake\`: 1 round trip
+- \`tls-handshake\`: 2 round trips
+- \`http-request\`: 1 round trip
+
+Once this passes, imagine feeding it the real steps produced by \`getConnectionSteps\` plus a measured round-trip time, to estimate a page's actual connection overhead before a single byte of content arrives.`,
+    starterCode: `function estimateLatency(steps, roundTripMs) {
+  // steps: string[] of connection step names
+}`,
+    solutionCode: `function estimateLatency(steps, roundTripMs) {
+  const COST = { "dns-lookup": 1, "tcp-handshake": 1, "tls-handshake": 2, "http-request": 1 };
+  return steps.reduce((total, step) => total + (COST[step] || 0) * roundTripMs, 0);
+}`,
+    testCases: [
+      {
+        input: `["dns-lookup","tcp-handshake","tls-handshake","http-request"], 50`,
+        expected: "250",
+        label: "A full fresh HTTPS connection costs 5 round trips total",
+      },
+      { input: `["http-request"], 50`, expected: "50", label: "A single reused connection costs one round trip" },
+      {
+        input: `["tcp-handshake","http-request"], 100`,
+        expected: "200",
+        label: "A plain HTTP fresh connection costs 2 round trips",
+      },
+      { input: "[], 50", expected: "0", label: "No steps means zero estimated latency" },
+    ],
+    isPremium: true,
+    orderIndex: 20,
+  },
+  {
+    slug: "caching-strategy-picker",
+    conceptSlug: "service-workers-caching-strategies",
+    title: "Build a Caching Strategy Picker",
+    description: `Build the routing logic a real service worker's \`fetch\` handler needs: given an incoming request, decide *which* caching strategy should handle it.
+
+## The problem
+
+A service worker intercepts every request the page makes — static assets, API calls, and page navigations all pass through the same \`fetch\` handler, but each needs a different strategy. Hardcoding one strategy for everything is exactly the mistake that causes either stale API data or unnecessarily slow static assets.
+
+## The idea
+
+Route on the shape of the URL: a recognizable static asset extension means cache-first is safe, an \`/api/\` path means the data is live enough to need network-first, and everything else falls back to stale-while-revalidate as the reasonable default.
+
+## Your task
+
+Write \`pickCachingStrategy(request)\` — given \`{ url }\`, return which strategy name should handle it:
+
+- a URL ending in a static asset extension (\`.js\`, \`.css\`, \`.png\`, \`.jpg\`, \`.jpeg\`, \`.svg\`, \`.woff\`, \`.woff2\`) → \`"cache-first"\`
+- a URL starting with \`/api/\` → \`"network-first"\`
+- anything else → \`"stale-while-revalidate"\`
+
+Once this passes, imagine wiring the result directly into the \`cacheFirst\`/\`networkFirst\`/\`staleWhileRevalidate\` functions from the Understand guide's examples, inside a real \`fetch\` event handler.`,
+    starterCode: `function pickCachingStrategy(request) {
+  // request: { url: string }
+}`,
+    solutionCode: `function pickCachingStrategy(request) {
+  const url = request.url;
+  if (/\\.(js|css|png|jpe?g|svg|woff2?)$/i.test(url)) return "cache-first";
+  if (url.startsWith("/api/")) return "network-first";
+  return "stale-while-revalidate";
+}`,
+    testCases: [
+      { input: `{ url: "/assets/app.js" }`, expected: `"cache-first"`, label: "A static JS asset uses cache-first" },
+      { input: `{ url: "/api/users" }`, expected: `"network-first"`, label: "An API route uses network-first" },
+      {
+        input: `{ url: "/dashboard" }`,
+        expected: `"stale-while-revalidate"`,
+        label: "A regular page navigation uses stale-while-revalidate",
+      },
+      { input: `{ url: "/images/logo.svg" }`, expected: `"cache-first"`, label: "A static image asset uses cache-first" },
+    ],
+    isPremium: true,
+    orderIndex: 21,
+  },
+  {
+    slug: "worker-task-dispatcher",
+    conceptSlug: "web-workers-concurrency",
+    title: "Build a Worker Task Dispatcher",
+    description: `Build the load-balancing logic behind a real Web Worker pool — the part that decides which of N workers gets the next task.
+
+## The problem
+
+Spinning up one worker per task defeats the purpose (thread creation itself isn't free); spinning up a single worker serializes everything. A worker *pool* needs a dispatcher that spreads incoming tasks evenly across a fixed number of workers.
+
+## The idea
+
+Cycle through worker indices round-robin — each call to \`dispatch()\` hands out the next index in sequence, wrapping back to \`0\` after the last worker, while a running count per worker tracks exactly how much load it's been given.
+
+## Your task
+
+Write \`createWorkerPool(workerCount)\` — returns an object with:
+
+- \`dispatch()\` — returns the index (0 to \`workerCount - 1\`) of the worker assigned to handle the next task, cycling round-robin
+- \`getLoads()\` — returns an array of length \`workerCount\`, each entry the number of tasks assigned to that worker index so far
+
+Once this passes, imagine calling \`dispatch()\` to pick an index, then actually posting the task to \`workers[index].postMessage(task)\` in a real pool.`,
+    starterCode: `function createWorkerPool(workerCount) {
+  // return { dispatch(), getLoads() }
+}`,
+    solutionCode: `function createWorkerPool(workerCount) {
+  let next = 0;
+  const loads = new Array(workerCount).fill(0);
+  return {
+    dispatch() {
+      const worker = next % workerCount;
+      loads[worker] += 1;
+      next += 1;
+      return worker;
+    },
+    getLoads() {
+      return loads.slice();
+    },
+  };
+}`,
+    testCases: [
+      {
+        input: "5 dispatches on a 3-worker pool",
+        expected: "[0, 1, 2, 0, 1]",
+        label: "Assigns workers round-robin",
+      },
+      {
+        input: "getLoads() after 5 dispatches on a 3-worker pool",
+        expected: "[2, 2, 1]",
+        label: "Tracks each worker's task count correctly",
+      },
+      { input: "a 1-worker pool, 3 dispatches", expected: "[0, 0, 0]", label: "A single-worker pool always assigns index 0" },
+      { input: "4 dispatches on a 2-worker pool", expected: "loads: [2, 2]", label: "Splits evenly across an even number of dispatches" },
+    ],
+    isPremium: true,
+    orderIndex: 22,
   },
 ];
 

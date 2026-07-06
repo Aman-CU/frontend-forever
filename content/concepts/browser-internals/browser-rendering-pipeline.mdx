@@ -1,0 +1,44 @@
+---
+title: "Browser Rendering Pipeline"
+description: "Trace how a browser turns HTML and CSS into pixels: DOM, CSSOM, Render Tree, Layout, Paint, and Composite."
+category: "browser-internals"
+difficulty: "intermediate"
+order: 4
+whatsHappening: "The browser turns raw HTML and CSS text into pixels through a fixed sequence of stages — each one builds on the output of the last. Which stages have to re-run when something changes on screen is exactly what determines whether an animation is smooth or janky."
+keyInsight: "Not every visual change re-runs the whole pipeline. Changing layout-affecting properties (width, top) triggers Layout → Paint → Composite. Changing paint-only properties (color, background) skips Layout. Changing transform or opacity can skip both and go straight to Composite — which is why those two are the only properties safe to animate at 60fps."
+memoryHook: "DOM + CSSOM = Render Tree (what to show). Layout = where it goes. Paint = what color it is. Composite = stack the layers and show it. Skipping earlier stages is always cheaper than skipping later ones."
+inRealLife: "Like building a house: architects' content blueprint (DOM) + interior design plan (CSSOM) merge into a final plan (Render Tree), then framing determines where every wall goes (Layout), painters fill in colors (Paint), and the final walkthrough stacks everything together (Composite). Repainting a wall doesn't mean re-framing the house."
+---
+
+## The six stages
+
+1. **DOM** — the browser parses HTML into a tree of nodes representing content and structure.
+2. **CSSOM** — the browser parses CSS into a tree representing every style rule and how it cascades.
+3. **Render Tree** — DOM + CSSOM combine into a tree containing only the nodes that will actually be visible, each carrying its final computed styles. `display: none` elements are dropped entirely here.
+4. **Layout (reflow)** — the browser computes the exact geometry (position, size) of every node in the render tree.
+5. **Paint** — the browser fills in pixels: colors, borders, shadows, text — for every node, but not yet combined into a final image.
+6. **Composite** — separately painted layers are combined in the right stacking order into what actually appears on screen.
+
+```
+HTML ──▶ DOM ─┐
+              ├──▶ Render Tree ──▶ Layout ──▶ Paint ──▶ Composite
+CSS ───▶ CSSOM ┘
+```
+
+## Why some changes are cheaper than others
+
+The pipeline doesn't always restart from the top — the browser only re-runs the stages a change actually affects:
+
+- **Layout-triggering properties** (`width`, `top`, `margin`, `font-size`) — force Layout → Paint → Composite, because changing one element's geometry can cascade to its siblings and ancestors.
+- **Paint-only properties** (`color`, `background`, `box-shadow` on a non-positioned element) — skip Layout, but still trigger Paint → Composite.
+- **Composite-only properties** (`transform`, `opacity`) — skip both Layout and Paint. The GPU can reuse the already-painted layer and just reposition/fade it.
+
+This is exactly why animating `transform: translateX()` is smooth while animating `left` on the same element is not — one only touches Composite, the other re-triggers the whole pipeline on every frame.
+
+## Render-blocking resources
+
+CSS is render-blocking by default: the browser won't build the Render Tree — and therefore won't paint anything — until the CSSOM is ready, to avoid a flash of unstyled content. A synchronous `<script>` (no `async`/`defer`) is parser-blocking on top of that: it halts HTML parsing itself until the script downloads and executes, delaying when the DOM is even complete.
+
+## Why it matters
+
+Every "why is my animation janky" question traces back to this pipeline. The fix is almost always the same: stop animating layout- or paint-triggering properties and animate `transform`/`opacity` instead, letting the browser skip straight to Composite on every frame.

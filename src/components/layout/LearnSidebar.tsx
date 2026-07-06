@@ -11,9 +11,10 @@ import { CategoryAccordionItem } from "./CategoryAccordionItem";
 
 type Props = {
   categories: CategorySummary[];
+  isPremiumUser: boolean;
 };
 
-export function LearnSidebar({ categories }: Props) {
+export function LearnSidebar({ categories, isPremiumUser }: Props) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
 
@@ -38,6 +39,7 @@ export function LearnSidebar({ categories }: Props) {
               category={category}
               meta={meta}
               pathname={pathname}
+              isPremiumUser={isPremiumUser}
             />
           );
         })}
