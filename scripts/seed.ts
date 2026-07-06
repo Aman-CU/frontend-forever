@@ -363,6 +363,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Understand how useRef holds a mutable value across renders without triggering one, and how useImperativeHandle exposes an imperative API from a child component.",
     category: "react",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 4,
   },
   {
@@ -372,6 +373,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how prop drilling forces data through components that don't need it, and how the Context API lets any descendant read shared state directly.",
     category: "react",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 5,
   },
   {
@@ -390,6 +392,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Compare render props, children, and compound components — three patterns for sharing behavior between components without prop drilling or inheritance.",
     category: "react",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 7,
   },
   {
@@ -399,6 +402,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how extracting a use* function lets you share stateful logic between components, and the rules that keep custom hooks composable.",
     category: "react",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 8,
   },
   {
@@ -408,6 +412,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how an Error Boundary component catches render-time errors in its subtree and shows a fallback UI instead of crashing the whole app.",
     category: "react",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 9,
   },
   {
@@ -417,6 +422,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how React.memo, useMemo, and useCallback skip unnecessary re-renders and recalculations — and why profiling before adding them matters more than the APIs themselves.",
     category: "react",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 10,
   },
   {
@@ -426,6 +432,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Understand how Concurrent React lets rendering be interrupted and resumed, and how Suspense boundaries show a fallback while a component waits on data.",
     category: "react",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 11,
   },
   {
@@ -435,6 +442,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Compare local state, Context, and external stores (Redux, Zustand, Jotai) for where shared state should live, and the tradeoffs of each as an app scales.",
     category: "react",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 12,
   },
 
@@ -2414,6 +2422,640 @@ Write \`cloneMessage(value)\` implementing this behavior.`,
     isPremium: true,
     orderIndex: 24,
   },
+  {
+    slug: "build-create-element",
+    conceptSlug: "jsx-virtual-dom",
+    title: "Build a Mini createElement",
+    description: `Build the function every JSX tag actually compiles down to — the one that turns a description like \`<button className="primary">Save</button>\` into a plain Virtual DOM object.
+
+## The problem
+
+JSX never runs in the browser as-is — a compiler rewrites every tag into a \`createElement(type, props, ...children)\` call before your code executes. Understanding what that call actually returns is the first step to understanding everything React does afterward (diffing, reconciliation) to that returned object.
+
+## The idea
+
+- \`type\` is the tag name (or component), stored as-is.
+- \`props\` becomes the returned object's \`props\`, with \`children\` folded in: zero children omits nothing (an empty array), one child is stored directly (not wrapped in an array), more than one is stored as an array.
+
+## Your task
+
+Write \`createElement(type, props, ...children)\` returning \`{ type, props }\`, where \`props.children\` follows the folding rule above (merge in any \`props\` passed in, even if \`props\` is \`null\`).`,
+    difficulty: "easy",
+    starterCode: `function createElement(type, props, ...children) {
+  // return { type, props } where props.children follows the folding rule
+}`,
+    solutionCode: `function createElement(type, props, ...children) {
+  return {
+    type,
+    props: {
+      ...(props || {}),
+      children: children.length === 1 ? children[0] : children,
+    },
+  };
+}`,
+    testCases: [
+      {
+        input: `createElement("div", null)`,
+        expected: `{ type: "div", props: { children: [] } }`,
+        label: "No children folds to an empty array",
+      },
+      {
+        input: `createElement("button", { className: "primary" }, "Save")`,
+        expected: `{ type: "button", props: { className: "primary", children: "Save" } }`,
+        label: "A single child is stored directly, not wrapped in an array",
+      },
+      {
+        input: `createElement("ul", null, "a", "b")`,
+        expected: `{ type: "ul", props: { children: ["a", "b"] } }`,
+        label: "Multiple children are stored as an array",
+      },
+      {
+        input: `createElement("div", null, createElement("span", null, "hi"))`,
+        expected: `a div vnode whose single child is the span vnode object`,
+        label: "Children can themselves be vnode objects, nested arbitrarily deep",
+      },
+    ],
+    hints: [
+      "Spread props first, then overwrite/add children last so it always ends up on the returned object even when props is null.",
+      "The folding rule only cares about children.length — 0, 1, or more than 1 — not what the children actually are.",
+    ],
+    isPremium: false,
+    orderIndex: 25,
+  },
+  {
+    slug: "should-run-effect",
+    conceptSlug: "usestate-useeffect-fundamentals",
+    title: "Implement useEffect's Dependency Comparison",
+    description: `Build the comparison React itself runs on every render to decide whether an effect fires again — the actual logic behind the dependency array.
+
+## The problem
+
+An effect doesn't re-run just because a component re-rendered — React compares the new dependency array to the previous one first, and only re-runs the effect if something in it actually changed.
+
+## The idea
+
+- No dependency array at all (\`undefined\`) means "always run."
+- The very first render has no previous dependencies to compare against, so it always runs (mount).
+- Otherwise, compare each entry pairwise with \`Object.is\` (not \`===\`) — this matters for values like \`NaN\`, which \`Object.is\` correctly treats as equal to itself.
+
+## Your task
+
+Write \`shouldRunEffect(prevDeps, nextDeps)\` returning \`true\` if the effect should run this render, \`false\` if it should be skipped.`,
+    difficulty: "easy",
+    starterCode: `function shouldRunEffect(prevDeps, nextDeps) {
+  // prevDeps is null/undefined on the very first render (mount)
+}`,
+    solutionCode: `function shouldRunEffect(prevDeps, nextDeps) {
+  if (nextDeps === undefined) return true;
+  if (prevDeps === undefined || prevDeps === null) return true;
+  if (prevDeps.length !== nextDeps.length) return true;
+  for (let i = 0; i < nextDeps.length; i++) {
+    if (!Object.is(prevDeps[i], nextDeps[i])) return true;
+  }
+  return false;
+}`,
+    testCases: [
+      { input: "shouldRunEffect(null, [1])", expected: "true", label: "First render (mount) always runs" },
+      { input: "shouldRunEffect([1], [1])", expected: "false", label: "Unchanged dependency skips the effect" },
+      { input: "shouldRunEffect([1], [2])", expected: "true", label: "A changed dependency re-runs the effect" },
+      {
+        input: "shouldRunEffect([NaN], [NaN])",
+        expected: "false",
+        label: "Object.is treats NaN as equal to itself, unlike ===",
+      },
+      { input: "shouldRunEffect([1, 2], undefined)", expected: "true", label: "No dependency array always runs" },
+    ],
+    hints: [
+      "Check the undefined/no-array case before anything else — it short-circuits the comparison entirely.",
+      "Use Object.is, not ===, for each pairwise comparison — that's the detail that makes the NaN case behave correctly.",
+    ],
+    isPremium: false,
+    orderIndex: 26,
+  },
+  {
+    slug: "detect-controlled-switch",
+    conceptSlug: "controlled-vs-uncontrolled-forms",
+    title: "Detect a Controlled/Uncontrolled Switch",
+    description: `Build the check behind React's real "a component is changing from uncontrolled to controlled" warning — given an input's value across two renders, decide whether its controlled-ness just flipped.
+
+## The problem
+
+An input is uncontrolled when its \`value\` prop is \`undefined\`/\`null\`, and controlled once it's a real value. Flipping between the two mid-lifetime is a common source of the warning — usually caused by state initialized to \`undefined\` instead of an empty string.
+
+## The idea
+
+Controlled-ness is just: was \`value\` defined (not \`undefined\`/\`null\`) last render, and is it defined this render? A flip is when those two booleans disagree.
+
+## Your task
+
+Write \`isSwitchingControlled(prevValue, nextValue)\` returning \`true\` if the input's controlled/uncontrolled status changed between the two renders.`,
+    difficulty: "easy",
+    starterCode: `function isSwitchingControlled(prevValue, nextValue) {
+  // true if defined-ness of prevValue vs nextValue differs
+}`,
+    solutionCode: `function isSwitchingControlled(prevValue, nextValue) {
+  const wasControlled = prevValue !== undefined && prevValue !== null;
+  const isControlled = nextValue !== undefined && nextValue !== null;
+  return wasControlled !== isControlled;
+}`,
+    testCases: [
+      {
+        input: `isSwitchingControlled(undefined, "abc")`,
+        expected: "true",
+        label: "Uncontrolled to controlled is a switch",
+      },
+      { input: `isSwitchingControlled("abc", "")`, expected: "false", label: "Empty string is still controlled" },
+      {
+        input: `isSwitchingControlled("abc", undefined)`,
+        expected: "true",
+        label: "Controlled to uncontrolled is also a switch",
+      },
+      { input: "isSwitchingControlled(undefined, undefined)", expected: "false", label: "Uncontrolled the whole time is not a switch" },
+      { input: `isSwitchingControlled(null, "x")`, expected: "true", label: "null counts as uncontrolled, same as undefined" },
+    ],
+    hints: [
+      "Treat null the same as undefined — both mean 'uncontrolled,' not just undefined specifically.",
+      "An empty string is still a real, defined value — it's controlled, not uncontrolled.",
+    ],
+    isPremium: false,
+    orderIndex: 27,
+  },
+  {
+    slug: "implement-merge-refs",
+    conceptSlug: "useref-imperative-handles",
+    title: "Implement mergeRefs",
+    description: `Build a small utility that comes up constantly once a component needs to attach more than one ref to the same DOM node — a real gap in React's API, not a toy problem.
+
+## The problem
+
+A component sometimes needs to forward a ref from its parent \`and\` keep its own internal ref to the same node (e.g. a parent's \`ref\` prop plus the component's own \`useRef\` for internal focus management). React only lets a JSX element take one \`ref\` prop, so both refs need to be driven by a single callback.
+
+## The idea
+
+Refs come in two shapes: a function (\`(node) => {...}\`) or an object (\`{ current: null }\`). Setting either "form" of ref just means calling the function, or assigning \`.current\`, for every ref in the list — skipping any that are \`null\`/\`undefined\`.
+
+## Your task
+
+Write \`mergeRefs(...refs)\` returning a single callback ref that, when called with a node, updates every ref in \`refs\` to point at that node.`,
+    difficulty: "medium",
+    starterCode: `function mergeRefs(...refs) {
+  // return a function(node) that updates every ref in refs
+}`,
+    solutionCode: `function mergeRefs(...refs) {
+  return function (node) {
+    refs.forEach((ref) => {
+      if (!ref) return;
+      if (typeof ref === "function") ref(node);
+      else ref.current = node;
+    });
+  };
+}`,
+    testCases: [
+      {
+        input: "a function ref and an object ref merged, then called with a node",
+        expected: "the function ref is invoked with the node, and the object ref's .current is set to the node",
+        label: "Updates both a function ref and an object ref",
+      },
+      {
+        input: "mergeRefs(null, objectRef) called with a node",
+        expected: "objectRef.current is set to the node, the null entry is skipped without throwing",
+        label: "Skips null/undefined refs safely",
+      },
+      {
+        input: "the merged ref called again with null",
+        expected: "every ref is updated to null",
+        label: "Clears all refs when called with null (on unmount)",
+      },
+      {
+        input: "three object refs merged and called once",
+        expected: "all three .current values point at the same node",
+        label: "Supports more than two refs",
+      },
+    ],
+    hints: [
+      "A ref is either a function or an object with a .current property — check typeof to tell them apart.",
+      "Skip falsy refs (null/undefined) up front so the caller can pass an optional ref without extra guards.",
+    ],
+    isPremium: true,
+    orderIndex: 28,
+  },
+  {
+    slug: "implement-context-store",
+    conceptSlug: "context-api-prop-drilling",
+    title: "Implement a Minimal Context Store",
+    description: `Build the subscribe/notify mechanism that Context uses under the hood to propagate a value to every consumer without any component in between passing it along.
+
+## The problem
+
+Context's whole point is that a value published at the top of a subtree reaches any descendant that asks for it, without every intermediate component forwarding it as a prop. That only works because of a publish/subscribe mechanism — the same shape used by \`useSyncExternalStore\` and every external store library.
+
+## The idea
+
+A store needs three things: a way to read the current value, a way to update it (which must notify everyone currently listening), and a way to subscribe (which must return an unsubscribe function, so a consumer can stop listening when it unmounts).
+
+## Your task
+
+Write \`createStore(initialValue)\` returning \`{ getValue, setValue, subscribe }\`, where \`setValue(next)\` calls every currently-subscribed listener with the new value, and \`subscribe(listener)\` returns a function that removes that listener.`,
+    difficulty: "medium",
+    starterCode: `function createStore(initialValue) {
+  // return { getValue, setValue, subscribe }
+}`,
+    solutionCode: `function createStore(initialValue) {
+  let value = initialValue;
+  let subscribers = [];
+  return {
+    getValue: () => value,
+    setValue: (next) => {
+      value = next;
+      subscribers.forEach((listener) => listener(value));
+    },
+    subscribe: (listener) => {
+      subscribers.push(listener);
+      return () => {
+        subscribers = subscribers.filter((s) => s !== listener);
+      };
+    },
+  };
+}`,
+    testCases: [
+      { input: `createStore("dark").getValue()`, expected: `"dark"`, label: "getValue returns the initial value" },
+      {
+        input: "subscribe a listener, then call setValue",
+        expected: "the listener is called once with the new value",
+        label: "setValue notifies subscribed listeners",
+      },
+      {
+        input: "subscribe, unsubscribe, then setValue",
+        expected: "the listener is not called",
+        label: "The function returned by subscribe removes that listener",
+      },
+      {
+        input: "two listeners subscribed, then setValue",
+        expected: "both listeners are called with the new value",
+        label: "Supports multiple simultaneous subscribers",
+      },
+    ],
+    hints: [
+      "subscribe must return a new function each time that removes only that specific listener, not all of them.",
+      "setValue should update the stored value before notifying, so a listener calling getValue() inside its callback sees the new value.",
+    ],
+    isPremium: true,
+    orderIndex: 29,
+  },
+  {
+    slug: "implement-map-children",
+    conceptSlug: "component-composition-patterns",
+    title: "Implement a Children-Mapping Utility",
+    description: `Build the normalization logic behind \`React.Children.map\` — the utility that lets a component safely transform \`props.children\` no matter what shape it arrives in.
+
+## The problem
+
+\`props.children\` isn't always an array — it can be \`null\`, a single child, or an array containing \`null\`s from conditional rendering (\`{condition && <Item />}\`). Mapping over it safely means normalizing all of these into one consistent shape first.
+
+## The idea
+
+- \`null\`/\`undefined\` children means there's nothing to map — return an empty array.
+- A single child (not an array) should be treated as a one-item list.
+- An array's direct \`null\`/\`undefined\`/\`false\` entries (from conditional rendering) must be dropped before mapping, and the index passed to the mapping function must reflect position among only the *surviving* children, not the original array.
+
+## Your task
+
+Write \`mapChildren(children, mapFn)\` returning the normalized, filtered array with \`mapFn(child, index)\` applied to each entry.`,
+    difficulty: "medium",
+    starterCode: `function mapChildren(children, mapFn) {
+  // normalize, filter out null/undefined/false, then map
+}`,
+    solutionCode: `function mapChildren(children, mapFn) {
+  if (children === null || children === undefined) return [];
+  const list = Array.isArray(children) ? children : [children];
+  const kept = list.filter((child) => child !== null && child !== undefined && child !== false);
+  return kept.map((child, index) => mapFn(child, index));
+}`,
+    testCases: [
+      { input: "mapChildren(null, fn)", expected: "[]", label: "null children maps to an empty array" },
+      {
+        input: `mapChildren("only child", fn)`,
+        expected: "an array with fn applied once, at index 0",
+        label: "A single non-array child is treated as a one-item list",
+      },
+      {
+        input: `mapChildren(["a", null, "b", false], fn)`,
+        expected: "fn called with (\"a\", 0) and (\"b\", 1)",
+        label: "Falsy conditional-rendering entries are dropped, and indices reflect only surviving children",
+      },
+      {
+        input: `mapChildren(["a", "b", "c"], fn)`,
+        expected: "fn called with (\"a\",0), (\"b\",1), (\"c\",2)",
+        label: "A plain array of children maps in order",
+      },
+    ],
+    hints: [
+      "Filter before mapping, not after — the index argument must be based on the already-filtered list.",
+      "false needs the same treatment as null/undefined — it's the value {condition && <X/>} produces when condition is falsy.",
+    ],
+    isPremium: true,
+    orderIndex: 30,
+  },
+  {
+    slug: "detect-conditional-hook-call",
+    conceptSlug: "custom-hooks-composition",
+    title: "Detect a Rules-of-Hooks Violation",
+    description: `Build a simplified version of what eslint-plugin-react-hooks checks at runtime-equivalent logic — given the sequence of hooks called on each render, detect the render where that sequence first diverges from the baseline.
+
+## The problem
+
+React matches hook state to calls purely by the *order* they're called in during render, not by name. Calling a hook conditionally means some renders call a different number (or order) of hooks than others, silently shifting every hook state after the divergence into the wrong slot.
+
+## The idea
+
+The very first render establishes the baseline call sequence. Every later render must match that exact sequence — same hooks, same order, same count. The first render that doesn't match is where the violation happened.
+
+## Your task
+
+Write \`findHookOrderViolation(renders)\`, where \`renders\` is an array of arrays of hook names (one array per render, in call order). Return the index of the first render whose sequence differs from \`renders[0]\`, or \`-1\` if every render matches.`,
+    difficulty: "medium",
+    starterCode: `function findHookOrderViolation(renders) {
+  // compare every render's hook sequence against renders[0]
+}`,
+    solutionCode: `function findHookOrderViolation(renders) {
+  if (renders.length === 0) return -1;
+  const baseline = renders[0];
+  for (let i = 1; i < renders.length; i++) {
+    const current = renders[i];
+    if (current.length !== baseline.length) return i;
+    for (let j = 0; j < baseline.length; j++) {
+      if (current[j] !== baseline[j]) return i;
+    }
+  }
+  return -1;
+}`,
+    testCases: [
+      {
+        input: `findHookOrderViolation([["useState","useEffect"], ["useState","useEffect"]])`,
+        expected: "-1",
+        label: "Matching sequences every render means no violation",
+      },
+      {
+        input: `findHookOrderViolation([["useState","useEffect"], ["useState"]])`,
+        expected: "1",
+        label: "A render that skips a hook is flagged at its own index",
+      },
+      {
+        input: `findHookOrderViolation([["useState"], ["useState"], ["useEffect","useState"]])`,
+        expected: "2",
+        label: "A render with hooks in a different order is a violation, even with the same count",
+      },
+      { input: "findHookOrderViolation([])", expected: "-1", label: "No renders at all means nothing to violate" },
+    ],
+    hints: [
+      "Only the first render sets the baseline — every later render is compared against renders[0], not the previous render.",
+      "Check the length first; a shorter or longer sequence is always a violation regardless of what matches.",
+    ],
+    isPremium: true,
+    orderIndex: 31,
+  },
+  {
+    slug: "find-error-boundary",
+    conceptSlug: "error-boundaries",
+    title: "Find the Catching Error Boundary",
+    description: `Build the lookup behind "which Error Boundary actually catches this crash" — given a component tree and where an error is thrown, find the nearest ancestor boundary.
+
+## The problem
+
+A component never catches its own thrown error — only an ancestor marked as an Error Boundary can. When boundaries are nested (a page-level boundary wrapping several widget-level boundaries), the *nearest* one above the failure is the one that actually renders a fallback, not the outermost one.
+
+## The idea
+
+Walk the path from the tree's root down to the throwing component, then scan that path upward (starting from its parent, since a node never catches its own error) for the first node flagged as a boundary.
+
+## Your task
+
+Write \`findErrorBoundary(tree, throwingId)\`, where each tree node is \`{ id, isBoundary, children: [] }\`. Return the \`id\` of the nearest ancestor boundary, or \`null\` if none exists.`,
+    difficulty: "hard",
+    starterCode: `function findErrorBoundary(tree, throwingId) {
+  // find the path to throwingId, then scan upward (excluding throwingId itself)
+}`,
+    solutionCode: `function findErrorBoundary(tree, throwingId) {
+  function findPath(node, targetId, path) {
+    const nextPath = [...path, node];
+    if (node.id === targetId) return nextPath;
+    for (const child of node.children || []) {
+      const result = findPath(child, targetId, nextPath);
+      if (result) return result;
+    }
+    return null;
+  }
+  const path = findPath(tree, throwingId, []);
+  if (!path) return null;
+  for (let i = path.length - 2; i >= 0; i--) {
+    if (path[i].isBoundary) return path[i].id;
+  }
+  return null;
+}`,
+    testCases: [
+      {
+        input: "a boundary at the root, error thrown deep in a non-boundary subtree",
+        expected: "the root's id",
+        label: "Finds a distant ancestor boundary when nothing closer exists",
+      },
+      {
+        input: "nested boundaries at two levels, error thrown below both",
+        expected: "the id of the nearer (deeper) boundary, not the outer one",
+        label: "The nearest boundary wins over an outer one",
+      },
+      {
+        input: "no node in the tree is a boundary",
+        expected: "null",
+        label: "Returns null when no ancestor boundary exists",
+      },
+      {
+        input: "the throwing node itself is flagged isBoundary: true",
+        expected: "its ancestor's id (or null), never its own id",
+        label: "A node never catches its own thrown error",
+      },
+    ],
+    hints: [
+      "Build the full root-to-target path first, then walk it backwards — don't try to search top-down and bottom-up at the same time.",
+      "Start the upward scan at index length - 2, one above the throwing node, so it can never return the throwing node's own id.",
+    ],
+    isPremium: true,
+    orderIndex: 32,
+  },
+  {
+    slug: "implement-shallow-equal",
+    conceptSlug: "render-performance-memoization",
+    title: "Implement shallowEqual",
+    description: `Build the comparison \`React.memo\` runs by default on every prop object — the actual algorithm behind "did this component's props really change?"
+
+## The problem
+
+\`React.memo\` skips re-rendering a component when its new props are shallow-equal to the previous ones. Knowing exactly what "shallow-equal" checks (and doesn't check) explains both why memo works and why it silently fails to help once a prop is a freshly-created object or array every render.
+
+## The idea
+
+Two values are shallow-equal if they're the exact same reference (checked with \`Object.is\`, which handles \`NaN\` correctly), or if both are non-null objects with the same set of own keys, each holding \`Object.is\`-equal values one level deep — nested objects are compared by reference, not recursively.
+
+## Your task
+
+Write \`shallowEqual(objA, objB)\` implementing this comparison.`,
+    difficulty: "hard",
+    starterCode: `function shallowEqual(objA, objB) {
+  // Object.is reference check, then one level of own-key comparison
+}`,
+    solutionCode: `function shallowEqual(objA, objB) {
+  if (Object.is(objA, objB)) return true;
+  if (typeof objA !== "object" || objA === null || typeof objB !== "object" || objB === null) {
+    return false;
+  }
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(objB, key) || !Object.is(objA[key], objB[key])) {
+      return false;
+    }
+  }
+  return true;
+}`,
+    testCases: [
+      { input: `shallowEqual({ a: 1 }, { a: 1 })`, expected: "true", label: "Same own keys and values are shallow-equal" },
+      { input: `shallowEqual({ a: 1 }, { a: 2 })`, expected: "false", label: "A different value for the same key is not equal" },
+      {
+        input: `shallowEqual({ a: { x: 1 } }, { a: { x: 1 } })`,
+        expected: "false",
+        label: "Nested objects are compared by reference, not recursively — two different inner objects are unequal",
+      },
+      { input: "shallowEqual(sameObjectRef, sameObjectRef)", expected: "true", label: "The identical reference is always equal" },
+      {
+        input: `shallowEqual({ a: 1 }, { a: 1, b: 2 })`,
+        expected: "false",
+        label: "A different number of keys is never shallow-equal",
+      },
+    ],
+    hints: [
+      "Check Object.is(objA, objB) first — the identical-reference case should short-circuit before any key comparison.",
+      "Comparing key counts up front catches an extra key on either side without needing a second full loop.",
+    ],
+    isPremium: true,
+    orderIndex: 33,
+  },
+  {
+    slug: "schedule-updates-by-priority",
+    conceptSlug: "concurrent-react-suspense",
+    title: "Schedule Updates by Priority",
+    description: `Build the ordering logic behind Concurrent React's priority model — given a batch of pending updates, decide which run first.
+
+## The problem
+
+Not every state update is equally urgent. A keystroke needs to feel instant; a transition-wrapped update (like re-filtering a large results list) can wait. A scheduler needs to reorder a batch of updates so urgent ones always run before transition ones, without scrambling the relative order within each group.
+
+## The idea
+
+Split the updates into two groups by priority, preserving each group's original relative order, then concatenate urgent before transition — a stable partition, not a full re-sort.
+
+## Your task
+
+Write \`scheduleUpdates(updates)\`, where each update is \`{ id, priority: 'urgent' | 'transition' }\`. Return an array of \`id\`s with all urgent updates first, then all transition updates, each group keeping its original order.`,
+    difficulty: "hard",
+    starterCode: `function scheduleUpdates(updates) {
+  // partition by priority, urgent first, preserving relative order within each group
+}`,
+    solutionCode: `function scheduleUpdates(updates) {
+  const urgent = updates.filter((u) => u.priority === "urgent").map((u) => u.id);
+  const transition = updates.filter((u) => u.priority === "transition").map((u) => u.id);
+  return [...urgent, ...transition];
+}`,
+    testCases: [
+      {
+        input: `scheduleUpdates([{id:"a",priority:"transition"},{id:"b",priority:"urgent"},{id:"c",priority:"transition"},{id:"d",priority:"urgent"}])`,
+        expected: `["b", "d", "a", "c"]`,
+        label: "Urgent updates move first while relative order within each group is preserved",
+      },
+      {
+        input: `scheduleUpdates([{id:"a",priority:"urgent"},{id:"b",priority:"urgent"}])`,
+        expected: `["a", "b"]`,
+        label: "All-urgent input is returned unchanged",
+      },
+      {
+        input: `scheduleUpdates([{id:"a",priority:"transition"},{id:"b",priority:"transition"}])`,
+        expected: `["a", "b"]`,
+        label: "All-transition input is returned unchanged",
+      },
+      { input: "scheduleUpdates([])", expected: "[]", label: "An empty batch schedules to an empty array" },
+    ],
+    hints: [
+      "Filter twice (once per priority) rather than trying to sort in place — a stable partition is simpler than a custom comparator.",
+      "Array.prototype.filter preserves relative order on its own, so each group never needs a separate sort step.",
+    ],
+    isPremium: true,
+    orderIndex: 34,
+  },
+  {
+    slug: "find-shared-state-ancestor",
+    conceptSlug: "state-management-tradeoffs",
+    title: "Find Where Shared State Should Live",
+    description: `Build the lookup behind "lift state up" — given a component tree and two components that need to share a value, find the lowest common ancestor state should move to.
+
+## The problem
+
+When two components need the same piece of state, it has to live in a component that's an ancestor of both — but picking one too far up the tree causes unrelated components to re-render unnecessarily. The *lowest* common ancestor is the smallest subtree that still covers both consumers.
+
+## The idea
+
+This is the classic lowest-common-ancestor tree problem: find the root-to-node path for each of the two components, then walk both paths together from the root until they diverge — the last node where they still agreed is the answer.
+
+## Your task
+
+Write \`findLowestCommonAncestor(tree, idA, idB)\`, where each tree node is \`{ id, children: [] }\`. Return the \`id\` of the lowest common ancestor of \`idA\` and \`idB\`.`,
+    difficulty: "hard",
+    starterCode: `function findLowestCommonAncestor(tree, idA, idB) {
+  // find both root-to-node paths, then walk them together until they diverge
+}`,
+    solutionCode: `function findLowestCommonAncestor(tree, idA, idB) {
+  function findPath(node, target, path) {
+    const next = [...path, node.id];
+    if (node.id === target) return next;
+    for (const child of node.children || []) {
+      const result = findPath(child, target, next);
+      if (result) return result;
+    }
+    return null;
+  }
+  const pathA = findPath(tree, idA, []);
+  const pathB = findPath(tree, idB, []);
+  if (!pathA || !pathB) return null;
+  let lca = null;
+  for (let i = 0; i < Math.min(pathA.length, pathB.length); i++) {
+    if (pathA[i] === pathB[i]) lca = pathA[i];
+    else break;
+  }
+  return lca;
+}`,
+    testCases: [
+      {
+        input: "two sibling leaf components under the same parent",
+        expected: "the shared parent's id",
+        label: "Siblings' lowest common ancestor is their direct parent",
+      },
+      {
+        input: "idA is a direct ancestor of idB",
+        expected: "idA itself",
+        label: "When one node is an ancestor of the other, it is its own answer",
+      },
+      {
+        input: "two components in different, deeply nested branches of a larger tree",
+        expected: "the branching node where the two paths diverge",
+        label: "Finds the correct ancestor in a deeper, unbalanced tree",
+      },
+      { input: "idB does not exist anywhere in the tree", expected: "null", label: "Returns null if either id isn't found" },
+    ],
+    hints: [
+      "Solve it as two separate root-to-node path searches first — don't try to find the answer in a single combined traversal.",
+      "Walk both paths in lockstep from index 0; the last index where they still match is the LCA, not the first index where they differ.",
+    ],
+    isPremium: true,
+    orderIndex: 35,
+  },
 ];
 
 // ── Interview questions (5 per collection, plus concept-linked top-ups) ────────
@@ -3910,6 +4552,568 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     difficulty: "hard",
     companies: ["Meta", "Airbnb"],
     orderIndex: 65,
+  },
+
+  // React Concepts (Feature 43) — 5 questions per new concept
+  {
+    collection: "ff-75",
+    conceptSlug: "jsx-virtual-dom",
+    question: "What does JSX actually compile to?",
+    answer:
+      "JSX is syntax sugar compiled by Babel/SWC into plain `React.createElement(type, props, ...children)` calls before the code ever runs. `<button className=\"primary\">Save</button>` becomes `React.createElement('button', { className: 'primary' }, 'Save')`, which returns a plain JavaScript object describing the element — not a real DOM node.",
+    difficulty: "easy",
+    companies: ["Meta", "Google"],
+    orderIndex: 66,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "jsx-virtual-dom",
+    question: "Why does React use a Virtual DOM instead of updating the real DOM directly?",
+    answer:
+      "Reading and writing the real DOM triggers layout, style recalculation, and repaints — all comparatively expensive. Plain JavaScript objects are cheap to create and compare. By building a new Virtual DOM tree on every render and diffing it against the previous one first, React can compute the minimal set of real DOM operations needed and only pay the expensive cost for that minimal set, instead of on every render.",
+    difficulty: "easy",
+    companies: ["Amazon", "Microsoft"],
+    orderIndex: 67,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "jsx-virtual-dom",
+    question: "Is the Virtual DOM the same thing as the Shadow DOM?",
+    answer:
+      "No — they solve unrelated problems. The Shadow DOM is a real browser API for encapsulating a subtree's styles and markup (used by Web Components). The Virtual DOM is a React-specific, in-memory JavaScript representation used purely for diffing — it never touches the browser's rendering engine directly and has no encapsulation behavior at all.",
+    difficulty: "easy",
+    companies: ["Google"],
+    orderIndex: 6,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "jsx-virtual-dom",
+    question: "What happens if you return two adjacent top-level elements from a component without wrapping them?",
+    answer:
+      "It's a compile error — JSX (really, `createElement`) requires exactly one root element per return value, since a single function call can only return one object. Wrapping siblings in `<>...</>` (a Fragment) or a real element satisfies this without adding an extra DOM node.",
+    difficulty: "medium",
+    companies: ["Meta"],
+    orderIndex: 7,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "jsx-virtual-dom",
+    question: "What is React.Fragment and why does it exist?",
+    answer:
+      "`<React.Fragment>` (shorthand `<>...</>`) groups a list of children into one JSX return value without adding an extra wrapping DOM node. It exists purely to satisfy JSX's single-root-element requirement — useful when adding a `<div>` wrapper would break CSS (e.g. flex/grid layouts that expect direct children) or table markup (`<tr>` requiring direct `<td>` children).",
+    difficulty: "easy",
+    companies: ["Airbnb"],
+    orderIndex: 8,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "usestate-useeffect-fundamentals",
+    question: "Why should you use the function form of a state setter (setCount(c => c + 1)) inside rapid or batched updates?",
+    answer:
+      "The function form always receives the latest pending state, even when multiple updates are batched together before a re-render. `setCount(count + 1)` called three times in a row all close over the same stale `count` from the current render and only apply once net; `setCount(c => c + 1)` called three times correctly compounds to +3, because each call receives the result of the previous one.",
+    difficulty: "medium",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 68,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "usestate-useeffect-fundamentals",
+    question: "What is a 'stale closure' in the context of useEffect, and how does it happen?",
+    answer:
+      "An effect's function closes over the values from the render it was created in. If the effect reads a value but that value is missing from the dependency array, the effect keeps using its original value from whenever it last ran — even after the real value has since changed elsewhere in the component. The fix is always to include every value the effect reads in the dependency array, not to suppress the exhaustive-deps lint warning.",
+    difficulty: "medium",
+    companies: ["Google", "Stripe"],
+    orderIndex: 69,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "usestate-useeffect-fundamentals",
+    question: "What are the three modes an effect's dependency array can be in?",
+    answer:
+      "No array at all runs the effect after every render. An empty array `[]` runs it once, after the first render only. An array with values runs it after the first render, and again any time one of those values changes (compared with `Object.is`).",
+    difficulty: "easy",
+    companies: ["Meta"],
+    orderIndex: 9,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "usestate-useeffect-fundamentals",
+    question: "Why does React call an effect's cleanup function before re-running it, not just on unmount?",
+    answer:
+      "Every run of an effect is treated as \"start syncing with this render's values\" — so before syncing with the *new* values, React must first undo whatever the previous run set up (clear the old timer, unsubscribe the old listener) to avoid leaking two overlapping subscriptions/timers. Cleanup runs on unmount too, for the same reason: tearing down whatever the last active run started.",
+    difficulty: "medium",
+    companies: ["Amazon", "Airbnb"],
+    orderIndex: 10,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "usestate-useeffect-fundamentals",
+    question: "Does calling a state setter with the exact same value it already holds trigger a re-render?",
+    answer:
+      "No — React compares the new value to the current one with `Object.is` (a `useState` bail-out) and skips re-rendering if they're equal, even though the setter was called. This only bails out the render for that state update, not any other state changes happening in the same batch.",
+    difficulty: "easy",
+    companies: ["Google"],
+    orderIndex: 11,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "controlled-vs-uncontrolled-forms",
+    question: "What determines whether an input is controlled or uncontrolled in React?",
+    answer:
+      "Whether the input receives a `value` prop from React state. A controlled input's `value` always comes from state and is updated via `onChange`; an uncontrolled input manages its own value internally in the DOM, and React only reads it on demand through a ref.",
+    difficulty: "easy",
+    companies: ["Meta", "Google"],
+    orderIndex: 70,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "controlled-vs-uncontrolled-forms",
+    question: "Why does React warn about a component 'changing from uncontrolled to controlled'?",
+    answer:
+      "If `value` starts as `undefined` on the first render, React treats the input as uncontrolled. If `value` later becomes a real string, the source of truth flips mid-lifetime — a state React explicitly warns about, since it usually indicates state that was accidentally initialized to `undefined`/`null` instead of an empty string.",
+    difficulty: "medium",
+    companies: ["Amazon", "Stripe"],
+    orderIndex: 71,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "controlled-vs-uncontrolled-forms",
+    question: "When would you deliberately choose an uncontrolled input over a controlled one?",
+    answer:
+      "For a simple form only read once on submit, where per-keystroke validation or live formatting isn't needed — the extra state and re-renders a controlled input requires add no value. It's also the right choice when integrating a non-React widget (some rich-text editors, some date pickers) that already manages its own DOM value internally.",
+    difficulty: "easy",
+    companies: ["Meta"],
+    orderIndex: 12,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "controlled-vs-uncontrolled-forms",
+    question: "How do you set a starting value for an uncontrolled input without controlling it?",
+    answer:
+      "Use `defaultValue` instead of `value`. `defaultValue` only sets the input's initial value when it first mounts — the DOM then owns the value from then on, and React never re-applies `defaultValue` on subsequent renders the way it would continuously re-apply a controlled `value`.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 13,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "controlled-vs-uncontrolled-forms",
+    question: "Why can typing into a controlled input feel laggy in some apps?",
+    answer:
+      "Every keystroke fires `onChange`, which calls the state setter, which triggers a re-render before the input visually shows the new character. If `onChange` does anything expensive (validation, formatting, an API call) before calling the setter, that work now sits directly on the critical path between a keystroke and the screen updating.",
+    difficulty: "medium",
+    companies: ["Airbnb", "Stripe"],
+    orderIndex: 14,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "useref-imperative-handles",
+    question: "What's the core difference between useRef and useState?",
+    answer:
+      "Both persist a value across renders, but `useState` triggers a re-render when updated and `useRef` never does. `useRef` is for values the UI shouldn't reflect — DOM nodes, timer ids, previous values — while `useState` is for anything the rendered output should change in response to.",
+    difficulty: "easy",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 72,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "useref-imperative-handles",
+    question: "Why doesn't mutating a ref's .current property trigger a re-render?",
+    answer:
+      "`useRef` returns a single, stable mutable object for the component's whole lifetime — React has no hook into assignments to its `.current` property, unlike a state setter, which explicitly schedules work when called. This is intentional: it's what makes refs safe for values that shouldn't cause re-renders, but also means changing `.current` is invisible to anything relying on React to notice.",
+    difficulty: "medium",
+    companies: ["Google", "Stripe"],
+    orderIndex: 73,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "useref-imperative-handles",
+    question: "What problem does useImperativeHandle solve that forwardRef alone doesn't?",
+    answer:
+      "`forwardRef` alone exposes a component's entire underlying DOM node (or whatever it forwards the ref to) to the parent. `useImperativeHandle` lets the component instead hand back a curated object — only the specific methods (`play()`, `focus()`) it wants the parent to call — hiding everything else about its internal implementation.",
+    difficulty: "medium",
+    companies: ["Meta"],
+    orderIndex: 15,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "useref-imperative-handles",
+    question: "Give an example of a bug caused by storing a value in a ref instead of state.",
+    answer:
+      "Storing a filter value that should affect what's rendered (e.g. a search query used to filter a displayed list) in a ref instead of state: updating `.current` never triggers a re-render, so the UI keeps showing results from the old query even though the 'current' value has technically changed — the classic 'I set it but the screen didn't update' bug.",
+    difficulty: "medium",
+    companies: ["Amazon"],
+    orderIndex: 16,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "useref-imperative-handles",
+    question: "Can you safely read or write a ref's .current value during the render phase itself?",
+    answer:
+      "Writing to a ref during render is discouraged and can produce unpredictable behavior (React may call the render function multiple times per commit in Strict Mode/concurrent features), since render is supposed to be pure. Refs are meant to be read and written in effects and event handlers, after render has committed — not as part of computing what to render.",
+    difficulty: "hard",
+    companies: ["Google"],
+    orderIndex: 17,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "context-api-prop-drilling",
+    question: "What problem does prop drilling create in a component tree?",
+    answer:
+      "Every intermediate component between the value's source and its actual consumer has to accept and forward a prop it never uses itself. Renaming the prop, adding a new one, or inserting a component in the middle means touching every layer in between, even though most of them have no real relationship to the value.",
+    difficulty: "easy",
+    companies: ["Meta", "Google"],
+    orderIndex: 74,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "context-api-prop-drilling",
+    question: "What re-render cost does Context introduce that passing plain props doesn't?",
+    answer:
+      "Every component calling `useContext` for a given context re-renders whenever that Provider's `value` changes — regardless of which part of the value it actually reads. A context object holding `{ theme, user, cart }` re-renders a component that only reads `theme` on every `cart` update too, which plain, narrowly-scoped props would never do.",
+    difficulty: "medium",
+    companies: ["Amazon", "Airbnb"],
+    orderIndex: 75,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "context-api-prop-drilling",
+    question: "How would you stop every consumer of a context from re-rendering when only part of its value changes?",
+    answer:
+      "Split one large context into several narrower ones (a `ThemeContext` and a separate `UserContext` instead of one combined context), so a component only subscribes to — and only re-renders from — the specific slice it actually reads. Memoizing the Provider's `value` with `useMemo` also helps avoid re-renders caused purely by a new object reference on every parent render.",
+    difficulty: "medium",
+    companies: ["Meta"],
+    orderIndex: 18,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "context-api-prop-drilling",
+    question: "Does Context replace the need for useState or useReducer?",
+    answer:
+      "No — Context is purely a wiring mechanism for making a value available to descendants without passing props through every layer. The value it provides still has to come from somewhere, usually a `useState`/`useReducer` call in the component holding the `Provider`; Context doesn't manage state on its own.",
+    difficulty: "easy",
+    companies: ["Google"],
+    orderIndex: 19,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "context-api-prop-drilling",
+    question: "What happens if a component calls useContext but there's no matching Provider above it in the tree?",
+    answer:
+      "It receives the `defaultValue` passed to `createContext(defaultValue)` — not an error or `undefined` by default. This is why a well-designed context usually gives its default value a sensible shape (or throws explicitly from a custom hook wrapper) rather than leaving consumers to silently work with an unexpected default.",
+    difficulty: "medium",
+    companies: ["Stripe"],
+    orderIndex: 20,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "component-composition-patterns",
+    question: "Compare the render props pattern to a custom hook — when would you still reach for render props today?",
+    answer:
+      "Both share stateful logic while leaving the caller in control of rendering, but render props wrap the output in an extra component and level of JSX nesting, while a custom hook doesn't. Render props are still useful when the shared logic genuinely needs to inject markup *between* other elements the caller controls (rather than the caller receiving raw values and rendering however it wants), which a hook alone can't do.",
+    difficulty: "medium",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 76,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "component-composition-patterns",
+    question: "How do compound components share state between siblings without prop drilling?",
+    answer:
+      "The parent (e.g. `<Tabs>`) holds the shared state (like the active tab) in a Context Provider internally; each child component (`Tabs.Trigger`, `Tabs.Panel`) reads that Context directly with `useContext`. The caller's JSX still reads like plain nested markup — no props are manually passed between the siblings themselves.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 77,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "component-composition-patterns",
+    question: "How does composition via children avoid the prop drilling problem entirely?",
+    answer:
+      "A component that just renders `props.children` doesn't need to know anything about what's inside — the caller supplies the content directly at the point where it's needed, instead of that content's data being threaded down as props through components that don't use it.",
+    difficulty: "easy",
+    companies: ["Meta"],
+    orderIndex: 21,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "component-composition-patterns",
+    question: "How would you design a component so its internals honor whatever markup a caller passes as children?",
+    answer:
+      "Render `props.children` directly rather than any hardcoded markup, and avoid assumptions about *what* children are (a specific component type, a fixed count) unless the component genuinely needs to coordinate between them — in which case compound components with Context is the pattern to reach for instead of inspecting `children` structurally.",
+    difficulty: "medium",
+    companies: ["Amazon"],
+    orderIndex: 22,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "component-composition-patterns",
+    question: "What's a downside of the compound component pattern compared to plain props?",
+    answer:
+      "It requires internal plumbing (a Context Provider, and every sub-component consuming it) that plain, single-component APIs don't need, and it implicitly couples sub-components to being rendered somewhere inside their parent — `<Tabs.Panel>` rendered outside a `<Tabs>` silently gets the context's default value instead of a clear prop-types error.",
+    difficulty: "hard",
+    companies: ["Google"],
+    orderIndex: 23,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "custom-hooks-composition",
+    question: "Why must hooks always be called in the same order on every render?",
+    answer:
+      "React tracks each `useState`/`useEffect` call by the position it's called in during render, not by any name — there's no variable-name binding at runtime. Skipping a hook call on some renders (by calling it conditionally) shifts every hook call after it into the wrong internal slot, corrupting state that has nothing to do with the skipped hook.",
+    difficulty: "medium",
+    companies: ["Meta", "Google"],
+    orderIndex: 78,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "custom-hooks-composition",
+    question: "Does a custom hook share state between the different components that call it?",
+    answer:
+      "No — a custom hook is just a function that calls other hooks; every component that calls it gets its own independent copy of that state. Two components both calling `useToggle()` end up with two completely separate booleans, not one shared boolean.",
+    difficulty: "easy",
+    companies: ["Amazon"],
+    orderIndex: 79,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "custom-hooks-composition",
+    question: "What's the modern replacement for higher-order components and render props, and why did it win out?",
+    answer:
+      "Custom hooks. They extract the same shared, stateful logic without wrapping the consuming component in an extra component layer or adding indirection to the JSX tree — a hook call is a plain function call, so there's no 'wrapper hell' from nesting several HOCs, and no extra component showing up in React DevTools' tree for logic that has no visual output of its own.",
+    difficulty: "medium",
+    companies: ["Meta", "Stripe"],
+    orderIndex: 24,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "custom-hooks-composition",
+    question: "Can a custom hook call another custom hook? Give an example of why you'd do that.",
+    answer:
+      "Yes — composing hooks from other hooks is the standard way to build more specific behavior from simpler pieces, e.g. `useSearchResults(query)` internally calling `useDebouncedValue(query, 300)` to avoid firing a fetch on every keystroke, then using the debounced value to actually search. Each layer only needs to understand the hook directly below it.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 25,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "custom-hooks-composition",
+    question: "Why does calling a hook inside a conditional or loop corrupt state even in components after it?",
+    answer:
+      "Not \"components after it\" — hook state within the *same* component, in every hook call that comes after the conditional one in source order. Since React matches hook calls to state slots purely by call order, skipping one hook call on some renders shifts every subsequent hook call in that same component into the wrong slot for the rest of that render.",
+    difficulty: "hard",
+    companies: ["Meta"],
+    orderIndex: 26,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "error-boundaries",
+    question: "What kinds of errors does an Error Boundary NOT catch?",
+    answer:
+      "Errors inside event handlers (`onClick`, `onChange`), errors in asynchronous code (`setTimeout` callbacks, rejected promises), errors during server-side rendering, and errors thrown inside the boundary component itself. All of these need a regular `try/catch` at the source, since an Error Boundary only catches errors thrown synchronously during rendering, in lifecycle methods, or in constructors of its descendants.",
+    difficulty: "medium",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 80,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "error-boundaries",
+    question: "Why must an Error Boundary be a class component?",
+    answer:
+      "It relies on `static getDerivedStateFromError` and `componentDidCatch`, two lifecycle methods with no hook equivalent as of React 18 — there is no `useDerivedStateFromError` or `useDidCatch` hook. Function components that need boundary behavior wrap a small class component internally, or use a library like `react-error-boundary` that does this for them.",
+    difficulty: "medium",
+    companies: ["Google", "Stripe"],
+    orderIndex: 81,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "error-boundaries",
+    question: "What's the difference between getDerivedStateFromError and componentDidCatch?",
+    answer:
+      "`getDerivedStateFromError(error)` is called during the render phase and returns new state used to render the fallback UI — it must be pure, with no side effects. `componentDidCatch(error, info)` is called during the commit phase and is where side effects belong — logging the error to a reporting service, for instance.",
+    difficulty: "easy",
+    companies: ["Meta"],
+    orderIndex: 27,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "error-boundaries",
+    question: "How would you decide where in a component tree to place error boundaries?",
+    answer:
+      "It's a resilience tradeoff based on granularity: one boundary around the whole app means any single component's crash blanks the entire page. Wrapping each independent section (a dashboard's individual widgets, a feed's individual posts) in its own boundary means one broken widget shows its own fallback while everything else keeps working — usually the better default for anything with independently-failable sections.",
+    difficulty: "medium",
+    companies: ["Amazon", "Airbnb"],
+    orderIndex: 28,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "error-boundaries",
+    question: "How do you handle an error thrown inside an async event handler, since an Error Boundary won't catch it?",
+    answer:
+      "Wrap the async logic in its own `try/catch` and handle the error explicitly — often by setting local state (e.g. an `error` state variable) that the component's own render then uses to show an inline error message, since there's no boundary mechanism that will intercept it automatically the way rendering errors are.",
+    difficulty: "hard",
+    companies: ["Google"],
+    orderIndex: 29,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "render-performance-memoization",
+    question: "What does React.memo actually compare, and what's a common way it silently fails to help?",
+    answer:
+      "By default, `React.memo` does a shallow comparison of the new props object against the previous one — same keys, `Object.is`-equal values. It silently stops helping the moment a parent passes a brand-new object, array, or inline function as a prop on every render, since a new reference always fails the shallow-equality check even if its contents are 'the same.'",
+    difficulty: "medium",
+    companies: ["Meta", "Google"],
+    orderIndex: 82,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "render-performance-memoization",
+    question: "When would adding useMemo or useCallback make performance worse, not better?",
+    answer:
+      "When the calculation/function being memoized is cheap and the dependencies change on almost every render anyway — the comparison overhead, plus the memory held onto for the cached value, can exceed the cost of just recomputing it. This is why the React team's own guidance is to profile first and confirm an actual slow re-render before reaching for either.",
+    difficulty: "hard",
+    companies: ["Amazon", "Stripe"],
+    orderIndex: 83,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "render-performance-memoization",
+    question: "What's the difference between what useMemo does and what useCallback does?",
+    answer:
+      "`useMemo` caches the *result* of a calculation, recomputing it only when its dependencies change. `useCallback` caches the *function reference itself*, returning the same function instance across renders until its dependencies change — it's really just `useMemo` specialized for the case where the cached value happens to be a function.",
+    difficulty: "medium",
+    companies: ["Meta"],
+    orderIndex: 30,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "render-performance-memoization",
+    question: "What tool would you use to confirm a component is actually re-rendering unnecessarily before optimizing it?",
+    answer:
+      "The React DevTools Profiler — it records which components rendered during an interaction, how long each took, and (with 'why did this render' options enabled) what actually changed. Optimizing based on a guess instead of a profile is the most common way memoization ends up adding overhead without fixing anything.",
+    difficulty: "easy",
+    companies: ["Google"],
+    orderIndex: 31,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "render-performance-memoization",
+    question: "Why does passing an inline arrow function as a prop defeat a child's React.memo?",
+    answer:
+      "`onClick={() => handleClick(id)}` creates a brand-new function on every render of the parent, even if `handleClick` and `id` haven't changed. A `memo`-wrapped child's shallow-equality check compares this new function reference to the previous one, sees they differ, and re-renders anyway — `useCallback` around the function (with matching dependencies) is what keeps the reference stable so `memo` can actually skip the re-render.",
+    difficulty: "medium",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 32,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "concurrent-react-suspense",
+    question: "What problem does useTransition solve that a plain state update doesn't?",
+    answer:
+      "A plain, synchronous state update blocks the UI from reflecting anything else — including a more urgent update like the next keystroke — until it finishes. `useTransition` marks an update as low-priority and interruptible: if a more urgent update comes in while it's still processing, React abandons the stale in-progress work and starts over with the latest input, keeping the rest of the UI responsive throughout.",
+    difficulty: "hard",
+    companies: ["Meta", "Google"],
+    orderIndex: 84,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "concurrent-react-suspense",
+    question: "How does Suspense actually catch a component that isn't ready to render yet?",
+    answer:
+      "A component (or the data-fetching library it uses) throws a Promise instead of returning JSX when it isn't ready. React catches that thrown Promise the same way a try/catch would, renders the nearest `<Suspense fallback>` in its place, and automatically retries rendering the component once the Promise resolves.",
+    difficulty: "medium",
+    companies: ["Amazon"],
+    orderIndex: 85,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "concurrent-react-suspense",
+    question: "What's the difference between wrapping an update in startTransition versus not wrapping it at all?",
+    answer:
+      "An update wrapped in `startTransition` is marked low-priority and interruptible — React can pause it, prioritize a more urgent update, and resume or restart it later. An update outside `startTransition` runs at default (synchronous-feeling) priority and blocks other rendering until it completes.",
+    difficulty: "medium",
+    companies: ["Meta"],
+    orderIndex: 33,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "concurrent-react-suspense",
+    question: "How does Suspense enable streaming server-side rendering?",
+    answer:
+      "The server can send the HTML shell immediately and stream in the content of any component still wrapped in a pending `<Suspense>` boundary as its data becomes ready, rather than waiting for every single piece of data across the whole page before sending anything. Each streamed chunk 'hydrates in' as it arrives, instead of the user staring at a blank page until the slowest piece of data resolves.",
+    difficulty: "hard",
+    companies: ["Google", "Stripe"],
+    orderIndex: 34,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "concurrent-react-suspense",
+    question: "Does React 18's concurrent rendering mean components can run twice unexpectedly? What should you watch out for?",
+    answer:
+      "Strict Mode in development intentionally double-invokes component functions and effects to help surface code that isn't safely repeatable (e.g. an effect with a side effect that isn't idempotent, or a render function relying on mutable external state). This is a development-only diagnostic, but it exists because concurrent rendering *can* genuinely discard and restart an in-progress render — so component functions and render logic need to stay pure regardless.",
+    difficulty: "hard",
+    companies: ["Meta"],
+    orderIndex: 35,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "state-management-tradeoffs",
+    question: "How do you decide whether a piece of state should be local, lifted, or global?",
+    answer:
+      "Start local, in whichever component actually uses it. Lift it to the nearest common ancestor only once a sibling genuinely needs to read or update the same value. Reach for a broader mechanism (Context or an external store) only once lifting has pushed the state so many levels up that intermediate components are just forwarding props they never use themselves.",
+    difficulty: "medium",
+    companies: ["Meta", "Google"],
+    orderIndex: 86,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "state-management-tradeoffs",
+    question: "What's the main advantage of a store with selectors (Zustand/Redux) over Context for frequently-changing state?",
+    answer:
+      "A selector-based store lets a component subscribe to just the specific slice of state it reads (e.g. `state.cart.items.length`), re-rendering only when that slice changes. Context re-renders every consumer whenever the Provider's whole value changes, regardless of which part any individual consumer actually reads — for state that updates often, that difference in re-render granularity matters a lot at scale.",
+    difficulty: "hard",
+    companies: ["Amazon", "Stripe"],
+    orderIndex: 87,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "state-management-tradeoffs",
+    question: "What's a sign that a codebase reached for a global store too early?",
+    answer:
+      "State that's only ever read and updated by one component (or its direct children) living in a global store anyway — meaning changes to it can, in principle, cause unrelated parts of the app to re-check their subscriptions for no reason, and any developer touching that state has to understand the global store's wiring for something that was never actually shared.",
+    difficulty: "medium",
+    companies: ["Meta"],
+    orderIndex: 36,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "state-management-tradeoffs",
+    question: "Compare colocating state near where it's used versus centralizing it in one global store.",
+    answer:
+      "Colocated state is easier to reason about locally (everything relevant is in or near the component) but has to be lifted or drilled once sibling components need it too. A centralized store makes any piece of state reachable from anywhere without lifting, at the cost of needing selectors (or careful Context splitting) to avoid over-triggering re-renders, and making it less obvious, just from reading a component, what state it actually depends on.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 37,
+  },
+  {
+    collection: "ff-react",
+    conceptSlug: "state-management-tradeoffs",
+    question: "Why can a large Context value cause more re-renders than the prop drilling it was meant to replace?",
+    answer:
+      "Prop drilling, however tedious, only re-renders a component when the specific prop it actually receives changes. A single context bundling several unrelated fields re-renders every consumer on *any* field's change, since Context has no built-in concept of subscribing to part of a value — a component reading only `theme` from a `{ theme, user, cart }` context re-renders on every cart update too.",
+    difficulty: "hard",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 38,
   },
 ];
 
@@ -5589,6 +6793,646 @@ Once this passes, imagine calling \`dispatch()\` to pick an index, then actually
     ],
     isPremium: true,
     orderIndex: 22,
+  },
+  {
+    slug: "mini-jsx-renderer",
+    conceptSlug: "jsx-virtual-dom",
+    title: "Build a Mini JSX Renderer",
+    description: `Build the function that turns a Virtual DOM tree into real HTML — the missing half of what a JSX compiler sets up, completing the loop from \`<button>Save</button>\` to actual markup.
+
+## The problem
+
+\`createElement\`-style calls produce plain \`{ type, props }\` objects, not HTML — something still has to walk that tree and turn it into markup a browser can render. Real React does this with the DOM API directly; a static renderer (like this project) does it by building an HTML string instead.
+
+## The idea
+
+Recursively walk the vnode tree: a string/number child is text, rendered as-is; an object vnode renders as \`<type attrs>...children...</type>\`; a \`false\`/\`null\`/\`undefined\` child (from conditional rendering) renders as nothing at all.
+
+## Your task
+
+Write \`render(vnode)\` returning an HTML string for a vnode shaped like \`{ type, props }\`, where \`props.children\` may be a string, a single vnode, an array of any mix of strings/vnodes/\`false\`/\`null\`, and any other key in \`props\` is a plain attribute.
+
+Wire this into a real page once it passes — take a vnode tree and actually mount its rendered HTML string into a container element.`,
+    starterCode: `function render(vnode) {
+  // recursively turn a { type, props } vnode tree into an HTML string
+}`,
+    solutionCode: `function render(vnode) {
+  if (vnode === null || vnode === undefined || vnode === false) return "";
+  if (typeof vnode === "string" || typeof vnode === "number") return String(vnode);
+
+  const { type, props } = vnode;
+  const { children, ...attrs } = props || {};
+  const attrString = Object.keys(attrs)
+    .map((key) => " " + key + '="' + attrs[key] + '"')
+    .join("");
+  const childList = Array.isArray(children) ? children : [children];
+  const innerHTML = childList.map(render).join("");
+  return "<" + type + attrString + ">" + innerHTML + "</" + type + ">";
+}`,
+    testCases: [
+      { input: `render({ type: "div", props: { children: [] } })`, expected: `"<div></div>"`, label: "An empty children array renders as an empty tag" },
+      {
+        input: `render({ type: "button", props: { className: "primary", children: "Save" } })`,
+        expected: `'<button className="primary">Save</button>'`,
+        label: "Attributes and a single text child both render correctly",
+      },
+      {
+        input: `render({ type: "div", props: { children: [false, "a", null] } })`,
+        expected: `"<div>a</div>"`,
+        label: "false/null children from conditional rendering are skipped entirely",
+      },
+      {
+        input: `render({ type: "div", props: { children: { type: "span", props: { children: "hi" } } } })`,
+        expected: `"<div><span>hi</span></div>"`,
+        label: "Nested vnodes render recursively",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 23,
+  },
+  {
+    slug: "autosave-dirty-fields",
+    conceptSlug: "usestate-useeffect-fundamentals",
+    title: "Build an Auto-Saving Form",
+    description: `Build the piece that decides *when* an auto-save effect should actually fire — the same kind of comparison useEffect's dependency array runs internally, applied to a form's fields.
+
+## The problem
+
+An auto-saving form shouldn't fire a save request on every render — only when a field actually changed since the last save. Saving unconditionally on every render wastes requests; comparing the wrong things means missing real edits or re-saving unchanged data.
+
+## The idea
+
+Compare each field in the current values against the last-saved snapshot with \`Object.is\` — the same comparison React itself uses for dependency arrays. Any field where the two differ (including a brand-new field that wasn't in the last snapshot at all) is "dirty" and belongs in the next save.
+
+## Your task
+
+Write \`getDirtyFields(initial, current)\` returning an array of the field names in \`current\` whose value differs from \`initial\`'s value for that same key.
+
+Wire this into a real form: call it inside a debounced \`useEffect\` and only POST the fields it returns.`,
+    starterCode: `function getDirtyFields(initial, current) {
+  // return the keys of \`current\` whose value differs from \`initial\`
+}`,
+    solutionCode: `function getDirtyFields(initial, current) {
+  return Object.keys(current).filter((key) => !Object.is(initial[key], current[key]));
+}`,
+    testCases: [
+      {
+        input: `getDirtyFields({ name: "Ana", email: "a@x.com" }, { name: "Ana", email: "b@x.com" })`,
+        expected: `["email"]`,
+        label: "Only the field that actually changed is flagged dirty",
+      },
+      {
+        input: `getDirtyFields({ name: "Ana" }, { name: "Ana" })`,
+        expected: "[]",
+        label: "Identical values produce no dirty fields",
+      },
+      {
+        input: `getDirtyFields({ name: "Ana" }, { name: "Ana", phone: "555" })`,
+        expected: `["phone"]`,
+        label: "A brand-new field not present in the initial snapshot counts as dirty",
+      },
+      {
+        input: `getDirtyFields({ age: NaN }, { age: NaN })`,
+        expected: "[]",
+        label: "Object.is treats NaN as equal to itself, so it is not flagged dirty",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 24,
+  },
+  {
+    slug: "multi-step-form-validator",
+    conceptSlug: "controlled-vs-uncontrolled-forms",
+    title: "Build a Multi-Step Form Wizard",
+    description: `Build the validator that decides whether a controlled multi-step form can advance to the next step — the gatekeeper every "Next" button in a wizard actually calls.
+
+## The problem
+
+A multi-step form (signup, checkout) shouldn't let the user advance past a step with missing required fields or invalid formats — but each step usually only cares about a handful of its own fields, not the whole form's schema.
+
+## The idea
+
+Each step has a schema describing its own fields: whether each is required, and an optional pattern it must match if a value is present. A field only fails validation if it's required and empty, or if it has a value that doesn't match its pattern — an empty, non-required field is always fine.
+
+## Your task
+
+Write \`validateStep(schema, values)\`, where \`schema\` is \`{ [field]: { required: boolean, pattern?: RegExp } }\` and \`values\` is \`{ [field]: string }\`. Return an array of the field names that fail validation.
+
+Wire this into a real 3-step wizard: block the "Next" button while \`validateStep\` returns any errors for the current step.`,
+    starterCode: `function validateStep(schema, values) {
+  // return the field names in \`schema\` that fail validation against \`values\`
+}`,
+    solutionCode: `function validateStep(schema, values) {
+  const errors = [];
+  for (const field of Object.keys(schema)) {
+    const rule = schema[field];
+    const value = values[field];
+    const isEmpty = value === undefined || value === null || value === "";
+    if (rule.required && isEmpty) {
+      errors.push(field);
+      continue;
+    }
+    if (!isEmpty && rule.pattern && !rule.pattern.test(value)) {
+      errors.push(field);
+    }
+  }
+  return errors;
+}`,
+    testCases: [
+      {
+        input: `validateStep({ email: { required: true } }, { email: "" })`,
+        expected: `["email"]`,
+        label: "A missing required field fails validation",
+      },
+      {
+        input: `validateStep({ nickname: { required: false } }, {})`,
+        expected: "[]",
+        label: "A missing optional field never fails validation",
+      },
+      {
+        input: `validateStep({ zip: { required: true, pattern: /^\\d{5}$/ } }, { zip: "abc" })`,
+        expected: `["zip"]`,
+        label: "A present value that fails its pattern is flagged",
+      },
+      {
+        input: `validateStep({ email: { required: true }, zip: { required: true, pattern: /^\\d{5}$/ } }, { email: "a@x.com", zip: "94107" })`,
+        expected: "[]",
+        label: "A fully valid step returns no errors",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 25,
+  },
+  {
+    slug: "focus-trap-elements",
+    conceptSlug: "useref-imperative-handles",
+    title: "Build a Focus-Trap Modal",
+    description: `Build the lookup that powers a modal's focus trap — the piece that decides which elements Tab should even be allowed to land on while the modal is open.
+
+## The problem
+
+An accessible modal must trap keyboard focus inside itself — Tab should cycle only through the modal's own focusable elements, never escaping to the page underneath. That starts with correctly identifying which elements in the modal actually are focusable in the first place.
+
+## The idea
+
+An element is focusable if it isn't hidden or disabled, its \`tabIndex\` isn't explicitly \`-1\` (removed from the tab order), and it's either a naturally-focusable tag (\`button\`, \`input\`, \`select\`, \`textarea\`, \`a\`) or has an explicit non-negative \`tabIndex\` (like a \`div\` with \`tabIndex={0}\`).
+
+## Your task
+
+Write \`getFocusableElements(nodes)\`, where each node is \`{ id, tag, disabled, hidden, tabIndex }\`. Return the \`id\`s of every focusable node, in their original order.
+
+Wire this into a real modal: use \`useRef\` on the container, call this over its actual children on mount, and cycle \`Tab\`/\`Shift+Tab\` between only those elements.`,
+    starterCode: `function getFocusableElements(nodes) {
+  // return the ids of focusable nodes, in order
+}`,
+    solutionCode: `function getFocusableElements(nodes) {
+  const FOCUSABLE_TAGS = ["button", "input", "select", "textarea", "a"];
+  return nodes
+    .filter((node) => {
+      if (node.hidden || node.disabled) return false;
+      if (node.tabIndex === -1) return false;
+      return FOCUSABLE_TAGS.includes(node.tag) || node.tabIndex >= 0;
+    })
+    .map((node) => node.id);
+}`,
+    testCases: [
+      {
+        input: `getFocusableElements([{ id: "btn", tag: "button", disabled: false }, { id: "input", tag: "input", disabled: true }])`,
+        expected: `["btn"]`,
+        label: "A disabled element is excluded even though its tag is naturally focusable",
+      },
+      {
+        input: `getFocusableElements([{ id: "custom", tag: "div", tabIndex: 0 }])`,
+        expected: `["custom"]`,
+        label: "A div with an explicit non-negative tabIndex is focusable",
+      },
+      {
+        input: `getFocusableElements([{ id: "removed", tag: "button", tabIndex: -1 }])`,
+        expected: "[]",
+        label: "tabIndex -1 removes an otherwise-focusable element from the tab order",
+      },
+      {
+        input: `getFocusableElements([{ id: "a", tag: "input" }, { id: "b", tag: "div" }, { id: "c", tag: "a" }])`,
+        expected: `["a", "c"]`,
+        label: "Order is preserved, and non-focusable plain tags are dropped",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 26,
+  },
+  {
+    slug: "resolve-theme-value",
+    conceptSlug: "context-api-prop-drilling",
+    title: "Build a Theme Switcher",
+    description: `Build the resolution logic behind nested Context providers — given a stack of nested theme values, figure out which one a consumer actually sees for a given key.
+
+## The problem
+
+A component reads whatever value the *nearest* ancestor Provider set — a \`<ThemeContext.Provider value={{ accent: 'blue' }}>\` nested inside another one with \`value={{ accent: 'red', bg: 'white' }}\` means a consumer inside both sees \`accent: 'blue'\` (the nearer one wins) but still falls back to \`bg: 'white'\` from the outer one, since the inner provider never set \`bg\` at all.
+
+## The idea
+
+Walk the provider stack from nearest to farthest, and return the first value found that actually defines the requested key — not just the nearest provider overall, since a nearer provider might not set every key.
+
+## Your task
+
+Write \`resolveThemeValue(providerStack, key)\`, where \`providerStack\` is an array of value objects ordered nearest-first. Return the first defined value for \`key\`, or \`undefined\` if no provider in the stack sets it.
+
+Wire this into a real nested theme switcher: a \`<ThemeProvider>\` per section of the page, each overriding only the keys it cares about.`,
+    starterCode: `function resolveThemeValue(providerStack, key) {
+  // walk nearest-to-farthest, return the first value that defines key
+}`,
+    solutionCode: `function resolveThemeValue(providerStack, key) {
+  for (const values of providerStack) {
+    if (values && Object.prototype.hasOwnProperty.call(values, key)) {
+      return values[key];
+    }
+  }
+  return undefined;
+}`,
+    testCases: [
+      {
+        input: `resolveThemeValue([{ accent: "blue" }, { accent: "red", bg: "white" }], "accent")`,
+        expected: `"blue"`,
+        label: "The nearest provider's value wins when both define the key",
+      },
+      {
+        input: `resolveThemeValue([{ accent: "blue" }, { accent: "red", bg: "white" }], "bg")`,
+        expected: `"white"`,
+        label: "Falls through to a farther provider for a key the nearer one never set",
+      },
+      {
+        input: `resolveThemeValue([{ accent: "blue" }], "font")`,
+        expected: "undefined",
+        label: "Returns undefined when no provider in the stack defines the key",
+      },
+      {
+        input: `resolveThemeValue([{}, { accent: "red" }], "accent")`,
+        expected: `"red"`,
+        label: "Skips a nearer provider that doesn't define the key at all",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 27,
+  },
+  {
+    slug: "accordion-toggle-state",
+    conceptSlug: "component-composition-patterns",
+    title: "Build an Accordion",
+    description: `Build the state transition behind an accordion's open/close behavior — the logic a compound \`<Accordion>\`/\`<Accordion.Item>\` API shares internally through Context.
+
+## The problem
+
+An accordion can allow multiple sections open at once, or restrict it to exactly one at a time — and clicking an already-open section should close it either way. Getting this transition right (and doing it immutably, since it drives a re-render) is the actual state-management core of the component; the compound-component wiring around it is just plumbing.
+
+## The idea
+
+In multiple-open mode, clicking a section simply toggles its own membership in the open set. In single-open mode, clicking the currently-open section closes everything, and clicking any other section replaces the open set with just that one item.
+
+## Your task
+
+Write \`toggleAccordionItem(openIds, itemId, allowMultiple)\` returning the **new** array of open item ids — never mutate \`openIds\`.
+
+Wire this into a real accordion with 4 sections, toggling between single-open and multiple-open modes via a prop.`,
+    starterCode: `function toggleAccordionItem(openIds, itemId, allowMultiple) {
+  // return a NEW array — don't mutate openIds
+}`,
+    solutionCode: `function toggleAccordionItem(openIds, itemId, allowMultiple) {
+  const isOpen = openIds.includes(itemId);
+  if (allowMultiple) {
+    return isOpen ? openIds.filter((id) => id !== itemId) : [...openIds, itemId];
+  }
+  return isOpen ? [] : [itemId];
+}`,
+    testCases: [
+      {
+        input: `toggleAccordionItem(["a"], "b", true)`,
+        expected: `["a", "b"]`,
+        label: "Multiple-open mode adds a newly clicked section",
+      },
+      {
+        input: `toggleAccordionItem(["a", "b"], "a", true)`,
+        expected: `["b"]`,
+        label: "Multiple-open mode removes an already-open section when clicked again",
+      },
+      {
+        input: `toggleAccordionItem(["a"], "b", false)`,
+        expected: `["b"]`,
+        label: "Single-open mode replaces the open section with the newly clicked one",
+      },
+      {
+        input: `toggleAccordionItem(["a"], "a", false)`,
+        expected: "[]",
+        label: "Single-open mode closes everything when the already-open section is clicked again",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 28,
+  },
+  {
+    slug: "use-undo-reducer",
+    conceptSlug: "custom-hooks-composition",
+    title: "Build a useUndo Custom Hook",
+    description: `Build the reducer behind a reusable \`useUndo\` custom hook — the classic past/present/future history pattern shared by every undo-able editor.
+
+## The problem
+
+Undo/redo needs more than just the current value — it needs a history of past values to step back into, and a "redo" stack to step forward into again after an undo, which gets cleared the moment a genuinely new change is made.
+
+## The idea
+
+State is \`{ past: [], present, future: [] }\`. Setting a new value pushes the current \`present\` onto \`past\` and clears \`future\` entirely (a new branch of history invalidates any "redo" path). Undo pops the last \`past\` entry into \`present\` and pushes the old \`present\` onto the front of \`future\`. Redo does the mirror image.
+
+## Your task
+
+Write \`undoReducer(state, action)\`, where \`action\` is \`{ type: 'SET' | 'UNDO' | 'REDO', payload }\`. \`UNDO\` with an empty \`past\` (or \`REDO\` with an empty \`future\`) must return the state unchanged.
+
+Wire this into a real \`useUndo(initialValue)\` hook (\`useReducer(undoReducer, ...)\`) and use it in a small text editor with Undo/Redo buttons.`,
+    starterCode: `function undoReducer(state, action) {
+  // state: { past: [], present, future: [] }
+}`,
+    solutionCode: `function undoReducer(state, action) {
+  switch (action.type) {
+    case "SET": {
+      if (Object.is(action.payload, state.present)) return state;
+      return { past: [...state.past, state.present], present: action.payload, future: [] };
+    }
+    case "UNDO": {
+      if (state.past.length === 0) return state;
+      const previous = state.past[state.past.length - 1];
+      return {
+        past: state.past.slice(0, -1),
+        present: previous,
+        future: [state.present, ...state.future],
+      };
+    }
+    case "REDO": {
+      if (state.future.length === 0) return state;
+      const next = state.future[0];
+      return {
+        past: [...state.past, state.present],
+        present: next,
+        future: state.future.slice(1),
+      };
+    }
+    default:
+      return state;
+  }
+}`,
+    testCases: [
+      {
+        input: `undoReducer({ past: [], present: "a", future: [] }, { type: "SET", payload: "b" })`,
+        expected: `{ past: ["a"], present: "b", future: [] }`,
+        label: "SET pushes the current present into past and clears future",
+      },
+      {
+        input: `undoReducer({ past: ["a"], present: "b", future: [] }, { type: "UNDO" })`,
+        expected: `{ past: [], present: "a", future: ["b"] }`,
+        label: "UNDO restores the previous value and moves the current one into future",
+      },
+      {
+        input: `undoReducer({ past: [], present: "a", future: ["b"] }, { type: "REDO" })`,
+        expected: `{ past: ["a"], present: "b", future: [] }`,
+        label: "REDO restores the next future value and pushes the current one back into past",
+      },
+      {
+        input: `undoReducer({ past: [], present: "a", future: [] }, { type: "UNDO" })`,
+        expected: `{ past: [], present: "a", future: [] }`,
+        label: "UNDO with no history is a no-op",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 29,
+  },
+  {
+    slug: "resolve-error-fallback",
+    conceptSlug: "error-boundaries",
+    title: "Build an Error-Resilient Dashboard",
+    description: `Build the routing logic behind a dashboard where different widgets show different, purpose-built fallback UIs instead of one generic "Something went wrong" for every crash.
+
+## The problem
+
+A single generic fallback treats a network-timeout error in a chart widget the same as a corrupt-data error in a table widget — but a real dashboard usually wants a distinct fallback per error type (a "retry" UI for a network error, a "report a bug" UI for anything unexpected).
+
+## The idea
+
+Each widget's Error Boundary is configured with a map from error name to a fallback key. Looking up the thrown error's \`name\` in that map gives the right fallback; anything not explicitly mapped falls back to a \`default\` entry instead of crashing the lookup itself.
+
+## Your task
+
+Write \`getFallbackForError(error, fallbackMap)\`, where \`error\` is \`{ name: string }\` and \`fallbackMap\` is \`{ [errorName]: fallbackKey, default: fallbackKey }\`. Return the matching fallback key, or \`fallbackMap.default\` if \`error.name\` isn't a key in the map.
+
+Wire this into a real dashboard: give each widget its own Error Boundary, and render the fallback key this function returns as the actual fallback component.`,
+    starterCode: `function getFallbackForError(error, fallbackMap) {
+  // look up error.name in fallbackMap, falling back to fallbackMap.default
+}`,
+    solutionCode: `function getFallbackForError(error, fallbackMap) {
+  return Object.prototype.hasOwnProperty.call(fallbackMap, error.name)
+    ? fallbackMap[error.name]
+    : fallbackMap.default;
+}`,
+    testCases: [
+      {
+        input: `getFallbackForError({ name: "NetworkError" }, { NetworkError: "retry-banner", default: "generic-error" })`,
+        expected: `"retry-banner"`,
+        label: "A mapped error name resolves to its specific fallback",
+      },
+      {
+        input: `getFallbackForError({ name: "TypeError" }, { NetworkError: "retry-banner", default: "generic-error" })`,
+        expected: `"generic-error"`,
+        label: "An unmapped error name falls back to the default entry",
+      },
+      {
+        input: `getFallbackForError({ name: "TypeError" }, { NetworkError: "retry-banner" })`,
+        expected: "undefined",
+        label: "With no default entry, an unmapped error resolves to undefined",
+      },
+      {
+        input: `getFallbackForError({ name: "AuthError" }, { NetworkError: "retry-banner", AuthError: "login-prompt", default: "generic-error" })`,
+        expected: `"login-prompt"`,
+        label: "Different widgets' maps can route the same kind of error to different fallbacks",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 30,
+  },
+  {
+    slug: "diff-changed-rows",
+    conceptSlug: "render-performance-memoization",
+    title: "Build a Memoized Data Table",
+    description: `Build the comparison a memoized data table actually needs — given the previous and next set of rows, figure out which rows genuinely changed, so only those rows' components have to re-render.
+
+## The problem
+
+Re-rendering every row of a large table whenever any single row's data updates wastes work identical to what \`React.memo\` is meant to prevent — but \`memo\` only helps if something first identifies *which* rows actually changed, so the rest can be left alone with stable props.
+
+## The idea
+
+Match rows between the two snapshots by \`id\`. A row with no match in the previous snapshot is new (changed by definition). A row that does have a match is changed only if any of its fields differ from the matching previous row, compared shallowly.
+
+## Your task
+
+Write \`getChangedRows(prevRows, nextRows)\`, where each row is \`{ id, ...fields }\`. Return the \`id\`s (from \`nextRows\`) of every row that is new or has at least one changed field.
+
+Wire this into a real table: wrap each row component in \`React.memo\`, and only pass a changed \`key\`/prop reference for the ids this function returns.`,
+    starterCode: `function getChangedRows(prevRows, nextRows) {
+  // return the ids of rows in nextRows that are new or have a changed field
+}`,
+    solutionCode: `function rowsShallowEqual(a, b) {
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  return keysA.every((key) => Object.is(a[key], b[key]));
+}
+
+function getChangedRows(prevRows, nextRows) {
+  const prevById = new Map(prevRows.map((row) => [row.id, row]));
+  return nextRows
+    .filter((row) => {
+      const prev = prevById.get(row.id);
+      if (!prev) return true;
+      return !rowsShallowEqual(prev, row);
+    })
+    .map((row) => row.id);
+}`,
+    testCases: [
+      {
+        input: `getChangedRows([{ id: "1", price: 10 }], [{ id: "1", price: 10 }])`,
+        expected: "[]",
+        label: "An unchanged row is not reported as changed",
+      },
+      {
+        input: `getChangedRows([{ id: "1", price: 10 }], [{ id: "1", price: 12 }])`,
+        expected: `["1"]`,
+        label: "A row with a changed field is reported",
+      },
+      {
+        input: `getChangedRows([{ id: "1", price: 10 }], [{ id: "1", price: 10 }, { id: "2", price: 5 }])`,
+        expected: `["2"]`,
+        label: "A brand-new row (no match in prevRows) is always reported",
+      },
+      {
+        input: `getChangedRows([{ id: "1", price: 10 }, { id: "2", price: 5 }], [{ id: "1", price: 11 }, { id: "2", price: 5 }])`,
+        expected: `["1"]`,
+        label: "Only the actually-changed row is reported, not every row",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 31,
+  },
+  {
+    slug: "merge-transition-results",
+    conceptSlug: "concurrent-react-suspense",
+    title: "Build a Search-as-You-Type UI with Transitions",
+    description: `Build the decision a search-as-you-type UI has to make on every keystroke while a transition-wrapped search is still pending: keep showing the last real results, or show the newly-arrived ones?
+
+## The problem
+
+Wrapping a search update in \`startTransition\` keeps the input responsive, but the UI still needs to decide what to render *while* that transition is pending — showing nothing looks broken, and showing half-computed results is worse than showing the previous, complete results with a "stale" indicator.
+
+## The idea
+
+While a transition is still pending, keep rendering the previous results (marked stale, so the UI can dim them or show a spinner alongside). The moment the transition resolves, switch fully to the new results and clear the stale flag.
+
+## Your task
+
+Write \`mergeTransitionResults(previousResults, incomingResults, isPending)\` returning \`{ results, stale }\`.
+
+Wire this into a real search box: call this inside the component using \`useTransition\`'s \`isPending\` flag, and dim the results list whenever \`stale\` is true.`,
+    starterCode: `function mergeTransitionResults(previousResults, incomingResults, isPending) {
+  // return { results, stale }
+}`,
+    solutionCode: `function mergeTransitionResults(previousResults, incomingResults, isPending) {
+  if (isPending) {
+    return { results: previousResults, stale: true };
+  }
+  return { results: incomingResults, stale: false };
+}`,
+    testCases: [
+      {
+        input: `mergeTransitionResults(["a", "b"], ["c"], true)`,
+        expected: `{ results: ["a", "b"], stale: true }`,
+        label: "While pending, the previous results are kept and marked stale",
+      },
+      {
+        input: `mergeTransitionResults(["a", "b"], ["c"], false)`,
+        expected: `{ results: ["c"], stale: false }`,
+        label: "Once resolved, the incoming results replace the previous ones",
+      },
+      {
+        input: `mergeTransitionResults([], ["c"], true)`,
+        expected: `{ results: [], stale: true }`,
+        label: "An empty previous result set stays empty while pending, rather than showing incoming results early",
+      },
+      {
+        input: `mergeTransitionResults(["a"], ["a"], false)`,
+        expected: `{ results: ["a"], stale: false }`,
+        label: "Resolving to identical results still clears the stale flag",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 32,
+  },
+  {
+    slug: "memoized-selector",
+    conceptSlug: "state-management-tradeoffs",
+    title: "Build a Shopping Cart with Selector-Based State",
+    description: `Build the memoization wrapper behind selector-based state libraries (Redux + Reselect, Zustand selectors) — the piece that lets a component subscribe to a derived value without recomputing it on every single state change.
+
+## The problem
+
+Deriving a cart total from a list of items is cheap once, but recomputing it on every render — even when the cart hasn't changed — adds up in a large app, and a derived value recomputed with a new object/array reference every time also defeats any \`memo\`-wrapped consumer downstream.
+
+## The idea
+
+Cache the last arguments a selector was called with alongside its result. If the next call's arguments are the same (shallow, in order, via \`Object.is\`), return the cached result without invoking the selector function again; otherwise recompute and cache the new result.
+
+## Your task
+
+Write \`createSelector(selectorFn)\` returning a memoized version of \`selectorFn\` — calling it with the same arguments as last time must not invoke \`selectorFn\` again.
+
+Wire this into a real cart: create a \`selectCartTotal = createSelector((items) => items.reduce(...))\` and confirm (e.g. with a call counter) it isn't recomputed on unrelated re-renders.`,
+    starterCode: `function createSelector(selectorFn) {
+  // return a memoized version of selectorFn
+}`,
+    solutionCode: `function createSelector(selectorFn) {
+  let lastArgs = null;
+  let lastResult;
+  return function (...args) {
+    const sameArgs =
+      lastArgs !== null &&
+      lastArgs.length === args.length &&
+      lastArgs.every((arg, i) => Object.is(arg, args[i]));
+    if (sameArgs) return lastResult;
+    lastArgs = args;
+    lastResult = selectorFn(...args);
+    return lastResult;
+  };
+}`,
+    testCases: [
+      {
+        input: "a selector counting its own calls, invoked twice with the identical array reference",
+        expected: "the selector function itself is only actually invoked once",
+        label: "Calling with the same arguments returns the cached result without recomputing",
+      },
+      {
+        input: "the same selector invoked with two different array references",
+        expected: "the selector function is invoked again and returns the new, correct result",
+        label: "Calling with different arguments recomputes and returns the new result",
+      },
+      {
+        input: `createSelector((items) => items.reduce((sum, i) => sum + i.price, 0))([{ price: 10 }, { price: 5 }])`,
+        expected: "15",
+        label: "The memoized selector still returns the selector function's real result",
+      },
+      {
+        input: "the selector called with (1, 2) then with (2, 1)",
+        expected: "recomputed, since argument order is part of what defines 'the same arguments'",
+        label: "A different argument order counts as different arguments",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 33,
   },
 ];
 

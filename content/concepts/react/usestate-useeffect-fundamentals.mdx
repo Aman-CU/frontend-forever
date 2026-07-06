@@ -1,0 +1,53 @@
+---
+title: "useState & useEffect Fundamentals"
+description: "Learn the two hooks every component starts with — useState for local state, useEffect for synchronizing with something outside React — and their dependency-array rules."
+category: "react"
+difficulty: "beginner"
+order: 2
+whatsHappening: "useState gives a component memory that survives across renders and triggers a re-render when it changes. useEffect runs code after React commits to the DOM, to synchronize with something React doesn't manage itself — a subscription, a timer, `document.title`. The dependency array controls how often that synchronization re-runs, not when the component itself re-renders."
+keyInsight: "useEffect isn't a lifecycle hook — it's a synchronization mechanism. Every render describes what the effect *should* look like right now; React compares the new dependency array to the last one and only re-runs the effect if something actually changed. Missing a dependency doesn't skip a step, it makes the effect synchronize with stale values."
+memoryHook: "useState = component memory. useEffect = keep something outside React in sync with what's inside React. The dependency array answers one question: did the thing this effect depends on actually change?"
+inRealLife: "Like a thermostat (useEffect) that only adjusts the heater when the room's target temperature (a dependency) actually changes — not on some arbitrary timer, and not only once when it was installed. useState is the dial you turn; the thermostat's job is to keep reacting to it correctly."
+---
+
+## useState: memory across renders
+
+A regular variable resets every time a component function re-runs. `useState` gives a value that React remembers between renders, and a setter that schedules a re-render when called:
+
+```jsx
+function Counter() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(count + 1)}>{count}</button>;
+}
+```
+
+Calling `setCount` doesn't mutate `count` in place — it tells React "re-render this component, and next time give it this new value instead."
+
+## useEffect: syncing with the outside world
+
+`useEffect` runs *after* React has committed the render to the DOM — it's for anything that isn't itself a description of UI: subscribing to an event, starting a timer, fetching data.
+
+```jsx
+useEffect(() => {
+  const id = setInterval(() => setCount((c) => c + 1), 1000);
+  return () => clearInterval(id); // cleanup, runs before the next effect and on unmount
+}, []); // dependency array
+```
+
+## The dependency array's three modes
+
+```js
+useEffect(() => { ... });          // no array: runs after every render
+useEffect(() => { ... }, []);      // empty array: runs once, after the first render
+useEffect(() => { ... }, [id]);    // runs after the first render, and again whenever `id` changes
+```
+
+React compares each dependency to its previous value with `Object.is` — the same value means the effect is skipped this render.
+
+## Why "stale closures" happen
+
+An effect's function closes over the values from the render it was created in. If a dependency it reads isn't listed, the effect keeps using the *original* value from mount, even after that value has changed elsewhere in the component — the classic "stale closure" bug. The fix is always to include every value the effect reads in the dependency array, not to suppress the lint warning.
+
+## Why it matters
+
+Almost every React bug report that starts with "this only works on the first render" or "this fires infinitely" traces back to a dependency array that doesn't actually match what the effect reads. Getting the mental model right here — sync, not lifecycle — prevents most of them before they happen.

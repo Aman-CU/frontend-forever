@@ -1,0 +1,58 @@
+---
+title: "Forms: Controlled vs. Uncontrolled"
+description: "Compare form inputs whose value React owns via state (controlled) against inputs that manage their own value internally (uncontrolled via refs), and when to pick each."
+category: "react"
+difficulty: "beginner"
+order: 3
+whatsHappening: "A controlled input's displayed value always comes from React state — every keystroke fires onChange, which updates state, which re-renders the input with the new value passed back in as `value`. An uncontrolled input keeps its value in the DOM itself, the way a plain HTML input always has; React only reads it on demand, via a ref."
+keyInsight: "The moment you pass a `value` prop to an input, React expects to own it for its entire lifetime. Switching an input from uncontrolled (value starts `undefined`) to controlled (value becomes a real string) partway through — or the reverse — triggers React's 'a component is changing from uncontrolled to controlled' warning, because the source of truth just moved."
+memoryHook: "Controlled = React state drives the DOM. Uncontrolled = the DOM drives itself, and you peek at it with a ref when you need to."
+inRealLife: "Like a controlled input being a GPS-guided car (every turn is dictated by the app's current instruction) versus an uncontrolled input being a car with a human driver you only ask 'where are we?' when you actually need to know — it drives itself the rest of the time."
+---
+
+## Controlled: React owns the value
+
+```jsx
+function ControlledInput() {
+  const [value, setValue] = useState("");
+  return <input value={value} onChange={(e) => setValue(e.target.value)} />;
+}
+```
+
+Every render, the input's displayed text is exactly `value` — nothing else can change it. This makes validation, formatting-as-you-type, and conditionally disabling submit trivial, because state is always the single source of truth.
+
+## Uncontrolled: the DOM owns the value
+
+```jsx
+function UncontrolledInput() {
+  const inputRef = useRef(null);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log(inputRef.current.value);
+  };
+  return (
+    <form onSubmit={handleSubmit}>
+      <input ref={inputRef} defaultValue="" />
+    </form>
+  );
+}
+```
+
+The input manages its own internal value the way a plain `<input>` always has. React never re-renders on keystroke — it only reaches in and reads the current value through the ref when something else (a submit handler) asks for it.
+
+## Why mixing them causes a warning
+
+```jsx
+<input value={value} /> // value starts as undefined, then later becomes "abc"
+```
+
+If `value` starts as `undefined`, React treats the input as uncontrolled on the first render. The moment `value` becomes a real string on a later render, React sees the source of truth flip mid-lifetime and warns — this is almost always caused by state initialized to `undefined`/`null` instead of an empty string.
+
+## Choosing between them
+
+- **Controlled** — when you need to validate on every keystroke, format input live (currency, phone numbers), or conditionally enable/disable other UI based on the value.
+- **Uncontrolled** — for a simple form read once on submit, or when integrating a non-React widget that manages its own DOM value already (many rich-text editors, some date pickers).
+
+## Why it matters
+
+Most "my input feels laggy" or "cursor jumps to the end while typing" bugs in production React apps trace back to a controlled input whose `onChange` does something expensive (or asynchronous) before calling `setValue` — the render that shows your keystroke is now waiting on that work to finish.

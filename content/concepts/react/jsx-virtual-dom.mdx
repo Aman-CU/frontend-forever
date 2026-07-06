@@ -1,0 +1,57 @@
+---
+title: "JSX & the Virtual DOM"
+description: "See how JSX compiles down to React.createElement calls that build a lightweight Virtual DOM tree, the object React actually diffs on every render."
+category: "react"
+difficulty: "beginner"
+order: 1
+whatsHappening: "JSX isn't HTML — it's syntax sugar that a compiler (Babel/SWC) turns into plain `React.createElement(type, props, ...children)` calls before your code ever runs in the browser. Each call returns a plain JavaScript object — a Virtual DOM node — not a real DOM element. React builds a whole tree of these lightweight objects, then decides what real DOM to touch by comparing trees, never by re-parsing your JSX at runtime."
+keyInsight: "The Virtual DOM isn't a performance trick by itself — it's a diffing input. Creating plain JS objects is cheap; the actual DOM is expensive to read and write. React pays the cheap cost (building/comparing objects) to minimize the expensive one (touching real nodes)."
+memoryHook: "JSX is a *description*, not a *creation*. `<div>` compiles to `createElement('div', ...)` — a blueprint object — before anything reaches the actual page."
+inRealLife: "Like an architect's blueprint (the Virtual DOM) versus the actual building (the real DOM). Redrawing a blueprint on paper is fast and cheap; only the parts that changed between two blueprint revisions get sent to the construction crew (the DOM) to actually build."
+---
+
+## From JSX to a plain object
+
+This JSX:
+
+```jsx
+<button className="primary">Save</button>
+```
+
+compiles to this function call:
+
+```js
+React.createElement("button", { className: "primary" }, "Save");
+```
+
+which returns a plain object — the actual "element" React works with:
+
+```js
+{
+  type: "button",
+  props: { className: "primary", children: "Save" },
+}
+```
+
+No DOM node exists yet. This object just describes *what should exist* — React decides later whether and how to turn it into a real `<button>`.
+
+## Building a tree
+
+Nesting JSX nests these objects the same way:
+
+```jsx
+<ul>
+  <li>One</li>
+  <li>Two</li>
+</ul>
+```
+
+becomes a `ul` object whose `props.children` is an array of two `li` objects. The whole component tree you write in JSX is really one big nested object graph — the Virtual DOM — before React touches the browser at all.
+
+## Why this exists
+
+Reading and writing the real DOM is comparatively expensive: it triggers layout, style recalculation, and repaints. Plain JS objects don't. By describing the *next* UI as a tree of objects first, React can compare it against the *previous* tree in memory, figure out the minimal set of real DOM operations needed, and only then touch the actual page — the subject of the Rendering & Reconciliation concept later in this path.
+
+## Why it matters
+
+Understanding that JSX is just `createElement` calls in disguise demystifies a lot of "magic" — `key` props, conditional rendering with `&&`, mapping arrays to lists — it's all just JavaScript building and returning plain objects, with no special syntax rules beyond what the compiler translates.

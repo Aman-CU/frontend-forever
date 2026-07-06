@@ -1,0 +1,59 @@
+---
+title: "Context API & Prop Drilling"
+description: "See how prop drilling forces data through components that don't need it, and how the Context API lets any descendant read shared state directly."
+category: "react"
+difficulty: "intermediate"
+order: 5
+whatsHappening: "Prop drilling is passing a value through every intermediate component in a tree purely so a deeply nested descendant can receive it — even components that never use the value themselves still have to accept and forward it. Context lets a `Provider` at the top of a subtree publish a value that any descendant can read directly with `useContext`, skipping every layer in between."
+keyInsight: "Context solves a wiring problem, not a state-management problem — it doesn't replace useState/useReducer, it just changes how far a value has to travel to reach a consumer. Every component that calls useContext re-renders whenever the Provider's value changes, even if that component only cares about one field of a larger context object — which is why a single sprawling context can cause more re-renders than the prop drilling it replaced."
+memoryHook: "Prop drilling: pass it down, floor by floor, whether or not that floor needs it. Context: broadcast it once from the top, and any floor can tune in directly."
+inRealLife: "Like passing a note hand-to-hand through every person in a line just so the person at the end reads it (prop drilling) versus posting the note on a shared bulletin board that anyone in the building can walk up and read directly (Context) — nobody in between has to touch it."
+---
+
+## The prop drilling problem
+
+```jsx
+function App() {
+  const [theme, setTheme] = useState("dark");
+  return <Layout theme={theme} />;
+}
+function Layout({ theme }) {
+  return <Sidebar theme={theme} />; // Layout never uses theme itself
+}
+function Sidebar({ theme }) {
+  return <ThemeToggle theme={theme} />; // Sidebar never uses theme itself
+}
+```
+
+`Layout` and `Sidebar` only exist to forward `theme` — adding a new prop, renaming one, or inserting a component in the middle means touching every intermediate layer even though none of them care about the value.
+
+## Context: publish once, read anywhere
+
+```jsx
+const ThemeContext = createContext("light");
+
+function App() {
+  const [theme, setTheme] = useState("dark");
+  return (
+    <ThemeContext.Provider value={theme}>
+      <Layout />
+    </ThemeContext.Provider>
+  );
+}
+function Layout() { return <Sidebar />; }
+function Sidebar() { return <ThemeToggle />; }
+function ThemeToggle() {
+  const theme = useContext(ThemeContext); // reads directly, no props passed through
+  return <button>{theme}</button>;
+}
+```
+
+`Layout` and `Sidebar` no longer mention `theme` at all — only the component that actually needs it calls `useContext`.
+
+## The re-render tradeoff
+
+Every component that calls `useContext(ThemeContext)` re-renders whenever the Provider's `value` changes — regardless of which part of that value it actually reads. A context holding `{ theme, user, cart }` causes every consumer to re-render on a cart update, even a component that only reads `theme`. This is why large apps often split one big context into several narrow ones, or pair Context with `useMemo` on the provided value.
+
+## Why it matters
+
+Context is the right tool for values that are genuinely global to a subtree — theme, locale, the current authenticated user — not a general replacement for passing props. Reaching for Context to avoid drilling two levels deep usually adds more indirection than it removes.

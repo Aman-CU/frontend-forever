@@ -1,0 +1,46 @@
+---
+title: "React Rendering & Reconciliation"
+description: "See how React's reconciler decides which components to re-render, diffs the Virtual DOM, and commits changes to the real DOM."
+category: "react"
+difficulty: "intermediate"
+order: 6
+whatsHappening: "A state update doesn't touch the DOM directly — it schedules a render. React calls your component functions again to build a new Virtual DOM tree, diffs it against the previous tree (reconciliation), and computes the minimal set of real DOM operations needed. Only that minimal set is actually committed to the page."
+keyInsight: "By default, when a component re-renders, React re-renders every child underneath it too — regardless of whether that child's own props changed. Reconciliation decides *what DOM to touch*, not *which components' functions to call*; skipping a subtree's function calls entirely requires an explicit opt-out like `React.memo`."
+memoryHook: "State Update → Render Phase (call component functions, build new Virtual DOM) → Diffing (compare new tree to old tree) → Commit (apply only what changed to the real DOM). Only the last step ever touches the actual page."
+inRealLife: "Like an editor comparing a manuscript's new draft against the previous one (diffing) and sending the printer only the pages that actually changed (commit) — not reprinting the entire book every time one sentence is edited."
+---
+
+## The four stages
+
+1. **State Update** — `setState`/a state-setter call marks a component as needing to re-render; React doesn't act immediately, it schedules the work.
+2. **Render Phase** — React calls the component function (and, by default, every descendant's function too) to produce a new Virtual DOM tree. This phase is pure and can be interrupted — nothing touches the real DOM yet.
+3. **Diffing** — React compares the new tree to the previous one, node by node, to compute the minimal set of real DOM changes required.
+4. **Commit** — React applies exactly those changes to the real DOM. This phase is synchronous and cannot be interrupted.
+
+```
+setCount(c => c + 1)
+      │
+      ▼
+ Render Phase ──▶ new Virtual DOM tree
+      │
+      ▼
+  Diffing ──▶ "only this <span> text changed"
+      │
+      ▼
+  Commit ──▶ real DOM updated
+```
+
+## Two rules that make diffing fast
+
+Reconciliation runs in linear time by assuming, rather than proving, two things:
+
+- **Different element types produce different trees.** If a `<div>` becomes a `<span>` at the same position, React tears down the old subtree and mounts a fresh one — it never tries to patch a `div` into a `span`.
+- **Keys identify which child is which across renders.** Rendering a list without stable `key` props forces React to match children by position instead of identity — reordering the array then looks like every item changed, causing form state, animations, or focus to attach to the wrong item.
+
+## Why children re-render even when props don't change
+
+When a parent re-renders, React calls every child component's function again by default — not just the ones whose props actually changed. This is often invisible because the *output* usually looks identical, but the function still ran. `React.memo` is the explicit opt-out: it skips re-calling a component's function if its props are shallow-equal to last time, a technique covered in depth later in this path (Render Performance).
+
+## Why it matters
+
+"Why did this unrelated component re-render?" is one of the most common React debugging questions, and it's almost always this default: a re-render cascades to every descendant unless something explicitly stops it. Reaching for memoization before confirming *this* is actually the bottleneck (via the Profiler) is the most common performance mistake in React codebases.

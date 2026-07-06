@@ -1,0 +1,67 @@
+---
+title: "Custom Hooks & Composition"
+description: "Learn how extracting a use* function lets you share stateful logic between components, and the rules that keep custom hooks composable."
+category: "react"
+difficulty: "intermediate"
+order: 8
+whatsHappening: "A custom hook is just a regular function, named with a `use` prefix, that calls other hooks inside it. Extracting `useState`/`useEffect` logic into a `useToggle` or `useFetch` function doesn't share *state* between the components that call it — each call gets its own independent copy — it shares the *logic* for creating and managing that state."
+keyInsight: "The Rules of Hooks — always call hooks at the top level, never inside conditions/loops/nested functions — exist because React tracks hook state by call *order*, not by name. Two components calling the same custom hook get completely separate state; the same component calling a hook conditionally on some renders and not others desyncs that order and corrupts every hook state after it."
+memoryHook: "A custom hook shares the *recipe*, not the *dish*. Every caller bakes their own copy of the state."
+inRealLife: "Like a cooking recipe (the custom hook) shared between two different kitchens (two components) — both kitchens end up with a cake, but they're two separate cakes, not one cake split between them. Change the recipe and both kitchens' next batch changes; the cake already made in one kitchen isn't affected by what happens in the other."
+---
+
+## Extracting a custom hook
+
+```jsx
+function useToggle(initial = false) {
+  const [value, setValue] = useState(initial);
+  const toggle = useCallback(() => setValue((v) => !v), []);
+  return [value, toggle];
+}
+
+function Sidebar() {
+  const [isOpen, toggleOpen] = useToggle(false);
+  return <button onClick={toggleOpen}>{isOpen ? "Close" : "Open"}</button>;
+}
+```
+
+`useToggle` is nothing but a function that calls `useState` and `useCallback` on the caller's behalf — React has no special concept of "custom hook" beyond the naming convention. Any component calling `useToggle` gets its own independent `value`/`toggle` pair.
+
+## Why call order matters
+
+React associates each `useState`/`useEffect` call in a component with a slot in an internal list, based purely on the order those calls happen during render — there are no variable names attached at runtime. That's why hooks can never be called conditionally:
+
+```jsx
+// WRONG — breaks the call-order guarantee
+if (isLoggedIn) {
+  const [user, setUser] = useState(null);
+}
+```
+
+On a render where `isLoggedIn` is `false`, this hook call is skipped entirely, shifting every hook call after it into the wrong slot — a state update meant for one piece of state silently lands on a different one. The fix is always to call the hook unconditionally and branch on the *value* instead.
+
+## Composing hooks from other hooks
+
+Custom hooks can call other custom hooks, building up more specific behavior from simpler pieces:
+
+```jsx
+function useDebouncedValue(value, delay) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
+
+function useSearchResults(query) {
+  const debouncedQuery = useDebouncedValue(query, 300);
+  // ...fetch using debouncedQuery
+}
+```
+
+`useSearchResults` composes `useDebouncedValue` the same way a component composes other components — each layer only knows about the one directly below it.
+
+## Why it matters
+
+Custom hooks are the modern replacement for the render-props and higher-order-component patterns used before hooks existed — they extract identical logic without adding an extra layer of JSX nesting or wrapper components, which is exactly why "when would you write a custom hook instead of a render prop" is a common interview follow-up to Component Composition Patterns.
