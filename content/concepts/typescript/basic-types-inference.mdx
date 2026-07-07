@@ -1,0 +1,65 @@
+---
+title: "Basic Types, Inference & any/unknown/never"
+description: "Learn how TypeScript infers types without annotations, and when to reach for any, unknown, or never — and why only one of them is safe to use often."
+category: "typescript"
+difficulty: "beginner"
+order: 1
+whatsHappening: "TypeScript doesn't need an annotation on every variable — it looks at the value you assign and infers the narrowest type that fits. any, unknown, and never sit outside that normal inference flow: any turns off type checking entirely, unknown forces you to prove what a value is before using it, and never marks a value that can't exist at all."
+keyInsight: "any and unknown both mean 'I don't know the type yet' — but any lets you do anything with the value (including definitely-wrong things) and unknown blocks every operation until you narrow it with a type guard. unknown gives you the same flexibility as any at the boundary, without giving up compile-time safety once you actually use the value."
+memoryHook: "any = no seatbelt. unknown = seatbelt that won't unclick until you check your surroundings. never = a seat that doesn't exist — you should never be sitting in it."
+inRealLife: "Like receiving an unmarked package (unknown): you have to open and inspect it before you can safely use whatever's inside. any is accepting the package and using the contents blindfolded. never is the empty box that should have never arrived — if your code path produces it, something upstream already went wrong."
+---
+
+## Inference: types without annotations
+
+TypeScript infers a type the moment a value is assigned, without you writing one:
+
+```ts
+let count = 5;        // inferred: number
+let name = "Ada";     // inferred: string
+let items = [1, 2, 3]; // inferred: number[]
+```
+
+Once inferred, the variable is held to that type going forward — `count = "five"` is a compile error, even though `count` was never annotated. Inference also flows through function return values (`function double(n: number) { return n * 2; }` infers a `number` return type) and through generic calls, which is why explicit annotations are often unnecessary for local variables and only really earn their keep on function parameters and public APIs, where there's no assigned value yet for TypeScript to infer from.
+
+## any: opting out of type checking
+
+`any` disables type checking for a value entirely. Every operation on an `any` is allowed, and it silently spreads — assign an `any` to another variable, and that variable becomes `any` too, with no error anywhere:
+
+```ts
+let raw: any = fetchSomething();
+raw.toUpperCase();     // no error, even if raw is a number
+raw.nonExistentMethod(); // no error, even though this will crash at runtime
+```
+
+`any` is sometimes the pragmatic escape hatch for a genuinely untyped boundary (a third-party library with no types), but every `any` is a hole in the type system — errors that should be caught at compile time surface as runtime crashes instead.
+
+## unknown: the safe alternative
+
+`unknown` accepts any value, just like `any` — but you can't *do* anything with it until you've proven what it is:
+
+```ts
+let value: unknown = fetchSomething();
+value.toUpperCase(); // compile error — value could be anything
+if (typeof value === "string") {
+  value.toUpperCase(); // fine — narrowed to string inside this block
+}
+```
+
+This is the core tradeoff: `any` and `unknown` are equally permissive about what can be *assigned*, but only `unknown` requires you to check before you *use*. Any function boundary receiving genuinely unpredictable input — a JSON response, a value from `localStorage`, user input — should be typed `unknown`, not `any`.
+
+## never: the type with no values
+
+`never` means "this can't happen." A function that always throws or infinite-loops returns `never`, because it never actually produces a value:
+
+```ts
+function fail(message: string): never {
+  throw new Error(message);
+}
+```
+
+`never` also shows up as the result of narrowing away every possibility in a union — inside an `if (typeof x === "string") {} else {}` block where `x: string`, the `else` branch narrows `x` to `never`, since there's nothing left it could be. This is exactly what makes exhaustiveness checks work: assigning a value to a `never`-typed variable only compiles if every case has truly been handled.
+
+## Why it matters
+
+`any` is the single most common way type safety silently disappears from a TypeScript codebase — it doesn't error, it just stops helping. Defaulting to `unknown` at every untyped boundary, and only narrowing down from there, keeps the compiler doing its job everywhere instead of going quiet the moment external data enters the system.

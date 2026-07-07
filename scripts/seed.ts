@@ -569,6 +569,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how generic type parameters let a function or type work across many concrete types while still catching mismatches at compile time.",
     category: "typescript",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 3,
   },
   {
@@ -578,6 +579,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how Partial, Pick, Omit, and Record transform existing types instead of redefining them by hand, and how they compose together.",
     category: "typescript",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 4,
   },
   {
@@ -587,6 +589,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Use control-flow analysis, type guards, and discriminated unions to refine wide types to precise ones at compile time.",
     category: "typescript",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 5,
   },
   {
@@ -596,6 +599,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how a shared literal type/kind field lets TypeScript narrow a union to the exact variant inside a conditional, eliminating a whole class of runtime checks.",
     category: "typescript",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 6,
   },
   {
@@ -605,6 +609,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how conditional types (T extends U ? X : Y) and mapped types ({ [K in keyof T]: ... }) let TypeScript compute new types from existing ones.",
     category: "typescript",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 7,
   },
   {
@@ -614,6 +619,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how template literal types build string types from patterns, and how branded types simulate nominal typing to stop structurally-identical values from being mixed up.",
     category: "typescript",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 8,
   },
 
@@ -3607,6 +3613,429 @@ function classifyAnimationCost(properties) {
     isPremium: true,
     orderIndex: 44,
   },
+  // ── Phase 10 (Feature 45) — TypeScript Concepts ───────────────────────────
+  // The sandbox only runs JS, not tsc — every Challenge here is a deterministic
+  // JS function that simulates the TypeScript concept's logic at runtime,
+  // matching the JS-simulation pattern Feature 44 established for CSS.
+  {
+    slug: "narrow-unknown-to-number",
+    conceptSlug: "basic-types-inference",
+    title: "Narrow unknown to a safe number",
+    description: `\`unknown\` forces you to prove what a value actually is before you can use it — this is that proof, written as a function.
+
+## The problem
+
+A value from \`JSON.parse\`, a form field, or \`localStorage\` arrives with no guarantee it's actually a usable number — it might be a real number, a numeric string, \`NaN\`, or something else entirely.
+
+## The idea
+
+Narrow the \`unknown\` value step by step: a real, finite \`number\` passes straight through; a non-empty string that resolves to a finite number gets parsed; everything else — including \`NaN\` itself — is rejected.
+
+## Your task
+
+Write \`safeParseNumber(value)\`, returning a finite number or \`null\`:
+
+\`\`\`js
+safeParseNumber(42)              // 42
+safeParseNumber("3.14")          // 3.14
+safeParseNumber("not a number")  // null
+safeParseNumber(NaN)             // null
+\`\`\``,
+    difficulty: "easy",
+    starterCode: `function safeParseNumber(value) {
+  // value is "unknown" — prove it's a usable number before returning it
+}`,
+    solutionCode: `function safeParseNumber(value) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}`,
+    testCases: [
+      { input: "42", expected: "42", label: "A finite number passes through unchanged" },
+      { input: "\"3.14\"", expected: "3.14", label: "A numeric string is parsed to a number" },
+      { input: "\"not a number\"", expected: "null", label: "A non-numeric string returns null instead of NaN" },
+      { input: "NaN", expected: "null", label: "NaN itself is rejected, not returned as a valid number" },
+    ],
+    hints: [
+      "typeof value === 'number' doesn't guarantee it's usable — NaN is typeof 'number' too.",
+      "For strings, trim first and reject anything that resolves to Number.isFinite(...) === false.",
+      "Every other input type (null, undefined, object, boolean) should fall through to null.",
+    ],
+    isPremium: false,
+    orderIndex: 45,
+  },
+  {
+    slug: "merge-declarations",
+    conceptSlug: "interfaces-vs-type-aliases",
+    title: "Simulate declaration merging",
+    description: `Two separate \`interface Config { ... }\` blocks with the same name silently combine into one — this models what that merge actually does to the resulting shape.
+
+## The problem
+
+\`interface\`'s declaration merging means the *same* key declared twice with the *same* type should just collapse into one, but the *same* key declared twice with *different* types is a real conflict that shouldn't be silently resolved by whichever declaration happened to run last.
+
+## The idea
+
+Fold a list of partial shapes into one result: a key seen for the first time is copied over; a key seen again with the exact same value stays a single value; a key seen again with a genuinely different value becomes an array of the distinct values — surfacing the conflict instead of one silently overwriting the other.
+
+## Your task
+
+Write \`mergeDeclarations(declarations)\`, where each declaration is a plain object:
+
+\`\`\`js
+mergeDeclarations([{ timeout: "number" }, { retries: "number" }])
+// → { timeout: "number", retries: "number" }
+
+mergeDeclarations([{ id: "string" }, { id: "number" }])
+// → { id: ["string", "number"] } — a genuine conflict, both kept
+\`\`\``,
+    difficulty: "easy",
+    starterCode: `function mergeDeclarations(declarations) {
+  // declarations: array of plain objects to fold into one merged shape
+}`,
+    solutionCode: `function mergeDeclarations(declarations) {
+  const result = {};
+  for (const decl of declarations) {
+    for (const [key, value] of Object.entries(decl)) {
+      if (!(key in result)) {
+        result[key] = value;
+      } else if (Array.isArray(result[key])) {
+        if (!result[key].includes(value)) result[key].push(value);
+      } else if (result[key] !== value) {
+        result[key] = [result[key], value];
+      }
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "[{ timeout: 'number' }, { retries: 'number' }]", expected: "{ timeout: 'number', retries: 'number' }", label: "Distinct keys across declarations simply combine" },
+      { input: "[{ id: 'string' }, { id: 'string' }]", expected: "{ id: 'string' }", label: "The same key with the same value merges to a single value, not an array" },
+      { input: "[{ id: 'string' }, { id: 'number' }]", expected: "{ id: ['string', 'number'] }", label: "The same key with a different value surfaces as a conflict array" },
+      { input: "[{ a: 1 }, { b: 2 }, { a: 1 }]", expected: "{ a: 1, b: 2 }", label: "A key repeated later with the same value doesn't change the result" },
+    ],
+    hints: [
+      "Walk the declarations in order, building up one result object as you go.",
+      "A key seen for the first time just gets copied over untouched.",
+      "Only turn a value into an array once you've confirmed a genuine conflict — not on every repeat.",
+    ],
+    isPremium: false,
+    orderIndex: 46,
+  },
+  {
+    slug: "create-typed-stack",
+    conceptSlug: "generics",
+    title: "Build a self-typing stack",
+    description: `A generic collection doesn't know its element type until the first value goes in — after that, it holds every later value to the same type.
+
+## The problem
+
+An untyped stack will happily accept a number, then a string, then an object, with nothing stopping a later bug from mixing incompatible values into what was meant to be a single-type collection.
+
+## The idea
+
+The stack's type isn't fixed at creation — it's inferred from the *first* pushed item, exactly like a generic type parameter gets inferred from the first argument at a call site. Every push after that is checked against the locked-in type.
+
+## Your task
+
+Write \`createTypedStack()\`, returning \`{ push(item), pop(), toArray() }\`. The first \`push\` locks the stack's type; a later \`push\` of a different type should \`throw\`.
+
+\`\`\`js
+const s = createTypedStack();
+s.push(1);
+s.push(2);
+s.toArray(); // [1, 2]
+s.push("oops"); // throws
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function createTypedStack() {
+  // return { push(item), pop(), toArray() } — type locks in on the first push
+}`,
+    solutionCode: `function createTypedStack() {
+  const items = [];
+  let lockedType = null;
+
+  function classify(value) {
+    if (value === null) return "null";
+    if (Array.isArray(value)) return "array";
+    return typeof value;
+  }
+
+  return {
+    push(item) {
+      const type = classify(item);
+      if (lockedType === null) {
+        lockedType = type;
+      } else if (type !== lockedType) {
+        throw new Error(\`Expected \${lockedType}, got \${type}\`);
+      }
+      items.push(item);
+    },
+    pop() {
+      return items.pop();
+    },
+    toArray() {
+      return [...items];
+    },
+  };
+}`,
+    testCases: [
+      { input: "push(1), push(2), push(3)", expected: "[1, 2, 3]", label: "Same-type pushes are all accepted, in order" },
+      { input: "push('a') then push(1)", expected: "throws an Error", label: "A mismatched type after the first push throws" },
+      { input: "push(1), pop(), toArray()", expected: "[]", label: "pop() removes the most recently pushed item" },
+      { input: "toArray() on a stack with nothing pushed", expected: "[]", label: "A stack with no pushes starts out empty" },
+    ],
+    hints: [
+      "The stack's type isn't fixed until the first push — that's what 'inferred once' means here.",
+      "Compare every later push's classified type against the locked type, and throw on a mismatch.",
+      "null and arrays both report typeof 'object' in JS — classify them separately so a stack of numbers still rejects an array.",
+    ],
+    isPremium: true,
+    orderIndex: 47,
+  },
+  {
+    slug: "pick-keys",
+    conceptSlug: "utility-types",
+    title: "Implement Pick at runtime",
+    description: `\`Pick<T, K>\` keeps only a chosen subset of an object's keys — this is that same idea, applied to an actual object instead of a type.
+
+## The problem
+
+A large object often needs a narrower view for a specific use — a list row that only needs 2 of an object's 10 fields shouldn't have to carry (or expose) the rest.
+
+## The idea
+
+Copy over only the requested keys, and skip any requested key the object doesn't actually have — a missing key shouldn't appear in the result as \`undefined\`.
+
+## Your task
+
+Write \`pick(obj, keys)\`:
+
+\`\`\`js
+pick({ id: 1, name: "Ada", email: "a@x.com" }, ["id", "name"])
+// → { id: 1, name: "Ada" }
+\`\`\``,
+    difficulty: "easy",
+    starterCode: `function pick(obj, keys) {
+  // return a new object containing only the requested keys
+}`,
+    solutionCode: `function pick(obj, keys) {
+  const result = {};
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      result[key] = obj[key];
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "{ id: 1, name: 'Ada', email: 'a@x.com' }, ['id', 'name']", expected: "{ id: 1, name: 'Ada' }", label: "Only the requested keys are kept, in the object they belong to" },
+      { input: "{ id: 1, name: 'Ada' }, ['email']", expected: "{}", label: "A requested key the object doesn't have is skipped, not set to undefined" },
+      { input: "{ id: 1, name: 'Ada' }, []", expected: "{}", label: "An empty key list returns an empty object" },
+    ],
+    hints: [
+      "Build a fresh result object — don't mutate the input.",
+      "Check hasOwnProperty before copying, so a missing key doesn't sneak in as undefined.",
+    ],
+    isPremium: true,
+    orderIndex: 48,
+  },
+  {
+    slug: "narrow-value-length",
+    conceptSlug: "type-narrowing",
+    title: "Narrow a union to compute its length",
+    description: `A chain of narrowing checks is how real code safely handles a value that could be several different shapes.
+
+## The problem
+
+A "length" concept applies to strings and arrays directly, to some objects (via a \`length\` property), and to nothing else — treating them all the same way crashes on at least one of them.
+
+## The idea
+
+Narrow the value step by step, exactly like TypeScript's control-flow analysis would: check \`typeof\` for a string, \`Array.isArray\` for an array, then an \`in\` check for an object with a \`length\` field, falling back to \`0\` for everything else.
+
+## Your task
+
+Write \`getLength(value)\`:
+
+\`\`\`js
+getLength("hello")            // 5
+getLength([1, 2, 3])          // 3
+getLength({ length: 10 })     // 10
+getLength(42)                 // 0
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function getLength(value) {
+  // narrow value through string, array, { length }, then fall back to 0
+}`,
+    solutionCode: `function getLength(value) {
+  if (typeof value === "string") return value.length;
+  if (Array.isArray(value)) return value.length;
+  if (value && typeof value === "object" && "length" in value) return value.length;
+  return 0;
+}`,
+    testCases: [
+      { input: "'hello'", expected: "5", label: "A string narrows to its own .length" },
+      { input: "[1, 2, 3]", expected: "3", label: "An array narrows to its own .length, checked before the plain-object case" },
+      { input: "{ length: 10 }", expected: "10", label: "A plain object with a length field narrows via the in check" },
+      { input: "42", expected: "0", label: "A value with no length concept at all falls back to 0" },
+    ],
+    hints: [
+      "Check typeof for string first, then Array.isArray — order matters since arrays are also typeof 'object'.",
+      "The in operator narrows an object by checking whether a specific property exists on it.",
+      "Guard against null before the object branch — typeof null is 'object' too.",
+    ],
+    isPremium: true,
+    orderIndex: 49,
+  },
+  {
+    slug: "discriminated-union-reducer",
+    conceptSlug: "discriminated-unions",
+    title: "Write a discriminated-union reducer",
+    description: `A shared \`type\` field is what lets a single \`switch\` safely branch across several differently-shaped actions — the exact pattern behind every Redux-style reducer.
+
+## The problem
+
+Each action variant carries different data (\`"set"\` needs a \`value\`, \`"increment"\`/\`"decrement"\` need nothing extra) — reading a field that doesn't exist on the current variant should never happen.
+
+## The idea
+
+Switch on the shared \`type\` field. Each \`case\` only reads the fields that variant actually has — the discriminant is what makes each branch unambiguous.
+
+## Your task
+
+Write \`reducer(state, action)\`, where \`state\` is a number and \`action\` is one of \`{ type: "increment" }\`, \`{ type: "decrement" }\`, or \`{ type: "set", value }\`:
+
+\`\`\`js
+reducer(0, { type: "increment" })       // 1
+reducer(5, { type: "decrement" })       // 4
+reducer(5, { type: "set", value: 100 }) // 100
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function reducer(state, action) {
+  // switch on action.type: "increment", "decrement", "set"
+}`,
+    solutionCode: `function reducer(state, action) {
+  switch (action.type) {
+    case "increment":
+      return state + 1;
+    case "decrement":
+      return state - 1;
+    case "set":
+      return action.value;
+    default:
+      throw new Error(\`Unhandled action type: \${action.type}\`);
+  }
+}`,
+    testCases: [
+      { input: "reducer(0, { type: 'increment' })", expected: "1", label: "increment adds one to the current state" },
+      { input: "reducer(5, { type: 'decrement' })", expected: "4", label: "decrement subtracts one from the current state" },
+      { input: "reducer(5, { type: 'set', value: 100 })", expected: "100", label: "set replaces the state entirely with action.value" },
+      { input: "reducer(0, { type: 'nope' })", expected: "throws an Error", label: "An unrecognized action type throws instead of silently returning the old state" },
+    ],
+    hints: [
+      "switch (action.type) is the whole pattern — each case only reads the fields that variant actually carries.",
+      "Only the 'set' case needs action.value; increment/decrement ignore the rest of the action entirely.",
+      "A default case that throws catches an unhandled variant instead of silently doing nothing.",
+    ],
+    isPremium: true,
+    orderIndex: 50,
+  },
+  {
+    slug: "map-values",
+    conceptSlug: "conditional-mapped-types",
+    title: "Implement a mapped-type-style value transformer",
+    description: `A mapped type applies the same transformation to every property of a type — this is that same idea, applied to an actual object's values at runtime.
+
+## The problem
+
+Transforming every value in an object the same way (doubling every number, uppercasing every string) usually ends up hand-written per shape, one line per key.
+
+## The idea
+
+Iterate every key once, the same way \`{ [K in keyof T]: transform(T[K]) }\` iterates every key of a type — apply \`transform\` to each value and collect the results under the same keys.
+
+## Your task
+
+Write \`mapValues(obj, transform)\`:
+
+\`\`\`js
+mapValues({ a: 1, b: 2 }, (v) => v * 2)
+// → { a: 2, b: 4 }
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function mapValues(obj, transform) {
+  // return a new object with every value passed through transform, same keys
+}`,
+    solutionCode: `function mapValues(obj, transform) {
+  const result = {};
+  for (const key of Object.keys(obj)) {
+    result[key] = transform(obj[key], key);
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "{ a: 1, b: 2 }, (v) => v * 2", expected: "{ a: 2, b: 4 }", label: "Every value is transformed, keys stay the same" },
+      { input: "{ name: 'ada' }, (v) => v.toUpperCase()", expected: "{ name: 'ADA' }", label: "Works for any transform function, not just numbers" },
+      { input: "{}, (v) => v * 2", expected: "{}", label: "An empty object maps to an empty object" },
+    ],
+    hints: [
+      "Object.keys(obj) gives you every key to iterate, exactly once each.",
+      "Build a fresh result object — don't mutate the input object's values in place.",
+    ],
+    isPremium: true,
+    orderIndex: 51,
+  },
+  {
+    slug: "match-event-name-pattern",
+    conceptSlug: "template-literal-branded-types",
+    title: "Validate a template-literal string pattern",
+    description: `A template literal type like \`\`on\${Capitalize<string>}\`\` describes every string matching a pattern, checked at compile time — this validates the same pattern at runtime.
+
+## The problem
+
+Not every string is a valid event-handler-style name — \`"click"\`, \`"onclick"\`, and \`"on2Fast"\` all fail the pattern that a real one like \`"onClick"\` satisfies.
+
+## The idea
+
+A valid name starts with the literal \`"on"\`, immediately followed by a capitalized word (uppercase first letter, then only letters) — anything else fails.
+
+## Your task
+
+Write \`isEventName(value)\`:
+
+\`\`\`js
+isEventName("onClick")   // true
+isEventName("onSubmit")  // true
+isEventName("click")     // false
+isEventName("onclick")   // false — not capitalized after "on"
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function isEventName(value) {
+  // true only if value is "on" followed by a Capitalized word
+}`,
+    solutionCode: `function isEventName(value) {
+  return typeof value === "string" && /^on[A-Z][a-zA-Z]*$/.test(value);
+}`,
+    testCases: [
+      { input: "'onClick'", expected: "true", label: "\"on\" plus a capitalized word matches the pattern" },
+      { input: "'onSubmit'", expected: "true", label: "Any capitalized word after \"on\" matches" },
+      { input: "'click'", expected: "false", label: "Missing the \"on\" prefix entirely fails" },
+      { input: "'onclick'", expected: "false", label: "\"on\" followed by a lowercase word fails — not Capitalized" },
+    ],
+    hints: [
+      "A regular expression is the natural runtime equivalent of a compile-time string pattern.",
+      "Anchor the pattern with ^ and $ so a longer string containing a valid substring doesn't false-positive.",
+      "[A-Z][a-zA-Z]* means exactly one uppercase letter, then any number of letters of either case.",
+    ],
+    isPremium: true,
+    orderIndex: 52,
+  },
 ];
 
 // ── Interview questions (5 per collection, plus concept-linked top-ups) ────────
@@ -6116,6 +6545,407 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     difficulty: "medium",
     companies: ["Microsoft", "Meta"],
     orderIndex: 132,
+  },
+  // Phase 10 (Feature 45) — TypeScript Concepts, 5 flagship questions per new concept
+  {
+    collection: "ff-75",
+    conceptSlug: "basic-types-inference",
+    question: "What's the difference between `any` and `unknown` in TypeScript?",
+    answer:
+      "Both accept any value on assignment, but they differ completely on what you can do with that value afterward. `any` disables type checking entirely — every operation on it is allowed, including ones that will crash at runtime, and it silently spreads to any variable it's assigned to. `unknown` blocks every operation until you've narrowed it with a type guard (`typeof`, `instanceof`, etc.) — it's the safe choice for a genuinely untyped boundary like a JSON response or `localStorage` read.",
+    difficulty: "easy",
+    companies: ["Google", "Meta"],
+    orderIndex: 133,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "basic-types-inference",
+    question: "When does TypeScript infer a type instead of requiring an annotation?",
+    answer:
+      "Whenever a variable is assigned a value at declaration, TypeScript infers the narrowest type that fits and holds the variable to it going forward — `let count = 5` is inferred as `number` with no annotation needed. Inference also flows through function return values and generic calls. Annotations mostly earn their keep on function parameters and public APIs, where there's no assigned value yet for TypeScript to infer from.",
+    difficulty: "easy",
+    companies: ["Amazon", "Microsoft"],
+    orderIndex: 134,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "basic-types-inference",
+    question: "What does the `never` type represent, and when would a function return it?",
+    answer:
+      "`never` is the type of a value that can't exist — it represents an unreachable case. A function returns `never` when it never actually produces a value: one that always throws, or one that infinite-loops. It also shows up as the result of narrowing away every possibility in a union, which is exactly what powers exhaustiveness checks.",
+    difficulty: "medium",
+    companies: ["Stripe", "Airbnb"],
+    orderIndex: 135,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "basic-types-inference",
+    question: "Why is `unknown` considered safer than `any` even though both accept any value?",
+    answer:
+      "The safety difference is entirely about what happens *after* assignment, not at assignment. `any` propagates silently and permits every operation with no error, so a type mistake surfaces as a runtime crash instead of a compile error. `unknown` requires an explicit narrowing check before any operation is allowed, so the compiler keeps enforcing safety the moment the value is actually used, not just when it first enters the system.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 136,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "basic-types-inference",
+    question: "How does exhaustiveness checking use the `never` type?",
+    answer:
+      "A `default` case (or final `else`) that assigns the remaining value to a parameter typed `never` only compiles if every other case has truly been handled — once all real possibilities are narrowed away in the preceding branches, what's left is provably nothing, i.e. `never`. Add a new variant to the original union without handling it, and that assignment stops compiling, catching the missing case at build time instead of at runtime.",
+    difficulty: "hard",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 137,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "interfaces-vs-type-aliases",
+    question: "What is declaration merging, and which of `interface`/`type` supports it?",
+    answer:
+      "Declaration merging is when multiple declarations with the same name automatically combine into one — two separate `interface Config { ... }` blocks anywhere in scope merge into a single shape with every field from both. Only `interface` supports this; declaring `type Config = { ... }` a second time is a compile error (\"Duplicate identifier\"), not a merge. It's how libraries safely extend global or third-party types without editing the original source.",
+    difficulty: "medium",
+    companies: ["Google", "Stripe"],
+    orderIndex: 138,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "interfaces-vs-type-aliases",
+    question: "When would you choose `type` over `interface`, or vice versa?",
+    answer:
+      "`type` is the only option once a shape needs to be a union, a tuple, or any non-object type expression — `interface` has no syntax for \"one of these three string literals.\" `interface` is preferable for object shapes a consumer might reasonably need to extend later, like component props or a public API's request/response shape, since it supports declaration merging and a slightly more familiar `extends` syntax.",
+    difficulty: "easy",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 139,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "interfaces-vs-type-aliases",
+    question: "Can a `type` alias express a union? Can an `interface`?",
+    answer:
+      "`type` can — `type Status = \"idle\" | \"loading\" | \"error\"` is a completely ordinary type alias. `interface` cannot; it can only describe the shape of a single object, function, or class, so there's no way to write an interface that means \"one of these three specific things.\" This is the clearest case where `type` is not optional.",
+    difficulty: "easy",
+    companies: ["Google"],
+    orderIndex: 140,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "interfaces-vs-type-aliases",
+    question: "What happens if you declare two `type` aliases with the same name?",
+    answer:
+      "It's a compile error — \"Duplicate identifier\" — because `type` aliases don't merge the way `interface` declarations do. Each `type` name can only be declared once in a given scope; if you need to add fields to an existing type-aliased shape, you have to define a new type and intersect it (`type Extended = Original & { extra: string }`) rather than redeclare the original name.",
+    difficulty: "medium",
+    companies: ["Microsoft"],
+    orderIndex: 141,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "interfaces-vs-type-aliases",
+    question: "How do you extend an interface, and how does that compare to intersecting a type?",
+    answer:
+      "`interface Admin extends User { role: string }` adds fields on top of `User`'s shape, and TypeScript reports a clear error if a field conflicts incompatibly. The `type` equivalent is an intersection — `type Admin = User & { role: string }` — which produces a structurally identical result but resolves conflicting fields differently (an intersection of two incompatible types for the same key collapses to `never` for that field, rather than raising the same explicit conflict error `extends` does).",
+    difficulty: "hard",
+    companies: ["Stripe", "Airbnb"],
+    orderIndex: 142,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "generics",
+    question: "What problem do generics solve compared to using `any`?",
+    answer:
+      "Without generics, a reusable function has two bad options: duplicate it once per concrete type, or type its parameters `any` and lose type checking entirely. A generic type parameter (`<T>`) lets one function definition work across every type while TypeScript still infers and enforces the actual type per call — `first(numbers)[0]` is known to be `number`, `first(strings)[0]` is known to be `string`, from the exact same function body.",
+    difficulty: "easy",
+    companies: ["Google", "Meta"],
+    orderIndex: 143,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "generics",
+    question: "How does `K extends keyof T` constrain a generic type parameter?",
+    answer:
+      "`keyof T` produces a union of `T`'s actual property names, and `K extends keyof T` restricts the generic parameter `K` to only those names. A function like `pluck<T, K extends keyof T>(obj: T, key: K): T[K]` then rejects a typo'd or nonexistent key at compile time, since a string that isn't one of `T`'s real keys simply isn't assignable to `K`.",
+    difficulty: "medium",
+    companies: ["Amazon", "Microsoft"],
+    orderIndex: 144,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "generics",
+    question: "What happens when you call a generic function without an explicit type argument?",
+    answer:
+      "TypeScript infers the type argument from the actual arguments passed at the call site — `first([1, 2, 3])` infers `T` as `number` without needing `first<number>([1, 2, 3])` written out. Explicit type arguments are only needed when inference genuinely can't determine `T` from the call, such as calling a generic function with no arguments that reference `T` at all.",
+    difficulty: "easy",
+    companies: ["Meta"],
+    orderIndex: 145,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "generics",
+    question: "Can a function declare more than one generic type parameter?",
+    answer:
+      "Yes — a signature can declare as many generic parameters as it needs, each inferred independently from a different argument. `function merge<A, B>(a: A, b: B): A & B` infers `A` from the first argument and `B` from the second, and returns their intersection, with no relationship required between the two type parameters unless one is explicitly constrained against the other.",
+    difficulty: "medium",
+    companies: ["Stripe"],
+    orderIndex: 146,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "generics",
+    question: "Why doesn't `first<T>(arr: T[]): T` need to be duplicated per array type?",
+    answer:
+      "`T` is a placeholder that gets filled in per call rather than fixed at the function's definition — TypeScript infers a fresh `T` for `first([1,2,3])` (`number`) and a different fresh `T` for `first([\"a\",\"b\"])` (`string`) from the same compiled function. The alternative — `firstNumber`, `firstString`, and so on — would require identical logic copy-pasted once per concrete type, which is exactly the duplication generics exist to eliminate.",
+    difficulty: "easy",
+    companies: ["Google", "Airbnb"],
+    orderIndex: 147,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "utility-types",
+    question: "What does `Partial<T>` do, and where is it commonly used?",
+    answer:
+      "`Partial<T>` produces a new type identical to `T` but with every property made optional. It's most common for \"update\" payloads, where a caller only sends the fields that actually changed, and for objects that get built up incrementally across several steps before every required field has a value.",
+    difficulty: "easy",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 148,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "utility-types",
+    question: "What's the difference between `Pick<T, K>` and `Omit<T, K>`?",
+    answer:
+      "`Pick<T, K>` keeps only the listed keys `K` from `T` and drops everything else — useful for a narrow view like a list-item type. `Omit<T, K>` is the inverse: it keeps every key of `T` *except* the listed ones — useful for a \"create\" input type that excludes a server-assigned field like `id`. Both are derived from `T`, so they stay accurate automatically if `T` gains or loses fields later.",
+    difficulty: "easy",
+    companies: ["Google", "Microsoft"],
+    orderIndex: 149,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "utility-types",
+    question: "How does `Record<K, V>` differ from the other utility types in what it derives?",
+    answer:
+      "`Partial`, `Pick`, and `Omit` all transform an *existing* object type. `Record<K, V>` doesn't start from an object type at all — it constructs one from a union of keys `K` and a single value type `V`, mapping every key in `K` to `V`. It's the one utility type here whose job is to build a shape from a key list, not derive a variant of an existing shape.",
+    difficulty: "medium",
+    companies: ["Stripe", "Airbnb"],
+    orderIndex: 150,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "utility-types",
+    question: "How would you combine `Partial` and `Omit` to build an \"update\" input type?",
+    answer:
+      "`type UserUpdateInput = Partial<Omit<User, \"id\">>` — `Omit` first drops the server-assigned `id` field entirely, then `Partial` makes every remaining field optional, since an update payload might only touch one or two fields at a time. Utility types compose freely because each one is just a function from a type to a type, so nesting them is ordinary function composition at the type level.",
+    difficulty: "medium",
+    companies: ["Meta"],
+    orderIndex: 151,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "utility-types",
+    question: "Why do utility types stay in sync automatically when the source type changes?",
+    answer:
+      "Because they're computed from `T`, not redefined by hand — `Pick<User, \"id\" | \"name\">` re-derives its shape from `User`'s current definition every time it's used, so adding a field to `User` doesn't require touching every derived type separately. A hand-written duplicate type has no such connection and silently drifts out of sync the moment the source type changes and the duplicate isn't updated to match.",
+    difficulty: "hard",
+    companies: ["Google", "Airbnb"],
+    orderIndex: 152,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "type-narrowing",
+    question: "What's the difference between `typeof` narrowing and `instanceof` narrowing?",
+    answer:
+      "`typeof` distinguishes JavaScript's primitive types — `\"string\"`, `\"number\"`, `\"boolean\"`, `\"object\"`, `\"function\"`, `\"undefined\"` — but can't tell apart different object shapes or class instances, since they're all `\"object\"`. `instanceof` fills that gap by checking against a constructor's prototype chain, so `err instanceof RangeError` narrows correctly even though `typeof err` would just say `\"object\"` for any `Error` subclass.",
+    difficulty: "easy",
+    companies: ["Amazon", "Microsoft"],
+    orderIndex: 153,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "type-narrowing",
+    question: "How does the `in` operator narrow a union of object types?",
+    answer:
+      "`if (\"radius\" in shape)` checks whether a property actually exists on the value at runtime, and TypeScript uses that check to narrow `shape` to whichever union member(s) declare a `radius` field. It's the tool for narrowing object shapes that don't share a common literal discriminant field — where `typeof`/`instanceof` can't help because both variants are plain objects.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 154,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "type-narrowing",
+    question: "Why does narrowing stop working once a value is passed into a callback?",
+    answer:
+      "Narrowing is control-flow analysis — TypeScript tracks which checks are guaranteed to have run by a given line, based on the literal shape of the surrounding `if`/`switch`/early-return statements. Once a narrowed value crosses into a separate callback (especially an async one, or one stored and called later), the compiler can no longer statically prove the original check still holds by the time that callback runs, so the narrowing doesn't carry over automatically.",
+    difficulty: "hard",
+    companies: ["Stripe", "Meta"],
+    orderIndex: 155,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "type-narrowing",
+    question: "What's the difference between narrowing and a type assertion (`as`)?",
+    answer:
+      "Narrowing is always backed by a real runtime check the compiler can verify — `typeof value === \"string\"` genuinely proves `value` is a string in that branch. A type assertion (`value as string`) makes no such promise; it just tells the compiler to trust you, with zero runtime check behind it, so an incorrect assertion compiles cleanly and fails later at the point the value is actually used incorrectly.",
+    difficulty: "medium",
+    companies: ["Airbnb"],
+    orderIndex: 156,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "type-narrowing",
+    question: "How does `Array.isArray` help narrow a `T | T[]` union?",
+    answer:
+      "`typeof` can't distinguish an array from a plain object — both report `\"object\"` — so `Array.isArray(value)` is the dedicated check for that specific split. Inside the `if (Array.isArray(value))` branch, TypeScript narrows `value` to the array member of the union; in the `else`, it narrows to the non-array member, letting each branch use the value's real shape with no cast.",
+    difficulty: "easy",
+    companies: ["Google"],
+    orderIndex: 157,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "discriminated-unions",
+    question: "What is a discriminant field, and why does it need to be a literal type?",
+    answer:
+      "A discriminant is a field every variant in a union shares, holding a distinct literal value — often `type` or `kind`. It has to be a literal type (`\"circle\"`, not the general type `string`) specifically because narrowing depends on TypeScript being able to prove that `shape.kind === \"circle\"` rules out every other variant; if `kind` were typed as plain `string`, no single check could ever eliminate the other possibilities.",
+    difficulty: "medium",
+    companies: ["Meta", "Google"],
+    orderIndex: 158,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "discriminated-unions",
+    question: "How does exhaustiveness checking work with a discriminated union and `never`?",
+    answer:
+      "A `default` case that passes the remaining value into a function typed to accept only `never` will only compile if every other `case` in the `switch` has already narrowed away every real variant. Add a new variant to the union without adding its `case`, and the `default` branch's value is no longer narrowed to `never` — the compile error lands exactly where the new case needs to be added.",
+    difficulty: "hard",
+    companies: ["Stripe", "Airbnb"],
+    orderIndex: 159,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "discriminated-unions",
+    question: "Why are discriminated unions the standard pattern for Redux-style reducers?",
+    answer:
+      "A reducer's whole job is branching on `action.type` and reading whatever data that specific action carries — exactly what a discriminated union is designed for. Typing `Action` as a union of `{ type: \"increment\" } | { type: \"set\"; value: number }` means `switch (action.type) { case \"set\": return action.value; }` gets `action.value` fully type-checked, with no manual cast, and no risk of reading a field that variant doesn't actually have.",
+    difficulty: "medium",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 160,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "discriminated-unions",
+    question: "What breaks if two variants in a discriminated union share the same discriminant value?",
+    answer:
+      "Narrowing becomes ambiguous — if both `Circle` and `Ellipse` used `kind: \"circle\"`, checking `shape.kind === \"circle\"` couldn't narrow to just one of them, since TypeScript can't tell which fields are actually present without a unique literal per variant. Each variant's discriminant value has to be distinct for the whole pattern to work at all.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 161,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "discriminated-unions",
+    question: "How does a `switch` on the discriminant narrow the entire object, not just that field?",
+    answer:
+      "TypeScript's control-flow analysis ties the discriminant's narrowed value back to which union member the whole object must be — inside `case \"circle\":`, it's not just `shape.kind` that's known to be `\"circle\"`, the compiler has eliminated every other possibility for `shape` itself, so `shape.radius` becomes accessible with no cast, even though `radius` and `kind` are two separate fields.",
+    difficulty: "hard",
+    companies: ["Microsoft", "Stripe"],
+    orderIndex: 162,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "conditional-mapped-types",
+    question: "What does `{ [K in keyof T]: ... }` do?",
+    answer:
+      "It's a mapped type — `keyof T` produces a union of `T`'s property names, and `[K in ...]` iterates over that union once per key, producing a new value type for each, the same way `Array.prototype.map` transforms every array element the same way. `T[K]` inside the mapping looks up that specific key's original value type, so the result stays connected to `T`'s real shape.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 163,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "conditional-mapped-types",
+    question: "How does a conditional type like `T extends U ? X : Y` get evaluated?",
+    answer:
+      "It's the type-level equivalent of a ternary — the compiler checks whether `T` is assignable to `U`, and resolves to `X` if so, `Y` if not, entirely at compile time with no runtime cost. It's most powerful combined with a generic `T`, since the same conditional type expression can resolve differently for every concrete type it's applied to.",
+    difficulty: "medium",
+    companies: ["Amazon", "Stripe"],
+    orderIndex: 164,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "conditional-mapped-types",
+    question: "What does `infer` do inside a conditional type?",
+    answer:
+      "`infer` introduces a new type variable inside a conditional type's `extends` clause, capturing whatever type appears in that specific position if the match succeeds. `T extends (...args: never[]) => infer R ? R : never` matches any function type and captures its actual return type as `R` — it's how `ReturnType<T>` and similar utility types extract a piece of a larger type instead of just testing it.",
+    difficulty: "hard",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 165,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "conditional-mapped-types",
+    question: "How is `Partial<T>` implemented using a mapped type?",
+    answer:
+      "`type MyPartial<T> = { [K in keyof T]?: T[K] }` — every key of `T` maps to itself, with a `?` added to make it optional. There's no special compiler feature behind `Partial`; it's a three-line mapped type shipped as a named utility so nobody has to write it themselves.",
+    difficulty: "medium",
+    companies: ["Google"],
+    orderIndex: 166,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "conditional-mapped-types",
+    question: "How is `ReturnType<T>` implemented using a conditional type?",
+    answer:
+      "`type MyReturnType<T> = T extends (...args: never[]) => infer R ? R : never` — the conditional checks whether `T` matches a function type pattern, and if so, `infer R` captures the function's actual return type; if `T` isn't a function at all, the result falls back to `never`. It's a conditional type using `infer` to pull one specific piece out of a larger matched type.",
+    difficulty: "hard",
+    companies: ["Stripe", "Microsoft"],
+    orderIndex: 167,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "template-literal-branded-types",
+    question: "What can a template literal type express that a plain `string` type can't?",
+    answer:
+      "A template literal type describes every string matching a specific pattern, checked at compile time — `type Margin = \\`margin-${\"top\" | \"right\" | \"bottom\" | \"left\"}\\`` is exactly those four literal strings, not any arbitrary string. A plain `string` accepts any value at all, so a typo like `\"margin-diagonal\"` would compile; as the template literal type, it's a compile error instead.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 168,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "template-literal-branded-types",
+    question: "Why does TypeScript's structural typing let you pass an `OrderId` where a `UserId` is expected, if both are just `string`?",
+    answer:
+      "TypeScript compares types by shape, not by name — `type UserId = string` and `type OrderId = string` both compile down to exactly `string`, and structurally there's nothing distinguishing them, so a function expecting `UserId` happily accepts a value typed `OrderId`. This is exactly the class of bug — passing the wrong kind of ID where a similarly-shaped one belongs — that structural typing alone can't catch.",
+    difficulty: "hard",
+    companies: ["Stripe", "Amazon"],
+    orderIndex: 169,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "template-literal-branded-types",
+    question: "What is a \"branded type,\" and how does it fix that problem?",
+    answer:
+      "A branded type intersects a base type with a fake marker property that only exists in the type system — `type UserId = string & { readonly __brand: \"UserId\" }`. Two brands with different marker values become structurally incompatible even though their base type is identical, so `OrderId` is no longer assignable where `UserId` is expected, simulating the nominal typing (matched by name, not shape) that TypeScript doesn't have natively.",
+    difficulty: "hard",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 170,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "template-literal-branded-types",
+    question: "Does a brand exist at runtime?",
+    answer:
+      "No — the `__brand` marker property is purely a type-level fiction that never actually exists on any real value; a branded `UserId` is, at runtime, just a plain string like any other. The brand only affects what the compiler will and won't let you assign; it adds zero runtime behavior or overhead.",
+    difficulty: "easy",
+    companies: ["Google"],
+    orderIndex: 171,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "template-literal-branded-types",
+    question: "What are two real-world use cases for branded types?",
+    answer:
+      "Distinguishing structurally-identical ID types (a `UserId` from an `OrderId`, both really `string`, so they can't be passed to the wrong function by accident) and distinguishing units or currencies (a dollar amount from a cent amount, or meters from feet, both really `number`, so they can't be silently mixed in a calculation). Both are cases where the underlying primitive type is the same but the *meaning* genuinely isn't interchangeable.",
+    difficulty: "medium",
+    companies: ["Stripe", "Google"],
+    orderIndex: 172,
   },
 ];
 
@@ -9058,6 +9888,513 @@ function lintAnimatedRules(rules) {
     ],
     isPremium: true,
     orderIndex: 42,
+  },
+  // ── Phase 10 (Feature 45) — TypeScript Concepts ───────────────────────────
+  {
+    slug: "runtime-shape-validator",
+    conceptSlug: "basic-types-inference",
+    title: "Build a Runtime Shape Validator",
+    description: `Extend the "prove it before you use it" idea behind \`unknown\` into validating a whole object shape — exactly what's needed before trusting a JSON API response.
+
+## The problem
+
+A JSON response is typed \`unknown\` (or worse, silently trusted as \`any\`) the moment it arrives — using any of its fields without checking first is exactly the class of bug \`unknown\` exists to prevent.
+
+## The idea
+
+Given a simple schema describing each field's expected \`typeof\`, check every field on the incoming value before returning it — if anything is missing or has the wrong type, the whole value is rejected rather than partially trusted.
+
+## Your task
+
+Write \`validateShape(value, schema)\`, where \`schema\` is \`{ fieldName: "string" | "number" | "boolean" }\`. Return \`value\` unchanged if every field matches, otherwise \`null\`.
+
+\`\`\`js
+validateShape({ name: "Ada", age: 36 }, { name: "string", age: "number" })
+// → { name: "Ada", age: 36 }
+validateShape({ name: "Ada" }, { name: "string", age: "number" })
+// → null — missing "age"
+\`\`\`
+
+Once this passes, imagine wiring it into a real \`fetch\` wrapper that rejects malformed API responses before they ever reach application code.`,
+    starterCode: `function validateShape(value, schema) {
+  // return value unchanged if every schema field matches, else null
+}`,
+    solutionCode: `function validateShape(value, schema) {
+  if (typeof value !== "object" || value === null) return null;
+  for (const key of Object.keys(schema)) {
+    if (typeof value[key] !== schema[key]) return null;
+  }
+  return value;
+}`,
+    testCases: [
+      {
+        input: "{ name: 'Ada', age: 36 }, { name: 'string', age: 'number' }",
+        expected: "{ name: 'Ada', age: 36 }",
+        label: "A value matching every field's type passes through narrowed",
+      },
+      {
+        input: "{ name: 'Ada' }, { name: 'string', age: 'number' }",
+        expected: "null",
+        label: "A missing field fails validation",
+      },
+      {
+        input: "{ name: 'Ada', age: '36' }, { name: 'string', age: 'number' }",
+        expected: "null",
+        label: "A field with the wrong runtime type fails validation",
+      },
+      {
+        input: "null, { name: 'string' }",
+        expected: "null",
+        label: "null never satisfies any schema",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 43,
+  },
+  {
+    slug: "config-source-merger",
+    conceptSlug: "interfaces-vs-type-aliases",
+    title: "Build a Layered Config Merger",
+    description: `Extend declaration merging's "combine, don't silently overwrite" idea into a realistic layered config loader — defaults, then environment overrides, then CLI flags.
+
+## The problem
+
+Merging config from several sources (defaults → env → CLI) usually means later sources should win for a single value like \`timeout\`, but list-like settings like \`plugins\` should accumulate across sources instead of the last one wiping out the rest.
+
+## The idea
+
+Walk the sources in order. For a plain scalar value, the later source simply overwrites the earlier one. For an array value present in both the accumulated result and the new source, concatenate and de-duplicate instead of overwriting.
+
+## Your task
+
+Write \`mergeConfigSources(sources)\`, where \`sources\` is an array of plain config objects applied in order:
+
+\`\`\`js
+mergeConfigSources([{ timeout: 1000 }, { timeout: 5000 }])
+// → { timeout: 5000 }
+mergeConfigSources([{ plugins: ["a"] }, { plugins: ["b"] }])
+// → { plugins: ["a", "b"] }
+\`\`\`
+
+Once this passes, imagine loading \`defaults.json\`, \`.env\`-derived overrides, and CLI flags through the same function, in that order, to produce one final config.`,
+    starterCode: `function mergeConfigSources(sources) {
+  // scalars: later source wins. arrays: concatenate + de-duplicate.
+}`,
+    solutionCode: `function mergeConfigSources(sources) {
+  const result = {};
+  for (const source of sources) {
+    for (const [key, value] of Object.entries(source)) {
+      if (Array.isArray(value) && Array.isArray(result[key])) {
+        result[key] = [...new Set([...result[key], ...value])];
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      {
+        input: "[{ timeout: 1000 }, { timeout: 5000 }]",
+        expected: "{ timeout: 5000 }",
+        label: "A scalar value is overwritten by the later source",
+      },
+      {
+        input: "[{ plugins: ['a'] }, { plugins: ['b'] }]",
+        expected: "{ plugins: ['a', 'b'] }",
+        label: "Array values accumulate across sources instead of overwriting",
+      },
+      {
+        input: "[{ plugins: ['a', 'b'] }, { plugins: ['b', 'c'] }]",
+        expected: "{ plugins: ['a', 'b', 'c'] }",
+        label: "Accumulated array values are de-duplicated",
+      },
+      {
+        input: "[{ debug: false }, { debug: true }]",
+        expected: "{ debug: true }",
+        label: "A boolean scalar follows the same later-wins rule as any other scalar",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 44,
+  },
+  {
+    slug: "pluck-with-key-constraint",
+    conceptSlug: "generics",
+    title: "Build a Constrained Property Plucker",
+    description: `Extend the generic-constraint idea (\`K extends keyof T\`) into a runtime plucker that rejects a key the object doesn't actually have, instead of silently returning \`undefined\`.
+
+## The problem
+
+\`obj[key]\` never fails in JavaScript, even when \`key\` isn't a real property — it just quietly returns \`undefined\`, hiding what would be a compile error in TypeScript (\`K extends keyof T\` catching a typo'd key at the call site).
+
+## The idea
+
+Before reading anything, check that every requested key genuinely exists on the object — if any don't, throw and name them, rather than let a typo pass through as a silent \`undefined\`.
+
+## Your task
+
+Write \`pluck(obj, keys)\`. A single string \`keys\` returns that one value; an array of keys returns an object of just those keys. Any key not present on \`obj\` should throw.
+
+\`\`\`js
+pluck({ name: "Ada", age: 36 }, "name")            // "Ada"
+pluck({ name: "Ada", age: 36 }, ["name", "age"])   // { name: "Ada", age: 36 }
+pluck({ name: "Ada" }, ["name", "email"])          // throws — "email" isn't a real key
+\`\`\``,
+    starterCode: `function pluck(obj, keys) {
+  // single key -> that value. array of keys -> an object of just those keys.
+  // throw if any requested key isn't a real property of obj.
+}`,
+    solutionCode: `function pluck(obj, keys) {
+  const keyList = Array.isArray(keys) ? keys : [keys];
+  const missing = keyList.filter((k) => !Object.prototype.hasOwnProperty.call(obj, k));
+  if (missing.length > 0) {
+    throw new Error(\`Not a key of the given object: \${missing.join(", ")}\`);
+  }
+  if (!Array.isArray(keys)) return obj[keys];
+  const result = {};
+  for (const k of keyList) result[k] = obj[k];
+  return result;
+}`,
+    testCases: [
+      {
+        input: "{ name: 'Ada', age: 36 }, 'name'",
+        expected: "'Ada'",
+        label: "A single valid key returns that key's value directly",
+      },
+      {
+        input: "{ name: 'Ada', age: 36 }, ['name', 'age']",
+        expected: "{ name: 'Ada', age: 36 }",
+        label: "An array of valid keys returns an object of just those keys",
+      },
+      {
+        input: "{ name: 'Ada' }, ['name', 'email']",
+        expected: "throws an Error naming 'email'",
+        label: "A nonexistent key in the array throws instead of returning undefined",
+      },
+      {
+        input: "{ name: 'Ada' }, 'email'",
+        expected: "throws an Error naming 'email'",
+        label: "A single nonexistent key also throws",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 45,
+  },
+  {
+    slug: "record-defaults-builder",
+    conceptSlug: "utility-types",
+    title: "Build a Record-Style Defaults Generator",
+    description: `\`Record<K, V>\` builds an object type from a list of keys and one value type — this builds the same shape of object from an actual list of keys, at runtime.
+
+## The problem
+
+Initializing a config or state object with the same default for every one of a known set of keys (\`{ admin: [], editor: [], viewer: [] }\`) usually means writing each key out by hand, one line at a time.
+
+## The idea
+
+Given a list of keys and a factory function, generate one entry per key by calling the factory — mirroring how \`Record<K, V>\` maps every key in \`K\` to the same value type \`V\`, except here each value can be freshly computed rather than shared by reference.
+
+## Your task
+
+Write \`createRecordDefaults(keys, factory)\`:
+
+\`\`\`js
+createRecordDefaults(["admin", "editor", "viewer"], () => [])
+// → { admin: [], editor: [], viewer: [] }
+createRecordDefaults(["a", "b"], (key) => key.toUpperCase())
+// → { a: "A", b: "B" }
+\`\`\`
+
+Once this passes, imagine using it to build per-role permission lists or per-route default state from a single source list of keys.`,
+    starterCode: `function createRecordDefaults(keys, factory) {
+  // return an object with one entry per key, value = factory(key)
+}`,
+    solutionCode: `function createRecordDefaults(keys, factory) {
+  const result = {};
+  for (const key of keys) {
+    result[key] = factory(key);
+  }
+  return result;
+}`,
+    testCases: [
+      {
+        input: "['admin', 'editor', 'viewer'], () => []",
+        expected: "{ admin: [], editor: [], viewer: [] }",
+        label: "Every key gets its own freshly-generated default value",
+      },
+      {
+        input: "['a', 'b'], (key) => key.toUpperCase()",
+        expected: "{ a: 'A', b: 'B' }",
+        label: "The factory receives each key and can compute a value from it",
+      },
+      {
+        input: "[], () => 0",
+        expected: "{}",
+        label: "An empty key list produces an empty object",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 46,
+  },
+  {
+    slug: "format-value-safely",
+    conceptSlug: "type-narrowing",
+    title: "Build a Narrowing-Based Value Formatter",
+    description: `Extend a chain of narrowing checks into a small, safe "pretty-print anything" utility — the kind of thing a real logger reaches for constantly.
+
+## The problem
+
+A generic logging utility receives values of every shape — strings, numbers, \`null\`, arrays, plain objects — and formatting them all the same way (\`String(value)\`) produces useless output like \`[object Object]\`.
+
+## The idea
+
+Narrow the value through each case in turn — \`null\`/\`undefined\` first (since \`typeof null\` lies and says \`"object"\`), then string, number/boolean, array, then plain object — formatting each shape appropriately, recursing into arrays and objects.
+
+## Your task
+
+Write \`formatValue(value)\`, returning a readable string:
+
+\`\`\`js
+formatValue("hi")             // '"hi"'
+formatValue(42)                // "42"
+formatValue(null)              // "null"
+formatValue([1, "a", null])    // '[1, "a", null]'
+formatValue({ a: 1, b: "x" })  // '{ a: 1, b: "x" }'
+\`\`\``,
+    starterCode: `function formatValue(value) {
+  // narrow through null/undefined, string, number/boolean, array, object
+}`,
+    solutionCode: `function formatValue(value) {
+  if (value === null) return "null";
+  if (value === undefined) return "undefined";
+  if (typeof value === "string") return \`"\${value}"\`;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return \`[\${value.map(formatValue).join(", ")}]\`;
+  if (typeof value === "object") {
+    const entries = Object.entries(value).map(([k, v]) => \`\${k}: \${formatValue(v)}\`);
+    return \`{ \${entries.join(", ")} }\`;
+  }
+  return String(value);
+}`,
+    testCases: [
+      { input: "'hi'", expected: '\'"hi"\'', label: "A string is wrapped in quotes to distinguish it from other output" },
+      { input: "42", expected: "'42'", label: "A number is formatted as-is" },
+      { input: "null", expected: "'null'", label: "null is narrowed correctly, not confused with an object" },
+      { input: "[1, 'a', null]", expected: "'[1, \"a\", null]'", label: "An array recursively formats each of its own elements" },
+      { input: "{ a: 1, b: 'x' }", expected: "'{ a: 1, b: \"x\" }'", label: "A plain object recursively formats each of its values" },
+    ],
+    isPremium: true,
+    orderIndex: 47,
+  },
+  {
+    slug: "mini-redux-store",
+    conceptSlug: "discriminated-unions",
+    title: "Build a Mini Redux-Style Store",
+    description: `Wire a discriminated-union reducer into a real, minimal store — \`getState\`, \`dispatch\`, and \`subscribe\`, the same three-method core every Redux-style store is built from.
+
+## The problem
+
+A reducer alone only computes the *next* state from the current one — it doesn't hold onto that state between calls, or notify anything when it changes.
+
+## The idea
+
+Keep the current state in a closure. \`dispatch\` runs the reducer against it, stores the result, and notifies every subscribed listener with the new state. \`subscribe\` registers a listener and returns an unsubscribe function.
+
+## Your task
+
+Write \`createStore(reducer, initialState)\`, returning \`{ getState(), dispatch(action), subscribe(listener) }\`:
+
+\`\`\`js
+const store = createStore((state, action) =>
+  action.type === "increment" ? state + 1 : state, 0);
+store.subscribe((state) => console.log("now:", state));
+store.dispatch({ type: "increment" }); // logs "now: 1"
+store.getState(); // 1
+\`\`\``,
+    starterCode: `function createStore(reducer, initialState) {
+  // return { getState(), dispatch(action), subscribe(listener) }
+  // subscribe(listener) should return an unsubscribe function
+}`,
+    solutionCode: `function createStore(reducer, initialState) {
+  let state = initialState;
+  const listeners = [];
+  return {
+    getState() {
+      return state;
+    },
+    dispatch(action) {
+      state = reducer(state, action);
+      listeners.forEach((listener) => listener(state));
+      return state;
+    },
+    subscribe(listener) {
+      listeners.push(listener);
+      return () => {
+        const index = listeners.indexOf(listener);
+        if (index !== -1) listeners.splice(index, 1);
+      };
+    },
+  };
+}`,
+    testCases: [
+      {
+        input: "createStore(reducer, 0).getState()",
+        expected: "0",
+        label: "getState() reflects the initial state before any dispatch",
+      },
+      {
+        input: "dispatch({ type: 'increment' }) against state 0",
+        expected: "1",
+        label: "dispatch runs the reducer and updates the stored state",
+      },
+      {
+        input: "a subscribed listener, after one dispatch",
+        expected: "called once with the new state",
+        label: "subscribe registers a listener that's notified on dispatch",
+      },
+      {
+        input: "subscribe(...)() then dispatch again",
+        expected: "the unsubscribed listener is not called again",
+        label: "The function returned by subscribe unsubscribes that listener",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 48,
+  },
+  {
+    slug: "deep-map-values",
+    conceptSlug: "conditional-mapped-types",
+    title: "Build a Deep Mapped-Value Transformer",
+    description: `Extend a single-level mapped-type-style transformer into a recursive one — the runtime equivalent of a recursive conditional/mapped type like a hand-rolled \`DeepPartial\`.
+
+## The problem
+
+A flat \`mapValues\` only transforms an object's top-level values — a nested object's inner values pass through completely untouched, exactly the gap a recursive mapped type is needed to close.
+
+## The idea
+
+For each key, if the value is itself a plain object, recurse into it with the same transform; otherwise apply \`transform\` directly, exactly like a mapped type conditionally recursing into a nested object type instead of transforming it directly.
+
+## Your task
+
+Write \`deepMapValues(obj, transform)\`:
+
+\`\`\`js
+deepMapValues({ a: 1, b: { c: 2, d: 3 } }, (v) => v * 2)
+// → { a: 2, b: { c: 4, d: 6 } }
+\`\`\`
+
+Once this passes, imagine using it to deep-freeze or deep-validate an arbitrarily nested config object with one function instead of one per nesting level.`,
+    starterCode: `function deepMapValues(obj, transform) {
+  // recurse into nested plain objects; apply transform to every leaf value
+}`,
+    solutionCode: `function deepMapValues(obj, transform) {
+  const result = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      result[key] = deepMapValues(value, transform);
+    } else {
+      result[key] = transform(value, key);
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      {
+        input: "{ a: 1, b: { c: 2, d: 3 } }, (v) => v * 2",
+        expected: "{ a: 2, b: { c: 4, d: 6 } }",
+        label: "Nested object values are transformed recursively, not skipped",
+      },
+      {
+        input: "{ a: 1 }, (v) => v * 2",
+        expected: "{ a: 2 }",
+        label: "A flat object with no nesting still transforms correctly",
+      },
+      {
+        input: "{}, (v) => v",
+        expected: "{}",
+        label: "An empty object maps to an empty object",
+      },
+      {
+        input: "{ a: { b: { c: 1 } } }, (v) => v + 1",
+        expected: "{ a: { b: { c: 2 } } }",
+        label: "Recursion goes as deep as the nesting actually goes, not just one level",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 49,
+  },
+  {
+    slug: "brand-and-verify",
+    conceptSlug: "template-literal-branded-types",
+    title: "Build a Runtime Brand Checker",
+    description: `TypeScript's brand is erased at compile time — this rebuilds the same nominal-typing idea as a real runtime tag, so a mismatched brand fails loudly instead of silently.
+
+## The problem
+
+Two values that are structurally identical (both just a string, or both just a wrapped primitive) can be passed to the wrong place with no error, if nothing distinguishes what they're actually *for*.
+
+## The idea
+
+Wrap a raw value together with a brand name tag. A value can only be unwrapped by code that names the exact matching brand — unwrapping with the wrong brand name fails, the same way TypeScript's compile-time brand would refuse an incompatible assignment.
+
+## Your task
+
+Write \`brand(value, brandName)\`, \`isBranded(branded, brandName)\`, and \`unwrapBrand(branded, brandName)\` (throws if the brand doesn't match):
+
+\`\`\`js
+const userId = brand("u_1", "UserId");
+isBranded(userId, "UserId")   // true
+isBranded(userId, "OrderId")  // false
+unwrapBrand(userId, "UserId") // "u_1"
+unwrapBrand(userId, "OrderId") // throws
+\`\`\``,
+    starterCode: `function brand(value, brandName) {
+  // wrap value with a brand tag
+}
+function isBranded(branded, brandName) {
+  // true only if branded carries exactly this brandName
+}
+function unwrapBrand(branded, brandName) {
+  // return the raw value if the brand matches, else throw
+}`,
+    solutionCode: `function brand(value, brandName) {
+  return { value, __brand: brandName };
+}
+function isBranded(branded, brandName) {
+  return !!branded && typeof branded === "object" && branded.__brand === brandName;
+}
+function unwrapBrand(branded, brandName) {
+  if (!isBranded(branded, brandName)) {
+    throw new Error(\`Expected a value branded "\${brandName}"\`);
+  }
+  return branded.value;
+}`,
+    testCases: [
+      {
+        input: "isBranded(brand('u_1', 'UserId'), 'UserId')",
+        expected: "true",
+        label: "A value checked against its own brand name matches",
+      },
+      {
+        input: "isBranded(brand('u_1', 'UserId'), 'OrderId')",
+        expected: "false",
+        label: "A value checked against a different brand name doesn't match",
+      },
+      {
+        input: "unwrapBrand(brand('u_1', 'UserId'), 'UserId')",
+        expected: "'u_1'",
+        label: "Unwrapping with the matching brand returns the raw value",
+      },
+      {
+        input: "unwrapBrand(brand('u_1', 'UserId'), 'OrderId')",
+        expected: "throws an Error",
+        label: "Unwrapping with the wrong brand throws instead of returning the value anyway",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 50,
   },
 ];
 

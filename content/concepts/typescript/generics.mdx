@@ -1,0 +1,69 @@
+---
+title: "Generics"
+description: "See how generic type parameters let a function or type work across many concrete types while still catching mismatches at compile time."
+category: "typescript"
+difficulty: "intermediate"
+order: 3
+whatsHappening: "A generic type parameter, written as <T>, is a placeholder for a type that gets filled in at the call site — TypeScript figures out what T actually is from the argument you pass, then holds every other use of T in that same call to match. It's the middle ground between a function locked to one specific type and any, which gives up type checking altogether."
+keyInsight: "Without generics, a reusable function has exactly two options: write it once per concrete type (duplicated code), or type its parameters any (no type checking at all). Generics let one function definition work across every type while still catching a mismatched usage — first(numbers)[0] is known to be number, first(strings)[0] is known to be string, from the same function body."
+memoryHook: "T is a variable, but for types instead of values — filled in once per call, then held consistent everywhere else it appears in that same call's signature."
+inRealLife: "Like a shipping container: the container's own dimensions and handling rules never change no matter what's inside it, but once you've loaded electronics into one container, that container's manifest says 'electronics' — you can't quietly swap in furniture without it being flagged as wrong for what this specific container was declared to hold."
+---
+
+## The problem generics solve
+
+A function locked to one type can't be reused for another, even when the logic is identical:
+
+```ts
+function firstNumber(arr: number[]): number { return arr[0]; }
+function firstString(arr: string[]): string { return arr[0]; }
+// same logic, duplicated per type
+```
+
+The tempting shortcut — typing the parameter `any` — throws away the guarantee entirely: `first(arr: any): any` compiles for every input, but also silently accepts and returns garbage with no error anywhere.
+
+## Generic type parameters
+
+A generic type parameter fills in the gap between "one exact type" and "any type, unchecked":
+
+```ts
+function first<T>(arr: T[]): T {
+  return arr[0];
+}
+
+first([1, 2, 3]);       // T inferred as number, returns number
+first(["a", "b"]);      // T inferred as string, returns string
+```
+
+TypeScript infers `T` from the argument at the call site — no need to write `first<number>([1, 2, 3])` explicitly unless inference genuinely can't determine it. Once `T` is fixed for that call, every other place `T` appears in the signature is held to the same type.
+
+## Constraining generics with extends
+
+An unconstrained `T` can be *any* type, which sometimes allows too much — `T extends U` narrows the generic to only types compatible with `U`:
+
+```ts
+function pluck<T, K extends keyof T>(obj: T, key: K): T[K] {
+  return obj[key];
+}
+
+pluck({ name: "Ada", age: 36 }, "name"); // fine — "name" is a real key
+pluck({ name: "Ada", age: 36 }, "email"); // compile error — no "email" key
+```
+
+`K extends keyof T` says "`K` must be one of `T`'s actual property names" — the constraint is what makes `pluck` reject a typo'd key at compile time instead of returning `undefined` at runtime.
+
+## Multiple type parameters
+
+A signature can declare more than one generic parameter, each inferred independently from a different argument:
+
+```ts
+function merge<A, B>(a: A, b: B): A & B {
+  return { ...a, ...b };
+}
+
+merge({ name: "Ada" }, { age: 36 }); // { name: string } & { age: number }
+```
+
+## Why it matters
+
+Generics are what let a library ship one `Array.prototype.map`, one `Promise<T>`, one `useState<T>` instead of a hand-duplicated version per type — the entire standard library and most well-typed utility functions lean on generics to stay both reusable and precisely typed at the same time.

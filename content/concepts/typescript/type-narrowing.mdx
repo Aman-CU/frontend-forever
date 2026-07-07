@@ -1,0 +1,82 @@
+---
+title: "Type Narrowing"
+description: "Use control-flow analysis, type guards, and discriminated unions to refine wide types to precise ones at compile time."
+category: "typescript"
+difficulty: "intermediate"
+order: 5
+whatsHappening: "When a value's type is a union of possibilities (string | number | null), TypeScript tracks every check you perform on it — typeof, Array.isArray, instanceof, a property check, a truthiness check — and narrows the value to a more specific type inside each branch that the check makes true. The value's declared type never changes; TypeScript is just refining what it knows is still possible at each point in the code."
+keyInsight: "Narrowing is control-flow analysis, not a runtime feature — it's the compiler reasoning about which branch of an if/else, switch, or early return a given line of code can actually be reached from, and shrinking the union accordingly. That's why narrowing only survives as long as the value isn't reassigned or passed elsewhere in a way the compiler can't trace back to the same check."
+memoryHook: "Every type guard is a fork in the road that the compiler tracks separately — walk the string branch, and every line after the check knows it's holding a string, with no cast required."
+inRealLife: "Like a coat check that lets you claim a plain ticket for 'a coat' at drop-off, but by the time you're picking it up, the attendant has already looked and knows it's specifically a red wool coat — the ticket didn't change, but by the time you're standing at the counter, the exact item is already known, no guessing required."
+---
+
+## Why narrowing exists
+
+A union type like `string | number` only tells you what a value *might* be — using it as if it were definitely one or the other is unsafe until the code has actually checked:
+
+```ts
+function describe(value: string | number) {
+  value.toUpperCase(); // compile error — value might be a number
+}
+```
+
+Narrowing is how you get from "might be either" to "the compiler now knows exactly which one, in this branch."
+
+## typeof narrowing
+
+The most common guard, for distinguishing primitive types:
+
+```ts
+function describe(value: string | number) {
+  if (typeof value === "string") {
+    value.toUpperCase(); // fine — narrowed to string
+  } else {
+    value.toFixed(2); // fine — narrowed to number
+  }
+}
+```
+
+## Array.isArray and instanceof
+
+`typeof` can't distinguish objects, arrays, or class instances from each other — `Array.isArray` and `instanceof` fill that gap:
+
+```ts
+function firstOrSelf(value: number | number[]) {
+  if (Array.isArray(value)) {
+    return value[0]; // narrowed to number[]
+  }
+  return value; // narrowed to number
+}
+
+function isOverdue(err: Error | RangeError) {
+  if (err instanceof RangeError) { /* narrowed to RangeError */ }
+}
+```
+
+## The in operator
+
+Narrows between object shapes that don't share a common discriminant field, by checking whether a specific property exists:
+
+```ts
+type Circle = { radius: number };
+type Square = { side: number };
+
+function area(shape: Circle | Square) {
+  if ("radius" in shape) {
+    return Math.PI * shape.radius ** 2; // narrowed to Circle
+  }
+  return shape.side ** 2; // narrowed to Square
+}
+```
+
+## Discriminated unions
+
+The most reliable narrowing pattern: every member of the union shares one literal field (often `kind` or `type`), and a `switch` on that field narrows precisely, with no ambiguity even as more variants are added later — the dedicated pattern covered in the next concept.
+
+## Narrowing is control flow, not a cast
+
+Narrowing only holds as long as TypeScript can trace the control flow — a value narrowed inside an `if` loses that narrowing the moment it's passed into a callback the compiler can't statically follow, or reassigned in a way that widens it back out. This is different from a type assertion (`value as string`), which forces a type with no runtime check behind it at all — narrowing is always backed by a real check that ran.
+
+## Why it matters
+
+Narrowing is what makes union types usable without constant manual casting — write the check once, and every line inside that branch gets the precise type for free, with the compiler itself verifying every branch was actually handled.
