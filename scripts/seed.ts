@@ -3916,7 +3916,7 @@ reducer(0, { type: "increment" })       // 1
 reducer(5, { type: "decrement" })       // 4
 reducer(5, { type: "set", value: 100 }) // 100
 \`\`\``,
-    difficulty: "medium",
+    difficulty: "hard",
     starterCode: `function reducer(state, action) {
   // switch on action.type: "increment", "decrement", "set"
 }`,
@@ -3968,7 +3968,7 @@ Write \`mapValues(obj, transform)\`:
 mapValues({ a: 1, b: 2 }, (v) => v * 2)
 // → { a: 2, b: 4 }
 \`\`\``,
-    difficulty: "medium",
+    difficulty: "hard",
     starterCode: `function mapValues(obj, transform) {
   // return a new object with every value passed through transform, same keys
 }`,
@@ -4015,7 +4015,7 @@ isEventName("onSubmit")  // true
 isEventName("click")     // false
 isEventName("onclick")   // false — not capitalized after "on"
 \`\`\``,
-    difficulty: "medium",
+    difficulty: "hard",
     starterCode: `function isEventName(value) {
   // true only if value is "on" followed by a Capitalized word
 }`,
