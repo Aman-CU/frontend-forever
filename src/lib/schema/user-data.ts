@@ -16,6 +16,11 @@ import { XP_EVENT_TYPES, CHALLENGE_STATUSES } from "@/lib/constants";
 import { profiles } from "./profiles";
 import { concepts, challenges, interviewQuestions } from "./content";
 
+// Every table below is .enableRLS()'d — this has no bearing on the app itself
+// (the app's DATABASE_URL role has BYPASSRLS); it exists purely to block
+// Supabase's auto-generated PostgREST API from reading/writing these tables
+// via the anon/authenticated roles. See security.md's RLS section.
+
 // ── user_concept_progress ─────────────────────────────────────────────────────
 
 export const userConceptProgress = pgTable(
@@ -45,7 +50,7 @@ export const userConceptProgress = pgTable(
     unique("ucp_user_concept_unique").on(table.userId, table.conceptId),
     index("ucp_user_id_idx").on(table.userId),
   ],
-);
+).enableRLS();
 
 // ── xp_events ─────────────────────────────────────────────────────────────────
 
@@ -79,7 +84,7 @@ export const xpEvents = pgTable(
       )})`,
     ),
   ],
-);
+).enableRLS();
 
 // ── user_challenge_submissions ────────────────────────────────────────────────
 // No unique constraint — multiple submissions per (user, challenge) are expected.
@@ -109,7 +114,7 @@ export const userChallengeSubmissions = pgTable(
       )})`,
     ),
   ],
-);
+).enableRLS();
 
 // ── user_interview_reviews ────────────────────────────────────────────────────
 
@@ -136,7 +141,7 @@ export const userInterviewReviews = pgTable(
     index("uir_user_id_idx").on(table.userId),
     index("uir_next_review_idx").on(table.nextReviewAt),
   ],
-);
+).enableRLS();
 
 // ── bookmarks ─────────────────────────────────────────────────────────────────
 // Each row targets exactly one entity (concept, question, or challenge).
@@ -172,7 +177,7 @@ export const bookmarks = pgTable(
       sql`(${table.conceptId} IS NOT NULL)::int + (${table.questionId} IS NOT NULL)::int + (${table.challengeId} IS NOT NULL)::int = 1`,
     ),
   ],
-);
+).enableRLS();
 
 // ── relations ─────────────────────────────────────────────────────────────────
 

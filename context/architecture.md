@@ -471,14 +471,14 @@ Accessed via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), 
 
 ---
 
-## Authorization Model (no RLS — enforced in application code)
+## Authorization Model (RLS enabled, but not the app's boundary — enforced in application code)
 
-**This is a deliberate change from the original Supabase-Auth design.** RLS policies like `USING (user_id = auth.uid())` only work when queries go through Supabase's PostgREST layer with a Supabase-issued JWT. Better-Auth doesn't issue Supabase-compatible JWTs, and app data is now queried via a direct Postgres connection (`lib/db.ts`) using a single privileged connection string — there is no per-request Supabase JWT for `auth.uid()` to read, and a direct connection bypasses RLS regardless.
+**This is a deliberate change from the original Supabase-Auth design.** RLS policies like `USING (user_id = auth.uid())` only work when queries go through Supabase's PostgREST layer with a Supabase-issued JWT. Better-Auth doesn't issue Supabase-compatible JWTs, and app data is now queried via a direct Postgres connection (`lib/db.ts`) using a single privileged connection string — there is no per-request Supabase JWT for `auth.uid()` to read, and a direct connection using a role with `BYPASSRLS` (the default for Supabase's `postgres` role, which `DATABASE_URL` connects as) skips RLS entirely regardless of what policies exist.
 
 Consequences:
-- RLS is **not** the authorization boundary anymore. Every query against a user-owned table must filter `WHERE user_id = session.user.id` in application code — this is now the *primary* line of defense, not defense-in-depth on top of RLS.
-- `DATABASE_URL` is as sensitive as the old `SUPABASE_SERVICE_ROLE_KEY` was — it has full table access with no policy layer underneath it. Treat it with the same care (server-only, never in client code, never logged).
-- Existing tables may keep RLS enabled at the Postgres level for defense-in-depth against any future direct-PostgREST access, but the application must never rely on it — see `security.md` for the full rule.
+- RLS is **not** the app's authorization boundary. Every query against a user-owned table must filter `WHERE user_id = session.user.id` in application code — this is the *only* line of defense the app itself has, since its connection bypasses RLS outright.
+- `DATABASE_URL` is as sensitive as the old `SUPABASE_SERVICE_ROLE_KEY` was — it has full table access with no policy layer underneath it (from the app's point of view). Treat it with the same care (server-only, never in client code, never logged).
+- **Every table has RLS enabled with zero policies** (`.enableRLS()` in every `src/lib/schema/*.ts` table definition — see `security.md`'s RLS section for the incident that prompted this). This is unrelated to the app's own authorization: it exists solely to block Supabase's auto-generated PostgREST API (which runs over the `public` schema independently of anything the app does) from serving these tables to the `anon`/`authenticated` roles. RLS-enabled-with-no-policies means Postgres denies all access by default to any role without `BYPASSRLS` — exactly what's needed here, since the app's own role bypasses it and PostgREST's roles don't.
 
 Never query any user-owned table without an explicit `user_id` filter in the query itself.
 

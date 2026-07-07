@@ -42,9 +42,11 @@ Never add email/password auth without explicit product decision.
 
 ## Database Security
 
-### No RLS — Authorization Is Enforced in Application Code
+### RLS Is Enabled, But Isn't the App's Boundary — Authorization Is Enforced in Application Code
 
-**This is a deliberate change from the original Supabase-Auth design.** App data is now queried via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), not Supabase's PostgREST client — there is no per-request Supabase JWT for an `auth.uid()`-based RLS policy to read, and a direct connection bypasses RLS regardless of whether policies exist on the table. This means the `user_id` filter below is the **only** boundary, not a second layer on top of RLS — get it wrong and there is nothing else stopping a cross-user read or write.
+**This is a deliberate change from the original Supabase-Auth design.** App data is now queried via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), not Supabase's PostgREST client — there is no per-request Supabase JWT for an `auth.uid()`-based RLS policy to read, and the app's connection uses the `postgres` role, which has `BYPASSRLS` and skips RLS entirely regardless of whether policies exist on the table. This means the `user_id` filter below is the **only** boundary the app itself has, not a second layer on top of RLS — get it wrong and there is nothing else stopping a cross-user read or write.
+
+**Every table has RLS enabled anyway, with zero policies** (`.enableRLS()` on every table in `src/lib/schema/*.ts`) — for a reason that has nothing to do with the app's own authorization. **Incident (2026-07-06):** Supabase's automated security advisor flagged `account` (`access_token`, `refresh_token`, `password`) and `session` (`token`) as publicly readable/writable, because Supabase runs an auto-generated PostgREST API over every table in the `public` schema **independently of whatever the app's own code does** — that API is reachable with the project's anon key, and RLS is the only thing that restricts what it returns. With RLS off, the API would serve every row of every table to anyone who reaches it, including raw OAuth tokens and session tokens. Enabling RLS with no policies makes Postgres deny all access by default to any role without `BYPASSRLS` (i.e. PostgREST's `anon`/`authenticated` roles) — it's invisible to the app itself, since the app's role bypasses it, and it fully closes the PostgREST exposure. Confirmed via `SELECT rolbypassrls FROM pg_roles WHERE rolname = current_user` against the real dev DB before applying, and via `pg_class.relrowsecurity` after. If a new table is ever added, it must get `.enableRLS()` too, or it silently reopens this exact exposure.
 
 ```typescript
 // Mandatory — every query against a user-owned table filters by the session's user id
@@ -391,7 +393,8 @@ Rate limit key is always `user.id` — never IP address for authenticated routes
 Rules that must never be violated:
 
 - `auth.api.getSession()` (server-verified) is the only valid authorization check — never trust a client-reported session
-- There is no RLS safety net — every query on a user-owned table must filter `WHERE user_id = session.user.id` in application code, with no exceptions
+- There is no RLS safety net for the app itself (its connection role bypasses RLS) — every query on a user-owned table must filter `WHERE user_id = session.user.id` in application code, with no exceptions
+- Every table must have `.enableRLS()` set in its Drizzle schema definition — this doesn't protect the app (see above) but blocks Supabase's PostgREST API from exposing the table; a new table without it silently reopens that exposure
 - `DATABASE_URL` never appears in client code, never gets logged, never appears in an error message
 - All user input is validated against an allowlist before DB writes
 - Premium content is gated server-side — client UI is cosmetic only
