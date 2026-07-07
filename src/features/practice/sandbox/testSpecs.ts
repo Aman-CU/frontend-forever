@@ -1491,6 +1491,206 @@ const CLASSIFY_ANIMATION_COST_TESTS: SandboxTest[] = [
   },
 ];
 
+// ── Phase 10 (Feature 45) — TypeScript Concepts ─────────────────────────────
+
+const SAFE_PARSE_NUMBER_TESTS: SandboxTest[] = [
+  {
+    label: "A finite number passes through unchanged",
+    source: `
+      assert(typeof safeParseNumber === "function", "safeParseNumber is not defined");
+      assertEqual(safeParseNumber(42), 42);
+    `,
+  },
+  {
+    label: "A numeric string is parsed to a number",
+    source: `assertEqual(safeParseNumber("3.14"), 3.14);`,
+  },
+  {
+    label: "A non-numeric string returns null instead of NaN",
+    source: `assertEqual(safeParseNumber("not a number"), null);`,
+  },
+  {
+    label: "NaN itself is rejected, not returned as a valid number",
+    source: `assertEqual(safeParseNumber(NaN), null);`,
+  },
+];
+
+const MERGE_DECLARATIONS_TESTS: SandboxTest[] = [
+  {
+    label: "Distinct keys across declarations simply combine",
+    source: `
+      assert(typeof mergeDeclarations === "function", "mergeDeclarations is not defined");
+      assertEqual(mergeDeclarations([{ timeout: "number" }, { retries: "number" }]), { timeout: "number", retries: "number" });
+    `,
+  },
+  {
+    label: "The same key with the same value merges to a single value, not an array",
+    source: `assertEqual(mergeDeclarations([{ id: "string" }, { id: "string" }]), { id: "string" });`,
+  },
+  {
+    label: "The same key with a different value surfaces as a conflict array",
+    source: `assertEqual(mergeDeclarations([{ id: "string" }, { id: "number" }]), { id: ["string", "number"] });`,
+  },
+  {
+    label: "A key repeated later with the same value doesn't change the result",
+    source: `assertEqual(mergeDeclarations([{ a: 1 }, { b: 2 }, { a: 1 }]), { a: 1, b: 2 });`,
+  },
+];
+
+const CREATE_TYPED_STACK_TESTS: SandboxTest[] = [
+  {
+    label: "Same-type pushes are all accepted, in order",
+    source: `
+      assert(typeof createTypedStack === "function", "createTypedStack is not defined");
+      const s = createTypedStack();
+      s.push(1);
+      s.push(2);
+      s.push(3);
+      assertEqual(s.toArray(), [1, 2, 3]);
+    `,
+  },
+  {
+    label: "A mismatched type after the first push throws",
+    source: `
+      const s = createTypedStack();
+      s.push("a");
+      let threw = false;
+      try {
+        s.push(1);
+      } catch (e) {
+        threw = true;
+      }
+      assert(threw, "pushing a mismatched type should throw");
+    `,
+  },
+  {
+    label: "pop() removes the most recently pushed item",
+    source: `
+      const s = createTypedStack();
+      s.push(1);
+      s.pop();
+      assertEqual(s.toArray(), []);
+    `,
+  },
+  {
+    label: "A stack with no pushes starts out empty",
+    source: `
+      const s = createTypedStack();
+      assertEqual(s.toArray(), []);
+    `,
+  },
+];
+
+const PICK_KEYS_TESTS: SandboxTest[] = [
+  {
+    label: "Only the requested keys are kept, in the object they belong to",
+    source: `
+      assert(typeof pick === "function", "pick is not defined");
+      assertEqual(pick({ id: 1, name: "Ada", email: "a@x.com" }, ["id", "name"]), { id: 1, name: "Ada" });
+    `,
+  },
+  {
+    label: "A requested key the object doesn't have is skipped, not set to undefined",
+    source: `assertEqual(pick({ id: 1, name: "Ada" }, ["email"]), {});`,
+  },
+  {
+    label: "An empty key list returns an empty object",
+    source: `assertEqual(pick({ id: 1, name: "Ada" }, []), {});`,
+  },
+];
+
+const NARROW_VALUE_LENGTH_TESTS: SandboxTest[] = [
+  {
+    label: "A string narrows to its own .length",
+    source: `
+      assert(typeof getLength === "function", "getLength is not defined");
+      assertEqual(getLength("hello"), 5);
+    `,
+  },
+  {
+    label: "An array narrows to its own .length, checked before the plain-object case",
+    source: `assertEqual(getLength([1, 2, 3]), 3);`,
+  },
+  {
+    label: "A plain object with a length field narrows via the in check",
+    source: `assertEqual(getLength({ length: 10 }), 10);`,
+  },
+  {
+    label: "A value with no length concept at all falls back to 0",
+    source: `assertEqual(getLength(42), 0);`,
+  },
+];
+
+const DISCRIMINATED_UNION_REDUCER_TESTS: SandboxTest[] = [
+  {
+    label: "increment adds one to the current state",
+    source: `
+      assert(typeof reducer === "function", "reducer is not defined");
+      assertEqual(reducer(0, { type: "increment" }), 1);
+    `,
+  },
+  {
+    label: "decrement subtracts one from the current state",
+    source: `assertEqual(reducer(5, { type: "decrement" }), 4);`,
+  },
+  {
+    label: "set replaces the state entirely with action.value",
+    source: `assertEqual(reducer(5, { type: "set", value: 100 }), 100);`,
+  },
+  {
+    label: "An unrecognized action type throws instead of silently returning the old state",
+    source: `
+      let threw = false;
+      try {
+        reducer(0, { type: "nope" });
+      } catch (e) {
+        threw = true;
+      }
+      assert(threw, "an unhandled action type should throw");
+    `,
+  },
+];
+
+const MAP_VALUES_TESTS: SandboxTest[] = [
+  {
+    label: "Every value is transformed, keys stay the same",
+    source: `
+      assert(typeof mapValues === "function", "mapValues is not defined");
+      assertEqual(mapValues({ a: 1, b: 2 }, (v) => v * 2), { a: 2, b: 4 });
+    `,
+  },
+  {
+    label: "Works for any transform function, not just numbers",
+    source: `assertEqual(mapValues({ name: "ada" }, (v) => v.toUpperCase()), { name: "ADA" });`,
+  },
+  {
+    label: "An empty object maps to an empty object",
+    source: `assertEqual(mapValues({}, (v) => v * 2), {});`,
+  },
+];
+
+const MATCH_EVENT_NAME_PATTERN_TESTS: SandboxTest[] = [
+  {
+    label: '"on" plus a capitalized word matches the pattern',
+    source: `
+      assert(typeof isEventName === "function", "isEventName is not defined");
+      assertEqual(isEventName("onClick"), true);
+    `,
+  },
+  {
+    label: "Any capitalized word after \"on\" matches",
+    source: `assertEqual(isEventName("onSubmit"), true);`,
+  },
+  {
+    label: 'Missing the "on" prefix entirely fails',
+    source: `assertEqual(isEventName("click"), false);`,
+  },
+  {
+    label: '"on" followed by a lowercase word fails — not Capitalized',
+    source: `assertEqual(isEventName("onclick"), false);`,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "implement-debounce": DEBOUNCE_TESTS,
   "specificity-calculator": SPECIFICITY_TESTS,
@@ -1536,6 +1736,14 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "resolve-custom-property": RESOLVE_CUSTOM_PROPERTY_TESTS,
   "implement-has-matcher": IMPLEMENT_HAS_MATCHER_TESTS,
   "classify-animation-cost": CLASSIFY_ANIMATION_COST_TESTS,
+  "narrow-unknown-to-number": SAFE_PARSE_NUMBER_TESTS,
+  "merge-declarations": MERGE_DECLARATIONS_TESTS,
+  "create-typed-stack": CREATE_TYPED_STACK_TESTS,
+  "pick-keys": PICK_KEYS_TESTS,
+  "narrow-value-length": NARROW_VALUE_LENGTH_TESTS,
+  "discriminated-union-reducer": DISCRIMINATED_UNION_REDUCER_TESTS,
+  "map-values": MAP_VALUES_TESTS,
+  "match-event-name-pattern": MATCH_EVENT_NAME_PATTERN_TESTS,
 };
 
 export function getTestSpec(slug: string): SandboxTest[] | null {

@@ -1,0 +1,72 @@
+---
+title: "Template Literal & Branded Types"
+description: "See how template literal types build string types from patterns, and how branded types simulate nominal typing to stop structurally-identical values from being mixed up."
+category: "typescript"
+difficulty: "advanced"
+order: 8
+whatsHappening: "Template literal types build a string type from a pattern, the same way a template literal builds a string value — `on${Capitalize<string>}` describes every string starting with 'on' followed by a capitalized word, checked at compile time. Branded types solve a different problem: TypeScript's structural typing means two differently-named types with the same shape are interchangeable, and a brand — a fake extra property that only exists in the type system — breaks that interchangeability on purpose."
+keyInsight: "TypeScript is structurally typed: a UserId and an OrderId that are both really just string are the exact same type as far as the compiler is concerned, so passing one where the other is expected compiles cleanly and is wrong. A brand adds a compile-time-only marker property that makes two otherwise-identical shapes incompatible, simulating the nominal typing (types matched by name, not just shape) that languages like Java or C# have natively."
+memoryHook: "Template literal types = a regex for the type system, checked before the code ever runs. Branded types = a tag stapled onto a type that exists purely to make the compiler treat two identical shapes as different."
+inRealLife: "Template literal types are like a form field that only accepts values matching a required pattern (an event name always starting with 'on'), rejected at submission time rather than caught later. Branded types are like two currencies that use the same paper and ink — a US dollar bill and a Canadian dollar bill look structurally identical, but a brand (the flag printed on it) is the only thing stopping a cashier from accepting the wrong one as equivalent."
+---
+
+## Template literal types
+
+A template literal type describes every string matching a pattern, built the same way a template literal string is built:
+
+```ts
+type EventName = `on${Capitalize<string>}`;
+// matches: "onClick", "onSubmit", "onChange" — not "click" or "onclick"
+
+type CSSVariable = `--${string}`;
+// matches: "--primary-color", "--gap" — not "primary-color"
+```
+
+Combined with a union, template literal types can enumerate every valid combination at compile time:
+
+```ts
+type Direction = "top" | "right" | "bottom" | "left";
+type Margin = `margin-${Direction}`;
+// "margin-top" | "margin-right" | "margin-bottom" | "margin-left"
+```
+
+`Margin` isn't just typed as `string` — it's exactly those four literal strings, so `margin: "margin-diagonal"` is a compile error, not a typo waiting to be caught in code review.
+
+## The structural typing problem branded types solve
+
+TypeScript compares types by shape, not by name — two type aliases with an identical underlying shape are fully interchangeable:
+
+```ts
+type UserId = string;
+type OrderId = string;
+
+function getUser(id: UserId) { /* ... */ }
+const orderId: OrderId = "order_123";
+getUser(orderId); // compiles — both are just `string` under the hood
+```
+
+This is exactly the bug a type system should catch — passing an order ID where a user ID belongs — and structural typing lets it through, because to the compiler `UserId` and `OrderId` are both simply `string`.
+
+## Branded types
+
+A brand adds a compile-time-only marker property that makes two otherwise-identical shapes incompatible:
+
+```ts
+type UserId = string & { readonly __brand: "UserId" };
+type OrderId = string & { readonly __brand: "OrderId" };
+
+function makeUserId(raw: string): UserId {
+  return raw as UserId; // the one place the brand is asserted
+}
+
+function getUser(id: UserId) { /* ... */ }
+
+const orderId = "order_123" as OrderId;
+getUser(orderId); // compile error — OrderId is not assignable to UserId
+```
+
+`__brand` never actually exists at runtime — no real string has that property — it's a type-only fiction whose sole purpose is to make the compiler refuse to treat `UserId` and `OrderId` as the same type, even though both compile down to a plain `string`.
+
+## Why it matters
+
+Template literal types catch malformed string patterns — event names, CSS variables, route paths — before the code runs at all. Branded types close the gap structural typing otherwise leaves open for "same shape, different meaning" values like IDs, currency amounts, or units — the two most common real-world uses for a technique that otherwise looks like a party trick.

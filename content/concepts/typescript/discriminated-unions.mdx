@@ -1,0 +1,83 @@
+---
+title: "Discriminated Unions in Practice"
+description: "See how a shared literal type/kind field lets TypeScript narrow a union to the exact variant inside a conditional, eliminating a whole class of runtime checks."
+category: "typescript"
+difficulty: "advanced"
+order: 6
+whatsHappening: "A discriminated union is a union of object types that all share one common field holding a distinct literal value — usually named type or kind. Because every variant's discriminant is a unique literal, checking that one field (with a switch or if) is enough for TypeScript to narrow the entire object to the exact matching variant, with every other field on that variant now safely accessible."
+keyInsight: "The discriminant field is the entire trick — without one, narrowing a union of similarly-shaped objects requires checking for the presence of a specific property (in) on every branch, which gets fragile as variants grow. A shared literal field turns that into one clean switch, and — combined with a default case assigned to a never-typed variable — turns 'did I handle every variant?' into a compile error instead of a runtime bug."
+memoryHook: "One field, many meanings: switch (action.type) is the whole pattern. Every case narrows the entire object, not just that one field."
+inRealLife: "Like a set of package delivery forms that all start with a 'form type' checkbox at the top — 'Standard', 'Express', or 'International' — before anything else. The moment someone reads that checkbox, they know exactly which fields the rest of the form will have, without needing to scan the whole page to figure out which kind of form they're holding."
+---
+
+## The shape of a discriminated union
+
+Every variant shares one field with a distinct literal type — commonly `type` or `kind`:
+
+```ts
+type Circle = { kind: "circle"; radius: number };
+type Rectangle = { kind: "rectangle"; width: number; height: number };
+type Shape = Circle | Rectangle;
+```
+
+`kind` is the **discriminant** — its value uniquely identifies which variant a given `Shape` actually is.
+
+## Narrowing with switch
+
+Checking the discriminant narrows the entire object, not just that field:
+
+```ts
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle":
+      return Math.PI * shape.radius ** 2; // shape narrowed to Circle
+    case "rectangle":
+      return shape.width * shape.height; // shape narrowed to Rectangle
+  }
+}
+```
+
+Inside the `"circle"` case, `shape.radius` is accessible with no cast — TypeScript has already proven `shape` can only be a `Circle` there, because `kind` can't simultaneously be `"circle"` and `"rectangle"`.
+
+## Exhaustiveness checking
+
+Pairing a discriminated union with a `default` case that assigns to a `never`-typed variable turns "I forgot to handle a variant" into a compile error, not a silent runtime gap:
+
+```ts
+function assertNever(value: never): never {
+  throw new Error(`Unhandled variant: ${JSON.stringify(value)}`);
+}
+
+function area(shape: Shape): number {
+  switch (shape.kind) {
+    case "circle": return Math.PI * shape.radius ** 2;
+    case "rectangle": return shape.width * shape.height;
+    default: return assertNever(shape); // compile error if a variant is missing
+  }
+}
+```
+
+Add a third `Triangle` variant to `Shape` without adding its case here, and `assertNever(shape)` no longer compiles — `shape` in the `default` branch is no longer narrowed to `never`, because there's an unhandled possibility left over. The bug surfaces at compile time, in the exact function that needed updating, instead of a missing-case bug shipping to production.
+
+## Redux-style reducers — the canonical example
+
+Discriminated unions are the reason a Redux-style reducer can safely branch on `action.type` and get full type safety on every action's specific payload:
+
+```ts
+type Action =
+  | { type: "increment" }
+  | { type: "decrement" }
+  | { type: "set"; value: number };
+
+function reducer(state: number, action: Action): number {
+  switch (action.type) {
+    case "increment": return state + 1;
+    case "decrement": return state - 1;
+    case "set": return action.value; // action.value only exists on "set"
+  }
+}
+```
+
+## Why it matters
+
+Discriminated unions turn "which variant is this, and what fields does it actually have" from a runtime guessing game into something the compiler verifies for you at every call site — and exhaustiveness checking means adding a new variant anywhere in a large codebase gets flagged everywhere it wasn't handled, instead of silently falling through.

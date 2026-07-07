@@ -1,0 +1,65 @@
+---
+title: "Interfaces vs. Type Aliases"
+description: "Compare interface and type for shaping objects — where they overlap, where declaration merging or unions push you toward one or the other."
+category: "typescript"
+difficulty: "beginner"
+order: 2
+whatsHappening: "interface and type can both describe the shape of an object, and for that one job they're nearly interchangeable. Past object shapes, they diverge: only interface supports declaration merging (multiple interface blocks with the same name automatically combine), and only type can name a union, a tuple, or any non-object type."
+keyInsight: "Declaration merging is interface's real superpower — and its real risk. Two interface Window { ... } declarations in the same declaration space (most commonly the global scope, reached via declare global) silently combine into one, which is exactly how libraries safely extend global or third-party types, and exactly how an accidental typo can silently add an unwanted field to a shared type instead of raising a duplicate-name error."
+memoryHook: "interface = an open-ended contract, extendable after the fact by design. type = a sealed label, assigned once, that can point at anything — an object, a union, a tuple, even another type expression."
+inRealLife: "interface is like a shared house rules document that different roommates can add clauses to over time, and everyone reads the merged result. type is like a nickname assigned once — clear and specific, but if two people gave your dog the same nickname independently, that's a naming collision, not a way to add rules to how the dog behaves."
+---
+
+## Where they overlap
+
+For a plain object shape, `interface` and `type` produce the same result:
+
+```ts
+interface UserA {
+  name: string;
+  age: number;
+}
+
+type UserB = {
+  name: string;
+  age: number;
+};
+```
+
+Both support `extends`-like composition (`interface Admin extends UserA` vs. `type Admin = UserB & { role: string }`), both work as function parameter types, and both show up identically in editor tooltips. For everyday object shapes, the choice mostly comes down to team convention.
+
+## Declaration merging — interface only
+
+Multiple `interface` declarations with the same name in the same scope automatically merge into one combined shape:
+
+```ts
+interface Config {
+  timeout: number;
+}
+interface Config {
+  retries: number;
+}
+// Config is now { timeout: number; retries: number }
+```
+
+This is how you can safely add a property to a third-party or global type (`declare global { interface Window { myFlag: boolean } }`) without editing the library's source. `type` cannot do this — declaring `type Config = { retries: number }` a second time is a compile error ("Duplicate identifier"), not a merge.
+
+## What only type can express
+
+`type` can name things that have no "shape" to declare — unions, tuples, primitives, and mapped/conditional type expressions:
+
+```ts
+type Status = "idle" | "loading" | "error"; // union — interface can't do this
+type Point = [number, number];               // tuple
+type ID = string | number;                   // union of primitives
+```
+
+`interface` is fundamentally about describing an object's (or function's, or class's) shape — there's no `interface` syntax for "one of these three string literals."
+
+## Choosing between them
+
+A reasonable default: use `interface` for object shapes that a consumer might reasonably need to extend (component props, public API request/response shapes), and `type` for everything else — unions, tuples, and any type built by combining or transforming other types. If a shape will never need declaration merging, the choice barely matters; if it needs to express a union at all, `type` is the only option.
+
+## Why it matters
+
+The two aren't really competing for the same job — `interface` is an extendable object contract, `type` is a general-purpose label for any type expression. Reaching for the wrong one only becomes a real problem the moment a shape needs to grow into a union (forcing a switch to `type`) or needs to be safely extended by unrelated code (which only `interface`'s merging supports).

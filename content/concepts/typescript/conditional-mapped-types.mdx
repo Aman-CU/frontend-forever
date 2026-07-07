@@ -1,0 +1,69 @@
+---
+title: "Conditional & Mapped Types"
+description: "Learn how conditional types (T extends U ? X : Y) and mapped types ({ [K in keyof T]: ... }) let TypeScript compute new types from existing ones."
+category: "typescript"
+difficulty: "advanced"
+order: 7
+whatsHappening: "Conditional types (T extends U ? X : Y) let a type expression branch based on whether one type is assignable to another, evaluated entirely at compile time. Mapped types ({ [K in keyof T]: ... }) iterate over every key of an existing type and produce a transformed value for each one. Together they're the mechanism behind almost every built-in utility type — Partial, Pick, ReturnType, and friends are all conditional or mapped types under the hood."
+keyInsight: "A mapped type transforms every property of an object type the same way, the same way Array.prototype.map transforms every element of an array the same way — the parallel is exact. A conditional type is the type-level equivalent of a ternary, except the condition is 'is this type assignable to that type' rather than a runtime boolean."
+memoryHook: "Mapped types = .map() for the keys of a type. Conditional types = a ternary for types, evaluated by the compiler, not at runtime."
+inRealLife: "Like a factory line: a mapped type is the same modification station applied to every item on the belt (map every key the same way), and a conditional type is a sorting gate earlier on the line that routes each item down one of two paths depending on whether it matches a filter — both decisions are made before anything ships, not after."
+---
+
+## Mapped types
+
+A mapped type iterates every key `K` of an existing type `T` and produces a new value type for each:
+
+```ts
+type Readonly2<T> = {
+  readonly [K in keyof T]: T[K];
+};
+
+type Nullable<T> = {
+  [K in keyof T]: T[K] | null;
+};
+
+type User = { name: string; age: number };
+type NullableUser = Nullable<User>;
+// { name: string | null; age: number | null }
+```
+
+`keyof T` produces a union of `T`'s property names (`"name" | "age"`), and `[K in ...]` maps over that union the same way a `for...of` maps over an array — once per key, with `T[K]` looking up that key's original value type.
+
+## Conditional types
+
+A conditional type branches based on whether one type is assignable to another:
+
+```ts
+type IsString<T> = T extends string ? true : false;
+
+type A = IsString<"hello">; // true
+type B = IsString<42>;      // false
+```
+
+This is exactly how `ReturnType<T>` works under the hood — extract a function's return type by matching against a generic pattern:
+
+```ts
+type MyReturnType<T> = T extends (...args: never[]) => infer R ? R : never;
+
+function greet(): string { return "hi"; }
+type G = MyReturnType<typeof greet>; // string
+```
+
+`infer R` introduces a new type variable inside the conditional's `extends` clause, capturing whatever type appears in that position — here, the function's actual return type.
+
+## Combining them: how Partial\<T\> is built
+
+Built-in utility types are just mapped (and sometimes conditional) types with a name:
+
+```ts
+type MyPartial<T> = {
+  [K in keyof T]?: T[K];
+};
+```
+
+Every property in `T` gets mapped to itself, but with `?` added — the entire `Partial<T>` utility type, in three lines, no special compiler magic involved.
+
+## Why it matters
+
+Once mapped and conditional types click, the built-in utility types (`Partial`, `Pick`, `Required`, `ReturnType`, `Exclude`) stop looking like a fixed list to memorize and start looking like small, composable programs written in the type system — and it becomes possible to write a project's own derived types the same way, instead of hand-maintaining a second type that has to be kept in sync by hand.

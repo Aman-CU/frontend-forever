@@ -1,0 +1,80 @@
+---
+title: "Utility Types (Partial, Pick, Omit, Record)"
+description: "Learn how Partial, Pick, Omit, and Record transform existing types instead of redefining them by hand, and how they compose together."
+category: "typescript"
+difficulty: "intermediate"
+order: 4
+whatsHappening: "Utility types take an existing type and derive a new one from it, instead of you writing the new shape out by hand. Partial makes every property optional, Pick keeps only a chosen subset of keys, Omit drops a chosen subset, and Record builds an object type from a set of keys and a value type — all computed from a source type, so the derived type stays in sync automatically when the source changes."
+keyInsight: "Every one of these is built from the same handful of primitives every TypeScript codebase eventually reaches for anyway (keyof, mapped types, conditional types) — Partial<T>, Pick<T, K>, and friends aren't special compiler magic, they're just pre-written, named versions of type transformations you could write yourself, published so nobody has to."
+memoryHook: "Partial = every property gets a maybe. Pick = keep only these. Omit = keep everything except these. Record = build an object type from a list of keys plus one value type."
+inRealLife: "Like working from a master form (the full type) instead of redesigning a new form for every use case: a 'quick edit' form uses Pick to show only two fields, an 'update' form uses Partial because you might only be changing one thing, and a 'create' form uses Omit to drop the id field the server assigns later — all four forms stay in sync automatically the moment a field is added to the master."
+---
+
+## Deriving instead of redefining
+
+Without utility types, a variant of an existing shape means hand-writing a second, separate type that has to be kept in sync manually:
+
+```ts
+type User = { id: string; name: string; email: string };
+
+// hand-written variant — has to be updated by hand if User changes
+type UserDraft = { id?: string; name?: string; email?: string };
+```
+
+Utility types compute the variant from the source type instead, so it updates automatically the moment the source does.
+
+## Partial\<T\>
+
+Makes every property of `T` optional:
+
+```ts
+type UserDraft = Partial<User>;
+// { id?: string; name?: string; email?: string }
+```
+
+Common for "update" payloads, where a caller only sends the fields that changed, and for objects built up incrementally across multiple steps before every field is filled in.
+
+## Pick\<T, K\>
+
+Keeps only the listed keys `K` (a union of string literals) from `T`:
+
+```ts
+type UserPreview = Pick<User, "id" | "name">;
+// { id: string; name: string }
+```
+
+Useful for a narrower view of a large type — a list item that only needs a few fields from a much bigger record.
+
+## Omit\<T, K\>
+
+The inverse of `Pick` — keeps every key of `T` except the listed ones:
+
+```ts
+type UserCreateInput = Omit<User, "id">;
+// { name: string; email: string }
+```
+
+Common for "create" payloads, where the server assigns a field (like `id`) that the client should never provide.
+
+## Record\<K, V\>
+
+Builds an object type from a union of keys `K`, each mapped to the same value type `V` — the one utility here that isn't derived from an existing object type, but constructed from a key list:
+
+```ts
+type Role = "admin" | "editor" | "viewer";
+type RolePermissions = Record<Role, string[]>;
+// { admin: string[]; editor: string[]; viewer: string[] }
+```
+
+## Composing them together
+
+Utility types combine freely, since each one just takes a type and returns a type:
+
+```ts
+type UserUpdateInput = Partial<Omit<User, "id">>;
+// every field except id, and every remaining field optional
+```
+
+## Why it matters
+
+Utility types keep derived shapes honest — the moment `User` gains a new field, `Pick<User, "id" | "name">` and `Partial<User>` update automatically, with no hand-maintained duplicate type to forget about. A hand-written variant type is a second source of truth waiting to drift out of sync.

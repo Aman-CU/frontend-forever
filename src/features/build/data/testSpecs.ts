@@ -1602,6 +1602,231 @@ const ANIMATION_COST_LINTER_TESTS: SandboxTest[] = [
   },
 ];
 
+// ── Phase 10 (Feature 45) — TypeScript Concepts ─────────────────────────────
+
+const RUNTIME_SHAPE_VALIDATOR_TESTS: SandboxTest[] = [
+  {
+    label: "A value matching every field's type passes through narrowed",
+    source: `
+      assert(typeof validateShape === "function", "validateShape is not defined");
+      assertEqual(validateShape({ name: "Ada", age: 36 }, { name: "string", age: "number" }), { name: "Ada", age: 36 });
+    `,
+  },
+  {
+    label: "A missing field fails validation",
+    source: `assertEqual(validateShape({ name: "Ada" }, { name: "string", age: "number" }), null);`,
+  },
+  {
+    label: "A field with the wrong runtime type fails validation",
+    source: `assertEqual(validateShape({ name: "Ada", age: "36" }, { name: "string", age: "number" }), null);`,
+  },
+  {
+    label: "null never satisfies any schema",
+    source: `assertEqual(validateShape(null, { name: "string" }), null);`,
+  },
+];
+
+const CONFIG_SOURCE_MERGER_TESTS: SandboxTest[] = [
+  {
+    label: "A scalar value is overwritten by the later source",
+    source: `
+      assert(typeof mergeConfigSources === "function", "mergeConfigSources is not defined");
+      assertEqual(mergeConfigSources([{ timeout: 1000 }, { timeout: 5000 }]), { timeout: 5000 });
+    `,
+  },
+  {
+    label: "Array values accumulate across sources instead of overwriting",
+    source: `assertEqual(mergeConfigSources([{ plugins: ["a"] }, { plugins: ["b"] }]), { plugins: ["a", "b"] });`,
+  },
+  {
+    label: "Accumulated array values are de-duplicated",
+    source: `assertEqual(mergeConfigSources([{ plugins: ["a", "b"] }, { plugins: ["b", "c"] }]), { plugins: ["a", "b", "c"] });`,
+  },
+  {
+    label: "A boolean scalar follows the same later-wins rule as any other scalar",
+    source: `assertEqual(mergeConfigSources([{ debug: false }, { debug: true }]), { debug: true });`,
+  },
+];
+
+const PLUCK_WITH_KEY_CONSTRAINT_TESTS: SandboxTest[] = [
+  {
+    label: "A single valid key returns that key's value directly",
+    source: `
+      assert(typeof pluck === "function", "pluck is not defined");
+      assertEqual(pluck({ name: "Ada", age: 36 }, "name"), "Ada");
+    `,
+  },
+  {
+    label: "An array of valid keys returns an object of just those keys",
+    source: `assertEqual(pluck({ name: "Ada", age: 36 }, ["name", "age"]), { name: "Ada", age: 36 });`,
+  },
+  {
+    label: "A nonexistent key in the array throws instead of returning undefined",
+    source: `
+      let threw = false;
+      try {
+        pluck({ name: "Ada" }, ["name", "email"]);
+      } catch (e) {
+        threw = true;
+      }
+      assert(threw, "a nonexistent key should throw");
+    `,
+  },
+  {
+    label: "A single nonexistent key also throws",
+    source: `
+      let threw = false;
+      try {
+        pluck({ name: "Ada" }, "email");
+      } catch (e) {
+        threw = true;
+      }
+      assert(threw, "a nonexistent key should throw");
+    `,
+  },
+];
+
+const RECORD_DEFAULTS_BUILDER_TESTS: SandboxTest[] = [
+  {
+    label: "Every key gets its own freshly-generated default value",
+    source: `
+      assert(typeof createRecordDefaults === "function", "createRecordDefaults is not defined");
+      assertEqual(createRecordDefaults(["admin", "editor", "viewer"], () => []), { admin: [], editor: [], viewer: [] });
+    `,
+  },
+  {
+    label: "The factory receives each key and can compute a value from it",
+    source: `assertEqual(createRecordDefaults(["a", "b"], (key) => key.toUpperCase()), { a: "A", b: "B" });`,
+  },
+  {
+    label: "An empty key list produces an empty object",
+    source: `assertEqual(createRecordDefaults([], () => 0), {});`,
+  },
+];
+
+const FORMAT_VALUE_SAFELY_TESTS: SandboxTest[] = [
+  {
+    label: "A string is wrapped in quotes to distinguish it from other output",
+    source: `
+      assert(typeof formatValue === "function", "formatValue is not defined");
+      assertEqual(formatValue("hi"), '"hi"');
+    `,
+  },
+  {
+    label: "A number is formatted as-is",
+    source: `assertEqual(formatValue(42), "42");`,
+  },
+  {
+    label: "null is narrowed correctly, not confused with an object",
+    source: `assertEqual(formatValue(null), "null");`,
+  },
+  {
+    label: "An array recursively formats each of its own elements",
+    source: `assertEqual(formatValue([1, "a", null]), '[1, "a", null]');`,
+  },
+  {
+    label: "A plain object recursively formats each of its values",
+    source: `assertEqual(formatValue({ a: 1, b: "x" }), '{ a: 1, b: "x" }');`,
+  },
+];
+
+const MINI_REDUX_STORE_TESTS: SandboxTest[] = [
+  {
+    label: "getState() reflects the initial state before any dispatch",
+    source: `
+      assert(typeof createStore === "function", "createStore is not defined");
+      const store = createStore((state, action) => state, 0);
+      assertEqual(store.getState(), 0);
+    `,
+  },
+  {
+    label: "dispatch runs the reducer and updates the stored state",
+    source: `
+      const store = createStore((state, action) => action.type === "increment" ? state + 1 : state, 0);
+      store.dispatch({ type: "increment" });
+      assertEqual(store.getState(), 1);
+    `,
+  },
+  {
+    label: "subscribe registers a listener that's notified on dispatch",
+    source: `
+      const store = createStore((state, action) => state + 1, 0);
+      let received = null;
+      store.subscribe((state) => { received = state; });
+      store.dispatch({ type: "any" });
+      assertEqual(received, 1);
+    `,
+  },
+  {
+    label: "The function returned by subscribe unsubscribes that listener",
+    source: `
+      const store = createStore((state, action) => state + 1, 0);
+      let calls = 0;
+      const unsubscribe = store.subscribe(() => { calls++; });
+      store.dispatch({ type: "any" });
+      unsubscribe();
+      store.dispatch({ type: "any" });
+      assertEqual(calls, 1, "the listener should not be called after unsubscribing");
+    `,
+  },
+];
+
+const DEEP_MAP_VALUES_TESTS: SandboxTest[] = [
+  {
+    label: "Nested object values are transformed recursively, not skipped",
+    source: `
+      assert(typeof deepMapValues === "function", "deepMapValues is not defined");
+      assertEqual(deepMapValues({ a: 1, b: { c: 2, d: 3 } }, (v) => v * 2), { a: 2, b: { c: 4, d: 6 } });
+    `,
+  },
+  {
+    label: "A flat object with no nesting still transforms correctly",
+    source: `assertEqual(deepMapValues({ a: 1 }, (v) => v * 2), { a: 2 });`,
+  },
+  {
+    label: "An empty object maps to an empty object",
+    source: `assertEqual(deepMapValues({}, (v) => v), {});`,
+  },
+  {
+    label: "Recursion goes as deep as the nesting actually goes, not just one level",
+    source: `assertEqual(deepMapValues({ a: { b: { c: 1 } } }, (v) => v + 1), { a: { b: { c: 2 } } });`,
+  },
+];
+
+const BRAND_AND_VERIFY_TESTS: SandboxTest[] = [
+  {
+    label: "A value checked against its own brand name matches",
+    source: `
+      assert(typeof brand === "function", "brand is not defined");
+      assert(typeof isBranded === "function", "isBranded is not defined");
+      assertEqual(isBranded(brand("u_1", "UserId"), "UserId"), true);
+    `,
+  },
+  {
+    label: "A value checked against a different brand name doesn't match",
+    source: `assertEqual(isBranded(brand("u_1", "UserId"), "OrderId"), false);`,
+  },
+  {
+    label: "Unwrapping with the matching brand returns the raw value",
+    source: `
+      assert(typeof unwrapBrand === "function", "unwrapBrand is not defined");
+      assertEqual(unwrapBrand(brand("u_1", "UserId"), "UserId"), "u_1");
+    `,
+  },
+  {
+    label: "Unwrapping with the wrong brand throws instead of returning the value anyway",
+    source: `
+      let threw = false;
+      try {
+        unwrapBrand(brand("u_1", "UserId"), "OrderId");
+      } catch (e) {
+        threw = true;
+      }
+      assert(threw, "unwrapping with the wrong brand should throw");
+    `,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "kanban-board": KANBAN_BOARD_TESTS,
   "async-task-runner": ASYNC_TASK_RUNNER_TESTS,
@@ -1648,6 +1873,14 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "multi-property-theme-resolver": MULTI_PROPERTY_THEME_RESOLVER_TESTS,
   "form-validity-watcher": FORM_VALIDITY_WATCHER_TESTS,
   "animation-cost-linter": ANIMATION_COST_LINTER_TESTS,
+  "runtime-shape-validator": RUNTIME_SHAPE_VALIDATOR_TESTS,
+  "config-source-merger": CONFIG_SOURCE_MERGER_TESTS,
+  "pluck-with-key-constraint": PLUCK_WITH_KEY_CONSTRAINT_TESTS,
+  "record-defaults-builder": RECORD_DEFAULTS_BUILDER_TESTS,
+  "format-value-safely": FORMAT_VALUE_SAFELY_TESTS,
+  "mini-redux-store": MINI_REDUX_STORE_TESTS,
+  "deep-map-values": DEEP_MAP_VALUES_TESTS,
+  "brand-and-verify": BRAND_AND_VERIFY_TESTS,
 };
 
 export function getBuildTestSpec(slug: string): SandboxTest[] | null {
