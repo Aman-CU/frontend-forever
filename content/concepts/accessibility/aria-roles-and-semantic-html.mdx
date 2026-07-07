@@ -4,7 +4,7 @@ description: "Make your UIs usable by everyone: learn when to use semantic HTML,
 category: "accessibility"
 difficulty: "beginner"
 order: 1
-whatsHappening: "Semantic elements like <nav>, <button>, and <main> come with an accessibility role, keyboard behavior, and accessible-name computation already built in — the browser exposes all of it to screen readers and other assistive tech for free. ARIA (Accessible Rich Internet Applications) attributes exist to patch the gap when a native element genuinely can't do the job — a custom widget with no native HTML equivalent, like a tab panel or a combobox. ARIA never changes what an element looks like or how it behaves; it only changes what gets reported to the accessibility tree."
+whatsHappening: "Semantic elements like <nav>, <button>, and <main> come with an accessibility role and accessible-name computation already built in, and interactive ones like <button> also get correct keyboard behavior for free — the browser exposes all of it to screen readers and other assistive tech with no extra code. ARIA (Accessible Rich Internet Applications) attributes exist to patch the gap when no native element sufficiently covers the pattern — a custom widget like a tab panel, which HTML has no dedicated element for at all. ARIA never changes what an element looks like or how it behaves; it only changes what gets reported to the accessibility tree."
 keyInsight: "The First Rule of ARIA is: no ARIA is better than bad ARIA. A <div role=\"button\"> only reports that it's a button — you still have to manually wire up Enter/Space key handling, a tabindex, and focus styling yourself, and it's easy to miss one. A real <button> already does all of it correctly, with zero extra code."
 memoryHook: "A <div role=\"button\"> is a book report describing a button; a real <button> IS the button — the real thing arrives with everything built in, nothing left to explain."
 inRealLife: "Like using an actual stop sign's octagon shape instead of a plain rectangular sign that says 'this means stop' in small text — the shape itself already carries the meaning to everyone at a glance, in any lighting, at any speed, with no reading required."
@@ -12,7 +12,7 @@ inRealLife: "Like using an actual stop sign's octagon shape instead of a plain r
 
 ## Why semantic HTML comes first
 
-Every HTML element has an implicit ARIA role — `<button>` is `role="button"`, `<nav>` is `role="navigation"`, `<a href="...">` is `role="link"`. Screen readers build a separate **accessibility tree** from these roles, and it's that tree — not the visual layout — that determines what a screen reader user actually hears and can navigate by.
+Many HTML elements have an implicit ARIA role — `<button>` is `role="button"`, `<nav>` is `role="navigation"`, `<a href="...">` is `role="link"`. Screen readers build a separate **accessibility tree** from these roles, and it's that tree — not the visual layout — that determines what a screen reader user actually hears and can navigate by.
 
 ```html
 <!-- Screen reader announces: "Submit, button" — for free -->
@@ -35,11 +35,11 @@ Landmarks let a screen reader user jump directly to a section of the page instea
 
 ## Interactive elements are not interchangeable with styled divs
 
-`<button>`, `<a>`, `<input>`, and `<select>` all ship with real keyboard support (Tab to focus, Enter/Space to activate), a visible focus indicator, and a role a screen reader already understands. Recreating any of that on a `<div>` means manually rebuilding every one of those behaviors correctly — and it's easy to get one wrong (a common bug: a `role="button"` div that responds to a mouse click but not to a keyboard Enter press).
+`<button>`, `<a>`, `<input>`, and `<select>` all ship with real keyboard support, a visible focus indicator, and a role a screen reader already understands — though the exact activation key varies by element: a button activates on both Enter and Space, a link only on Enter (Space scrolls the page instead), a checkbox toggles on Space. Recreating any of that on a `<div>` means manually rebuilding the correct behavior for the specific control being built — and it's easy to get wrong (a common bug: a `role="button"` div that responds to a mouse click but not to a keyboard Enter press).
 
 ## When you actually need ARIA
 
-ARIA earns its place when there's no native element for the pattern at all — a tab panel, a combobox, a modal dialog, a custom slider. In those cases:
+ARIA earns its place when no native element fully covers the pattern — either none exists at all (a tab panel), or the native option (like `<dialog>` for modals, or `<input type="range">` for a slider) doesn't give enough control over structure and styling for what's being built. In those cases:
 
 ```html
 <div role="tablist">
