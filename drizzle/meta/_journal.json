@@ -64,6 +64,13 @@
       "when": 1783183458211,
       "tag": "0008_lean_triathlon",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783445751320,
+      "tag": "0009_secret_king_cobra",
+      "breakpoints": true
     }
   ]
 }

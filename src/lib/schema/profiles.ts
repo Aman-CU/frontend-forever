@@ -12,6 +12,11 @@ import {
 // `id` is `text`, not a Postgres `uuid` column, even though the value is always
 // a uuid string — it must match `user.id`'s type (text) for the FK to be valid,
 // same pattern as `session.userId`/`account.userId` in auth-schema.ts.
+//
+// .enableRLS() has no bearing on the app itself (the app's DATABASE_URL role
+// has BYPASSRLS); it exists purely to block Supabase's auto-generated
+// PostgREST API from reading/writing this table via the anon/authenticated
+// roles. See security.md's RLS section.
 export const profiles = pgTable("profiles", {
   id: text("id")
     .primaryKey()
@@ -32,7 +37,7 @@ export const profiles = pgTable("profiles", {
     .defaultNow()
     .$onUpdate(() => new Date())
     .notNull(),
-});
+}).enableRLS();
 
 export const profilesRelations = relations(profiles, ({ one, many }) => ({
   user: one(user, {

@@ -18,6 +18,11 @@ import {
   INTERVIEW_COLLECTIONS,
 } from "@/lib/constants";
 
+// Every table below is .enableRLS()'d — this has no bearing on the app itself
+// (the app's DATABASE_URL role has BYPASSRLS); it exists purely to block
+// Supabase's auto-generated PostgREST API from reading/writing these tables
+// via the anon/authenticated roles. See security.md's RLS section.
+
 // ── concepts ──────────────────────────────────────────────────────────────────
 
 export const concepts = pgTable(
@@ -50,7 +55,7 @@ export const concepts = pgTable(
       )})`,
     ),
   ],
-);
+).enableRLS();
 
 // ── challenges ────────────────────────────────────────────────────────────────
 
@@ -87,7 +92,7 @@ export const challenges = pgTable(
       )})`,
     ),
   ],
-);
+).enableRLS();
 
 // ── interview_questions ───────────────────────────────────────────────────────
 
@@ -130,7 +135,7 @@ export const interviewQuestions = pgTable(
       )})`,
     ),
   ],
-);
+).enableRLS();
 
 // ── project_briefs ────────────────────────────────────────────────────────────
 // Build tab content (Feature 26). Unlike challenges (nullable concept_id, some
@@ -170,7 +175,7 @@ export const projectBriefs = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index("project_briefs_concept_id_idx").on(table.conceptId)],
-);
+).enableRLS();
 
 // ── roadmaps ──────────────────────────────────────────────────────────────────
 
@@ -181,7 +186,7 @@ export const roadmaps = pgTable("roadmaps", {
   description: text("description").notNull(),
   isPremium: boolean("is_premium").notNull().default(false),
   orderIndex: integer("order_index").notNull().default(0),
-});
+}).enableRLS();
 
 // ── roadmap_steps ─────────────────────────────────────────────────────────────
 
@@ -202,7 +207,7 @@ export const roadmapSteps = pgTable(
     index("roadmap_steps_roadmap_id_idx").on(table.roadmapId),
     unique("roadmap_steps_roadmap_order_unique").on(table.roadmapId, table.orderIndex),
   ],
-);
+).enableRLS();
 
 // ── relations ─────────────────────────────────────────────────────────────────
 
