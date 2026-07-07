@@ -5,7 +5,7 @@ category: "typescript"
 difficulty: "intermediate"
 order: 3
 whatsHappening: "A generic type parameter, written as <T>, is a placeholder for a type that gets filled in at the call site — TypeScript figures out what T actually is from the argument you pass, then holds every other use of T in that same call to match. It's the middle ground between a function locked to one specific type and any, which gives up type checking altogether."
-keyInsight: "Without generics, a reusable function has exactly two options: write it once per concrete type (duplicated code), or type its parameters any (no type checking at all). Generics let one function definition work across every type while still catching a mismatched usage — first(numbers)[0] is known to be number, first(strings)[0] is known to be string, from the same function body."
+keyInsight: "Without generics, a reusable function has exactly two options: write it once per concrete type (duplicated code), or type its parameters any (no type checking at all). Generics let one function definition work across every type while still catching a mismatched usage — first(numbers) is known to be number, first(strings) is known to be string, from the same function body."
 memoryHook: "T is a variable, but for types instead of values — filled in once per call, then held consistent everywhere else it appears in that same call's signature."
 inRealLife: "Like a shipping container: the container's own dimensions and handling rules never change no matter what's inside it, but once you've loaded electronics into one container, that container's manifest says 'electronics' — you can't quietly swap in furniture without it being flagged as wrong for what this specific container was declared to hold."
 ---
