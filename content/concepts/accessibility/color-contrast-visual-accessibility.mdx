@@ -1,0 +1,47 @@
+---
+title: "Color Contrast & Visual Accessibility"
+description: "Understand WCAG's contrast ratio requirements for text and UI elements, and why color alone should never be the only way information is conveyed."
+category: "accessibility"
+difficulty: "beginner"
+order: 3
+whatsHappening: "WCAG measures how legible text is against its background using a contrast ratio — a single number from 1:1 (identical colors, unreadable) to 21:1 (pure black on pure white, maximum possible contrast). The ratio is computed from each color's relative luminance, a standardized measure of how much light a color reflects. WCAG 2.1's AA level requires at least 4.5:1 for normal text and 3:1 for large text (18pt+, or 14pt+ bold) and for meaningful UI components like input borders and icons. Separately, WCAG also requires that color is never the only way information is conveyed — a colorblind user (roughly 1 in 12 men) can't rely on red-vs-green alone to tell two states apart."
+keyInsight: "Contrast ratio is a ratio, not a percentage or a subjective 'looks readable' call — WCAG AA sets a hard numeric floor: 4.5:1 for normal-size text, 3:1 for large text and UI components. A design that 'looks fine' to one person's monitor and lighting can still fail that number, which is exactly why it's measured, not eyeballed."
+memoryHook: "4.5 for the fine print, 3 for the bold print — small text needs the higher bar because there's less of each letterform to recognize; large, bold text and UI icons get the lower one."
+inRealLife: "Like requiring a minimum stroke width on a highway sign so it's legible doing 70 mph in fog — the rule is set for the worst realistic viewing condition (low vision, glare, a cheap monitor), not the best one."
+---
+
+## What contrast ratio actually measures
+
+Every color has a **relative luminance** — how much light it reflects, on a 0 (black) to 1 (white) scale, computed from its red/green/blue channel values. Contrast ratio compares the relative luminance of two colors:
+
+```
+ratio = (lighter luminance + 0.05) / (darker luminance + 0.05)
+```
+
+Black-on-white luminance values (0 and 1) plug in to give exactly **21:1** — the maximum possible ratio. Two identical colors give exactly **1:1** — no contrast at all.
+
+## WCAG AA thresholds
+
+| Content | Minimum ratio |
+|---|---|
+| Normal text | 4.5:1 |
+| Large text (18pt+, or 14pt+ bold) | 3:1 |
+| UI components & graphical objects (input borders, icons) | 3:1 |
+
+AAA, a stricter optional level, raises these to 7:1 and 4.5:1 respectively. Most products target AA — it's the level most accessibility laws and audits reference.
+
+## Why large text gets a lower bar
+
+Larger, heavier letterforms have more pixels making up each character, so they stay legible at a lower contrast ratio than small text does — the requirement scales with how much visual detail is actually needed to distinguish the shape.
+
+## UI components need contrast too, not just text
+
+WCAG 1.4.11 (Non-text Contrast) extends the 3:1 requirement to meaningful graphical elements: an input's border against its background, an icon that conveys information, a focus indicator. A form field with a near-invisible 1px border can fail this even if its label text passes the 4.5:1 text requirement.
+
+## Never rely on color alone
+
+WCAG 1.4.1 requires that information conveyed by color also be conveyed some other way — text, an icon, a pattern. A required-field asterisk, an icon next to an error message, or an underline on a link (not just a color change) all satisfy this. The common failure case: a form field that turns its border red on error with no icon, no text, and no other visual change — a colorblind user may not perceive that anything changed at all.
+
+## Testing in practice
+
+Browser DevTools' color picker (Chrome, Firefox) shows the computed contrast ratio for any two colors directly, flagging AA/AAA pass or fail — the same formula covered above, just computed for you.

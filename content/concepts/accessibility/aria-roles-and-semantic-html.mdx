@@ -1,0 +1,57 @@
+---
+title: "Semantic HTML & ARIA Roles"
+description: "Make your UIs usable by everyone: learn when to use semantic HTML, when ARIA roles are needed, and what to never do."
+category: "accessibility"
+difficulty: "beginner"
+order: 1
+whatsHappening: "Semantic elements like <nav>, <button>, and <main> come with an accessibility role, keyboard behavior, and accessible-name computation already built in — the browser exposes all of it to screen readers and other assistive tech for free. ARIA (Accessible Rich Internet Applications) attributes exist to patch the gap when a native element genuinely can't do the job — a custom widget with no native HTML equivalent, like a tab panel or a combobox. ARIA never changes what an element looks like or how it behaves; it only changes what gets reported to the accessibility tree."
+keyInsight: "The First Rule of ARIA is: no ARIA is better than bad ARIA. A <div role=\"button\"> only reports that it's a button — you still have to manually wire up Enter/Space key handling, a tabindex, and focus styling yourself, and it's easy to miss one. A real <button> already does all of it correctly, with zero extra code."
+memoryHook: "A <div role=\"button\"> is a book report describing a button; a real <button> IS the button — the real thing arrives with everything built in, nothing left to explain."
+inRealLife: "Like using an actual stop sign's octagon shape instead of a plain rectangular sign that says 'this means stop' in small text — the shape itself already carries the meaning to everyone at a glance, in any lighting, at any speed, with no reading required."
+---
+
+## Why semantic HTML comes first
+
+Every HTML element has an implicit ARIA role — `<button>` is `role="button"`, `<nav>` is `role="navigation"`, `<a href="...">` is `role="link"`. Screen readers build a separate **accessibility tree** from these roles, and it's that tree — not the visual layout — that determines what a screen reader user actually hears and can navigate by.
+
+```html
+<!-- Screen reader announces: "Submit, button" — for free -->
+<button>Submit</button>
+
+<!-- Screen reader announces: "Submit" — with no role at all -->
+<!-- Also gets no keyboard support, no focus outline, nothing -->
+<div onclick="submit()">Submit</div>
+```
+
+## Landmark elements
+
+Landmarks let a screen reader user jump directly to a section of the page instead of reading through everything linearly:
+
+- `<header>` — introductory content, usually top of page or a section
+- `<nav>` — a block of navigation links
+- `<main>` — the page's primary content (exactly one per page)
+- `<aside>` — content tangentially related to the main content
+- `<footer>` — closing content, usually page or section metadata
+
+## Interactive elements are not interchangeable with styled divs
+
+`<button>`, `<a>`, `<input>`, and `<select>` all ship with real keyboard support (Tab to focus, Enter/Space to activate), a visible focus indicator, and a role a screen reader already understands. Recreating any of that on a `<div>` means manually rebuilding every one of those behaviors correctly — and it's easy to get one wrong (a common bug: a `role="button"` div that responds to a mouse click but not to a keyboard Enter press).
+
+## When you actually need ARIA
+
+ARIA earns its place when there's no native element for the pattern at all — a tab panel, a combobox, a modal dialog, a custom slider. In those cases:
+
+```html
+<div role="tablist">
+  <button role="tab" aria-selected="true" id="tab-1">Profile</button>
+  <button role="tab" aria-selected="false" id="tab-2">Settings</button>
+</div>
+```
+
+Note that the tabs above are still real `<button>` elements underneath the ARIA role — ARIA augments semantics, it doesn't replace the need for a focusable, keyboard-operable base element.
+
+## Three rules of thumb
+
+1. **Prefer a native element over ARIA-on-a-div** whenever one exists for what you're building.
+2. **Don't override native semantics unnecessarily** — putting `role="heading" aria-level="2"` on a `<div>` when you could just write `<h2>` adds complexity for zero benefit.
+3. **Every custom ARIA widget must be fully keyboard-operable** to match the behavior its role implies — adding `role="button"` without also adding a `tabindex` and key handlers is worse than using no ARIA at all, because it promises behavior that isn't there.

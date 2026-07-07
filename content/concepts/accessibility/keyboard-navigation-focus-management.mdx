@@ -1,0 +1,51 @@
+---
+title: "Keyboard Navigation & Focus Management"
+description: "Learn how tab order, focus traps, and visible focus indicators let a keyboard-only user operate every interactive element on a page."
+category: "accessibility"
+difficulty: "intermediate"
+order: 4
+whatsHappening: "By default, pressing Tab moves focus through every natively focusable element (links, buttons, inputs) in DOM order — no extra code required. The tabindex attribute changes this: tabindex=\"0\" inserts an otherwise-non-focusable element (like a div) into that natural order at its DOM position; tabindex=\"-1\" makes an element focusable only via JavaScript (element.focus()), removing it from the Tab sequence entirely; a positive tabindex (1, 2, 3...) creates a completely separate, manually-numbered sequence that overrides DOM order altogether. A focus trap constrains Tab and Shift+Tab to cycle only within an open modal or dialog, so focus can't silently escape to page content sitting behind it."
+keyInsight: "Positive tabindex values build an entirely separate manual sequence that runs before natural DOM order, and every element in that sequence has to be renumbered whenever one gets inserted or removed — which is exactly why positive tabindex is treated as an anti-pattern in practice, not just a style preference."
+memoryHook: "0 joins the line where it's standing, -1 skips the line but can still be called on directly, positive numbers cut to the front of the whole line — and now someone has to keep renumbering the queue."
+inRealLife: "Like a fire escape that only unlocks in one direction and dead-ends past a certain point — that's what a page with no focus trap does to a keyboard user once a modal opens: nothing stops Tab from wandering into content buried behind it that they can't see and can't get back out of easily."
+---
+
+## The default tab order needs no code
+
+Every natively focusable element — links, buttons, form controls — is reachable by pressing Tab, in the order they appear in the DOM. This is free, correct, and shouldn't be fought against.
+
+## tabindex's three distinct values
+
+```html
+<!-- tabindex="0": joins the natural Tab order at this DOM position -->
+<div tabindex="0" role="button">Custom button</div>
+
+<!-- tabindex="-1": focusable via JS only, skipped by Tab -->
+<h1 tabindex="-1" id="main-heading">Page Title</h1>
+
+<!-- tabindex="1", "2", ...: a manual sequence, overrides DOM order entirely -->
+<input tabindex="2" />
+<input tabindex="1" />
+```
+
+`tabindex="-1"` is genuinely useful — it's the standard way to make a heading or landmark programmatically focusable (for a skip link's target, for example) without adding it to the Tab sequence. Positive `tabindex` is the one to avoid: it's brittle, and inserting a single new element anywhere in the sequence usually means renumbering everything after it.
+
+## Focus traps
+
+When a modal dialog opens, Tab and Shift+Tab should cycle only through the modal's own focusable elements — reaching the last one and pressing Tab again should wrap back to the first, not escape into the page behind it. On close, focus should return to whatever element opened the modal, not get lost at the top of the document.
+
+## Skip links
+
+A "Skip to main content" link, positioned first in the DOM (often visually hidden until focused), lets a keyboard user bypass a long navigation menu on every single page load:
+
+```html
+<a href="#main-content">Skip to main content</a>
+<!-- ... nav with 20 links ... -->
+<main id="main-content" tabindex="-1">...</main>
+```
+
+`tabindex="-1"` on `<main>` is what lets the browser actually move focus there when the link's `href="#main-content"` is activated — without it, the page scrolls but keyboard focus doesn't follow.
+
+## Visible focus indicators are not optional
+
+Every focusable element needs a visible indicator (typically an outline) showing where focus currently is. `outline: none` in CSS with no replacement is one of the most common accessibility regressions — it doesn't remove keyboard navigation, it just makes it invisible, leaving keyboard-only users with no way to see where they are on the page.

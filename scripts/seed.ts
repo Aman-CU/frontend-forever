@@ -658,6 +658,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how tab order, focus traps, and visible focus indicators let a keyboard-only user operate every interactive element on a page.",
     category: "accessibility",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 4,
   },
   {
@@ -667,6 +668,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how labels, error messaging, and aria-describedby connect a form control to the information a screen reader needs to announce it correctly.",
     category: "accessibility",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 5,
   },
   {
@@ -676,6 +678,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how aria-live announces dynamic content changes — toasts, form errors, loading states — to screen reader users without moving their focus.",
     category: "accessibility",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 6,
   },
   {
@@ -685,6 +688,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Compare the keyboard and ARIA requirements for modals, menus, and comboboxes — the widgets most commonly built inaccessibly from scratch.",
     category: "accessibility",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 7,
   },
   {
@@ -694,6 +698,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn what automated tools like axe-core and Lighthouse can and can't catch, and where manual keyboard/screen-reader testing still has to fill the gap.",
     category: "accessibility",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 8,
   },
 
@@ -4036,6 +4041,492 @@ isEventName("onclick")   // false — not capitalized after "on"
     isPremium: true,
     orderIndex: 52,
   },
+  {
+    slug: "choose-semantic-tag",
+    conceptSlug: "aria-roles-and-semantic-html",
+    title: "Choose the correct semantic tag for a purpose",
+    description: `The right HTML element already carries the correct accessibility role — this is the lookup that picks it.
+
+## The problem
+
+Given a plain-English description of what a page section or control is *for*, picking a \`div\` and bolting on a role is tempting — but a real semantic element already exists for almost every common purpose.
+
+## The idea
+
+Map each recognized purpose to its correct native tag. Anything not on the recognized list falls back to a plain \`"div"\` — a generic container is the honest answer when nothing more specific fits.
+
+## Your task
+
+Write \`chooseSemanticTag(purpose)\`:
+
+\`\`\`js
+chooseSemanticTag("primary navigation") // "nav"
+chooseSemanticTag("performs an action on the current page") // "button"
+chooseSemanticTag("navigates to another page/URL") // "a"
+chooseSemanticTag("something totally unrelated") // "div"
+\`\`\``,
+    difficulty: "easy",
+    starterCode: `function chooseSemanticTag(purpose) {
+  // return the correct native tag name for this purpose, or "div" if none matches
+}`,
+    solutionCode: `function chooseSemanticTag(purpose) {
+  const map = {
+    "primary navigation": "nav",
+    "page banner/header": "header",
+    "page footer": "footer",
+    "main content region": "main",
+    "sidebar/complementary content": "aside",
+    "self-contained article": "article",
+    "navigates to another page/URL": "a",
+    "performs an action on the current page": "button",
+  };
+  return map[purpose] ?? "div";
+}`,
+    testCases: [
+      { input: '"primary navigation"', expected: '"nav"', label: "A recognized navigation purpose maps to <nav>" },
+      { input: '"performs an action on the current page"', expected: '"button"', label: "An action purpose maps to <button>, not <a>" },
+      { input: '"navigates to another page/URL"', expected: '"a"', label: "A navigation purpose maps to <a>, not <button>" },
+      { input: '"something totally unrelated"', expected: '"div"', label: "An unrecognized purpose falls back to a plain div" },
+    ],
+    hints: [
+      "A plain lookup table is the whole solution — no need for pattern matching or fuzzy string comparison.",
+      "The nullish coalescing operator (??) is a clean way to express \"fall back to div if the key isn't found\".",
+      "Resist the urge to special-case 'unrelated' strings — any key missing from the table should hit the same fallback.",
+    ],
+    isPremium: false,
+    orderIndex: 53,
+  },
+  {
+    slug: "decide-alt-text",
+    conceptSlug: "accessible-images-media",
+    title: "Decide the correct alt text for an image",
+    description: `Not every image needs the same kind of alt text — some need none at all, on purpose.
+
+## The problem
+
+An image is either meaningful (it needs real alt text) or purely decorative (it needs an empty alt so screen readers skip it) — treating every image the same way gets one of those two cases wrong.
+
+## The idea
+
+Decorative images always get an empty string, regardless of whatever description was supplied. Meaningful images need a real, non-empty description — and a meaningful image with no description at all is a genuine content bug, not something to silently paper over.
+
+## Your task
+
+Write \`getAltText(image)\`, where \`image\` is \`{ isDecorative, description }\`:
+
+\`\`\`js
+getAltText({ isDecorative: true, description: "swirl graphic" }) // ""
+getAltText({ isDecorative: false, description: "Company logo" }) // "Company logo"
+getAltText({ isDecorative: false }) // throws
+\`\`\``,
+    difficulty: "easy",
+    starterCode: `function getAltText(image) {
+  // "" if decorative, the trimmed description if meaningful, throw if meaningful with no description
+}`,
+    solutionCode: `function getAltText(image) {
+  if (image.isDecorative) return "";
+  if (!image.description || !image.description.trim()) {
+    throw new Error("Meaningful images must have alt text");
+  }
+  return image.description.trim();
+}`,
+    testCases: [
+      { input: '{ isDecorative: true, description: "swirl" }', expected: '""', label: "A decorative image always gets an empty alt, even if a description was supplied" },
+      { input: '{ isDecorative: false, description: "Company logo" }', expected: '"Company logo"', label: "A meaningful image returns its real description" },
+      { input: '{ isDecorative: false, description: "  Team photo  " }', expected: '"Team photo"', label: "The description is trimmed of surrounding whitespace" },
+      { input: '{ isDecorative: false }', expected: "throws an Error", label: "A meaningful image with no description throws instead of returning something misleading" },
+    ],
+    hints: [
+      "Check isDecorative first — it should short-circuit before the description is even looked at.",
+      "An empty or whitespace-only description should be treated the same as a missing one.",
+    ],
+    isPremium: false,
+    orderIndex: 54,
+  },
+  {
+    slug: "contrast-ratio-checker",
+    conceptSlug: "color-contrast-visual-accessibility",
+    title: "Implement the WCAG contrast ratio formula",
+    description: `The number behind every "does this pass AA?" question — computed the same way a browser DevTools contrast checker does.
+
+## The problem
+
+"Does this text color pass against this background?" isn't a matter of opinion — WCAG defines an exact formula, based on each color's relative luminance.
+
+## The idea
+
+Convert each hex color to its relative luminance (a 0–1 measure of how much light it reflects), then compare the lighter one to the darker one using WCAG's ratio formula: \`(lighter + 0.05) / (darker + 0.05)\`.
+
+## Your task
+
+Write \`getContrastRatio(hex1, hex2)\` (rounded to 2 decimals) and \`meetsWcagAA(hex1, hex2, isLargeText)\`:
+
+\`\`\`js
+getContrastRatio("#000000", "#FFFFFF") // 21
+meetsWcagAA("#000000", "#FFFFFF", false) // true
+\`\`\``,
+    difficulty: "easy",
+    starterCode: `function getContrastRatio(hex1, hex2) {
+  // return the WCAG contrast ratio between the two colors, rounded to 2 decimals
+}
+function meetsWcagAA(hex1, hex2, isLargeText) {
+  // true if getContrastRatio passes the AA threshold for the given text size
+}`,
+    solutionCode: `function hexToRgb(hex) {
+  const clean = hex.replace("#", "");
+  const bigint = parseInt(clean, 16);
+  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+}
+function channelLuminance(c) {
+  const s = c / 255;
+  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+}
+function relativeLuminance(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  return 0.2126 * channelLuminance(r) + 0.7152 * channelLuminance(g) + 0.0722 * channelLuminance(b);
+}
+function getContrastRatio(hex1, hex2) {
+  const l1 = relativeLuminance(hex1);
+  const l2 = relativeLuminance(hex2);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return Math.round(((lighter + 0.05) / (darker + 0.05)) * 100) / 100;
+}
+function meetsWcagAA(hex1, hex2, isLargeText) {
+  const ratio = getContrastRatio(hex1, hex2);
+  return isLargeText ? ratio >= 3 : ratio >= 4.5;
+}`,
+    testCases: [
+      { input: '"#000000", "#FFFFFF"', expected: "21", label: "Black on white is the maximum possible ratio, 21:1" },
+      { input: '"#FFFFFF", "#FFFFFF"', expected: "1", label: "Identical colors give the minimum possible ratio, 1:1" },
+      { input: 'meetsWcagAA("#000000", "#FFFFFF", false)', expected: "true", label: "21:1 passes AA for normal text (needs 4.5:1)" },
+      { input: 'meetsWcagAA("#FFFFFF", "#FFFFFF", false)', expected: "false", label: "1:1 fails AA for normal text" },
+    ],
+    hints: [
+      "Relative luminance is computed per channel first, then combined with the weights 0.2126 (red), 0.7152 (green), 0.0722 (blue).",
+      "Which color is 'lighter' isn't about which argument comes first — always divide the larger luminance by the smaller.",
+      "Large text's AA threshold (3:1) is lower than normal text's (4.5:1), not higher.",
+    ],
+    isPremium: false,
+    orderIndex: 55,
+  },
+  {
+    slug: "compute-tab-order",
+    conceptSlug: "keyboard-navigation-focus-management",
+    title: "Compute the real browser tab order",
+    description: `Tab order isn't just "top to bottom" once tabindex enters the picture — this reproduces the actual browser algorithm.
+
+## The problem
+
+A page's real Tab order depends on more than DOM position: elements with a positive tabindex jump the queue entirely, and elements with tabindex="-1" are skipped by Tab altogether even though they're still in the DOM.
+
+## The idea
+
+Split elements into two groups — positive tabindex (sorted by tabindex value, ties broken by DOM order) and everything else with tabindex 0 or unset (sorted by DOM order) — then positive-tabindex elements always come first. Elements with tabindex="-1" are excluded entirely.
+
+## Your task
+
+Write \`computeTabOrder(elements)\`, where each element is \`{ id, tabIndex, domOrder }\`, returning an array of ids in real Tab order:
+
+\`\`\`js
+computeTabOrder([
+  { id: "a", domOrder: 0 },
+  { id: "b", tabIndex: 2, domOrder: 1 },
+  { id: "c", tabIndex: 1, domOrder: 2 },
+  { id: "d", tabIndex: -1, domOrder: 3 },
+])
+// → ["c", "b", "a"]
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function computeTabOrder(elements) {
+  // positive tabIndex first (sorted by tabIndex, then domOrder), then tabIndex 0/unset (sorted by domOrder), -1 excluded
+}`,
+    solutionCode: `function computeTabOrder(elements) {
+  const positive = elements.filter((el) => el.tabIndex > 0);
+  const zero = elements.filter((el) => !el.tabIndex || el.tabIndex === 0);
+  positive.sort((a, b) => a.tabIndex - b.tabIndex || a.domOrder - b.domOrder);
+  zero.sort((a, b) => a.domOrder - b.domOrder);
+  return [...positive, ...zero].map((el) => el.id);
+}`,
+    testCases: [
+      {
+        input: '[{id:"a",domOrder:0},{id:"b",tabIndex:2,domOrder:1},{id:"c",tabIndex:1,domOrder:2},{id:"d",tabIndex:-1,domOrder:3},{id:"e",domOrder:4}]',
+        expected: '["c","b","a","e"]',
+        label: "Positive tabIndex elements come first in ascending order; tabIndex -1 is excluded",
+      },
+      {
+        input: '[{id:"x",domOrder:2},{id:"y",domOrder:0},{id:"z",domOrder:1}]',
+        expected: '["y","z","x"]',
+        label: "With no tabIndex set on anything, order falls back to plain DOM order",
+      },
+      {
+        input: '[{id:"p",tabIndex:1,domOrder:5},{id:"q",tabIndex:1,domOrder:2}]',
+        expected: '["q","p"]',
+        label: "A tie in tabIndex is broken by DOM order",
+      },
+    ],
+    hints: [
+      "tabIndex 0 and 'no tabIndex at all' (undefined) both belong in the same group as each other, not the positive group.",
+      "!el.tabIndex is true for both 0 and undefined in JavaScript, which is exactly the group you want — just make sure -1 isn't falsy too (it isn't).",
+      "Positive-tabIndex elements are sorted among themselves by tabIndex value, then by domOrder as the tiebreaker.",
+    ],
+    isPremium: true,
+    orderIndex: 56,
+  },
+  {
+    slug: "link-field-error",
+    conceptSlug: "accessible-forms",
+    title: "Wire up a field's error ARIA attributes",
+    description: `The attributes that connect a form field to its own error message — computed correctly for both the error and no-error case.
+
+## The problem
+
+A field showing an error visually (a red border) means nothing to a screen reader unless \`aria-invalid\` and \`aria-describedby\` are actually set to point at that specific error text.
+
+## The idea
+
+When a field has an error, it needs \`aria-invalid: true\` and an \`aria-describedby\` pointing at a predictable id (\`\${id}-error\`). When it doesn't, both should reflect the field being valid — no dangling reference to an error element that isn't there.
+
+## Your task
+
+Write \`buildFieldAria(field)\`, where \`field\` is \`{ id, hasError }\`:
+
+\`\`\`js
+buildFieldAria({ id: "email", hasError: true })
+// → { "aria-invalid": true, "aria-describedby": "email-error" }
+buildFieldAria({ id: "email", hasError: false })
+// → { "aria-invalid": false, "aria-describedby": undefined }
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function buildFieldAria(field) {
+  // return the correct { "aria-invalid", "aria-describedby" } pair for this field's error state
+}`,
+    solutionCode: `function buildFieldAria(field) {
+  if (field.hasError) {
+    return { "aria-invalid": true, "aria-describedby": \`\${field.id}-error\` };
+  }
+  return { "aria-invalid": false, "aria-describedby": undefined };
+}`,
+    testCases: [
+      { input: '{ id: "email", hasError: true }', expected: '{ "aria-invalid": true, "aria-describedby": "email-error" }', label: "An errored field points aria-describedby at its predictable error id" },
+      { input: '{ id: "email", hasError: false }', expected: '{ "aria-invalid": false, "aria-describedby": undefined }', label: "A valid field has no dangling aria-describedby reference" },
+    ],
+    hints: [
+      "The error element's id follows a predictable convention: the field's own id, plus \"-error\".",
+      "A valid field's aria-describedby should be undefined, not an empty string or a reference to a nonexistent element.",
+    ],
+    isPremium: true,
+    orderIndex: 57,
+  },
+  {
+    slug: "live-region-announcer-queue",
+    conceptSlug: "aria-live-regions",
+    title: "Implement an assertive-interrupts-polite announcer queue",
+    description: `The scheduling rule behind aria-live's two politeness levels — modeled as a queue, not the DOM.
+
+## The problem
+
+"assertive" and "polite" aren't just labels — assertive announcements are meant to interrupt, and polite ones are meant to wait their turn, but a naive single FIFO queue treats every message identically regardless of politeness.
+
+## The idea
+
+Keep two separate queues. Flushing always drains the assertive queue first — even messages that arrived after older polite ones still jump ahead — and only falls back to the polite queue once no assertive messages remain.
+
+## Your task
+
+Write \`createAnnouncer()\`, returning \`{ announce(message, politeness), flush() }\` — \`flush()\` removes and returns the next message to announce (or \`null\` if both queues are empty):
+
+\`\`\`js
+const a = createAnnouncer();
+a.announce("Saved", "polite");
+a.announce("Error: network failed", "assertive");
+a.flush() // → { message: "Error: network failed", politeness: "assertive" }
+a.flush() // → { message: "Saved", politeness: "polite" }
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function createAnnouncer() {
+  // return { announce(message, politeness), flush() } — assertive always flushes before polite
+}`,
+    solutionCode: `function createAnnouncer() {
+  let assertiveQueue = [];
+  let politeQueue = [];
+  return {
+    announce(message, politeness) {
+      if (politeness === "assertive") assertiveQueue.push(message);
+      else politeQueue.push(message);
+    },
+    flush() {
+      if (assertiveQueue.length) return { message: assertiveQueue.shift(), politeness: "assertive" };
+      if (politeQueue.length) return { message: politeQueue.shift(), politeness: "polite" };
+      return null;
+    },
+  };
+}`,
+    testCases: [
+      {
+        input: 'announce("Saved","polite"); announce("Error: network failed","assertive"); flush()',
+        expected: '{ message: "Error: network failed", politeness: "assertive" }',
+        label: "An assertive message jumps ahead of an already-queued polite one",
+      },
+      {
+        input: "flush() again after the assertive message above",
+        expected: '{ message: "Saved", politeness: "polite" }',
+        label: "The polite message is still delivered once the assertive queue is empty",
+      },
+      {
+        input: "flush() with both queues empty",
+        expected: "null",
+        label: "Flushing an empty announcer returns null instead of throwing",
+      },
+      {
+        input: 'a second assertive message announced after a flush',
+        expected: "it still interrupts",
+        label: "Assertive priority applies every time flush is called, not just once",
+      },
+    ],
+    hints: [
+      "Two separate arrays, not one — politeness determines which queue a message goes into, not its position in a single queue.",
+      "flush() should always check the assertive queue's length before even looking at the polite queue.",
+      "Array.prototype.shift() both removes and returns the first element — exactly the FIFO behavior each queue needs.",
+    ],
+    isPremium: true,
+    orderIndex: 58,
+  },
+  {
+    slug: "combobox-keyboard-handler",
+    conceptSlug: "accessible-component-patterns",
+    title: "Implement a combobox's keyboard state machine",
+    description: `The state transitions behind arrow-key navigation in an accessible combobox — as a pure state machine, no DOM involved.
+
+## The problem
+
+A combobox's keyboard behavior depends on more than the key pressed — the same ArrowDown key opens a closed list at its first option, but advances (and wraps) the highlighted option in an already-open one.
+
+## The idea
+
+Model the combobox as \`{ options, activeIndex, isOpen }\`. Handle each key as a pure transition: an unopened list responds only to the arrow that opens it; an open list responds to Home/End/Escape/Enter plus wrapping arrow-key movement.
+
+## Your task
+
+Write \`handleComboboxKey(state, key)\`, returning the new state:
+
+\`\`\`js
+handleComboboxKey({ options: ["Apple","Banana"], activeIndex: -1, isOpen: false }, "ArrowDown")
+// → { options: ["Apple","Banana"], activeIndex: 0, isOpen: true }
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function handleComboboxKey(state, key) {
+  // pure state transition for ArrowDown/ArrowUp/Home/End/Escape/Enter, closed vs. open
+}`,
+    solutionCode: `function handleComboboxKey(state, key) {
+  const { options, activeIndex, isOpen } = state;
+  if (!isOpen) {
+    if (key === "ArrowDown") return { options, activeIndex: 0, isOpen: true };
+    if (key === "ArrowUp") return { options, activeIndex: options.length - 1, isOpen: true };
+    return { ...state };
+  }
+  switch (key) {
+    case "ArrowDown":
+      return { options, activeIndex: (activeIndex + 1) % options.length, isOpen: true };
+    case "ArrowUp":
+      return { options, activeIndex: (activeIndex - 1 + options.length) % options.length, isOpen: true };
+    case "Home":
+      return { options, activeIndex: 0, isOpen: true };
+    case "End":
+      return { options, activeIndex: options.length - 1, isOpen: true };
+    case "Escape":
+      return { options, activeIndex: -1, isOpen: false };
+    case "Enter":
+      return { options, activeIndex, isOpen: false };
+    default:
+      return { ...state };
+  }
+}`,
+    testCases: [
+      {
+        input: '{options:["Apple","Banana","Cherry"],activeIndex:-1,isOpen:false}, "ArrowDown"',
+        expected: '{options:["Apple","Banana","Cherry"],activeIndex:0,isOpen:true}',
+        label: "ArrowDown on a closed list opens it at the first option",
+      },
+      {
+        input: '{options:["Apple","Banana","Cherry"],activeIndex:2,isOpen:true}, "ArrowDown"',
+        expected: '{options:["Apple","Banana","Cherry"],activeIndex:0,isOpen:true}',
+        label: "ArrowDown at the last option wraps back to the first",
+      },
+      {
+        input: '{options:["Apple","Banana","Cherry"],activeIndex:1,isOpen:true}, "Escape"',
+        expected: '{options:["Apple","Banana","Cherry"],activeIndex:-1,isOpen:false}',
+        label: "Escape closes the list and clears the active option entirely",
+      },
+      {
+        input: '{options:["Apple","Banana","Cherry"],activeIndex:1,isOpen:true}, "Enter"',
+        expected: '{options:["Apple","Banana","Cherry"],activeIndex:1,isOpen:false}',
+        label: "Enter closes the list but keeps the selected option's index",
+      },
+    ],
+    hints: [
+      "Check isOpen first — a closed list only cares about the two arrow keys, everything else is a no-op.",
+      "Wrapping math: (activeIndex + 1) % options.length handles the forward wrap; add options.length before the modulo for the backward wrap to avoid a negative result.",
+      "Escape and Enter both close the list, but only Escape resets activeIndex to -1 — Enter is a selection, not a cancellation.",
+    ],
+    isPremium: true,
+    orderIndex: 59,
+  },
+  {
+    slug: "mini-a11y-linter",
+    conceptSlug: "automated-a11y-testing",
+    title: "Write a mini automated a11y rule checker",
+    description: `A tiny version of what axe-core actually does — check a node against a fixed rule set and report what fails.
+
+## The problem
+
+Automated a11y tools work by mechanically checking a fixed set of rules against markup — this is two of the simplest, most common ones: images need alt text (unless decorative), and inputs need an accessible name.
+
+## The idea
+
+Given a simplified node \`{ tag, attrs }\`, apply only the rules relevant to that tag: an \`img\` needs \`alt\` unless it's marked decorative (\`role="presentation"\` or \`aria-hidden: true\`); an \`input\` needs an \`aria-label\` or \`aria-labelledby\`. Any other tag has no violations from this rule set.
+
+## Your task
+
+Write \`lintNode(node)\`, returning an array of violation message strings (empty if none):
+
+\`\`\`js
+lintNode({ tag: "img", attrs: {} }) // ["img missing alt text"]
+lintNode({ tag: "img", attrs: { alt: "A dog" } }) // []
+lintNode({ tag: "img", attrs: { role: "presentation" } }) // []
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function lintNode(node) {
+  // return an array of violation strings for this single node
+}`,
+    solutionCode: `function lintNode(node) {
+  const violations = [];
+  const attrs = node.attrs || {};
+  if (node.tag === "img") {
+    const isDecorative = attrs.role === "presentation" || attrs["aria-hidden"] === true;
+    if (!isDecorative && !("alt" in attrs)) violations.push("img missing alt text");
+  }
+  if (node.tag === "input") {
+    const hasName = Boolean(attrs["aria-label"] || attrs["aria-labelledby"]);
+    if (!hasName) violations.push("input missing an accessible name");
+  }
+  return violations;
+}`,
+    testCases: [
+      { input: '{ tag: "img", attrs: {} }', expected: '["img missing alt text"]', label: "An img with no alt attribute at all is flagged" },
+      { input: '{ tag: "img", attrs: { alt: "A dog" } }', expected: "[]", label: "An img with any alt attribute passes, even if empty" },
+      { input: '{ tag: "img", attrs: { role: "presentation" } }', expected: "[]", label: "A decorative img needs no alt attribute at all" },
+      { input: '{ tag: "input", attrs: {} }', expected: '["input missing an accessible name"]', label: "An input with no accessible name is flagged" },
+      { input: '{ tag: "div", attrs: {} }', expected: "[]", label: "Tags with no applicable rule always pass" },
+    ],
+    hints: [
+      "\"alt\" in attrs checks that the attribute exists at all — even alt=\"\" should count as present.",
+      "A decorative image is exempt from the alt-text rule entirely, checked before the alt-presence check runs.",
+      "Only img and input have rules in this mini rule set — every other tag should return an empty array unconditionally.",
+    ],
+    isPremium: true,
+    orderIndex: 60,
+  },
 ];
 
 // ── Interview questions (5 per collection, plus concept-linked top-ups) ────────
@@ -6946,6 +7437,406 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     difficulty: "medium",
     companies: ["Stripe", "Google"],
     orderIndex: 172,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "aria-roles-and-semantic-html",
+    question: "What is the \"First Rule of ARIA\"?",
+    answer:
+      "No ARIA is better than bad ARIA — always prefer a real semantic HTML element over recreating its behavior with ARIA attributes on a generic element like a div. A native `<button>` already ships with the correct role, keyboard support, and focusability; a `<div role=\"button\">` only gets the announced role, and every other piece of behavior has to be rebuilt by hand and is easy to get wrong.",
+    difficulty: "easy",
+    companies: ["Google", "Meta"],
+    orderIndex: 173,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "aria-roles-and-semantic-html",
+    question: "Why is a `<div onclick=\"...\">` less accessible than a `<button onclick=\"...\">`, even if they look identical?",
+    answer:
+      "A `<div>` has no implicit role, isn't in the Tab order by default, has no visible focus indicator, and doesn't respond to Enter or Space — all of that is native, free behavior on `<button>`. Recreating it on a div means adding `role=\"button\"`, `tabindex=\"0\"`, a focus style, and manual keydown handlers for both Enter and Space, and missing any one of them leaves a control that mouse users can operate but keyboard and screen reader users can't.",
+    difficulty: "medium",
+    companies: ["Amazon", "Microsoft"],
+    orderIndex: 174,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "aria-roles-and-semantic-html",
+    question: "What are landmark elements and why do they matter for screen reader users?",
+    answer:
+      "Landmarks — `<header>`, `<nav>`, `<main>`, `<aside>`, `<footer>` — mark out the major regions of a page in a way screen readers expose as a navigable list. Instead of reading through the entire page linearly, a screen reader user can jump directly to the main content or the navigation menu, the same way a sighted user visually scans straight to the section they want.",
+    difficulty: "easy",
+    companies: ["Stripe"],
+    orderIndex: 175,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "aria-roles-and-semantic-html",
+    question: "When is it actually appropriate to add an ARIA role to a non-semantic element?",
+    answer:
+      "Only when there's no native HTML element for the pattern at all — a tab panel, a combobox, a custom slider. Even then, the underlying element should still be a real focusable, keyboard-operable base (often a `<button>` or a div with `tabindex=\"0\"` and full key handling) — ARIA augments the semantics on top of working keyboard behavior, it doesn't substitute for it.",
+    difficulty: "medium",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 176,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "aria-roles-and-semantic-html",
+    question: "What's wrong with adding `role=\"button\"` to a div and stopping there?",
+    answer:
+      "It announces to assistive tech that the element behaves like a button, without actually making it behave like one — no keyboard focusability, no Enter/Space activation. That's arguably worse than no ARIA at all: a screen reader user is told \"this is a button\" and then discovers it doesn't respond the way every other button on the page does.",
+    difficulty: "hard",
+    companies: ["Google"],
+    orderIndex: 177,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-images-media",
+    question: "What's the difference between `alt=\"\"` and omitting the `alt` attribute entirely?",
+    answer:
+      "`alt=\"\"` is a deliberate signal that the image is decorative — a screen reader silently skips it. Omitting `alt` altogether is usually a bug: many screen readers fall back to announcing the image's file path or name as if it were real content, which is worse than saying nothing.",
+    difficulty: "easy",
+    companies: ["Meta", "Google"],
+    orderIndex: 178,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-images-media",
+    question: "How should alt text differ for a functional image (one inside a link or button) versus a purely informational image?",
+    answer:
+      "A functional image's alt text should describe the destination or action it performs — \"View shopping cart\" for a cart icon inside a link — not what the icon literally looks like. An informational image's alt text should describe the content or meaning of the image itself, since there's no action for it to describe.",
+    difficulty: "medium",
+    companies: ["Amazon", "Stripe"],
+    orderIndex: 179,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-images-media",
+    question: "What's the difference between captions and a transcript?",
+    answer:
+      "Captions are text synced to a video's timeline, covering dialogue and important non-speech sound, meant to be read alongside real-time playback. A transcript is a full text version with no timeline — used for audio-only content, or as a scannable/searchable alternative alongside a captioned video.",
+    difficulty: "easy",
+    companies: ["Microsoft"],
+    orderIndex: 180,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-images-media",
+    question: "How do you make an icon-only button (no visible text label) accessible?",
+    answer:
+      "Give the button itself an accessible name via `aria-label` (or visually-hidden text inside it), and mark the icon `aria-hidden=\"true\"` so it isn't announced redundantly alongside the label. Without one of these, a screen reader either announces nothing useful or announces the icon's raw file/asset name.",
+    difficulty: "medium",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 181,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-images-media",
+    question: "How would you handle alt text for a complex image like a bar chart?",
+    answer:
+      "A short `alt` names what the image is, but the real information — the actual data or takeaway the chart communicates — needs to exist as accessible text nearby: a data table, or a text summary of the key insight. A one-line alt attribute alone can't reasonably convey a multi-series chart's full content.",
+    difficulty: "hard",
+    companies: ["Google", "Stripe"],
+    orderIndex: 182,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "color-contrast-visual-accessibility",
+    question: "What WCAG AA contrast ratio is required for normal text versus large text?",
+    answer:
+      "4.5:1 for normal text, and 3:1 for large text (18pt and up, or 14pt and up if bold). Large text gets a lower bar because its bigger, heavier letterforms stay legible at a lower contrast ratio than small text needs.",
+    difficulty: "easy",
+    companies: ["Google", "Meta"],
+    orderIndex: 183,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "color-contrast-visual-accessibility",
+    question: "What is relative luminance, and how does it relate to contrast ratio?",
+    answer:
+      "Relative luminance is a standardized 0–1 measure of how much light a given color reflects, computed from its red/green/blue channel values with a gamma-correction step per channel. Contrast ratio compares the relative luminance of two colors — `(lighter + 0.05) / (darker + 0.05)` — giving a single number from 1:1 (no contrast) to 21:1 (pure black on pure white).",
+    difficulty: "medium",
+    companies: ["Stripe", "Microsoft"],
+    orderIndex: 184,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "color-contrast-visual-accessibility",
+    question: "Why do UI components like input borders have their own contrast requirement, separate from text contrast?",
+    answer:
+      "WCAG 1.4.11 (Non-text Contrast) requires a 3:1 ratio for meaningful graphical elements — input borders, icons, focus indicators — because those convey information visually just like text does. A form field can pass every text-contrast check and still fail accessibility if its border is nearly invisible against the page background.",
+    difficulty: "medium",
+    companies: ["Amazon", "Meta"],
+    orderIndex: 185,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "color-contrast-visual-accessibility",
+    question: "Why shouldn't color alone convey information, and what's a compliant alternative?",
+    answer:
+      "Roughly 1 in 12 men have some form of color vision deficiency, so a red-versus-green distinction alone can be imperceptible to a real portion of users. WCAG 1.4.1 requires a second signal alongside color — an icon, text label, or pattern — such as pairing a red error border with an error icon and message text, not the color change alone.",
+    difficulty: "easy",
+    companies: ["Google"],
+    orderIndex: 186,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "color-contrast-visual-accessibility",
+    question: "What's the maximum possible WCAG contrast ratio, and which two colors produce it?",
+    answer:
+      "21:1, produced by pure black (`#000000`) against pure white (`#FFFFFF`) — their relative luminance values are exactly 0 and 1, which plug into the ratio formula `(1 + 0.05) / (0 + 0.05)` to give exactly 21.",
+    difficulty: "hard",
+    companies: ["Stripe"],
+    orderIndex: 187,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "keyboard-navigation-focus-management",
+    question: "What's the difference between `tabindex=\"0\"`, `tabindex=\"-1\"`, and a positive `tabindex`?",
+    answer:
+      "`tabindex=\"0\"` inserts an otherwise-unfocusable element into the natural Tab order at its DOM position. `tabindex=\"-1\"` makes an element focusable only via JavaScript (`element.focus()`), removing it from the Tab sequence entirely. A positive `tabindex` creates a separate manually-numbered sequence that overrides DOM order completely, running before every `tabindex=\"0\"`/unset element.",
+    difficulty: "medium",
+    companies: ["Meta", "Google"],
+    orderIndex: 188,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "keyboard-navigation-focus-management",
+    question: "Why is a positive `tabindex` generally considered an anti-pattern?",
+    answer:
+      "It builds a manually-numbered sequence that's brittle to maintain — inserting a single new focusable element anywhere on the page usually means renumbering everything that should come after it, and forgetting to do so silently produces the wrong tab order. The natural DOM-order sequence needs no such bookkeeping at all.",
+    difficulty: "medium",
+    companies: ["Amazon", "Airbnb"],
+    orderIndex: 189,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "keyboard-navigation-focus-management",
+    question: "What is a focus trap, and why does a modal dialog need one?",
+    answer:
+      "A focus trap constrains Tab and Shift+Tab to cycle only within the modal's own focusable elements while it's open — reaching the last one and pressing Tab wraps back to the first, instead of escaping into page content sitting behind the modal. Without it, a keyboard user can tab into content they can't see (it's visually behind the modal overlay) and lose track of where focus even is.",
+    difficulty: "medium",
+    companies: ["Stripe", "Microsoft"],
+    orderIndex: 190,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "keyboard-navigation-focus-management",
+    question: "What does `tabindex=\"-1\"` on a `<main>` element enable for a skip link, and why is it needed?",
+    answer:
+      "A skip link's `href=\"#main-content\"` scrolls the page to `<main>` on activation, but doesn't move keyboard focus there by default since `<main>` isn't natively focusable. Adding `tabindex=\"-1\"` makes it programmatically focusable, so the browser can actually move focus to it when the anchor link is activated — without it, the page scrolls but subsequent Tab presses resume from wherever focus actually still is, not from the new visual position.",
+    difficulty: "hard",
+    companies: ["Google", "Meta"],
+    orderIndex: 191,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "keyboard-navigation-focus-management",
+    question: "What accessibility problem does `outline: none` with no replacement introduce?",
+    answer:
+      "It removes the visible indicator of which element currently has keyboard focus, without removing keyboard navigation itself — a keyboard-only user can still Tab through the page, but has no way to see where they currently are. It's one of the most common accessibility regressions, usually introduced purely for cosmetic reasons.",
+    difficulty: "easy",
+    companies: ["Meta"],
+    orderIndex: 192,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-forms",
+    question: "What are the two ways to programmatically associate a `<label>` with an input?",
+    answer:
+      "A matching `for`/`id` pair (`<label for=\"email\">` with `<input id=\"email\">`), or wrapping the input directly inside the `<label>` element with no `for`/`id` needed. Either way, a screen reader announces the label text when the input receives focus, and clicking the label focuses (or toggles) the input.",
+    difficulty: "easy",
+    companies: ["Google", "Amazon"],
+    orderIndex: 193,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-forms",
+    question: "Why isn't placeholder text a substitute for a `<label>`?",
+    answer:
+      "Placeholder text disappears the moment the user types, typically renders at lower contrast than real body text, and isn't reliably announced as the field's accessible name by every screen reader. A label persists regardless of the field's content and is the correct source of the field's name — placeholder text can only supplement it as a formatting hint.",
+    difficulty: "easy",
+    companies: ["Stripe"],
+    orderIndex: 194,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-forms",
+    question: "What does `aria-describedby` do, and how is it different from a label?",
+    answer:
+      "`aria-describedby` points at the id of separate text — a hint or error message — that gets appended after a field's accessible name is announced, giving extra context. It never replaces the accessible name a label provides; a field needs both a real label (\"what is this field\") and, when relevant, an `aria-describedby` (\"what else should I know\") — neither covers for the other.",
+    difficulty: "medium",
+    companies: ["Meta", "Microsoft"],
+    orderIndex: 195,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-forms",
+    question: "What's the purpose of pairing `aria-invalid=\"true\"` with `aria-describedby` on an errored field?",
+    answer:
+      "`aria-invalid=\"true\"` announces the field's current validation state as part of its accessible description, while `aria-describedby` points at the specific error text explaining why. Together, a screen reader user hears both that the field is invalid and what to fix — a visual-only red border communicates neither.",
+    difficulty: "medium",
+    companies: ["Amazon", "Stripe"],
+    orderIndex: 196,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-forms",
+    question: "Why use `<fieldset>`/`<legend>` for a group of radio buttons instead of just a heading above them?",
+    answer:
+      "`<fieldset>`/`<legend>` creates a real programmatic grouping — a screen reader announces the legend's question once as part of each radio button's accessible name, so \"Preferred contact method, Email, radio button\" is heard, not just \"Email, radio button\" with the grouping question lost. A visual heading above the group has no such programmatic connection to the inputs below it.",
+    difficulty: "hard",
+    companies: ["Google", "Airbnb"],
+    orderIndex: 197,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "aria-live-regions",
+    question: "What's the difference between `aria-live=\"polite\"` and `aria-live=\"assertive\"`?",
+    answer:
+      "`polite` waits until the screen reader finishes whatever it's currently reading before announcing the change, without interrupting. `assertive` interrupts immediately, and should be reserved for genuinely urgent, time-sensitive content since every use of it cuts off whatever the user was already listening to.",
+    difficulty: "easy",
+    companies: ["Meta", "Google"],
+    orderIndex: 198,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "aria-live-regions",
+    question: "What do `role=\"status\"` and `role=\"alert\"` imply, in terms of `aria-live`?",
+    answer:
+      "`role=\"status\"` implies `aria-live=\"polite\"` plus the semantics of a status message. `role=\"alert\"` implies `aria-live=\"assertive\"` plus alert semantics. Both are shorthands — using the explicit role is often clearer than the raw `aria-live` attribute for these common cases.",
+    difficulty: "medium",
+    companies: ["Stripe"],
+    orderIndex: 199,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "aria-live-regions",
+    question: "Why might a screen reader fail to announce a live region that's inserted into the DOM already containing its final text?",
+    answer:
+      "A live region only announces content that changes after it's already present in the accessibility tree — it detects a delta, not an appearance. If the container and its final text arrive together in one DOM update, there's no \"before\" state to compare against, so no change event fires and many screen readers never announce it, even though the markup looks entirely correct.",
+    difficulty: "hard",
+    companies: ["Google", "Meta"],
+    orderIndex: 200,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "aria-live-regions",
+    question: "Why should `aria-live=\"assertive\"` be used sparingly?",
+    answer:
+      "Every assertive announcement interrupts whatever the screen reader is currently reading, regardless of how minor the update is. Overusing it for routine updates (a save confirmation, a result count) constantly disrupts the user's listening experience — it should be reserved for content a sighted user would also treat as urgent.",
+    difficulty: "medium",
+    companies: ["Amazon"],
+    orderIndex: 201,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "aria-live-regions",
+    question: "Name two real UI patterns that commonly use a live region.",
+    answer:
+      "Toast/snackbar notifications (\"Changes saved\", \"Item added to cart\") and live search result counts that update as a user types — both need to be announced to a screen reader user without stealing keyboard focus away from where they're currently working.",
+    difficulty: "easy",
+    companies: ["Meta", "Stripe"],
+    orderIndex: 202,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-component-patterns",
+    question: "What three things does a custom widget like a modal or combobox need to be accessible?",
+    answer:
+      "The correct ARIA role and state (announcing what it is and its current condition), full keyboard operability matching the established pattern for that widget type, and correct focus management on open and close (focus moves into the widget when it appears, and back to its trigger when it's dismissed). Missing any one of the three leaves a widget that looks right but doesn't actually work for keyboard or screen reader users.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 203,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-component-patterns",
+    question: "What is `aria-activedescendant`, and what problem does it solve?",
+    answer:
+      "It lets one element (usually a combobox's text input) keep real DOM keyboard focus the entire time, while `aria-activedescendant` points at the id of whichever option is currently highlighted — a 'virtual focus'. This is why typing continues to work in a combobox while arrow keys move the highlighted option: actual focus never leaves the input.",
+    difficulty: "hard",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 204,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-component-patterns",
+    question: "What is \"roving tabindex\", and how does it differ from `aria-activedescendant`?",
+    answer:
+      "Roving tabindex gives only the currently-active option `tabindex=\"0\"` (every other option gets `tabindex=\"-1\"`), and moves real DOM focus between options via JavaScript as arrow keys are pressed. Unlike `aria-activedescendant`, focus genuinely moves — this fits standalone widgets like menus and toolbars well, while `aria-activedescendant` fits widgets with a text input to keep focus in, like a combobox.",
+    difficulty: "hard",
+    companies: ["Google", "Stripe"],
+    orderIndex: 205,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-component-patterns",
+    question: "What should happen to focus when a modal dialog closes?",
+    answer:
+      "Focus should return to whatever element originally triggered the dialog's opening — not get lost at the top of the document or left on a now-removed element. Losing this return step is a common bug: after closing a modal, a keyboard user's next Tab press starts from an unpredictable point instead of picking back up where they were.",
+    difficulty: "medium",
+    companies: ["Amazon", "Microsoft"],
+    orderIndex: 206,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "accessible-component-patterns",
+    question: "What does `aria-modal=\"true\"` communicate, and what should happen to content outside the dialog?",
+    answer:
+      "It tells assistive technology that everything outside the dialog is currently inert while it's open — a screen reader shouldn't navigate into background content, matching the visual reality that it's usually obscured or dimmed. This should be paired with an actual focus trap so keyboard navigation respects the same boundary, not just the announced state.",
+    difficulty: "medium",
+    companies: ["Meta", "Google"],
+    orderIndex: 207,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "automated-a11y-testing",
+    question: "What kinds of accessibility issues can tools like axe-core or Lighthouse reliably catch?",
+    answer:
+      "Objectively-checkable, rule-based violations: missing `alt` attributes, insufficient computed color contrast, form inputs with no associated label, invalid or contradictory ARIA attribute values, duplicate ids, and a missing document `lang` attribute. All of these can be verified mechanically by inspecting the DOM and computed styles, with no ambiguity.",
+    difficulty: "easy",
+    companies: ["Google", "Meta"],
+    orderIndex: 208,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "automated-a11y-testing",
+    question: "What's a commonly cited estimate for how much of WCAG automated tools catch, and what covers the rest?",
+    answer:
+      "Roughly 30–50% of real WCAG issues — the objectively rule-checkable subset. The rest requires human judgment: a keyboard-only walkthrough and real screen reader testing (VoiceOver, NVDA, JAWS) to evaluate things no static scan can verify, like whether content and interaction actually make sense.",
+    difficulty: "medium",
+    companies: ["Stripe", "Amazon"],
+    orderIndex: 209,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "automated-a11y-testing",
+    question: "Why can't an automated tool verify that alt text is accurate?",
+    answer:
+      "A scanner can confirm an `alt` attribute exists and even flag some likely-bad patterns (identical to the filename, or literally the word \"image\"), but it has no way to know whether the text actually describes what's in that specific image correctly. That's a judgment call about meaning, which is exactly the class of problem manual review exists to catch.",
+    difficulty: "medium",
+    companies: ["Meta", "Google"],
+    orderIndex: 210,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "automated-a11y-testing",
+    question: "What's a sound workflow for combining automated and manual accessibility testing?",
+    answer:
+      "Run an automated scan first — it's fast and clears the objectively-checkable issues out of the way. Then do a manual pass (keyboard-only walkthrough, real screen reader testing) focused on the judgment calls a scanner structurally can't make, since that's where human review time is best spent once the easy issues are already handled.",
+    difficulty: "medium",
+    companies: ["Amazon", "Airbnb"],
+    orderIndex: 211,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "automated-a11y-testing",
+    question: "What's the risk of treating a passing axe-core/Lighthouse CI check as your full accessibility sign-off?",
+    answer:
+      "A passing automated scan only confirms the objectively-checkable ~30-50% subset of issues — it says nothing about whether a custom widget is actually keyboard-operable end to end, whether the tab order is logical, or whether content genuinely makes sense read aloud. Treating a green CI check as a complete accessibility guarantee lets real, user-facing issues ship undetected.",
+    difficulty: "hard",
+    companies: ["Google", "Stripe"],
+    orderIndex: 212,
   },
 ];
 
@@ -10395,6 +11286,627 @@ function unwrapBrand(branded, brandName) {
     ],
     isPremium: true,
     orderIndex: 50,
+  },
+  {
+    slug: "semantic-landmark-outliner",
+    conceptSlug: "aria-roles-and-semantic-html",
+    title: "Build a Page Landmark & Heading Outliner",
+    description: `Extends the tag-chooser into a full page auditor — the same lookup that picks a section's semantic tag, plus a check that its heading levels don't skip a step.
+
+## The problem
+
+A page's landmark structure and its heading hierarchy are both things screen reader users navigate by directly — a skipped heading level (jumping from an h2 straight to an h4) breaks that navigation just as much as a missing landmark does.
+
+## The idea
+
+Map every section's purpose to its correct tag with the same table from the core lookup, then walk the sections in order tracking the last heading level seen — any section whose heading level jumps by more than one from the previous heading is a violation.
+
+## Your task
+
+Write \`buildLandmarkOutline(sections)\`, where each section is \`{ purpose, headingLevel }\`, returning \`{ outline, violations }\`:
+
+\`\`\`js
+buildLandmarkOutline([
+  { purpose: "page banner/header", headingLevel: 1 },
+  { purpose: "main content region", headingLevel: 2 },
+  { purpose: "sidebar/complementary content", headingLevel: 4 },
+])
+// → { outline: [...], violations: ["Section 2 skips a heading level (from h2 to h4)"] }
+\`\`\``,
+    starterCode: `function chooseSemanticTag(purpose) {
+  // same lookup as the Challenge — return the correct tag, or "div"
+}
+function buildLandmarkOutline(sections) {
+  // map each section to { tag, headingLevel }, then flag any skipped heading level
+}`,
+    solutionCode: `function chooseSemanticTag(purpose) {
+  const map = {
+    "primary navigation": "nav",
+    "page banner/header": "header",
+    "page footer": "footer",
+    "main content region": "main",
+    "sidebar/complementary content": "aside",
+    "self-contained article": "article",
+    "navigates to another page/URL": "a",
+    "performs an action on the current page": "button",
+  };
+  return map[purpose] ?? "div";
+}
+function buildLandmarkOutline(sections) {
+  const outline = sections.map((s) => ({
+    tag: chooseSemanticTag(s.purpose),
+    headingLevel: s.headingLevel ?? null,
+  }));
+  const violations = [];
+  let lastLevel = 0;
+  outline.forEach((entry, i) => {
+    if (entry.headingLevel != null) {
+      if (entry.headingLevel > lastLevel + 1) {
+        violations.push(\`Section \${i} skips a heading level (from h\${lastLevel} to h\${entry.headingLevel})\`);
+      }
+      lastLevel = entry.headingLevel;
+    }
+  });
+  return { outline, violations };
+}`,
+    testCases: [
+      {
+        input: '[{purpose:"page banner/header",headingLevel:1},{purpose:"main content region",headingLevel:2},{purpose:"sidebar/complementary content",headingLevel:4}]',
+        expected: '{outline:[{tag:"header",headingLevel:1},{tag:"main",headingLevel:2},{tag:"aside",headingLevel:4}],violations:["Section 2 skips a heading level (from h2 to h4)"]}',
+        label: "A heading jump from h2 to h4 is flagged as a skipped level",
+      },
+      {
+        input: '[{purpose:"page banner/header",headingLevel:1},{purpose:"main content region",headingLevel:2},{purpose:"self-contained article",headingLevel:3}]',
+        expected: '{outline:[{tag:"header",headingLevel:1},{tag:"main",headingLevel:2},{tag:"article",headingLevel:3}],violations:[]}',
+        label: "Sequential heading levels with no gaps produce no violations",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 51,
+  },
+  {
+    slug: "media-accessibility-auditor",
+    conceptSlug: "accessible-images-media",
+    title: "Build a Media Accessibility Auditor",
+    description: `Extends the alt-text decision into a full auditor over a whole page's media — one that reports every problem instead of crashing on the first one.
+
+## The problem
+
+A real page has many images, videos, and audio clips at once — auditing them means checking every item against its own rule (alt text for images, captions for video, a transcript for audio) and collecting every failure, not stopping at the first.
+
+## The idea
+
+Reuse the alt-text decision for images, but catch its thrown error and convert it into a violation message instead of letting it crash the whole audit. Apply a parallel rule for video (needs captions) and audio (needs a transcript).
+
+## Your task
+
+Write \`auditMedia(items)\`, where each item is \`{ type, isDecorative, description, hasCaptions, hasTranscript }\`, returning an array of violation strings:
+
+\`\`\`js
+auditMedia([
+  { type: "image", isDecorative: false, description: "Team photo" },
+  { type: "image", isDecorative: false },
+  { type: "video", hasCaptions: false },
+])
+// → ["Item 1: Meaningful images must have alt text", "Item 2: video is missing captions"]
+\`\`\``,
+    starterCode: `function getAltText(image) {
+  // same as the Challenge
+}
+function auditMedia(items) {
+  // check every item against its type's rule, collecting violation strings by index
+}`,
+    solutionCode: `function getAltText(image) {
+  if (image.isDecorative) return "";
+  if (!image.description || !image.description.trim()) {
+    throw new Error("Meaningful images must have alt text");
+  }
+  return image.description.trim();
+}
+function auditMedia(items) {
+  const violations = [];
+  items.forEach((item, i) => {
+    if (item.type === "image") {
+      try {
+        getAltText(item);
+      } catch (e) {
+        violations.push(\`Item \${i}: \${e.message}\`);
+      }
+    } else if (item.type === "video" && !item.hasCaptions) {
+      violations.push(\`Item \${i}: video is missing captions\`);
+    } else if (item.type === "audio" && !item.hasTranscript) {
+      violations.push(\`Item \${i}: audio is missing a transcript\`);
+    }
+  });
+  return violations;
+}`,
+    testCases: [
+      {
+        input: '[{type:"image",isDecorative:false,description:"Team photo"},{type:"image",isDecorative:false},{type:"video",hasCaptions:false},{type:"audio",hasTranscript:true}]',
+        expected: '["Item 1: Meaningful images must have alt text","Item 2: video is missing captions"]',
+        label: "Only the items that actually fail their rule are reported, by index",
+      },
+      {
+        input: '[{type:"image",isDecorative:true},{type:"video",hasCaptions:true},{type:"audio",hasTranscript:true}]',
+        expected: "[]",
+        label: "A fully compliant media list produces no violations",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 52,
+  },
+  {
+    slug: "theme-contrast-auditor",
+    conceptSlug: "color-contrast-visual-accessibility",
+    title: "Build a Theme Contrast Auditor",
+    description: `Extends the single contrast-ratio calculation into a full theme auditor — checking every foreground/background pair a design system defines against WCAG AA at once.
+
+## The problem
+
+A design system might define a dozen text/background color pairs — checking each individually is tedious and easy to fall behind on as the palette evolves.
+
+## The idea
+
+Reuse the same relative-luminance-based contrast ratio calculation, run it across a whole list of named pairs, and report each pair's ratio and pass/fail against its own required threshold (3:1 for large text, 4.5:1 otherwise).
+
+## Your task
+
+Write \`auditThemeContrast(pairs)\`, where each pair is \`{ name, foreground, background, isLargeText }\`, returning an array of \`{ name, ratio, passes }\`:
+
+\`\`\`js
+auditThemeContrast([
+  { name: "body-text", foreground: "#000000", background: "#FFFFFF", isLargeText: false },
+])
+// → [{ name: "body-text", ratio: 21, passes: true }]
+\`\`\``,
+    starterCode: `function getContrastRatio(hex1, hex2) {
+  // same as the Challenge
+}
+function auditThemeContrast(pairs) {
+  // compute ratio + pass/fail for every named pair
+}`,
+    solutionCode: `function hexToRgb(hex) {
+  const clean = hex.replace("#", "");
+  const bigint = parseInt(clean, 16);
+  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+}
+function channelLuminance(c) {
+  const s = c / 255;
+  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+}
+function relativeLuminance(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  return 0.2126 * channelLuminance(r) + 0.7152 * channelLuminance(g) + 0.0722 * channelLuminance(b);
+}
+function getContrastRatio(hex1, hex2) {
+  const l1 = relativeLuminance(hex1);
+  const l2 = relativeLuminance(hex2);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return Math.round(((lighter + 0.05) / (darker + 0.05)) * 100) / 100;
+}
+function auditThemeContrast(pairs) {
+  return pairs.map((p) => {
+    const ratio = getContrastRatio(p.foreground, p.background);
+    const required = p.isLargeText ? 3 : 4.5;
+    return { name: p.name, ratio, passes: ratio >= required };
+  });
+}`,
+    testCases: [
+      {
+        input: '[{name:"body-text",foreground:"#000000",background:"#FFFFFF",isLargeText:false},{name:"muted-text",foreground:"#777777",background:"#FFFFFF",isLargeText:false},{name:"muted-text-safe",foreground:"#767676",background:"#FFFFFF",isLargeText:false}]',
+        expected: '[{name:"body-text",ratio:21,passes:true},{name:"muted-text",ratio:4.48,passes:false},{name:"muted-text-safe",ratio:4.54,passes:true}]',
+        label: "A near-miss gray (#777777) fails AA by a hair while a slightly darker one (#767676) passes",
+      },
+    ],
+    isPremium: false,
+    orderIndex: 53,
+  },
+  {
+    slug: "keyboard-focus-trap-navigator",
+    conceptSlug: "keyboard-navigation-focus-management",
+    title: "Build a Modal Focus-Trap Navigator",
+    description: `Extends tab-order computation into a full focus trap — the object a real modal dialog would use to cycle Tab/Shift+Tab within itself.
+
+## The problem
+
+Computing the correct tab order is only half of a focus trap — the other half is cycling through it with wraparound, so Tab past the last element loops to the first instead of escaping the modal.
+
+## The idea
+
+Compute the real tab order once (reusing the same logic as the Challenge), then expose \`next\`/\`prev\` methods that move through that order and wrap around at both ends.
+
+## Your task
+
+Write \`createFocusTrap(elements)\`, returning \`{ getOrder(), next(currentId), prev(currentId) }\`:
+
+\`\`\`js
+const trap = createFocusTrap([
+  { id: "a", domOrder: 0 },
+  { id: "b", domOrder: 1 },
+  { id: "c", domOrder: 2 },
+]);
+trap.next("c") // → "a" (wraps)
+trap.prev("a") // → "c" (wraps)
+\`\`\``,
+    starterCode: `function computeTabOrder(elements) {
+  // same as the Challenge
+}
+function createFocusTrap(elements) {
+  // return { getOrder(), next(currentId), prev(currentId) } cycling with wraparound
+}`,
+    solutionCode: `function computeTabOrder(elements) {
+  const positive = elements.filter((el) => el.tabIndex > 0);
+  const zero = elements.filter((el) => !el.tabIndex || el.tabIndex === 0);
+  positive.sort((a, b) => a.tabIndex - b.tabIndex || a.domOrder - b.domOrder);
+  zero.sort((a, b) => a.domOrder - b.domOrder);
+  return [...positive, ...zero].map((el) => el.id);
+}
+function createFocusTrap(elements) {
+  const order = computeTabOrder(elements);
+  return {
+    getOrder() {
+      return order;
+    },
+    next(currentId) {
+      const idx = order.indexOf(currentId);
+      if (idx === -1) return order[0] ?? null;
+      return order[(idx + 1) % order.length];
+    },
+    prev(currentId) {
+      const idx = order.indexOf(currentId);
+      if (idx === -1) return order[order.length - 1] ?? null;
+      return order[(idx - 1 + order.length) % order.length];
+    },
+  };
+}`,
+    testCases: [
+      {
+        input: 'createFocusTrap([{id:"a",domOrder:0},{id:"b",domOrder:1},{id:"c",domOrder:2}]).getOrder()',
+        expected: '["a","b","c"]',
+        label: "getOrder reuses the same tab-order computation as the Challenge",
+      },
+      {
+        input: '...trap.next("c")',
+        expected: '"a"',
+        label: "next() at the last element wraps around to the first",
+      },
+      {
+        input: '...trap.prev("a")',
+        expected: '"c"',
+        label: "prev() at the first element wraps around to the last",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 54,
+  },
+  {
+    slug: "form-error-summary-builder",
+    conceptSlug: "accessible-forms",
+    title: "Build a Form Error Summary",
+    description: `Extends the single field-aria helper into a whole form's error summary — the accessible pattern of listing every error together and directing focus to the first one.
+
+## The problem
+
+Announcing each field's own error individually is necessary but not sufficient — on submit, a screen reader user benefits from one summary of everything wrong at once, with a clear place for focus to land first.
+
+## The idea
+
+Annotate every field with its own aria attributes (reusing the single-field logic), collect only the fields with errors into a summary list, and identify the first errored field as the target for focus after submission.
+
+## Your task
+
+Write \`buildFormErrorSummary(fields)\`, where each field is \`{ id, hasError, errorMessage }\`, returning \`{ fields, summary, focusFirstErrorId }\`:
+
+\`\`\`js
+buildFormErrorSummary([
+  { id: "name", hasError: false },
+  { id: "email", hasError: true, errorMessage: "Enter a valid email" },
+])
+// → { fields: [...], summary: [{ id: "email", message: "Enter a valid email" }], focusFirstErrorId: "email" }
+\`\`\``,
+    starterCode: `function buildFieldAria(field) {
+  // same as the Challenge
+}
+function buildFormErrorSummary(fields) {
+  // annotate every field, collect only errored ones into a summary, find the first error's id
+}`,
+    solutionCode: `function buildFieldAria(field) {
+  if (field.hasError) {
+    return { "aria-invalid": true, "aria-describedby": \`\${field.id}-error\` };
+  }
+  return { "aria-invalid": false, "aria-describedby": undefined };
+}
+function buildFormErrorSummary(fields) {
+  const annotated = fields.map((f) => ({ ...f, aria: buildFieldAria(f) }));
+  const summary = fields.filter((f) => f.hasError).map((f) => ({ id: f.id, message: f.errorMessage }));
+  const focusFirstErrorId = summary.length ? summary[0].id : null;
+  return { fields: annotated, summary, focusFirstErrorId };
+}`,
+    testCases: [
+      {
+        input: '[{id:"name",hasError:false},{id:"email",hasError:true,errorMessage:"Enter a valid email"},{id:"password",hasError:true,errorMessage:"Password too short"}]',
+        expected: '{summary:[{id:"email",message:"Enter a valid email"},{id:"password",message:"Password too short"}],focusFirstErrorId:"email"}',
+        label: "Summary lists only errored fields in order, and focus targets the first one",
+      },
+      {
+        input: '[{id:"name",hasError:false}]',
+        expected: '{summary:[],focusFirstErrorId:null}',
+        label: "A form with no errors has an empty summary and a null focus target",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 55,
+  },
+  {
+    slug: "toast-announcer-service",
+    conceptSlug: "aria-live-regions",
+    title: "Build a Toast Announcer Service",
+    description: `Extends the announcer queue into a real toast-notification service — with deduplication and a bounded visible list, the two concerns a raw queue alone doesn't handle.
+
+## The problem
+
+A raw announcer queue doesn't guard against the same message being pushed twice in a row, and a real toast UI can't display an unbounded number of toasts at once.
+
+## The idea
+
+Wrap the core announcer: skip pushing a message that's identical to the immediately preceding one, and on each "tick," pull the next announcement off the queue and keep only the most recent N in the visible list.
+
+## Your task
+
+Write \`createToastAnnouncerService(maxVisible)\`, returning \`{ push(message, politeness), tick() }\`:
+
+\`\`\`js
+const svc = createToastAnnouncerService(2);
+svc.push("Saved");
+svc.push("Saved"); // deduped, ignored
+svc.push("Error occurred", "assertive");
+svc.tick() // → [{ message: "Error occurred", politeness: "assertive" }]
+\`\`\``,
+    starterCode: `function createAnnouncer() {
+  // same as the Challenge
+}
+function createToastAnnouncerService(maxVisible = 3) {
+  // wrap createAnnouncer with consecutive-message dedupe and a bounded visible list
+}`,
+    solutionCode: `function createAnnouncer() {
+  let assertiveQueue = [];
+  let politeQueue = [];
+  return {
+    announce(message, politeness) {
+      if (politeness === "assertive") assertiveQueue.push(message);
+      else politeQueue.push(message);
+    },
+    flush() {
+      if (assertiveQueue.length) return { message: assertiveQueue.shift(), politeness: "assertive" };
+      if (politeQueue.length) return { message: politeQueue.shift(), politeness: "polite" };
+      return null;
+    },
+  };
+}
+function createToastAnnouncerService(maxVisible = 3) {
+  const announcer = createAnnouncer();
+  let lastMessage = null;
+  let visible = [];
+  return {
+    push(message, politeness = "polite") {
+      if (message === lastMessage) return;
+      lastMessage = message;
+      announcer.announce(message, politeness);
+    },
+    tick() {
+      const next = announcer.flush();
+      if (!next) return visible;
+      visible = [...visible, next].slice(-maxVisible);
+      return visible;
+    },
+  };
+}`,
+    testCases: [
+      {
+        input: 'push("Saved"); push("Saved"); push("Error occurred","assertive"); tick()',
+        expected: '[{message:"Error occurred",politeness:"assertive"}]',
+        label: "A duplicate consecutive push is ignored, and assertive is announced first",
+      },
+      {
+        input: "tick() again after the above",
+        expected: '[{message:"Error occurred",politeness:"assertive"},{message:"Saved",politeness:"polite"}]',
+        label: "The deduped polite message still gets delivered on the next tick",
+      },
+      {
+        input: "a service created with maxVisible: 1, after 2 ticks",
+        expected: '[{message:"B",politeness:"polite"}]',
+        label: "The visible list is trimmed to the most recent maxVisible entries",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 56,
+  },
+  {
+    slug: "accessible-combobox-controller",
+    conceptSlug: "accessible-component-patterns",
+    title: "Build an Accessible Combobox Controller",
+    description: `Extends the keyboard state machine into a full combobox controller — adding typeahead filtering and the aria-activedescendant id a real widget would render.
+
+## The problem
+
+A combobox's keyboard handling alone isn't the whole widget — filtering by what's typed, and computing which option id should be marked active for assistive tech, both have to stay in sync with the same state.
+
+## The idea
+
+Wrap the keyboard state machine with a filter step: typing narrows the option list and resets the highlighted option to the first match (or none, if nothing matches), while arrow-key navigation continues to operate over whatever the currently filtered list is.
+
+## Your task
+
+Write \`createComboboxController(options)\`, returning \`{ getState(), handleKey(key), setFilter(text), getActiveDescendantId() }\`:
+
+\`\`\`js
+const c = createComboboxController(["Apple", "Apricot", "Banana"]);
+c.setFilter("ap");
+c.getActiveDescendantId() // → "option-0"
+\`\`\``,
+    starterCode: `function handleComboboxKey(state, key) {
+  // same as the Challenge
+}
+function createComboboxController(options) {
+  // wrap handleComboboxKey with typeahead filtering + an active-descendant id
+}`,
+    solutionCode: `function handleComboboxKey(state, key) {
+  const { options, activeIndex, isOpen } = state;
+  if (!isOpen) {
+    if (key === "ArrowDown") return { options, activeIndex: 0, isOpen: true };
+    if (key === "ArrowUp") return { options, activeIndex: options.length - 1, isOpen: true };
+    return { ...state };
+  }
+  switch (key) {
+    case "ArrowDown":
+      return { options, activeIndex: (activeIndex + 1) % options.length, isOpen: true };
+    case "ArrowUp":
+      return { options, activeIndex: (activeIndex - 1 + options.length) % options.length, isOpen: true };
+    case "Home":
+      return { options, activeIndex: 0, isOpen: true };
+    case "End":
+      return { options, activeIndex: options.length - 1, isOpen: true };
+    case "Escape":
+      return { options, activeIndex: -1, isOpen: false };
+    case "Enter":
+      return { options, activeIndex, isOpen: false };
+    default:
+      return { ...state };
+  }
+}
+function createComboboxController(options) {
+  let state = { options, activeIndex: -1, isOpen: false, filter: "" };
+  return {
+    getState() {
+      return state;
+    },
+    handleKey(key) {
+      state = handleComboboxKey(state, key);
+      return state;
+    },
+    setFilter(text) {
+      const filtered = options.filter((o) => o.toLowerCase().startsWith(text.toLowerCase()));
+      state = { options: filtered, activeIndex: filtered.length ? 0 : -1, isOpen: filtered.length > 0, filter: text };
+      return state;
+    },
+    getActiveDescendantId() {
+      return state.activeIndex === -1 ? null : \`option-\${state.activeIndex}\`;
+    },
+  };
+}`,
+    testCases: [
+      {
+        input: 'setFilter("ap") on ["Apple","Apricot","Banana"]',
+        expected: '{options:["Apple","Apricot"],activeIndex:0,isOpen:true}',
+        label: "Filtering narrows the option list and activates the first match",
+      },
+      {
+        input: "getActiveDescendantId() after the filter above",
+        expected: '"option-0"',
+        label: "The active-descendant id reflects the currently highlighted filtered option",
+      },
+      {
+        input: 'handleKey("ArrowDown") twice on a 2-item filtered list',
+        expected: '"option-0"',
+        label: "Arrow navigation wraps within the filtered set, not the original full option list",
+      },
+      {
+        input: 'setFilter("xyz") with no matches',
+        expected: "isOpen: false, getActiveDescendantId(): null",
+        label: "A filter with zero matches closes the list and clears the active descendant",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 57,
+  },
+  {
+    slug: "a11y-rule-report-generator",
+    conceptSlug: "automated-a11y-testing",
+    title: "Build a Multi-Rule Accessibility Report Generator",
+    description: `Extends the single-node linter into a full tree-walking report generator — the same kind of pass a real tool like axe-core runs over an entire page.
+
+## The problem
+
+A real page is a tree, not one isolated element — a useful report needs to walk every node, run every applicable rule (including one this Challenge didn't cover: color contrast), and say *where* each violation was found.
+
+## The idea
+
+Reuse the single-node rule check for every node visited, add a contrast-ratio rule for any node carrying inline color/background-color style values, and recurse into children while building a readable path string as you go.
+
+## Your task
+
+Write \`lintTree(node, path)\`, where a node is \`{ tag, attrs, style, children }\`, returning an array of \`{ path, message }\`:
+
+\`\`\`js
+lintTree({ tag: "div", attrs: {}, children: [{ tag: "img", attrs: {} }] })
+// → [{ path: "div>img[0]", message: "img missing alt text" }]
+\`\`\``,
+    starterCode: `function lintNode(node) {
+  // same as the Challenge
+}
+function lintTree(node, path) {
+  // walk the tree, reusing lintNode + a contrast check, building a path per violation
+}`,
+    solutionCode: `function lintNode(node) {
+  const violations = [];
+  const attrs = node.attrs || {};
+  if (node.tag === "img") {
+    const isDecorative = attrs.role === "presentation" || attrs["aria-hidden"] === true;
+    if (!isDecorative && !("alt" in attrs)) violations.push("img missing alt text");
+  }
+  if (node.tag === "input") {
+    const hasName = Boolean(attrs["aria-label"] || attrs["aria-labelledby"]);
+    if (!hasName) violations.push("input missing an accessible name");
+  }
+  return violations;
+}
+function hexToRgb(hex) {
+  const clean = hex.replace("#", "");
+  const bigint = parseInt(clean, 16);
+  return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+}
+function channelLuminance(c) {
+  const s = c / 255;
+  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+}
+function relativeLuminance(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  return 0.2126 * channelLuminance(r) + 0.7152 * channelLuminance(g) + 0.0722 * channelLuminance(b);
+}
+function getContrastRatio(hex1, hex2) {
+  const l1 = relativeLuminance(hex1);
+  const l2 = relativeLuminance(hex2);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return Math.round(((lighter + 0.05) / (darker + 0.05)) * 100) / 100;
+}
+function lintTree(node, path) {
+  path = path || node.tag;
+  const violations = lintNode(node).map((message) => ({ path, message }));
+  if (node.style && node.style.color && node.style.backgroundColor) {
+    const ratio = getContrastRatio(node.style.color, node.style.backgroundColor);
+    if (ratio < 4.5) violations.push({ path, message: \`low contrast ratio \${ratio}:1 (needs 4.5:1)\` });
+  }
+  (node.children || []).forEach((child, i) => {
+    violations.push(...lintTree(child, \`\${path}>\${child.tag}[\${i}]\`));
+  });
+  return violations;
+}`,
+    testCases: [
+      {
+        input: 'a tree with an <img> missing alt, an <input> with aria-label, and a low-contrast <p>',
+        expected: '[{path:"div>img[0]",message:"img missing alt text"},{path:"div>p[2]",message:"low contrast ratio 1:1 (needs 4.5:1)"}]',
+        label: "Violations are collected from every level of the tree, each with its own path",
+      },
+      {
+        input: "a tree where every node passes every rule",
+        expected: "[]",
+        label: "A fully compliant tree produces no violations",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 58,
   },
 ];
 

@@ -1,0 +1,54 @@
+---
+title: "ARIA Live Regions"
+description: "Learn how aria-live announces dynamic content changes — toasts, form errors, loading states — to screen reader users without moving their focus."
+category: "accessibility"
+difficulty: "advanced"
+order: 6
+whatsHappening: "aria-live marks a region of the page whose content changes should be announced to a screen reader automatically, without moving keyboard focus there. aria-live=\"polite\" waits until the screen reader finishes whatever it's currently saying, then announces the change; aria-live=\"assertive\" interrupts immediately, reserved for urgent, time-sensitive content. role=\"status\" is shorthand that implies aria-live=\"polite\"; role=\"alert\" implies aria-live=\"assertive\". A live region only announces content that changes after it's already present in the accessibility tree — if a brand-new element is inserted already containing both the aria-live attribute and its final text in the same update, many screen readers never announce it, because there was no detectable change, only an appearance."
+keyInsight: "A live region watches for a change in content that happens after it's already sitting in the DOM — it does not announce on its own appearance. Insert an empty live region first, then fill it in a separate update, or the announcement is silently missed by many screen readers even though the markup looks correct."
+memoryHook: "Live regions watch for a change in the room, not for someone walking in already talking — the region has to be sitting there first, quiet, before it can notice anything happen."
+inRealLife: "Like a smoke detector that only triggers on a change in smoke level — carry it into a room that's already smoky and it won't alarm on smoke that was already there; it only reacts to smoke that starts after it's watching."
+---
+
+## polite vs. assertive
+
+```html
+<!-- Waits its turn — won't interrupt whatever is currently being read -->
+<div aria-live="polite">3 new results found</div>
+
+<!-- Interrupts immediately — reserve for truly urgent content -->
+<div aria-live="assertive">Your session expires in 1 minute</div>
+```
+
+Overusing `assertive` is a real cost: every interruption cuts off whatever the screen reader user was already listening to, so most updates — a saved confirmation, a result count — belong in `polite`.
+
+## Shorthand roles
+
+```html
+<!-- Equivalent to aria-live="polite" -->
+<div role="status">Changes saved</div>
+
+<!-- Equivalent to aria-live="assertive" -->
+<div role="alert">Payment failed — please try again</div>
+```
+
+## Common uses
+
+- Toast/snackbar notifications ("Saved", "Item added to cart")
+- Form submission results, especially when the result doesn't cause a page navigation
+- Live search result counts as a user types
+- Loading-state announcements ("Loading more items…" / "12 more items loaded")
+
+## The must-exist-before-changing gotcha
+
+```html
+<!-- Often silently missed by screen readers: the container and its
+     final content both arrive in the same DOM update -->
+<div aria-live="polite">3 new results found</div>
+```
+
+If this whole `<div>` is inserted fresh — attribute and text together — there's no "before" state for the screen reader to compare against, so no change event fires. The reliable pattern: render the live region empty (or with placeholder text) on initial mount, and update its text content in a later, separate render once real data arrives.
+
+## Don't announce everything
+
+A live region that fires on every minor state change trains users to ignore it, or actively interrupts them constantly if set to `assertive`. Reserve live regions for updates a sighted user would also naturally notice happened — not for every internal state transition.

@@ -1,0 +1,62 @@
+---
+title: "Accessible Images & Media"
+description: "Learn how to write meaningful alt text, when an image should be marked decorative instead, and how to caption and transcribe audio/video content."
+category: "accessibility"
+difficulty: "beginner"
+order: 2
+whatsHappening: "Alt text is what a screen reader announces in place of an image it can't display — good alt text describes the image's content or function (\"golden retriever running across a beach\"), never its literal appearance-as-a-file (\"image of a dog\", \"photo123.jpg\"). Images that are pure visual decoration — a background flourish, a divider graphic — get an empty alt attribute (alt=\"\") so a screen reader skips over them entirely, instead of announcing something meaningless. Video needs captions (text synced to the audio track); audio-only content needs a transcript (a full text version, since there's no video to caption)."
+keyInsight: "alt=\"\" and no alt attribute at all are not the same thing, even though they look similar. alt=\"\" is a deliberate signal meaning \"skip this, it's decorative\" — a screen reader silently moves on. Omitting alt entirely is a bug: many screen readers fall back to announcing the image's file path or name as if it were real content."
+memoryHook: "Empty alt is a shrug; missing alt is a shout of gibberish — always give a decorative image the shrug on purpose."
+inRealLife: "Like giving someone a play-by-play of only the parts of a photo that actually matter to the conversation, and staying deliberately silent about the picture frame around it — the frame isn't content, so you don't narrate it, but you also don't mumble its manufacturer's stamp instead."
+---
+
+## Writing alt text that actually helps
+
+Good alt text answers "what is this image communicating," not "what does this image literally show":
+
+```html
+<!-- Bad: describes the file, not the content -->
+<img src="chart-q3.png" alt="chart" />
+
+<!-- Good: describes what the image is communicating -->
+<img src="chart-q3.png" alt="Q3 revenue grew 18% over Q2, driven mostly by the new enterprise tier" />
+```
+
+For a functional image — one inside a link or button, where the image itself IS the control — alt text should describe the destination or action, not the picture:
+
+```html
+<a href="/cart">
+  <img src="cart-icon.svg" alt="View shopping cart" />
+</a>
+```
+
+## Decorative images get an empty alt, on purpose
+
+If an image adds nothing informational — a stylistic squiggle, a repeated background pattern — mark it decorative:
+
+```html
+<img src="divider-swirl.svg" alt="" />
+```
+
+This is different from forgetting alt entirely. `alt=""` is parsed correctly and skipped; a missing `alt` attribute often causes the screen reader to read out the raw `src` filename instead, which is worse than saying nothing.
+
+## Complex images need more than one line of alt text
+
+A chart, diagram, or infographic usually can't be summarized in a short alt attribute. The common pattern: a short `alt` that names what the image is, plus the same information available as real text nearby (a data table, a paragraph summary) that everyone — not just screen reader users — can read.
+
+## Video needs captions, audio needs a transcript
+
+- **Captions** are text synced to a video's timeline, covering both dialogue and important non-speech sound ("[phone ringing]"). They serve deaf/hard-of-hearing users and anyone watching without sound.
+- **Transcripts** are a full text version of audio-only content (a podcast, a voice memo) — there's no timeline to sync to, so it's just the complete text, often with speaker labels.
+
+A video can have both: captions for real-time viewing, and a full transcript underneath for scanning, searching, or translation.
+
+## Icon-only buttons still need an accessible name
+
+An icon with no visible text label needs an accessible name from somewhere — either `aria-label` on the button, or visually-hidden text inside it, with the icon itself marked `aria-hidden="true"` so it isn't announced twice:
+
+```html
+<button aria-label="Close dialog">
+  <svg aria-hidden="true">...</svg>
+</button>
+```
