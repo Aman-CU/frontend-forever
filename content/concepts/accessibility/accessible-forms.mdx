@@ -1,0 +1,70 @@
+---
+title: "Accessible Forms"
+description: "See how labels, error messaging, and aria-describedby connect a form control to the information a screen reader needs to announce it correctly."
+category: "accessibility"
+difficulty: "intermediate"
+order: 5
+whatsHappening: "A <label> associated with an input — via a matching for/id pair, or by wrapping the input — becomes that input's accessible name: a screen reader announces the label whenever the field receives focus, and clicking the label focuses (or toggles) the input itself. aria-describedby points to the id of separate text — a hint, an error message — that gets appended after the accessible name is announced, giving extra context without replacing it. aria-invalid=\"true\" marks a field as currently failing validation, which some screen readers announce as part of the field's state. None of these three mechanisms substitutes for either of the others."
+keyInsight: "aria-describedby only supplements the accessible name a label already provides — it never replaces it. A field needs a real associated label to answer 'what is this field,' and, when relevant, an aria-describedby pointing at hint or error text to answer 'what else should I know about it' — losing either one leaves a real gap, not a redundant one."
+memoryHook: "The label answers 'what is this field'; aria-describedby answers 'what else should I know about it' — a screen reader always needs the first answer, and only sometimes needs the second."
+inRealLife: "Like a paper form where the field's name is printed right next to the blank line (the label), with a small note underneath explaining a formatting rule (the description) — lose the name and you're guessing what to write; lose the note and you're guessing the format, but neither one covers for the other."
+---
+
+## Associating a label with its input
+
+Two ways to create a real, programmatic association — not just visual proximity:
+
+```html
+<!-- for/id: label and input can be placed anywhere relative to each other -->
+<label for="email">Email</label>
+<input id="email" type="email" />
+
+<!-- wrapping: no id needed, association is implicit -->
+<label>
+  Email
+  <input type="email" />
+</label>
+```
+
+Either way, a screen reader announces "Email, edit text" when the input receives focus, and clicking the label text focuses the input — neither happens with a `<span>` or `<div>` sitting visually near the input with no real association.
+
+## Placeholder text is not a label
+
+```html
+<!-- Broken: no accessible name once the input is empty vs. focused,
+     low default contrast, and disappears the moment text is typed -->
+<input placeholder="Email" />
+```
+
+Placeholder text can supplement a label as a formatting hint ("MM/DD/YYYY"), but it should never be the only source of the field's name.
+
+## aria-describedby for hints and errors
+
+```html
+<label for="password">Password</label>
+<input
+  id="password"
+  type="password"
+  aria-describedby="password-hint"
+  aria-invalid="true"
+/>
+<p id="password-hint">Must be at least 8 characters</p>
+```
+
+The screen reader announces the label first ("Password"), then the field's state ("invalid"), then the referenced description text — all connected to the one field, all in one announcement.
+
+## Grouping related inputs
+
+A set of radio buttons or checkboxes describing one question benefits from `<fieldset>` + `<legend>`, so a screen reader announces the group's overall question once, rather than making the user infer it from repeated individual labels:
+
+```html
+<fieldset>
+  <legend>Preferred contact method</legend>
+  <label><input type="radio" name="contact" value="email" /> Email</label>
+  <label><input type="radio" name="contact" value="phone" /> Phone</label>
+</fieldset>
+```
+
+## Timing matters for validation announcements
+
+Validating and announcing an error on every keystroke is overwhelming for screen reader users — the common pattern is to validate on blur (leaving the field) or on submit, not while the user is still mid-typing. How that announcement actually reaches the user without stealing focus is the next concept's job: ARIA live regions.

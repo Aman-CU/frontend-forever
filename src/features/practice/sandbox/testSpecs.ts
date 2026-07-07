@@ -1691,6 +1691,258 @@ const MATCH_EVENT_NAME_PATTERN_TESTS: SandboxTest[] = [
   },
 ];
 
+const CHOOSE_SEMANTIC_TAG_TESTS: SandboxTest[] = [
+  {
+    label: "A recognized navigation purpose maps to <nav>",
+    source: `
+      assert(typeof chooseSemanticTag === "function", "chooseSemanticTag is not defined");
+      assertEqual(chooseSemanticTag("primary navigation"), "nav");
+    `,
+  },
+  {
+    label: "An action purpose maps to <button>, not <a>",
+    source: `assertEqual(chooseSemanticTag("performs an action on the current page"), "button");`,
+  },
+  {
+    label: "A navigation purpose maps to <a>, not <button>",
+    source: `assertEqual(chooseSemanticTag("navigates to another page/URL"), "a");`,
+  },
+  {
+    label: "An unrecognized purpose falls back to a plain div",
+    source: `assertEqual(chooseSemanticTag("something totally unrelated"), "div");`,
+  },
+];
+
+const DECIDE_ALT_TEXT_TESTS: SandboxTest[] = [
+  {
+    label: "A decorative image always gets an empty alt, even if a description was supplied",
+    source: `
+      assert(typeof getAltText === "function", "getAltText is not defined");
+      assertEqual(getAltText({ isDecorative: true, description: "swirl" }), "");
+    `,
+  },
+  {
+    label: "A meaningful image returns its real description",
+    source: `assertEqual(getAltText({ isDecorative: false, description: "Company logo" }), "Company logo");`,
+  },
+  {
+    label: "The description is trimmed of surrounding whitespace",
+    source: `assertEqual(getAltText({ isDecorative: false, description: "  Team photo  " }), "Team photo");`,
+  },
+  {
+    label: "A meaningful image with no description throws instead of returning something misleading",
+    source: `
+      let threw = false;
+      try {
+        getAltText({ isDecorative: false });
+      } catch (e) {
+        threw = true;
+      }
+      assert(threw, "getAltText should throw when a meaningful image has no description");
+    `,
+  },
+];
+
+const CONTRAST_RATIO_CHECKER_TESTS: SandboxTest[] = [
+  {
+    label: "Black on white is the maximum possible ratio, 21:1",
+    source: `
+      assert(typeof getContrastRatio === "function", "getContrastRatio is not defined");
+      assertEqual(getContrastRatio("#000000", "#FFFFFF"), 21);
+    `,
+  },
+  {
+    label: "Identical colors give the minimum possible ratio, 1:1",
+    source: `assertEqual(getContrastRatio("#FFFFFF", "#FFFFFF"), 1);`,
+  },
+  {
+    label: "21:1 passes AA for normal text (needs 4.5:1)",
+    source: `
+      assert(typeof meetsWcagAA === "function", "meetsWcagAA is not defined");
+      assertEqual(meetsWcagAA("#000000", "#FFFFFF", false), true);
+    `,
+  },
+  {
+    label: "1:1 fails AA for normal text",
+    source: `assertEqual(meetsWcagAA("#FFFFFF", "#FFFFFF", false), false);`,
+  },
+];
+
+const COMPUTE_TAB_ORDER_TESTS: SandboxTest[] = [
+  {
+    label: "Positive tabIndex elements come first in ascending order; tabIndex -1 is excluded",
+    source: `
+      assert(typeof computeTabOrder === "function", "computeTabOrder is not defined");
+      assertEqual(
+        computeTabOrder([
+          { id: "a", domOrder: 0 },
+          { id: "b", tabIndex: 2, domOrder: 1 },
+          { id: "c", tabIndex: 1, domOrder: 2 },
+          { id: "d", tabIndex: -1, domOrder: 3 },
+          { id: "e", domOrder: 4 },
+        ]),
+        ["c", "b", "a", "e"]
+      );
+    `,
+  },
+  {
+    label: "With no tabIndex set on anything, order falls back to plain DOM order",
+    source: `
+      assertEqual(
+        computeTabOrder([
+          { id: "x", domOrder: 2 },
+          { id: "y", domOrder: 0 },
+          { id: "z", domOrder: 1 },
+        ]),
+        ["y", "z", "x"]
+      );
+    `,
+  },
+  {
+    label: "A tie in tabIndex is broken by DOM order",
+    source: `
+      assertEqual(
+        computeTabOrder([
+          { id: "p", tabIndex: 1, domOrder: 5 },
+          { id: "q", tabIndex: 1, domOrder: 2 },
+        ]),
+        ["q", "p"]
+      );
+    `,
+  },
+];
+
+const LINK_FIELD_ERROR_TESTS: SandboxTest[] = [
+  {
+    label: "An errored field points aria-describedby at its predictable error id",
+    source: `
+      assert(typeof buildFieldAria === "function", "buildFieldAria is not defined");
+      assertEqual(buildFieldAria({ id: "email", hasError: true }), {
+        "aria-invalid": true,
+        "aria-describedby": "email-error",
+      });
+    `,
+  },
+  {
+    label: "A valid field has no dangling aria-describedby reference",
+    source: `
+      assertEqual(buildFieldAria({ id: "email", hasError: false }), {
+        "aria-invalid": false,
+        "aria-describedby": undefined,
+      });
+    `,
+  },
+];
+
+const LIVE_REGION_ANNOUNCER_QUEUE_TESTS: SandboxTest[] = [
+  {
+    label: "An assertive message jumps ahead of an already-queued polite one",
+    source: `
+      assert(typeof createAnnouncer === "function", "createAnnouncer is not defined");
+      const a = createAnnouncer();
+      a.announce("Saved", "polite");
+      a.announce("Error: network failed", "assertive");
+      assertEqual(a.flush(), { message: "Error: network failed", politeness: "assertive" });
+    `,
+  },
+  {
+    label: "The polite message is still delivered once the assertive queue is empty",
+    source: `
+      const a = createAnnouncer();
+      a.announce("Saved", "polite");
+      a.announce("Error: network failed", "assertive");
+      a.flush();
+      assertEqual(a.flush(), { message: "Saved", politeness: "polite" });
+    `,
+  },
+  {
+    label: "Flushing an empty announcer returns null instead of throwing",
+    source: `
+      const a = createAnnouncer();
+      assertEqual(a.flush(), null);
+    `,
+  },
+  {
+    label: "Assertive priority applies every time flush is called, not just once",
+    source: `
+      const b = createAnnouncer();
+      b.announce("first", "polite");
+      b.announce("second", "polite");
+      assertEqual(b.flush(), { message: "first", politeness: "polite" });
+      b.announce("urgent", "assertive");
+      assertEqual(b.flush(), { message: "urgent", politeness: "assertive" });
+      assertEqual(b.flush(), { message: "second", politeness: "polite" });
+    `,
+  },
+];
+
+const COMBOBOX_KEYBOARD_HANDLER_TESTS: SandboxTest[] = [
+  {
+    label: "ArrowDown on a closed list opens it at the first option",
+    source: `
+      assert(typeof handleComboboxKey === "function", "handleComboboxKey is not defined");
+      const initial = { options: ["Apple", "Banana", "Cherry"], activeIndex: -1, isOpen: false };
+      assertEqual(handleComboboxKey(initial, "ArrowDown"), { options: initial.options, activeIndex: 0, isOpen: true });
+    `,
+  },
+  {
+    label: "ArrowDown at the last option wraps back to the first",
+    source: `
+      const options = ["Apple", "Banana", "Cherry"];
+      assertEqual(
+        handleComboboxKey({ options, activeIndex: 2, isOpen: true }, "ArrowDown"),
+        { options, activeIndex: 0, isOpen: true }
+      );
+    `,
+  },
+  {
+    label: "Escape closes the list and clears the active option entirely",
+    source: `
+      const options = ["Apple", "Banana", "Cherry"];
+      assertEqual(
+        handleComboboxKey({ options, activeIndex: 1, isOpen: true }, "Escape"),
+        { options, activeIndex: -1, isOpen: false }
+      );
+    `,
+  },
+  {
+    label: "Enter closes the list but keeps the selected option's index",
+    source: `
+      const options = ["Apple", "Banana", "Cherry"];
+      assertEqual(
+        handleComboboxKey({ options, activeIndex: 1, isOpen: true }, "Enter"),
+        { options, activeIndex: 1, isOpen: false }
+      );
+    `,
+  },
+];
+
+const MINI_A11Y_LINTER_TESTS: SandboxTest[] = [
+  {
+    label: "An img with no alt attribute at all is flagged",
+    source: `
+      assert(typeof lintNode === "function", "lintNode is not defined");
+      assertEqual(lintNode({ tag: "img", attrs: {} }), ["img missing alt text"]);
+    `,
+  },
+  {
+    label: "An img with any alt attribute passes, even if empty",
+    source: `assertEqual(lintNode({ tag: "img", attrs: { alt: "A dog" } }), []);`,
+  },
+  {
+    label: "A decorative img needs no alt attribute at all",
+    source: `assertEqual(lintNode({ tag: "img", attrs: { role: "presentation" } }), []);`,
+  },
+  {
+    label: "An input with no accessible name is flagged",
+    source: `assertEqual(lintNode({ tag: "input", attrs: {} }), ["input missing an accessible name"]);`,
+  },
+  {
+    label: "Tags with no applicable rule always pass",
+    source: `assertEqual(lintNode({ tag: "div", attrs: {} }), []);`,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "implement-debounce": DEBOUNCE_TESTS,
   "specificity-calculator": SPECIFICITY_TESTS,
@@ -1744,6 +1996,14 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "discriminated-union-reducer": DISCRIMINATED_UNION_REDUCER_TESTS,
   "map-values": MAP_VALUES_TESTS,
   "match-event-name-pattern": MATCH_EVENT_NAME_PATTERN_TESTS,
+  "choose-semantic-tag": CHOOSE_SEMANTIC_TAG_TESTS,
+  "decide-alt-text": DECIDE_ALT_TEXT_TESTS,
+  "contrast-ratio-checker": CONTRAST_RATIO_CHECKER_TESTS,
+  "compute-tab-order": COMPUTE_TAB_ORDER_TESTS,
+  "link-field-error": LINK_FIELD_ERROR_TESTS,
+  "live-region-announcer-queue": LIVE_REGION_ANNOUNCER_QUEUE_TESTS,
+  "combobox-keyboard-handler": COMBOBOX_KEYBOARD_HANDLER_TESTS,
+  "mini-a11y-linter": MINI_A11Y_LINTER_TESTS,
 };
 
 export function getTestSpec(slug: string): SandboxTest[] | null {

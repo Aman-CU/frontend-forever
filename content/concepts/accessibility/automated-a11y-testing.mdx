@@ -1,0 +1,39 @@
+---
+title: "Automated a11y Testing (axe-core, Lighthouse)"
+description: "Learn what automated tools like axe-core and Lighthouse can and can't catch, and where manual keyboard/screen-reader testing still has to fill the gap."
+category: "accessibility"
+difficulty: "advanced"
+order: 8
+whatsHappening: "Automated tools like axe-core, Lighthouse, and WAVE scan the rendered DOM and computed styles against a fixed rule set, catching objectively-checkable violations: a missing alt attribute, an insufficient contrast ratio between computed colors, a form input with no associated label, invalid ARIA attribute values, duplicate ids, a missing lang attribute. What they can't check is anything requiring human judgment — whether alt text actually describes the image correctly, whether the tab order is logical, whether a custom widget behaves correctly with a real screen reader, whether an error message is actually understandable. That gap is what manual testing — keyboard-only walkthroughs and real screen reader testing — exists to fill."
+keyInsight: "Automated tools can confirm an alt attribute exists, and can even flag some likely-bad ones (identical to the filename, or literally the word 'image') — but they cannot tell you whether the text is actually accurate or useful for the specific image it's on. That judgment call is exactly the class of problem manual testing exists for, no matter how sophisticated the automated tool becomes."
+memoryHook: "Automated tools check that the paperwork was filed, not that what's written on it is true."
+inRealLife: "Like a spellchecker — it flags typos and formatting problems all day, but has no idea whether a sentence it left untouched actually makes sense or answers the question being asked."
+---
+
+## What automated tools reliably catch
+
+- Missing `alt` attributes on images
+- Insufficient color contrast between computed foreground/background colors
+- Form inputs with no associated label
+- Invalid or contradictory ARIA attribute values (e.g. `aria-hidden="true"` on a focusable element)
+- Duplicate `id` attributes
+- Missing document `lang` attribute
+- Missing document title, or empty headings
+
+These are all mechanically checkable: the tool can inspect the DOM, compute a value, and compare it against a rule with no ambiguity.
+
+## The coverage caveat
+
+Automated tools are widely cited as catching somewhere around 30–50% of real WCAG issues — the checkable-by-rule subset. Everything requiring judgment about meaning, logic, or real assistive-tech behavior falls outside what any static scan can verify.
+
+## What still requires a person
+
+- **Keyboard-only walkthrough** — can every interactive element actually be reached and operated with only a keyboard, in a sensible order?
+- **Real screen reader testing** (VoiceOver, NVDA, JAWS) — does the announced experience actually make sense, not just pass a rule check?
+- **Content quality judgment** — is this alt text accurate? Is this error message actually understandable? Is this heading hierarchy logical for how the page is actually organized?
+
+None of these are things a rule-based scanner can evaluate, because they all depend on the specific meaning of the content, not just its structure.
+
+## A practical workflow
+
+Run an automated scan first — it's fast, catches the objectively-checkable issues, and clears the easy work out of the way before spending human time. Then do a manual pass (keyboard + screen reader) focused on judgment calls the automated tool structurally cannot make. Integrating axe-core or Lighthouse into CI is valuable as a regression gate against reintroducing checkable issues — but it's not a substitute for the manual pass, only a way to keep the cheap issues from creeping back in between manual audits.

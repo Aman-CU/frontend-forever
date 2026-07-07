@@ -1827,6 +1827,272 @@ const BRAND_AND_VERIFY_TESTS: SandboxTest[] = [
   },
 ];
 
+const SEMANTIC_LANDMARK_OUTLINER_TESTS: SandboxTest[] = [
+  {
+    label: "A heading jump from h2 to h4 is flagged as a skipped level",
+    source: `
+      assert(typeof buildLandmarkOutline === "function", "buildLandmarkOutline is not defined");
+      const result = buildLandmarkOutline([
+        { purpose: "page banner/header", headingLevel: 1 },
+        { purpose: "main content region", headingLevel: 2 },
+        { purpose: "sidebar/complementary content", headingLevel: 4 },
+      ]);
+      assertEqual(result.outline, [
+        { tag: "header", headingLevel: 1 },
+        { tag: "main", headingLevel: 2 },
+        { tag: "aside", headingLevel: 4 },
+      ]);
+      assertEqual(result.violations, ["Section 2 skips a heading level (from h2 to h4)"]);
+    `,
+  },
+  {
+    label: "Sequential heading levels with no gaps produce no violations",
+    source: `
+      const result = buildLandmarkOutline([
+        { purpose: "page banner/header", headingLevel: 1 },
+        { purpose: "main content region", headingLevel: 2 },
+        { purpose: "self-contained article", headingLevel: 3 },
+      ]);
+      assertEqual(result.violations, []);
+    `,
+  },
+];
+
+const MEDIA_ACCESSIBILITY_AUDITOR_TESTS: SandboxTest[] = [
+  {
+    label: "Only the items that actually fail their rule are reported, by index",
+    source: `
+      assert(typeof auditMedia === "function", "auditMedia is not defined");
+      assertEqual(
+        auditMedia([
+          { type: "image", isDecorative: false, description: "Team photo" },
+          { type: "image", isDecorative: false },
+          { type: "video", hasCaptions: false },
+          { type: "audio", hasTranscript: true },
+        ]),
+        ["Item 1: Meaningful images must have alt text", "Item 2: video is missing captions"]
+      );
+    `,
+  },
+  {
+    label: "A fully compliant media list produces no violations",
+    source: `
+      assertEqual(
+        auditMedia([
+          { type: "image", isDecorative: true },
+          { type: "video", hasCaptions: true },
+          { type: "audio", hasTranscript: true },
+        ]),
+        []
+      );
+    `,
+  },
+];
+
+const THEME_CONTRAST_AUDITOR_TESTS: SandboxTest[] = [
+  {
+    label: "A near-miss gray (#777777) fails AA by a hair while a slightly darker one (#767676) passes",
+    source: `
+      assert(typeof auditThemeContrast === "function", "auditThemeContrast is not defined");
+      assertEqual(
+        auditThemeContrast([
+          { name: "body-text", foreground: "#000000", background: "#FFFFFF", isLargeText: false },
+          { name: "muted-text", foreground: "#777777", background: "#FFFFFF", isLargeText: false },
+          { name: "muted-text-safe", foreground: "#767676", background: "#FFFFFF", isLargeText: false },
+        ]),
+        [
+          { name: "body-text", ratio: 21, passes: true },
+          { name: "muted-text", ratio: 4.48, passes: false },
+          { name: "muted-text-safe", ratio: 4.54, passes: true },
+        ]
+      );
+    `,
+  },
+];
+
+const KEYBOARD_FOCUS_TRAP_NAVIGATOR_TESTS: SandboxTest[] = [
+  {
+    label: "getOrder reuses the same tab-order computation as the Challenge",
+    source: `
+      assert(typeof createFocusTrap === "function", "createFocusTrap is not defined");
+      const trap = createFocusTrap([
+        { id: "a", domOrder: 0 },
+        { id: "b", domOrder: 1 },
+        { id: "c", domOrder: 2 },
+      ]);
+      assertEqual(trap.getOrder(), ["a", "b", "c"]);
+    `,
+  },
+  {
+    label: "next() at the last element wraps around to the first",
+    source: `
+      const trap = createFocusTrap([
+        { id: "a", domOrder: 0 },
+        { id: "b", domOrder: 1 },
+        { id: "c", domOrder: 2 },
+      ]);
+      assertEqual(trap.next("c"), "a");
+    `,
+  },
+  {
+    label: "prev() at the first element wraps around to the last",
+    source: `
+      const trap = createFocusTrap([
+        { id: "a", domOrder: 0 },
+        { id: "b", domOrder: 1 },
+        { id: "c", domOrder: 2 },
+      ]);
+      assertEqual(trap.prev("a"), "c");
+    `,
+  },
+];
+
+const FORM_ERROR_SUMMARY_BUILDER_TESTS: SandboxTest[] = [
+  {
+    label: "Summary lists only errored fields in order, and focus targets the first one",
+    source: `
+      assert(typeof buildFormErrorSummary === "function", "buildFormErrorSummary is not defined");
+      const result = buildFormErrorSummary([
+        { id: "name", hasError: false },
+        { id: "email", hasError: true, errorMessage: "Enter a valid email" },
+        { id: "password", hasError: true, errorMessage: "Password too short" },
+      ]);
+      assertEqual(result.summary, [
+        { id: "email", message: "Enter a valid email" },
+        { id: "password", message: "Password too short" },
+      ]);
+      assertEqual(result.focusFirstErrorId, "email");
+    `,
+  },
+  {
+    label: "A form with no errors has an empty summary and a null focus target",
+    source: `
+      const result = buildFormErrorSummary([{ id: "name", hasError: false }]);
+      assertEqual(result.summary, []);
+      assertEqual(result.focusFirstErrorId, null);
+    `,
+  },
+];
+
+const TOAST_ANNOUNCER_SERVICE_TESTS: SandboxTest[] = [
+  {
+    label: "A duplicate consecutive push is ignored, and assertive is announced first",
+    source: `
+      assert(typeof createToastAnnouncerService === "function", "createToastAnnouncerService is not defined");
+      const svc = createToastAnnouncerService(2);
+      svc.push("Saved");
+      svc.push("Saved");
+      svc.push("Error occurred", "assertive");
+      assertEqual(svc.tick(), [{ message: "Error occurred", politeness: "assertive" }]);
+    `,
+  },
+  {
+    label: "The deduped polite message still gets delivered on the next tick",
+    source: `
+      const svc = createToastAnnouncerService(2);
+      svc.push("Saved");
+      svc.push("Saved");
+      svc.push("Error occurred", "assertive");
+      svc.tick();
+      assertEqual(svc.tick(), [
+        { message: "Error occurred", politeness: "assertive" },
+        { message: "Saved", politeness: "polite" },
+      ]);
+    `,
+  },
+  {
+    label: "The visible list is trimmed to the most recent maxVisible entries",
+    source: `
+      const svc = createToastAnnouncerService(1);
+      svc.push("A");
+      svc.push("B");
+      svc.tick();
+      assertEqual(svc.tick(), [{ message: "B", politeness: "polite" }]);
+    `,
+  },
+];
+
+const ACCESSIBLE_COMBOBOX_CONTROLLER_TESTS: SandboxTest[] = [
+  {
+    label: "Filtering narrows the option list and activates the first match",
+    source: `
+      assert(typeof createComboboxController === "function", "createComboboxController is not defined");
+      const c = createComboboxController(["Apple", "Apricot", "Banana"]);
+      c.setFilter("ap");
+      assertEqual(c.getState().options, ["Apple", "Apricot"]);
+      assertEqual(c.getState().activeIndex, 0);
+    `,
+  },
+  {
+    label: "The active-descendant id reflects the currently highlighted filtered option",
+    source: `
+      const c = createComboboxController(["Apple", "Apricot", "Banana"]);
+      c.setFilter("ap");
+      assertEqual(c.getActiveDescendantId(), "option-0");
+    `,
+  },
+  {
+    label: "Arrow navigation wraps within the filtered set, not the original full option list",
+    source: `
+      const c = createComboboxController(["Apple", "Apricot", "Banana"]);
+      c.setFilter("ap");
+      c.handleKey("ArrowDown");
+      c.handleKey("ArrowDown");
+      assertEqual(c.getActiveDescendantId(), "option-0");
+    `,
+  },
+  {
+    label: "A filter with zero matches closes the list and clears the active descendant",
+    source: `
+      const c = createComboboxController(["Apple", "Apricot", "Banana"]);
+      c.setFilter("xyz");
+      assertEqual(c.getState().isOpen, false);
+      assertEqual(c.getActiveDescendantId(), null);
+    `,
+  },
+];
+
+const A11Y_RULE_REPORT_GENERATOR_TESTS: SandboxTest[] = [
+  {
+    label: "Violations are collected from every level of the tree, each with its own path",
+    source: `
+      assert(typeof lintTree === "function", "lintTree is not defined");
+      const tree = {
+        tag: "div",
+        attrs: {},
+        children: [
+          { tag: "img", attrs: {} },
+          { tag: "input", attrs: { "aria-label": "Search" } },
+          {
+            tag: "p",
+            attrs: {},
+            style: { color: "#FFFFFF", backgroundColor: "#FFFFFF" },
+            children: [],
+          },
+        ],
+      };
+      assertEqual(lintTree(tree), [
+        { path: "div>img[0]", message: "img missing alt text" },
+        { path: "div>p[2]", message: "low contrast ratio 1:1 (needs 4.5:1)" },
+      ]);
+    `,
+  },
+  {
+    label: "A fully compliant tree produces no violations",
+    source: `
+      const tree = {
+        tag: "div",
+        attrs: {},
+        children: [
+          { tag: "img", attrs: { alt: "A dog" } },
+          { tag: "input", attrs: { "aria-label": "Search" } },
+        ],
+      };
+      assertEqual(lintTree(tree), []);
+    `,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "kanban-board": KANBAN_BOARD_TESTS,
   "async-task-runner": ASYNC_TASK_RUNNER_TESTS,
@@ -1881,6 +2147,14 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "mini-redux-store": MINI_REDUX_STORE_TESTS,
   "deep-map-values": DEEP_MAP_VALUES_TESTS,
   "brand-and-verify": BRAND_AND_VERIFY_TESTS,
+  "semantic-landmark-outliner": SEMANTIC_LANDMARK_OUTLINER_TESTS,
+  "media-accessibility-auditor": MEDIA_ACCESSIBILITY_AUDITOR_TESTS,
+  "theme-contrast-auditor": THEME_CONTRAST_AUDITOR_TESTS,
+  "keyboard-focus-trap-navigator": KEYBOARD_FOCUS_TRAP_NAVIGATOR_TESTS,
+  "form-error-summary-builder": FORM_ERROR_SUMMARY_BUILDER_TESTS,
+  "toast-announcer-service": TOAST_ANNOUNCER_SERVICE_TESTS,
+  "accessible-combobox-controller": ACCESSIBLE_COMBOBOX_CONTROLLER_TESTS,
+  "a11y-rule-report-generator": A11Y_RULE_REPORT_GENERATOR_TESTS,
 };
 
 export function getBuildTestSpec(slug: string): SandboxTest[] | null {

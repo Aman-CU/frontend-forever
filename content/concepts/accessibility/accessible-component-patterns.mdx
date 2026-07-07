@@ -1,0 +1,46 @@
+---
+title: "Accessible Component Patterns"
+description: "Compare the keyboard and ARIA requirements for modals, menus, and comboboxes — the widgets most commonly built inaccessibly from scratch."
+category: "accessibility"
+difficulty: "advanced"
+order: 7
+whatsHappening: "Custom interactive widgets — modals, menus, comboboxes — have no single native HTML element, so being accessible takes three things at once: the correct ARIA role and state (role=\"dialog\" with aria-modal=\"true\", or role=\"combobox\" with aria-expanded and aria-activedescendant), full keyboard operability matching the pattern documented for that widget type (Escape closes a menu or modal, arrow keys move within a list without leaving the trigger), and correct focus management on open and close (focus moves into the widget when it opens, and returns to whatever triggered it when it closes). Getting the role right without the keyboard behavior — or vice versa — produces a widget that looks correct but doesn't actually work for a keyboard or screen reader user."
+keyInsight: "aria-activedescendant is the trick that keeps real DOM keyboard focus on one element (usually the input or the list container) while a 'virtual focus' — the currently highlighted option — moves via an id reference. That's why typing continues to work in a combobox's input the entire time an arrow key is highlighting different options: actual focus never leaves the input at all."
+memoryHook: "The trigger keeps the keyboard's actual attention; the ARIA attribute just points a finger at which option is currently highlighted."
+inRealLife: "Like a teacher calling on students to answer while everyone stays seated — the actual speaking turn (focus) never leaves the teacher at the front of the room; announcing a name just points at who's currently being called on."
+---
+
+## Three requirements, together
+
+1. **Role and state** — the widget announces what it is and its current condition (open/closed, selected/not).
+2. **Keyboard operability matching the pattern** — every mouse interaction has a keyboard equivalent, following the conventions users of that widget type already expect.
+3. **Focus management on open/close** — focus moves somewhere sensible when the widget appears, and returns to its trigger when it's dismissed.
+
+## Modal dialogs
+
+```html
+<div role="dialog" aria-modal="true" aria-labelledby="dialog-title">
+  <h2 id="dialog-title">Confirm delete</h2>
+  ...
+</div>
+```
+
+`aria-modal="true"` tells assistive tech that content outside the dialog is currently inert. On open, focus should move into the dialog (commonly its first focusable element, or the dialog container itself); Tab/Shift+Tab should stay trapped inside it (the focus-trap pattern covered in Keyboard Navigation & Focus Management); Escape should close it; and closing should return focus to whatever element opened it — never leave focus lost at the top of the document.
+
+## Menus and listboxes: two valid focus strategies
+
+**aria-activedescendant** keeps real focus on one container element (often the input, for a combobox) while `aria-activedescendant="option-3"` tells assistive tech which option is currently highlighted — no actual focus movement happens between options:
+
+```html
+<input role="combobox" aria-activedescendant="option-1" aria-expanded="true" />
+<ul role="listbox">
+  <li id="option-1" role="option" aria-selected="true">Apple</li>
+  <li id="option-2" role="option">Banana</li>
+</ul>
+```
+
+**Roving tabindex** is the alternative strategy: only the currently-active option has `tabindex="0"`; every other option has `tabindex="-1"`, and real focus is moved between them with JavaScript as arrow keys are pressed. Both strategies are valid APG-documented patterns — the choice usually comes down to whether the widget has a text input to keep focus in (favoring `aria-activedescendant`, as in a combobox) or is a standalone list (roving tabindex fits menus and toolbars well).
+
+## Comboboxes
+
+A combobox combines a text input with a filtered listbox: `aria-expanded` reflects whether the list is currently open, `aria-controls` points at the listbox's id, and `aria-autocomplete` describes whether suggestions are inline, a list, or both. Arrow keys move the highlighted option (via one of the two strategies above); Enter selects it and closes the list; Escape closes without selecting.
