@@ -25,7 +25,7 @@ Modern formats compress the same visual quality into meaningfully fewer bytes:
 | JPEG | Legacy photo fallback | No | Baseline |
 | PNG | Legacy graphics needing transparency | Yes | Larger, lossless |
 
-A simple rule of thumb: reach for AVIF on photographic content, WebP when you need guaranteed-safe transparency or animation support, and keep JPEG/PNG only as the `<picture>` fallback for browsers that don't support the modern formats.
+A simple rule of thumb: reach for AVIF on photographic content for the best compression — it does support transparency and animation too — but WebP has broader, more consistent encoder and browser support for those two cases specifically, so it's the safer default when transparency or animation is a hard requirement rather than a nice-to-have. Keep JPEG/PNG only as the `<picture>` fallback for browsers that don't support the modern formats.
 
 ## Sizing: never ship more pixels than will be displayed
 

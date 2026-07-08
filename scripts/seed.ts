@@ -13217,6 +13217,11 @@ function runStreamingTimeline(shellOrder, arrivalSequence, clientHydrationIds) {
         expected: "-1",
         label: "No hydration mismatch when the client's ids match the shell order exactly",
       },
+      {
+        input: 'runStreamingTimeline(["header","sidebar","main","footer"], ["footer","header","main","sidebar"], ["header","wrong","main","footer"]).hydrationMismatchIndex',
+        expected: "1",
+        label: "A client id that actually diverges from the shell order is caught at its exact index",
+      },
     ],
     isPremium: true,
     orderIndex: 1,

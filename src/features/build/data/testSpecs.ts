@@ -2247,6 +2247,17 @@ const STREAMING_HYDRATION_TIMELINE_SIMULATOR_TESTS: SandboxTest[] = [
       assertEqual(result.hydrationMismatchIndex, -1);
     `,
   },
+  {
+    label: "A client id that actually diverges from the shell order is caught at its exact index",
+    source: `
+      const result = runStreamingTimeline(
+        ["header", "sidebar", "main", "footer"],
+        ["footer", "header", "main", "sidebar"],
+        ["header", "wrong", "main", "footer"]
+      );
+      assertEqual(result.hydrationMismatchIndex, 1);
+    `,
+  },
 ];
 
 const BUDGET_REGRESSION_REPORTER_TESTS: SandboxTest[] = [
