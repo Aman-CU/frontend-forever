@@ -1,0 +1,49 @@
+---
+title: "Image & Asset Optimization"
+description: "Learn how modern formats (WebP/AVIF), responsive srcset, and correct sizing cut image payload — usually the single biggest lever on page weight."
+category: "performance"
+difficulty: "beginner"
+order: 1
+whatsHappening: "Images are almost always the heaviest thing a page downloads, so three independent levers control their weight: format (AVIF and WebP compress far better than JPEG/PNG for the same visual quality), sizing (serving a 3000px photo into a 300px thumbnail wastes everything past 300px), and responsive delivery (srcset/sizes let the browser itself pick the right file for its own viewport and pixel density, instead of one fixed image for every device). None of the three fixes the other two — a perfectly-sized JPEG is still bigger than it needs to be, and a perfectly-formatted AVIF served at 4x the display size still wastes bandwidth."
+keyInsight: "The browser — not the server, and not a fixed <img> tag — is in the best position to know its own viewport width and pixel density, which is exactly why srcset hands it a menu of pre-sized files to choose from instead of forcing one size on every device."
+memoryHook: "Format picks the compression, srcset picks the size — you need both, because the smallest possible file at the wrong dimensions is still wasted bytes, and the right dimensions in the wrong format still is too."
+inRealLife: "Like a print shop offering wallet-size, 4x6, and poster prints of the same photo instead of mailing everyone the poster and letting them shrink it themselves — the lab (browser) picks the print size (image file) that actually fits where it's going."
+---
+
+## Why images dominate page weight
+
+On most real pages, images account for more transferred bytes than every script and stylesheet combined. A single unoptimized hero photo can outweigh an entire JS bundle. That makes image weight the highest-leverage place to look first — a 40% cut in image bytes usually moves the needle further than a 40% cut in JS.
+
+## Format: AVIF and WebP beat JPEG/PNG
+
+Modern formats compress the same visual quality into meaningfully fewer bytes:
+
+| Format | Typical use | Transparency | Compression vs. JPEG |
+|---|---|---|---|
+| AVIF | Photos | Yes | Best — often 50% smaller |
+| WebP | Photos and graphics | Yes | Very good — broad support |
+| JPEG | Legacy photo fallback | No | Baseline |
+| PNG | Legacy graphics needing transparency | Yes | Larger, lossless |
+
+A simple rule of thumb: reach for AVIF on photographic content, WebP when you need guaranteed-safe transparency or animation support, and keep JPEG/PNG only as the `<picture>` fallback for browsers that don't support the modern formats.
+
+## Sizing: never ship more pixels than will be displayed
+
+An image's file size scales roughly with its pixel count, not its "importance." A 3000×2000 photo dropped into a 300px-wide card wastes the ~90% of pixels that get scaled away by CSS — the browser still downloaded every one of them first.
+
+## Responsive delivery: `srcset` and `sizes`
+
+```html
+<img
+  src="/hero-640.jpg"
+  srcset="/hero-320.jpg 320w, /hero-640.jpg 640w, /hero-1280.jpg 1280w"
+  sizes="(max-width: 600px) 100vw, 640px"
+  alt="Product hero shot"
+/>
+```
+
+`srcset` lists candidate files with their real pixel widths; `sizes` tells the browser how wide the image will actually render at each viewport. The browser combines those with its own device pixel ratio to pick the smallest candidate that still looks sharp — a phone on a 2x display and a desktop on a 1x display end up downloading different files, automatically.
+
+## Lazy loading and `width`/`height`
+
+`loading="lazy"` defers off-screen images until the user scrolls near them, so a long page doesn't pay for images no one may ever see. Always pair it with explicit `width`/`height` attributes (or `aspect-ratio` in CSS) — without them, the browser doesn't know how much space to reserve before the image loads, which is one of the most common causes of layout shift (see Core Web Vitals' CLS metric).

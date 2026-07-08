@@ -1,0 +1,38 @@
+---
+title: "List Virtualization"
+description: "See how windowing renders only the visible rows of a huge list, keeping the DOM node count — and scroll performance — constant regardless of list size."
+category: "performance"
+difficulty: "intermediate"
+order: 5
+whatsHappening: "Rendering every row of a 10,000-item list creates 10,000 real DOM nodes, and every scroll, re-render, or layout pass has to account for all of them — even though the viewport can only physically show a few dozen at once. Virtualization (also called windowing) mounts only the rows currently on screen (plus a small overscan buffer) and swaps which rows are mounted as the user scrolls, using one full-height spacer element so the scrollbar still behaves as if every row were really there. The DOM node count stays roughly constant whether the list has 100 rows or 1,000,000."
+keyInsight: "The list's total height has to be simulated even though almost none of its rows are ever mounted — a single spacer sized to totalRows × rowHeight keeps the scrollbar honest, while the actual visible rows are absolutely positioned inside it based on their real index."
+memoryHook: "Don't render the whole list — render the window into it, and move the window, not the list."
+inRealLife: "Like a scrolling news ticker sign that only has a few physical letter panels — it doesn't build every letter of every headline in advance, it just swaps the letters currently in view as the message scrolls past."
+---
+
+## The problem with rendering everything
+
+A naive `list.map(item => <Row {...item} />)` over 10,000 items creates 10,000 real DOM nodes immediately, whether or not the user ever scrolls to see most of them. Every scroll event, every re-render, and every layout recalculation then has to account for all 10,000 — the page stutters and memory climbs, all to display roughly a dozen rows at a time.
+
+## The windowing math
+
+Given the current scroll position, row height, and container height, the visible range is just arithmetic:
+
+```
+firstVisible = floor(scrollTop / rowHeight)
+lastVisible  = floor((scrollTop + containerHeight) / rowHeight)
+```
+
+Padding that range by a small **overscan** buffer on each side means a fast scroll doesn't outrun rendering and flash blank space before new rows mount.
+
+## The spacer trick
+
+If only 13 rows are ever mounted, what makes the scrollbar behave like there are actually 10,000 rows to scroll through? A single invisible spacer element, sized to `totalRows * rowHeight`, holds the full scroll height. The visible rows are absolutely positioned inside that spacer at `top: index * rowHeight`, so they land in the correct spot no matter which slice is currently mounted.
+
+## Fixed height vs. variable height
+
+The math above assumes every row is the same height, which is the common and simplest case. Variable-height virtualization (rows of different sizes) needs a running offset cache instead of a single multiplication, since a row's position now depends on the cumulative height of every row before it — meaningfully more bookkeeping, but the same core idea: only mount what's visible.
+
+## When virtualization is (and isn't) worth it
+
+Virtualization adds real complexity — scroll-to-index, dynamic content measurement, and accessibility (screen readers expect all content to exist) all get harder. It earns its keep specifically when a list is long enough that full rendering visibly hurts (typically several hundred rows or more); a 20-item list gets nothing from it but the added complexity.

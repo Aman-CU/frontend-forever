@@ -1,0 +1,41 @@
+---
+title: "Resource Loading & Render-Blocking"
+description: "Understand preload/prefetch/preconnect hints and async/defer script loading, and how each changes what the browser fetches early versus what it can defer."
+category: "performance"
+difficulty: "intermediate"
+order: 3
+whatsHappening: "The HTML parser runs top to bottom, and by default it stops dead at every <script> tag and every <link rel=\"stylesheet\"> until that resource is fully downloaded (and, for scripts, executed) — that's what 'render-blocking' means. async and defer let a <script> opt out of blocking: async downloads in parallel and runs the instant it's ready (in whatever order that happens to be), while defer downloads in parallel but waits to run until the document is fully parsed, in the original document order. Resource hints — preload, prefetch, preconnect — don't change execution at all; they just tell the browser to start a network step (a fetch, or just opening a connection) earlier than it would have discovered the need on its own."
+keyInsight: "async and defer change *when a script executes*; preload/prefetch/preconnect change *when the browser starts fetching* — a resource can be hinted early and still block rendering once it arrives, and a script can block rendering with no hint at all. These are two independent levers, not one sliding scale."
+memoryHook: "async: whenever it's ready. defer: after parsing, in order. preload: fetch it now, run logic unchanged. prefetch: might need it later. preconnect: warm up the road before the truck arrives."
+inRealLife: "Preconnect is calling ahead to reserve a parking spot before you've even left the house; preload is having the package already on the truck; async is a courier who hands you the box the second they arrive, interrupting whatever you were doing; defer is a courier who waits at the door until you've finished the task you were on."
+---
+
+## Why a plain `<script>` blocks the parser
+
+By default, the HTML parser treats `<script src="...">` as "stop everything until this downloads and runs" — the browser has no way to know in advance whether that script is going to modify the page (via `document.write`, for instance), so it plays it safe and halts. The same is true for `<link rel="stylesheet">`: the browser withholds paint until it knows the full set of styles that could apply, since rendering with the wrong styles and then repainting would be worse than the wait.
+
+## `async` vs. `defer`
+
+```html
+<script src="analytics.js" async></script>
+<script src="app.js" defer></script>
+```
+
+- **`async`** downloads in parallel with parsing and executes the moment it finishes — which could be before parsing is done, interrupting it. Good for independent scripts with no dependency on the DOM being fully built (analytics, ads).
+- **`defer`** also downloads in parallel, but always waits until parsing completes, and multiple `defer` scripts always run in their original document order. Good for scripts that need the full DOM or need to run in a specific order relative to each other.
+
+## Resource hints don't change execution — only fetch timing
+
+```html
+<link rel="preconnect" href="https://api.example.com" />
+<link rel="preload" href="/fonts/inter.woff2" as="font" crossorigin />
+<link rel="prefetch" href="/next-page-chunk.js" />
+```
+
+- **`preconnect`** opens the DNS/TCP/TLS connection to a host ahead of the first real request to it — useful when you know you'll fetch from that origin soon but don't have the exact URL yet.
+- **`preload`** fetches a specific resource the browser wouldn't otherwise discover until later in parsing (a font referenced only inside CSS, for example) — critical, above-the-fold resources.
+- **`prefetch`** is a low-priority hint for something the *next* navigation will likely need, not this page — the browser fetches it when bandwidth is idle.
+
+## Putting it together
+
+The real optimization goal is keeping the render-blocking set as small as possible: only the CSS and scripts genuinely required for first paint should block; everything else should be `async`, `defer`, or moved out of the critical path entirely with a resource hint.

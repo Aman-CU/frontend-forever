@@ -1,0 +1,31 @@
+---
+title: "Performance Budgets"
+description: "Learn how setting hard limits on bundle size, load time, or Core Web Vitals scores in CI keeps performance from silently regressing over time."
+category: "performance"
+difficulty: "advanced"
+order: 8
+whatsHappening: "Performance tends to regress one small, individually-reasonable change at a time — one more dependency here, one more image there — and no single change looks bad enough to block on its own, so the page just gets slower release by release with no one moment to point at. A performance budget makes that invisible drift visible by setting an explicit numeric ceiling (bundle size, LCP, CLS, whatever matters) and checking every change against it in CI, the same way a test suite checks correctness — a change that would push a metric over its budget fails the build instead of merging quietly."
+keyInsight: "A budget only works as a *hard* CI gate, not a dashboard someone occasionally glances at — a metric that's merely monitored still drifts, one acceptable-looking PR at a time, because nothing ever actually stops the regression from landing."
+memoryHook: "Tests catch correctness regressions before merge; budgets catch performance regressions before merge — same mechanism, different metric."
+inRealLife: "Like a household budget that tracks spending after the fact versus one that actually declines the purchase at checkout — only the second one prevents the overspend; the first one just documents it happened."
+---
+
+## Why performance regresses gradually, not suddenly
+
+No single PR usually looks like "let's make the app noticeably slower." It's a 12kb icon library added for one icon, a slightly heavier date-formatting dependency, an image that wasn't quite optimized — each individually invisible, cumulatively real. Without an enforced ceiling, there's no single point where any of these gets blocked.
+
+## What gets budgeted
+
+Common budget targets: total JS bundle size (often broken down per route), image payload weight, and the Core Web Vitals scores themselves (LCP, INP, CLS) measured against a fixed threshold. Bundle size budgets are the easiest to enforce mechanically, since they're computed at build time with no real-user variability involved.
+
+## Enforcing it in CI
+
+A budget check runs on every PR: build the app, measure the relevant metric, compare it against the budget, and fail the build if the metric exceeds it — exactly like a failing test blocks merge. Tools like `bundlesize`, Lighthouse CI, or a custom build-time script all follow the same shape: measure, compare, gate.
+
+## Budgets vs. baselines
+
+A pure fixed budget ("bundle must stay under 200kb") is simple but can miss a smaller, still-meaningful regression if the app started well under budget with room to spare. Comparing against the *previous* build's baseline — not just the fixed ceiling — catches "this PR alone grew the bundle by 15%" even when the absolute number hasn't crossed the budget line yet, which is often the more actionable signal for the specific PR under review.
+
+## Budgets need owners, not just numbers
+
+A budget that fails builds with no clear next step just gets bypassed under deadline pressure. The teams that keep budgets effective pair every budget with an obvious action when it's exceeded — split this chunk, defer this dependency, revisit this image — so failing the check is a solvable problem, not a blocker someone has to argue their way around.
