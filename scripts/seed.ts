@@ -719,6 +719,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how splitting a bundle by route or component lets the browser download only the code a page actually needs, and how to measure what's bloating it.",
     category: "performance",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 2,
   },
   {
@@ -728,6 +729,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Understand preload/prefetch/preconnect hints and async/defer script loading, and how each changes what the browser fetches early versus what it can defer.",
     category: "performance",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 3,
   },
   {
@@ -737,6 +739,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Measure and optimize LCP, INP, and CLS — Google's metrics for real-world page experience and search ranking.",
     category: "performance",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 4,
   },
   {
@@ -746,6 +749,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how windowing renders only the visible rows of a huge list, keeping the DOM node count — and scroll performance — constant regardless of list size.",
     category: "performance",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 5,
   },
   {
@@ -755,6 +759,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how to read a Performance panel flame chart and the React DevTools Profiler to find the actual bottleneck instead of guessing.",
     category: "performance",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 6,
   },
   {
@@ -764,6 +769,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Understand how streaming SSR sends the page shell immediately and streams in slower content, and how hydration attaches React's event handlers to that server-rendered HTML.",
     category: "performance",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 7,
   },
   {
@@ -773,6 +779,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Learn how setting hard limits on bundle size, load time, or Core Web Vitals scores in CI keeps performance from silently regressing over time.",
     category: "performance",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 8,
   },
 
@@ -904,7 +911,7 @@ Try it live in the playground below — type into the search box, then make your
   },
   {
     slug: "virtual-list",
-    conceptSlug: "react-rendering",
+    conceptSlug: "list-virtualization",
     title: "Virtualized list windowing",
     description: `**Virtualization** (or "windowing") renders a huge list at 60fps by only mounting the rows you can actually see — a few dozen, not thousands.
 
@@ -973,7 +980,7 @@ Scroll the list in the playground below — your window keeps the DOM-node count
       "Subtract overscan from start and add it to end to render a small buffer beyond the viewport.",
       "Clamp start with Math.max(0, ...) and end with Math.min(totalRows - 1, ...) so you never index past the list.",
     ],
-    isPremium: false,
+    isPremium: true,
     orderIndex: 2,
   },
   {
@@ -4527,6 +4534,439 @@ lintNode({ tag: "img", attrs: { role: "presentation" } }) // []
     isPremium: true,
     orderIndex: 60,
   },
+  {
+    slug: "pick-image-format-and-size",
+    conceptSlug: "image-asset-optimization",
+    title: "Pick the right image format and srcset width",
+    description: `The two independent levers behind every "optimize this image" task — which format to serve, and which pixel width to serve it at.
+
+## The problem
+
+"Just compress the image" hides two separate decisions: which modern format actually fits this image's needs, and which of the available pre-generated widths is the smallest one that still covers the container at the current pixel density.
+
+## The idea
+
+Format depends on what the image needs to support (animation, transparency) more than on taste. Width depends purely on arithmetic: the target pixel width is \`containerWidth * dpr\`, and the right candidate is the smallest available width that's still \`>=\` that target — falling back to the largest available width if none is big enough.
+
+## Your task
+
+Write \`pickImageFormat({ hasTransparency, isPhoto, needsAnimation })\` returning \`"avif"\` or \`"webp"\`, and \`pickSrcsetWidth(containerWidth, dpr, availableWidths)\`:
+
+\`\`\`js
+pickImageFormat({ hasTransparency: false, isPhoto: true, needsAnimation: false }) // "avif"
+pickSrcsetWidth(400, 2, [320, 640, 960, 1280]) // 960
+\`\`\``,
+    difficulty: "easy",
+    starterCode: `function pickImageFormat({ hasTransparency, isPhoto, needsAnimation }) {
+  // "avif" for opaque, non-animated photos — "webp" otherwise
+}
+function pickSrcsetWidth(containerWidth, dpr, availableWidths) {
+  // smallest available width >= containerWidth * dpr, or the largest if none fit
+}`,
+    solutionCode: `function pickImageFormat({ hasTransparency, isPhoto, needsAnimation }) {
+  if (needsAnimation) return "webp";
+  if (hasTransparency) return "webp";
+  if (isPhoto) return "avif";
+  return "webp";
+}
+function pickSrcsetWidth(containerWidth, dpr, availableWidths) {
+  const target = containerWidth * dpr;
+  const sorted = [...availableWidths].sort((a, b) => a - b);
+  const fit = sorted.find((w) => w >= target);
+  return fit !== undefined ? fit : sorted[sorted.length - 1];
+}`,
+    testCases: [
+      { input: '{ hasTransparency: false, isPhoto: true, needsAnimation: false }', expected: '"avif"', label: "An opaque photo picks AVIF for the best compression" },
+      { input: '{ hasTransparency: true, isPhoto: false, needsAnimation: false }', expected: '"webp"', label: "A transparent graphic picks WebP" },
+      { input: "pickSrcsetWidth(400, 2, [320, 640, 960, 1280])", expected: "960", label: "800px target (400 x 2 dpr) picks the smallest width that still covers it, 960" },
+      { input: "pickSrcsetWidth(1000, 3, [320, 640, 960])", expected: "960", label: "When no candidate is big enough, fall back to the largest available" },
+    ],
+    hints: [
+      "needsAnimation should override every other check — an animated image needs WebP regardless of transparency or photo content.",
+      "The target pixel width is containerWidth multiplied by the device pixel ratio, not containerWidth alone.",
+      "Sort the available widths first so 'smallest that still fits' and 'largest overall' are both simple array operations.",
+    ],
+    orderIndex: 61,
+  },
+  {
+    slug: "split-shared-chunks",
+    conceptSlug: "bundle-size-code-splitting",
+    title: "Split a bundle into shared and per-route chunks",
+    description: `The core signal a bundler starts from when deciding what goes in the shared chunk versus each route's own chunk.
+
+## The problem
+
+Given which modules each route imports, a naive bundle would duplicate every shared dependency (React, a UI library) into every single route's file. The fix is knowing exactly which modules qualify as "shared."
+
+## The idea
+
+A module used by exactly one route always stays in that route's own chunk. A module used by more than one route is at least a *candidate* for the shared chunk — real bundlers add size/request-count thresholds on top of this before actually splitting it out, but usage count is the starting signal this exercise models.
+
+## Your task
+
+Write \`splitChunks(routeModules)\`, where \`routeModules\` maps a route path to the array of module names it imports, returning \`{ shared, routes }\`:
+
+\`\`\`js
+splitChunks({
+  "/home": ["react", "home-page", "utils"],
+  "/about": ["react", "about-page", "utils"],
+})
+// → { shared: ["react", "utils"], routes: { "/home": ["home-page"], "/about": ["about-page"] } }
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function splitChunks(routeModules) {
+  // return { shared: [...], routes: { [route]: [...] } }
+}`,
+    solutionCode: `function splitChunks(routeModules) {
+  const counts = new Map();
+  for (const route in routeModules) {
+    for (const mod of routeModules[route]) {
+      counts.set(mod, (counts.get(mod) || 0) + 1);
+    }
+  }
+  const shared = [];
+  for (const route in routeModules) {
+    for (const mod of routeModules[route]) {
+      if (counts.get(mod) > 1 && !shared.includes(mod)) shared.push(mod);
+    }
+  }
+  const routes = {};
+  for (const route in routeModules) {
+    routes[route] = routeModules[route].filter((m) => !shared.includes(m));
+  }
+  return { shared, routes };
+}`,
+    testCases: [
+      {
+        input: '{ "/a": ["react","a1"], "/b": ["react","b1"], "/c": ["react","utils","c1"] }',
+        expected: '{ shared: ["react"], routes: { "/a": ["a1"], "/b": ["b1"], "/c": ["utils","c1"] } }',
+        label: "A module used by three routes is shared; one used by a single route is not",
+      },
+      {
+        input: '{ "/home": ["react","home-page","utils"], "/about": ["react","about-page","utils"] }',
+        expected: '{ shared: ["react","utils"], routes: { "/home": ["home-page"], "/about": ["about-page"] } }',
+        label: "Two modules shared across two routes both end up in the shared chunk",
+      },
+    ],
+    hints: [
+      "Count how many routes import each module first, before deciding anything.",
+      "A module qualifies as shared purely by usage count (> 1) — it has nothing to do with which route it appears in first.",
+      "Each route's own chunk is just its original module list with the shared ones filtered out.",
+    ],
+    isPremium: true,
+    orderIndex: 62,
+  },
+  {
+    slug: "classify-resource-loading-strategy",
+    conceptSlug: "resource-loading-render-blocking",
+    title: "Classify a resource's loading strategy",
+    description: `Beyond "does this block rendering" — which of the six real loading strategies does a given resource actually use?
+
+## The problem
+
+Scripts and stylesheets can block the parser, but resource hints (\`preload\`, \`prefetch\`, \`preconnect\`) don't block anything at all — they only change when the browser starts a network step. Lumping every non-blocking resource into one bucket hides that distinction.
+
+## The idea
+
+A \`<link>\`'s \`rel\` decides its strategy directly (\`stylesheet\` still blocks; \`preload\`/\`prefetch\`/\`preconnect\` are hints, not blockers). A \`<script>\`'s \`async\`/\`defer\` flags decide its strategy; with neither, it blocks by default.
+
+## Your task
+
+Write \`classifyResource(resource)\`, where \`resource\` is \`{ tag: "script" | "link", rel?, async?, defer? }\`, returning one of \`"render-blocking" | "async" | "defer" | "preload" | "prefetch" | "preconnect"\`. Then write \`totalParseBlockingTime(resources)\`, summing the \`duration\` of only the resources that classify as \`"render-blocking"\`:
+
+\`\`\`js
+classifyResource({ tag: "link", rel: "stylesheet" }) // "render-blocking"
+classifyResource({ tag: "script", async: true }) // "async"
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function classifyResource(resource) {
+  // return one of: "render-blocking" | "async" | "defer" | "preload" | "prefetch" | "preconnect"
+}
+function totalParseBlockingTime(resources) {
+  // sum the duration of only the render-blocking resources
+}`,
+    solutionCode: `function classifyResource(resource) {
+  if (resource.tag === "link") {
+    if (resource.rel === "stylesheet") return "render-blocking";
+    return resource.rel;
+  }
+  if (resource.async) return "async";
+  if (resource.defer) return "defer";
+  return "render-blocking";
+}
+function totalParseBlockingTime(resources) {
+  return resources
+    .filter((r) => classifyResource(r) === "render-blocking")
+    .reduce((sum, r) => sum + (r.duration || 0), 0);
+}`,
+    testCases: [
+      { input: '{ tag: "script" }', expected: '"render-blocking"', label: "A plain script with no async/defer blocks rendering" },
+      { input: '{ tag: "script", defer: true }', expected: '"defer"', label: "A deferred script does not block rendering" },
+      { input: '{ tag: "link", rel: "preconnect" }', expected: '"preconnect"', label: "A preconnect hint is its own strategy, not a blocker" },
+      {
+        input: '[{tag:"script",duration:100},{tag:"script",async:true,duration:50},{tag:"link",rel:"stylesheet",duration:30}]',
+        expected: "130",
+        label: "totalParseBlockingTime sums only the render-blocking resources' durations",
+      },
+    ],
+    hints: [
+      "A link's rel value that isn't 'stylesheet' is itself the strategy name — no extra mapping needed for preload/prefetch/preconnect.",
+      "Check async before defer on a script — a script could theoretically carry both attributes, and async takes precedence in real browsers.",
+      "totalParseBlockingTime should reuse classifyResource rather than re-implementing the blocking rule a second time.",
+    ],
+    isPremium: true,
+    orderIndex: 63,
+  },
+  {
+    slug: "rate-core-web-vitals",
+    conceptSlug: "core-web-vitals",
+    title: "Rate LCP, INP, and CLS against their real thresholds",
+    description: `The exact published thresholds behind every "good/needs improvement/poor" badge in a real Core Web Vitals report.
+
+## The problem
+
+"Is this LCP good?" isn't a judgment call — Google publishes exact numeric thresholds per metric, and a page's overall rating is only as good as its worst individual metric.
+
+## The idea
+
+Each metric has its own good/poor cutoff (LCP and INP are lower-is-better durations; CLS is a lower-is-better unitless score). A value at or under the "good" cutoff is good; strictly over the "poor" cutoff is poor; anything between is "needs-improvement." The page's overall rating takes the worst rating among all three metrics.
+
+## Your task
+
+Write \`classifyMetric(metric, value)\` for \`"LCP"\` (ms, good ≤ 2500, poor > 4000), \`"INP"\` (ms, good ≤ 200, poor > 500), and \`"CLS"\` (good ≤ 0.1, poor > 0.25). Then write \`overallPageRating(metrics)\`, where \`metrics\` is \`{ LCP, INP, CLS }\`:
+
+\`\`\`js
+classifyMetric("LCP", 2000) // "good"
+overallPageRating({ LCP: 4500, INP: 150, CLS: 0.05 }) // "poor"
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function classifyMetric(metric, value) {
+  // return "good" | "needs-improvement" | "poor" using the real published thresholds
+}
+function overallPageRating(metrics) {
+  // the worst individual rating among LCP/INP/CLS wins
+}`,
+    solutionCode: `function classifyMetric(metric, value) {
+  const thresholds = {
+    LCP: { good: 2500, poor: 4000 },
+    INP: { good: 200, poor: 500 },
+    CLS: { good: 0.1, poor: 0.25 },
+  };
+  const t = thresholds[metric];
+  if (value <= t.good) return "good";
+  if (value > t.poor) return "poor";
+  return "needs-improvement";
+}
+function overallPageRating(metrics) {
+  const ratings = Object.keys(metrics).map((m) => classifyMetric(m, metrics[m]));
+  if (ratings.includes("poor")) return "poor";
+  if (ratings.includes("needs-improvement")) return "needs-improvement";
+  return "good";
+}`,
+    testCases: [
+      { input: 'classifyMetric("LCP", 3000)', expected: '"needs-improvement"', label: "LCP between 2500 and 4000ms is needs-improvement" },
+      { input: 'classifyMetric("CLS", 0.3)', expected: '"poor"', label: "CLS over 0.25 is poor" },
+      { input: 'overallPageRating({ LCP: 2000, INP: 150, CLS: 0.05 })', expected: '"good"', label: "All three good metrics rate the page good" },
+      { input: 'overallPageRating({ LCP: 4500, INP: 150, CLS: 0.05 })', expected: '"poor"', label: "A single poor metric makes the whole page poor" },
+    ],
+    hints: [
+      "LCP and INP use millisecond thresholds; CLS uses a unitless score — don't mix them up in the threshold table.",
+      "'Good' is inclusive (<=) at its cutoff; 'poor' is exclusive (> ) at its cutoff — the middle band handles everything else.",
+      "overallPageRating should reuse classifyMetric for each metric rather than re-deriving the thresholds.",
+    ],
+    isPremium: true,
+    orderIndex: 64,
+  },
+  {
+    slug: "find-flame-chart-bottleneck",
+    conceptSlug: "profiling-with-devtools",
+    title: "Find the real bottleneck in a flame chart trace",
+    description: `Self time versus total time — the distinction that separates the real bottleneck from a slow-looking wrapper function.
+
+## The problem
+
+The widest bar in a flame chart isn't necessarily the slow function — it might just be a thin wrapper around something slower underneath it. The function actually worth fixing is the one with the highest **self time**: time spent in that function alone, excluding its children.
+
+## The idea
+
+Walk the call tree recursively. A node's total time is its own \`selfTime\` plus every child's total time. The real bottleneck is whichever single node — anywhere in the tree — has the highest \`selfTime\` on its own.
+
+## Your task
+
+Write \`totalTime(node)\` and \`findBottleneck(node)\`, where each node is \`{ name, selfTime, children: [...] }\`:
+
+\`\`\`js
+const trace = {
+  name: "render", selfTime: 10,
+  children: [
+    { name: "computeList", selfTime: 200, children: [] },
+    { name: "paint", selfTime: 5, children: [{ name: "reflow", selfTime: 15, children: [] }] },
+  ],
+};
+totalTime(trace) // 230
+findBottleneck(trace) // "computeList"
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function totalTime(node) {
+  // node.selfTime + the totalTime of every child, recursively
+}
+function findBottleneck(node) {
+  // the name of whichever node anywhere in the tree has the highest selfTime
+}`,
+    solutionCode: `function totalTime(node) {
+  return node.selfTime + (node.children || []).reduce((sum, c) => sum + totalTime(c), 0);
+}
+function findBottleneck(node) {
+  let best = { name: node.name, selfTime: node.selfTime };
+  function walk(n) {
+    if (n.selfTime > best.selfTime) best = { name: n.name, selfTime: n.selfTime };
+    (n.children || []).forEach(walk);
+  }
+  walk(node);
+  return best.name;
+}`,
+    testCases: [
+      {
+        input: '{ name:"render", selfTime:10, children:[{name:"computeList",selfTime:200,children:[]},{name:"paint",selfTime:5,children:[{name:"reflow",selfTime:15,children:[]}]}] }',
+        expected: "230",
+        label: "totalTime sums selfTime across the whole tree",
+      },
+      {
+        input: "the same trace",
+        expected: '"computeList"',
+        label: "findBottleneck finds the highest selfTime anywhere in the tree, not just at the top level",
+      },
+    ],
+    hints: [
+      "totalTime is naturally recursive: a node's own selfTime plus the totalTime of each child.",
+      "findBottleneck needs to walk every node in the tree, not just compare top-level children against each other.",
+      "The root node itself is a candidate for the bottleneck too — don't start the comparison only from its children.",
+    ],
+    isPremium: true,
+    orderIndex: 65,
+  },
+  {
+    slug: "render-streamed-content-order",
+    conceptSlug: "streaming-ssr-hydration",
+    title: "Render streamed content in shell order, not arrival order",
+    description: `The core insight behind streaming SSR: a chunk's arrival order has nothing to do with where it ends up on the page.
+
+## The problem
+
+Streamed sections resolve on the server in whatever order their data happens to finish — not necessarily the order they appear on the page. If the footer's data resolves before the main content's, does the footer render out of place?
+
+## The idea
+
+Each streamed chunk carries the id of the placeholder it belongs to, fixed by the original shell layout. However chunks arrive, each one just fills its own reserved slot — content not yet arrived stays as a skeleton placeholder.
+
+## Your task
+
+Write \`renderedContentAt(shellOrder, arrivedIds)\`, where \`shellOrder\` is the page's fixed layout order and \`arrivedIds\` is however many chunks have arrived so far (in arrival order) — return the shell positions, filling in arrived ids and \`"skeleton"\` for anything not yet arrived:
+
+\`\`\`js
+renderedContentAt(
+  ["header", "sidebar", "main", "footer"],
+  ["footer", "header"]
+)
+// → ["header", "skeleton", "skeleton", "footer"]
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function renderedContentAt(shellOrder, arrivedIds) {
+  // map shellOrder to itself where arrived, "skeleton" where not yet arrived
+}`,
+    solutionCode: `function renderedContentAt(shellOrder, arrivedIds) {
+  return shellOrder.map((id) => (arrivedIds.includes(id) ? id : "skeleton"));
+}`,
+    testCases: [
+      {
+        input: 'renderedContentAt(["header","sidebar","main","footer"], ["footer","header"])',
+        expected: '["header","skeleton","skeleton","footer"]',
+        label: "Content keeps its shell position regardless of arrival order",
+      },
+      {
+        input: 'renderedContentAt(["a","b","c"], [])',
+        expected: '["skeleton","skeleton","skeleton"]',
+        label: "Nothing arrived yet means every slot is still a skeleton",
+      },
+      {
+        input: 'renderedContentAt(["a","b","c"], ["a","b","c"])',
+        expected: '["a","b","c"]',
+        label: "Once everything has arrived, the result matches the shell order exactly",
+      },
+    ],
+    hints: [
+      "The output array's length and position always match shellOrder — arrivedIds only decides which positions are filled in.",
+      "Whether an id has 'arrived' is just an array membership check against arrivedIds.",
+      "The order chunks arrived in never appears in the output — only which ones have arrived so far matters.",
+    ],
+    isPremium: true,
+    orderIndex: 66,
+  },
+  {
+    slug: "check-performance-budget",
+    conceptSlug: "performance-budgets",
+    title: "Check metrics against a performance budget",
+    description: `The core mechanism behind every CI performance gate: measure, compare to the budget, and say pass or fail.
+
+## The problem
+
+A performance budget only works if it's actually enforced automatically — someone has to compute, for every metric that matters, whether the current build stayed under its limit.
+
+## The idea
+
+For each budgeted metric, a build passes if its actual value is at or under the budget's limit. The overall build only passes if every single budgeted metric passes — one failing metric fails the whole check.
+
+## Your task
+
+Write \`checkBudget(metrics, budgets)\`, where both are objects keyed by metric name, returning an array of \`{ metric, actual, budget, passed }\`. Then write \`overallBudgetStatus(results)\`, returning \`"pass"\` or \`"fail"\`:
+
+\`\`\`js
+checkBudget({ bundleSizeKb: 180, lcpMs: 3000 }, { bundleSizeKb: 170, lcpMs: 2500 })
+// → [{ metric: "bundleSizeKb", actual: 180, budget: 170, passed: false }, { metric: "lcpMs", actual: 3000, budget: 2500, passed: false }]
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function checkBudget(metrics, budgets) {
+  // return [{ metric, actual, budget, passed }] for every key in budgets
+}
+function overallBudgetStatus(results) {
+  // "pass" only if every result passed, otherwise "fail"
+}`,
+    solutionCode: `function checkBudget(metrics, budgets) {
+  return Object.keys(budgets).map((metric) => ({
+    metric,
+    actual: metrics[metric],
+    budget: budgets[metric],
+    passed: metrics[metric] <= budgets[metric],
+  }));
+}
+function overallBudgetStatus(results) {
+  return results.every((r) => r.passed) ? "pass" : "fail";
+}`,
+    testCases: [
+      {
+        input: 'checkBudget({ bundleSizeKb: 150 }, { bundleSizeKb: 170 })',
+        expected: '[{ metric: "bundleSizeKb", actual: 150, budget: 170, passed: true }]',
+        label: "A metric under its budget passes",
+      },
+      {
+        input: 'checkBudget({ bundleSizeKb: 180 }, { bundleSizeKb: 170 })',
+        expected: '[{ metric: "bundleSizeKb", actual: 180, budget: 170, passed: false }]',
+        label: "A metric over its budget fails",
+      },
+      {
+        input: 'overallBudgetStatus(checkBudget({ bundleSizeKb: 180, lcpMs: 2000 }, { bundleSizeKb: 170, lcpMs: 2500 }))',
+        expected: '"fail"',
+        label: "One failing metric fails the whole build, even if others pass",
+      },
+    ],
+    hints: [
+      "Iterate over budgets' keys, not metrics' keys — the budget defines which metrics are actually being gated.",
+      "passed is a plain <= comparison; nothing about it needs to be more clever than that.",
+      "overallBudgetStatus should reuse the passed field checkBudget already computed, not re-run any comparisons.",
+    ],
+    isPremium: true,
+    orderIndex: 67,
+  },
 ];
 
 // ── Interview questions (5 per collection, plus concept-linked top-ups) ────────
@@ -7837,6 +8277,406 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     difficulty: "hard",
     companies: ["Google", "Stripe"],
     orderIndex: 212,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "image-asset-optimization",
+    question: "Why doesn't compressing an image's file size alone guarantee it's optimized?",
+    answer:
+      "Compression only addresses one of three independent levers: format. An image can be maximally compressed for its format and still waste bandwidth if it's served at 4x the dimensions it will actually render at, or if the browser has no srcset menu to pick a smaller candidate for a smaller viewport. Format, sizing, and responsive delivery all have to be right together.",
+    difficulty: "easy",
+    companies: ["Google", "Shopify"],
+    orderIndex: 213,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "image-asset-optimization",
+    question: "When would you choose WebP over AVIF, given AVIF usually compresses better?",
+    answer:
+      "When broad, safe support matters more than squeezing out the last few percent of compression, or when the image needs animation — WebP's tooling and encoder support for animated images is more mature and consistent than AVIF's today. AVIF is the better default for static photographic content where maximum compression is the priority.",
+    difficulty: "medium",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 214,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "image-asset-optimization",
+    question: "How do srcset and sizes work together, and why do you need both?",
+    answer:
+      "srcset lists candidate image files with their real pixel widths; sizes tells the browser how wide the image will actually render at different viewport widths. The browser needs both to do the math — sizes gives it the target render width at the current viewport, and srcset gives it the menu of real file widths to pick the smallest sufficient one from. Without sizes, the browser has to guess the render width, usually assuming full viewport width, which defeats the purpose.",
+    difficulty: "medium",
+    companies: ["Amazon", "Stripe"],
+    orderIndex: 215,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "image-asset-optimization",
+    question: "What's the relationship between missing width/height on an image and layout shift?",
+    answer:
+      "Without explicit width/height (or an aspect-ratio), the browser doesn't know how much vertical space to reserve for the image before it loads, so surrounding content renders as if the image weren't there yet — then jumps down once the image arrives and its real dimensions are known. This is one of the most common real-world causes of a poor CLS score.",
+    difficulty: "medium",
+    companies: ["Google", "Netflix"],
+    orderIndex: 216,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "image-asset-optimization",
+    question: "Why does loading=\"lazy\" help page weight, and when is it the wrong choice?",
+    answer:
+      "It defers downloading off-screen images until the user scrolls near them, so a long page with dozens of images doesn't pay for all of them up front. It's the wrong choice for above-the-fold images — especially a likely LCP candidate — since deferring the very image the user sees first only delays it further and can hurt LCP instead of helping overall performance.",
+    difficulty: "medium",
+    companies: ["Meta", "Uber"],
+    orderIndex: 217,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "bundle-size-code-splitting",
+    question: "What decides whether a module ends up in a shared chunk versus a route's own chunk?",
+    answer:
+      "Purely how many separate entry points (routes, in the common case) import it. A module imported by more than one route graduates into a shared chunk so it's only downloaded once; a module imported by exactly one route stays local to that route's own chunk. It has nothing to do with the module's size or perceived importance.",
+    difficulty: "medium",
+    companies: ["Google", "Airbnb"],
+    orderIndex: 218,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "bundle-size-code-splitting",
+    question: "How does route-based code splitting differ from splitting a single heavy component with a dynamic import?",
+    answer:
+      "Route-based splitting happens automatically at a navigation boundary — visiting one route doesn't download another route's code. Splitting a single component (a rich text editor, a chart library) is the same underlying mechanism triggered manually at a component boundary instead, useful when one part of a route is disproportionately heavy and not needed until a specific interaction, like opening a modal.",
+    difficulty: "medium",
+    companies: ["Meta", "Stripe"],
+    orderIndex: 219,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "bundle-size-code-splitting",
+    question: "How would you use a bundle analyzer to find what's bloating a bundle?",
+    answer:
+      "A bundle analyzer renders each module as a box sized proportionally to its contribution to the final bundle, usually grouped by chunk. Scanning for an unexpectedly large box — a full utility library imported for one function, an icon set pulled in whole instead of per-icon — surfaces concrete, fixable bloat far faster than guessing from the file list alone.",
+    difficulty: "easy",
+    companies: ["Amazon", "Shopify"],
+    orderIndex: 220,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "bundle-size-code-splitting",
+    question: "Can over-splitting a bundle hurt performance? How?",
+    answer:
+      "Yes — every chunk is a separate network request, and each one carries its own overhead (HTTP request cost, and in HTTP/1.1 environments, real connection limits). Splitting so finely that dozens of tiny chunks load for one page can net out worse than one moderately-sized bundle, especially on higher-latency connections where per-request overhead dominates. Splitting is a tradeoff to tune, not a lever to maximize.",
+    difficulty: "hard",
+    companies: ["Netflix", "Google"],
+    orderIndex: 221,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "bundle-size-code-splitting",
+    question: "Why does Next.js's App Router split per route segment by default, without extra config?",
+    answer:
+      "Because the router already knows the full route tree and which segment's code a given navigation needs — it can generate a separate chunk per segment as part of the build without a developer manually drawing the split points, unlike a traditional SPA router where code splitting has to be wired up explicitly per route.",
+    difficulty: "medium",
+    companies: ["Vercel", "Meta"],
+    orderIndex: 222,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "resource-loading-render-blocking",
+    question: "What's the actual difference between async and defer on a script tag?",
+    answer:
+      "Both download in parallel with HTML parsing instead of blocking it immediately. async executes the moment its download finishes, whenever that happens to be — potentially interrupting parsing mid-stream. defer always waits until parsing has fully completed, and multiple defer scripts run in their original document order relative to each other; async scripts have no such ordering guarantee.",
+    difficulty: "medium",
+    companies: ["Google", "Amazon"],
+    orderIndex: 223,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "resource-loading-render-blocking",
+    question: "Why does preconnect help even though it doesn't fetch any actual resource?",
+    answer:
+      "Establishing a connection to a new origin (DNS lookup, TCP handshake, TLS negotiation) has real latency before the very first byte of any real request can even be sent. preconnect does that connection setup ahead of time, so when the actual request for a resource on that origin does fire, it skips straight to the request/response instead of paying the connection cost first.",
+    difficulty: "medium",
+    companies: ["Meta", "Cloudflare"],
+    orderIndex: 224,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "resource-loading-render-blocking",
+    question: "When would you reach for preload instead of just relying on the browser's normal resource discovery?",
+    answer:
+      "When a critical resource is discovered late by normal parsing — a font only referenced inside a CSS file, or an image set via a background-image rule the browser can't see until it's parsed the stylesheet. preload tells the browser about it immediately, from the HTML itself, so the fetch starts as early as possible instead of waiting for CSS parsing to reveal the need.",
+    difficulty: "medium",
+    companies: ["Airbnb", "Stripe"],
+    orderIndex: 225,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "resource-loading-render-blocking",
+    question: "Why does a <link rel=\"stylesheet\"> block rendering even though it isn't a script?",
+    answer:
+      "The browser can't safely paint anything until it knows the full set of styles that could apply — rendering with an incomplete stylesheet and then having to repaint once the rest arrives would produce a worse experience (a flash of unstyled or wrongly-styled content) than simply waiting. A media attribute that doesn't match the current context (like media=\"print\") is the one common escape hatch, since the browser knows that stylesheet doesn't apply to this render at all.",
+    difficulty: "medium",
+    companies: ["Google", "Netflix"],
+    orderIndex: 226,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "resource-loading-render-blocking",
+    question: "How would you decide which scripts on a real page should be async versus defer versus left blocking?",
+    answer:
+      "Leave blocking only what's genuinely required before first paint — usually nothing, if styles are handled separately. Use defer for scripts that need the full DOM or a specific execution order relative to each other (most app bootstrap code). Use async for scripts with no DOM dependency and no ordering requirement relative to other scripts, like independent analytics or ad tags.",
+    difficulty: "hard",
+    companies: ["Meta", "Uber"],
+    orderIndex: 227,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "core-web-vitals",
+    question: "Why does Google use the 75th percentile of real user data instead of an average or a lab test?",
+    answer:
+      "An average can hide a large slow-user population behind a handful of fast ones, and a single lab test only reflects one simulated device and network. The 75th percentile requires at least three out of every four real visits — across real devices and real networks — to meet the threshold, which is a much more honest bar for 'is this page actually fast for most people' than either alternative.",
+    difficulty: "hard",
+    companies: ["Google", "Shopify"],
+    orderIndex: 228,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "core-web-vitals",
+    question: "What replaced First Input Delay, and why?",
+    answer:
+      "Interaction to Next Paint (INP). FID only measured the delay before the browser started processing the very first interaction — it said nothing about how long that processing actually took, and nothing about any interaction after the first one. INP measures the full interaction-to-paint duration across every interaction in the visit, catching a page that's fine on the first click but janky by the fifth.",
+    difficulty: "medium",
+    companies: ["Google", "Meta"],
+    orderIndex: 229,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "core-web-vitals",
+    question: "What are the most common real causes of a poor CLS score?",
+    answer:
+      "Images or embeds with no reserved width/height (or aspect-ratio), causing surrounding content to jump once the real dimensions are known; web fonts that swap in and reflow text (FOIT/FOUT); and content — most often ads — injected above existing content after the initial layout has already settled.",
+    difficulty: "medium",
+    companies: ["Amazon", "Airbnb"],
+    orderIndex: 230,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "core-web-vitals",
+    question: "What's usually responsible for a slow LCP, and how would you diagnose which one it is on a real page?",
+    answer:
+      "The most common culprits are a slow initial server response, render-blocking CSS/JS delaying first paint, or the LCP resource itself (usually a hero image) being discovered late or not preloaded. The Performance panel's timeline shows exactly when the LCP element rendered relative to when its own resource started downloading — a big gap there points at discovery/priority, not raw download speed.",
+    difficulty: "hard",
+    companies: ["Google", "Netflix"],
+    orderIndex: 231,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "core-web-vitals",
+    question: "Is a page with excellent Core Web Vitals guaranteed to feel fast to use?",
+    answer:
+      "Not entirely — CWV measures three specific, well-chosen dimensions (load, responsiveness, stability), but a page could still feel slow for reasons outside those three, like a slow API response that leaves a spinner on screen well after LCP has fired, or content that's technically stable and responsive but poorly organized. CWV is a strong, standardized proxy for real experience, not an exhaustive measure of it.",
+    difficulty: "medium",
+    companies: ["Meta", "Stripe"],
+    orderIndex: 232,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "list-virtualization",
+    question: "Why does virtualization keep the DOM node count roughly constant regardless of list length?",
+    answer:
+      "Because only the rows currently within the viewport (plus a small overscan buffer) are ever mounted — the rest of the list simply doesn't exist as real DOM nodes at any given moment. A list of 100 rows and a list of 1,000,000 rows end up mounting a similar handful of rows at once; only which rows they are changes as the user scrolls.",
+    difficulty: "medium",
+    companies: ["Meta", "Google"],
+    orderIndex: 233,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "list-virtualization",
+    question: "What role does the spacer element play in a virtualized list?",
+    answer:
+      "It's sized to the full list's total height (totalRows × rowHeight in the fixed-height case), even though almost none of that height is filled with real rendered rows. It keeps the scrollbar's size and position behaving exactly as if every row were really mounted, while the actual visible rows are absolutely positioned inside it at their real offsets.",
+    difficulty: "medium",
+    companies: ["Airbnb", "Uber"],
+    orderIndex: 234,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "list-virtualization",
+    question: "Why is variable-height virtualization meaningfully harder than fixed-height?",
+    answer:
+      "Fixed-height virtualization can compute any row's position with a single multiplication (index × rowHeight). Variable-height rows break that — a row's position depends on the cumulative height of every row before it, which needs an offset cache (and usually a measurement pass, since heights often aren't known until content renders) instead of a constant-time formula.",
+    difficulty: "hard",
+    companies: ["Meta", "Netflix"],
+    orderIndex: 235,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "list-virtualization",
+    question: "What real UX and accessibility tradeoffs does virtualization introduce?",
+    answer:
+      "Browser find-in-page and screen readers generally expect content to actually exist in the DOM — a virtualized list's off-screen rows genuinely aren't there, so Ctrl+F won't find them and some assistive technology won't announce list length correctly without extra ARIA work. Scroll-to-index and deep-linking to a specific row also need custom logic, since the browser's native anchor-scrolling has nothing to scroll to until that row is mounted.",
+    difficulty: "hard",
+    companies: ["Google", "Amazon"],
+    orderIndex: 236,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "list-virtualization",
+    question: "How would you decide whether a given list actually needs virtualization?",
+    answer:
+      "By whether full rendering visibly hurts — typically somewhere in the low hundreds of rows and up, depending on row complexity. A 20-row list gains nothing from virtualization but inherits all of its added complexity (scroll-to-index, accessibility workarounds); the decision should be driven by measured jank, not a blanket rule to virtualize every list.",
+    difficulty: "medium",
+    companies: ["Stripe", "Shopify"],
+    orderIndex: 237,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "profiling-with-devtools",
+    question: "What's the difference between a function's self time and total time in a flame chart?",
+    answer:
+      "Total time is the function's duration including everything it called — its whole subtree. Self time is the function's duration excluding its children — the work it did itself, directly. A function can have huge total time and tiny self time if it's mostly a wrapper around slower children; the real bottleneck is found by self time, not total time.",
+    difficulty: "medium",
+    companies: ["Meta", "Google"],
+    orderIndex: 238,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "profiling-with-devtools",
+    question: "Why might the widest bar in a flame chart not be the actual bottleneck?",
+    answer:
+      "A wide bar reflects total time — how long that function's entire subtree took — which is often dominated by its children's work rather than its own. Chasing the widest bar can lead straight to a high-level orchestrating function that's doing almost no real work itself, while the genuine bottleneck sits several levels deeper with a much narrower-looking bar but high self time.",
+    difficulty: "medium",
+    companies: ["Amazon", "Airbnb"],
+    orderIndex: 239,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "profiling-with-devtools",
+    question: "What does the Performance panel's Bottom-Up view show that a single flame chart recording doesn't make obvious?",
+    answer:
+      "It aggregates self time for each function across every place it was called during the entire recording, not just within one call stack. A helper function called from a dozen different components might never be the widest bar in any single stack, yet its aggregate cost across all those calls could be the biggest single line item in the whole recording — exactly what Bottom-Up is built to surface.",
+    difficulty: "hard",
+    companies: ["Google", "Meta"],
+    orderIndex: 240,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "profiling-with-devtools",
+    question: "How does the React DevTools Profiler complement the generic Performance panel?",
+    answer:
+      "The generic Performance panel only sees function calls — it has no concept of a 'component.' The React Profiler adds that layer back, recording commits and showing which components rendered on each one along with an estimated render duration, making it far faster to spot 'this component re-rendered on every keystroke despite unchanged props' than reconstructing the same insight from a raw flame chart.",
+    difficulty: "medium",
+    companies: ["Meta", "Netflix"],
+    orderIndex: 241,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "profiling-with-devtools",
+    question: "Why is profiling a real, representative interaction more valuable than profiling a guess?",
+    answer:
+      "Performance problems are frequently non-obvious and non-intuitive — the function a developer assumes is slow is often not the one a recording actually flags. Recording the real interaction a user reported as slow, then reading the trace for the true self-time bottleneck, replaces guesswork with evidence and avoids optimizing code that was never the problem in the first place.",
+    difficulty: "medium",
+    companies: ["Google", "Stripe"],
+    orderIndex: 242,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "streaming-ssr-hydration",
+    question: "How does streaming SSR avoid one slow section holding up the entire page response?",
+    answer:
+      "The server sends the page shell — layout, nav, anything with no slow dependency — immediately, with a placeholder for any section wrapped in a Suspense boundary that isn't ready yet. Each slow section streams in separately, replacing its placeholder, the moment its own data resolves — so a single slow widget no longer blocks the fast parts of the page from showing up right away.",
+    difficulty: "medium",
+    companies: ["Meta", "Vercel"],
+    orderIndex: 243,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "streaming-ssr-hydration",
+    question: "Does a streamed chunk's arrival order affect where it ends up on the page? Why or why not?",
+    answer:
+      "No — each streamed chunk is tagged with the id of the placeholder it belongs to, which is fixed by the original shell layout. The browser slots each chunk into its already-reserved position rather than appending it wherever it happens to arrive, so a footer that resolves before the main content still renders in the footer's spot, not ahead of main content.",
+    difficulty: "medium",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 244,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "streaming-ssr-hydration",
+    question: "What is hydration actually doing to already-rendered server HTML?",
+    answer:
+      "React walks the existing, already-visible DOM tree the server produced and matches it up node-for-node against what a client-side render of the same tree would produce, attaching real event handlers and internal component state to the existing nodes — without throwing the DOM away and rebuilding it. This is why content is visible before it's interactive: paint happens first, hydration happens after.",
+    difficulty: "hard",
+    companies: ["Meta", "Google"],
+    orderIndex: 245,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "streaming-ssr-hydration",
+    question: "What commonly causes a hydration mismatch, and why can't React just silently fix it like a normal re-render?",
+    answer:
+      "Common causes: rendering something dependent on Date.now()/Math.random() differently between server and client, or reading browser-only globals (window, localStorage) during the server render, which the client then renders differently. React can't silently reconcile a mismatch the way a normal re-render diffs old vs. new — it has to detect that the assumed-matching subtree actually diverged, then recover, typically by discarding and re-rendering that section client-side, which is slower and can cause a visible flash.",
+    difficulty: "hard",
+    companies: ["Meta", "Netflix"],
+    orderIndex: 246,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "streaming-ssr-hydration",
+    question: "Why does streaming let hydration start earlier than it could with traditional SSR?",
+    answer:
+      "With traditional (non-streaming) SSR, the whole response has to arrive before the client has any HTML to hydrate at all. With streaming, each chunk can be hydrated as it arrives and its placeholder is replaced — the shell's fast sections can become interactive well before the slowest section has even finished loading, instead of the entire page waiting on the slowest common denominator.",
+    difficulty: "medium",
+    companies: ["Vercel", "Shopify"],
+    orderIndex: 247,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "performance-budgets",
+    question: "Why does performance tend to regress gradually rather than in one obvious jump?",
+    answer:
+      "No single change usually looks bad enough to block on its own — one more small dependency, a slightly heavier image, one extra icon library — each individually invisible. Without an enforced ceiling, there's no single moment any of these gets stopped, so the page just gets slower release over release with no clear point anyone could have caught it.",
+    difficulty: "easy",
+    companies: ["Google", "Shopify"],
+    orderIndex: 248,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "performance-budgets",
+    question: "Why does a budget only work as a hard CI gate rather than a dashboard someone checks periodically?",
+    answer:
+      "A dashboard that's merely monitored still lets regressions land — nothing actually stops a PR that crosses the line from merging, so drift continues one 'acceptable-looking' change at a time. A budget enforced in CI fails the build the same way a broken test would, which is the only mechanism that actually prevents the regression from shipping rather than just documenting it after the fact.",
+    difficulty: "medium",
+    companies: ["Meta", "Netflix"],
+    orderIndex: 249,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "performance-budgets",
+    question: "What's the advantage of comparing a build against its previous baseline, not just a fixed budget ceiling?",
+    answer:
+      "A fixed budget only fails once the absolute number crosses the line — it can miss a real, meaningful regression in a PR that started well under budget with room to spare. Comparing against the immediately previous build's baseline instead catches 'this specific PR alone grew the bundle by 15%,' which is a much more actionable, attributable signal for the PR under review, even before the fixed ceiling is actually crossed.",
+    difficulty: "hard",
+    companies: ["Google", "Airbnb"],
+    orderIndex: 250,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "performance-budgets",
+    question: "What typically gets budgeted, and why is bundle size the easiest to enforce mechanically?",
+    answer:
+      "Common targets: total JS bundle size (often per route), image payload weight, and the Core Web Vitals scores themselves. Bundle size is the easiest to gate mechanically because it's computed at build time with no real-user variability involved — unlike CWV metrics, which depend on real devices and networks and need real-user or lab measurement rather than a deterministic build-time number.",
+    difficulty: "medium",
+    companies: ["Vercel", "Stripe"],
+    orderIndex: 251,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "performance-budgets",
+    question: "Why does a budget check need a clear next step, not just a pass/fail result?",
+    answer:
+      "A failing check with no obvious fix just gets bypassed under deadline pressure — someone force-merges past it because there's no clear path to actually resolving it. Pairing every budget with an obvious remediation (split this chunk, defer this dependency, revisit this image) turns a failing check into a solvable problem instead of a blocker people learn to argue their way around.",
+    difficulty: "medium",
+    companies: ["Meta", "Amazon"],
+    orderIndex: 252,
   },
 ];
 
@@ -11907,6 +12747,551 @@ function lintTree(node, path) {
     ],
     isPremium: true,
     orderIndex: 58,
+  },
+  {
+    slug: "responsive-image-config-builder",
+    conceptSlug: "image-asset-optimization",
+    title: "Build a Responsive Image Config Builder",
+    description: `Extends the format/width picker into the full config a real \`<img>\` component needs — a single source, plus a complete \`srcset\` string.
+
+## The problem
+
+Picking a format and a single width is only half of a real responsive image — a production \`<img>\` needs a whole \`srcset\` listing every candidate width, so the browser can choose differently per device.
+
+## The idea
+
+Reuse the format and width pickers to build one recommended image config, then generate the full \`srcset\` attribute string across every available width in the same format.
+
+## Your task
+
+Write \`buildImageConfig(options)\`, reusing \`pickImageFormat\`/\`pickSrcsetWidth\`, returning \`{ format, width, src }\`. Then write \`buildSrcSet(baseUrl, format, availableWidths)\`, returning the full \`srcset\` string:
+
+\`\`\`js
+buildSrcSet("/img/hero", "avif", [320, 640, 960])
+// → "/img/hero?w=320&fmt=avif 320w, /img/hero?w=640&fmt=avif 640w, /img/hero?w=960&fmt=avif 960w"
+\`\`\``,
+    starterCode: `function pickImageFormat({ hasTransparency, isPhoto, needsAnimation }) {
+  // same as the Challenge
+}
+function pickSrcsetWidth(containerWidth, dpr, availableWidths) {
+  // same as the Challenge
+}
+function buildImageConfig({ hasTransparency, isPhoto, needsAnimation, containerWidth, dpr, availableWidths, baseUrl }) {
+  // return { format, width, src }
+}
+function buildSrcSet(baseUrl, format, availableWidths) {
+  // return the full srcset attribute string
+}`,
+    solutionCode: `function pickImageFormat({ hasTransparency, isPhoto, needsAnimation }) {
+  if (needsAnimation) return "webp";
+  if (hasTransparency) return "webp";
+  if (isPhoto) return "avif";
+  return "webp";
+}
+function pickSrcsetWidth(containerWidth, dpr, availableWidths) {
+  const target = containerWidth * dpr;
+  const sorted = [...availableWidths].sort((a, b) => a - b);
+  const fit = sorted.find((w) => w >= target);
+  return fit !== undefined ? fit : sorted[sorted.length - 1];
+}
+function buildImageConfig({ hasTransparency, isPhoto, needsAnimation, containerWidth, dpr, availableWidths, baseUrl }) {
+  const format = pickImageFormat({ hasTransparency, isPhoto, needsAnimation });
+  const width = pickSrcsetWidth(containerWidth, dpr, availableWidths);
+  return { format, width, src: \`\${baseUrl}?w=\${width}&fmt=\${format}\` };
+}
+function buildSrcSet(baseUrl, format, availableWidths) {
+  return availableWidths.map((w) => \`\${baseUrl}?w=\${w}&fmt=\${format} \${w}w\`).join(", ");
+}`,
+    testCases: [
+      {
+        input: 'buildImageConfig({ hasTransparency: false, isPhoto: true, needsAnimation: false, containerWidth: 400, dpr: 2, availableWidths: [320,640,960,1280], baseUrl: "/img/hero" })',
+        expected: '{ format: "avif", width: 960, src: "/img/hero?w=960&fmt=avif" }',
+        label: "buildImageConfig combines format and width into one config",
+      },
+      {
+        input: 'buildSrcSet("/img/hero", "avif", [320,640,960])',
+        expected: '"/img/hero?w=320&fmt=avif 320w, /img/hero?w=640&fmt=avif 640w, /img/hero?w=960&fmt=avif 960w"',
+        label: "buildSrcSet produces the full srcset string across every width",
+      },
+    ],
+    orderIndex: 1,
+  },
+  {
+    slug: "chunk-size-report-builder",
+    conceptSlug: "bundle-size-code-splitting",
+    title: "Build a Chunk Size Report",
+    description: `Extends the shared/route chunk splitter with real byte sizes — the report a bundle analyzer actually shows.
+
+## The problem
+
+Knowing *which* modules are shared is only useful once it's tied to actual byte weight — a shared chunk with three tiny modules matters far less than a route chunk with one enormous one.
+
+## The idea
+
+Reuse the chunk-splitting logic, then look up each module's size and sum it per chunk, producing a byte total for the shared chunk and for every route's own chunk.
+
+## Your task
+
+Write \`computeChunkSizes(routeModules, moduleSizes)\`, reusing \`splitChunks\`, returning \`{ shared: { modules, totalBytes }, routes: { [route]: { modules, totalBytes } } }\`:
+
+\`\`\`js
+computeChunkSizes(
+  { "/home": ["react", "home-page"], "/about": ["react", "about-page"] },
+  { react: 100, "home-page": 20, "about-page": 15 }
+)
+// → { shared: { modules: ["react"], totalBytes: 100 }, routes: { "/home": { modules: ["home-page"], totalBytes: 20 }, "/about": { modules: ["about-page"], totalBytes: 15 } } }
+\`\`\``,
+    starterCode: `function splitChunks(routeModules) {
+  // same as the Challenge
+}
+function computeChunkSizes(routeModules, moduleSizes) {
+  // reuse splitChunks, then attach a totalBytes sum to the shared chunk and each route chunk
+}`,
+    solutionCode: `function splitChunks(routeModules) {
+  const counts = new Map();
+  for (const route in routeModules) {
+    for (const mod of routeModules[route]) {
+      counts.set(mod, (counts.get(mod) || 0) + 1);
+    }
+  }
+  const shared = [];
+  for (const route in routeModules) {
+    for (const mod of routeModules[route]) {
+      if (counts.get(mod) > 1 && !shared.includes(mod)) shared.push(mod);
+    }
+  }
+  const routes = {};
+  for (const route in routeModules) {
+    routes[route] = routeModules[route].filter((m) => !shared.includes(m));
+  }
+  return { shared, routes };
+}
+function computeChunkSizes(routeModules, moduleSizes) {
+  const { shared, routes } = splitChunks(routeModules);
+  const sizeOf = (mods) => mods.reduce((sum, m) => sum + (moduleSizes[m] || 0), 0);
+  const result = { shared: { modules: shared, totalBytes: sizeOf(shared) }, routes: {} };
+  for (const route in routes) {
+    result.routes[route] = { modules: routes[route], totalBytes: sizeOf(routes[route]) };
+  }
+  return result;
+}`,
+    testCases: [
+      {
+        input: 'computeChunkSizes({ "/home": ["react","home-page"], "/about": ["react","about-page"] }, { react: 100, "home-page": 20, "about-page": 15 })',
+        expected: '{ shared: { modules: ["react"], totalBytes: 100 }, routes: { "/home": { modules: ["home-page"], totalBytes: 20 }, "/about": { modules: ["about-page"], totalBytes: 15 } } }',
+        label: "computeChunkSizes attaches byte totals to the shared chunk and each route chunk",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "resource-load-strategy-planner",
+    conceptSlug: "resource-loading-render-blocking",
+    title: "Build a Resource Load Strategy Planner",
+    description: `Extends single-resource classification into a full loading plan — the report a build tool would use to flag what's on the critical path.
+
+## The problem
+
+Classifying one resource at a time doesn't answer the actual question a team asks before optimizing a page: across everything this page loads, what's actually blocking, what's deferred, and what's just a background hint?
+
+## The idea
+
+Reuse the classifier across a whole resource list, grouping every resource's id into the bucket matching its strategy.
+
+## Your task
+
+Write \`groupResourcesByLoadStrategy(resources)\`, reusing \`classifyResource\`, returning \`{ blocking, async, deferred, background }\` — each an array of resource ids:
+
+\`\`\`js
+groupResourcesByLoadStrategy([
+  { id: "a", tag: "script", duration: 100 },
+  { id: "b", tag: "script", async: true, duration: 50 },
+  { id: "c", tag: "link", rel: "stylesheet", duration: 30 },
+  { id: "d", tag: "link", rel: "preload" },
+])
+// → { blocking: ["a","c"], async: ["b"], deferred: [], background: ["d"] }
+\`\`\``,
+    starterCode: `function classifyResource(resource) {
+  // same as the Challenge
+}
+function groupResourcesByLoadStrategy(resources) {
+  // return { blocking, async, deferred, background }, each an array of ids
+}`,
+    solutionCode: `function classifyResource(resource) {
+  if (resource.tag === "link") {
+    if (resource.rel === "stylesheet") return "render-blocking";
+    return resource.rel;
+  }
+  if (resource.async) return "async";
+  if (resource.defer) return "defer";
+  return "render-blocking";
+}
+function groupResourcesByLoadStrategy(resources) {
+  const groups = { blocking: [], async: [], deferred: [], background: [] };
+  for (const r of resources) {
+    const cls = classifyResource(r);
+    if (cls === "render-blocking") groups.blocking.push(r.id);
+    else if (cls === "async") groups.async.push(r.id);
+    else if (cls === "defer") groups.deferred.push(r.id);
+    else groups.background.push(r.id);
+  }
+  return groups;
+}`,
+    testCases: [
+      {
+        input: 'groupResourcesByLoadStrategy([{id:"a",tag:"script",duration:100},{id:"b",tag:"script",async:true,duration:50},{id:"c",tag:"link",rel:"stylesheet",duration:30},{id:"d",tag:"link",rel:"preload"}])',
+        expected: '{ blocking: ["a","c"], async: ["b"], deferred: [], background: ["d"] }',
+        label: "groupResourcesByLoadStrategy buckets every resource id by its classification",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "core-web-vitals-page-auditor",
+    conceptSlug: "core-web-vitals",
+    title: "Build a Core Web Vitals Page Auditor",
+    description: `Extends single-snapshot classification into the real methodology: rating a page off the 75th percentile across many real visits, not one sample.
+
+## The problem
+
+A single LCP/INP/CLS reading only describes one visit. Google's actual Core Web Vitals score is the 75th percentile across many real user sessions — a page has to clear the bar for at least three out of every four real visits, not just its best one.
+
+## The idea
+
+Compute the 75th percentile of each metric across a set of samples, then classify and rate the page off those percentile values, reusing the classifier from the Challenge.
+
+## Your task
+
+Write \`percentile(values, p)\` (nearest-rank: sort ascending, index \`Math.ceil((p/100)*length)-1\`), then \`auditPage(samples)\`, where \`samples\` is an array of \`{ LCP, INP, CLS }\` readings:
+
+\`\`\`js
+auditPage([
+  { LCP: 2000, INP: 100, CLS: 0.02 },
+  { LCP: 2400, INP: 150, CLS: 0.05 },
+  { LCP: 4800, INP: 600, CLS: 0.3 },
+  { LCP: 2600, INP: 180, CLS: 0.08 },
+])
+// → { LCP: { value: 2600, rating: "needs-improvement" }, INP: { value: 180, rating: "good" }, CLS: { value: 0.08, rating: "good" }, overall: "needs-improvement" }
+\`\`\``,
+    starterCode: `function classifyMetric(metric, value) {
+  // same as the Challenge
+}
+function overallPageRating(metrics) {
+  // same as the Challenge
+}
+function percentile(values, p) {
+  // nearest-rank percentile: sort ascending, index = ceil((p/100) * length) - 1
+}
+function auditPage(samples) {
+  // compute the p75 of LCP/INP/CLS across samples, classify each, and rate the page overall
+}`,
+    solutionCode: `function classifyMetric(metric, value) {
+  const thresholds = {
+    LCP: { good: 2500, poor: 4000 },
+    INP: { good: 200, poor: 500 },
+    CLS: { good: 0.1, poor: 0.25 },
+  };
+  const t = thresholds[metric];
+  if (value <= t.good) return "good";
+  if (value > t.poor) return "poor";
+  return "needs-improvement";
+}
+function overallPageRating(metrics) {
+  const ratings = Object.keys(metrics).map((m) => classifyMetric(m, metrics[m]));
+  if (ratings.includes("poor")) return "poor";
+  if (ratings.includes("needs-improvement")) return "needs-improvement";
+  return "good";
+}
+function percentile(values, p) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = Math.ceil((p / 100) * sorted.length) - 1;
+  return sorted[Math.max(0, Math.min(idx, sorted.length - 1))];
+}
+function auditPage(samples) {
+  const metrics = ["LCP", "INP", "CLS"];
+  const result = {};
+  for (const m of metrics) {
+    const value = percentile(samples.map((s) => s[m]), 75);
+    result[m] = { value, rating: classifyMetric(m, value) };
+  }
+  result.overall = overallPageRating({ LCP: result.LCP.value, INP: result.INP.value, CLS: result.CLS.value });
+  return result;
+}`,
+    testCases: [
+      { input: "percentile([4000,1000,3000,2000], 75)", expected: "3000", label: "percentile computes the p75 value via nearest-rank" },
+      {
+        input: 'auditPage([{LCP:2000,INP:100,CLS:0.02},{LCP:2400,INP:150,CLS:0.05},{LCP:4800,INP:600,CLS:0.3},{LCP:2600,INP:180,CLS:0.08}])',
+        expected: '{ LCP: { value: 2600, rating: "needs-improvement" }, INP: { value: 180, rating: "good" }, CLS: { value: 0.08, rating: "good" }, overall: "needs-improvement" }',
+        label: "auditPage rates the page off the p75 of each metric, matching real CWV methodology",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "virtual-list-controller",
+    conceptSlug: "list-virtualization",
+    title: "Build a Virtual List Controller",
+    description: `Extends the windowing math into a stateful controller with scroll-to-index support — the shape a real virtualized list component wraps.
+
+## The problem
+
+The raw windowing formula answers "what's visible right now," but a real component also needs the reverse question: to jump programmatically to a given row (a "scroll to item 500" button, for instance), what scroll position gets it there?
+
+## The idea
+
+Wrap the same windowing math in a small object configured once with the list's fixed dimensions, exposing both directions: current scroll position → visible range, and target row index → required scroll position.
+
+## Your task
+
+Write \`createVirtualList({ rowHeight, containerHeight, totalRows, overscan })\`, returning \`{ getVisibleRange(scrollTop), scrollTopForIndex(index) }\`:
+
+\`\`\`js
+const vl = createVirtualList({ rowHeight: 40, containerHeight: 400, totalRows: 10000, overscan: 3 });
+vl.getVisibleRange(0) // { start: 0, end: 13 }
+vl.scrollTopForIndex(50) // 2000
+\`\`\``,
+    starterCode: `function createVirtualList({ rowHeight, containerHeight, totalRows, overscan }) {
+  // return { getVisibleRange(scrollTop), scrollTopForIndex(index) }
+}`,
+    solutionCode: `function createVirtualList({ rowHeight, containerHeight, totalRows, overscan }) {
+  return {
+    getVisibleRange(scrollTop) {
+      const first = Math.floor(scrollTop / rowHeight);
+      const last = Math.floor((scrollTop + containerHeight) / rowHeight);
+      const start = Math.max(0, first - overscan);
+      const end = Math.min(totalRows - 1, last + overscan);
+      return { start, end };
+    },
+    scrollTopForIndex(index) {
+      return index * rowHeight;
+    },
+  };
+}`,
+    testCases: [
+      {
+        input: 'createVirtualList({ rowHeight: 40, containerHeight: 400, totalRows: 10000, overscan: 3 }).getVisibleRange(0)',
+        expected: "{ start: 0, end: 13 }",
+        label: "getVisibleRange reuses the same windowing math as the Challenge",
+      },
+      {
+        input: 'createVirtualList({ rowHeight: 40, containerHeight: 400, totalRows: 10000, overscan: 3 }).scrollTopForIndex(50)',
+        expected: "2000",
+        label: "scrollTopForIndex computes the scroll position needed to bring a given row to the top",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "aggregate-bottleneck-finder",
+    conceptSlug: "profiling-with-devtools",
+    title: "Build an Aggregate Bottleneck Finder",
+    description: `Extends single-trace bottleneck-finding into DevTools' real "Bottom-Up" view: aggregating self time for a function across many recorded traces, not just one.
+
+## The problem
+
+A function that costs 20ms here and 25ms there across a dozen different call stacks might never be the single widest bar in any one flame chart — but its total cost across the whole session could dwarf anything that is.
+
+## The idea
+
+Walk every trace, summing self time per function name (not per tree position), then find whichever name has the highest aggregate — the real target the Bottom-Up view is built to surface.
+
+## Your task
+
+Write \`aggregateSelfTime(traces)\`, returning a map of function name to total self time across all traces, and \`findTopAggregateBottleneck(traces)\`, returning the name with the highest aggregate:
+
+\`\`\`js
+const traces = [
+  { name: "a", selfTime: 5, children: [{ name: "format", selfTime: 20, children: [] }] },
+  { name: "b", selfTime: 5, children: [{ name: "format", selfTime: 25, children: [] }, { name: "render", selfTime: 10, children: [] }] },
+];
+aggregateSelfTime(traces) // { a: 5, format: 45, b: 5, render: 10 }
+findTopAggregateBottleneck(traces) // "format"
+\`\`\``,
+    starterCode: `function aggregateSelfTime(traces) {
+  // sum selfTime per function name, walking every trace's whole tree
+}
+function findTopAggregateBottleneck(traces) {
+  // the name with the highest total in aggregateSelfTime(traces)
+}`,
+    solutionCode: `function aggregateSelfTime(traces) {
+  const totals = {};
+  function walk(n) {
+    totals[n.name] = (totals[n.name] || 0) + n.selfTime;
+    (n.children || []).forEach(walk);
+  }
+  traces.forEach(walk);
+  return totals;
+}
+function findTopAggregateBottleneck(traces) {
+  const totals = aggregateSelfTime(traces);
+  let bestName = null;
+  let bestValue = -Infinity;
+  for (const name in totals) {
+    if (totals[name] > bestValue) {
+      bestValue = totals[name];
+      bestName = name;
+    }
+  }
+  return bestName;
+}`,
+    testCases: [
+      {
+        input: '[{name:"a",selfTime:5,children:[{name:"format",selfTime:20,children:[]}]},{name:"b",selfTime:5,children:[{name:"format",selfTime:25,children:[]},{name:"render",selfTime:10,children:[]}]}]',
+        expected: '{ a: 5, format: 45, b: 5, render: 10 }',
+        label: "aggregateSelfTime sums selfTime for a repeated function name across separate traces",
+      },
+      {
+        input: "the same traces",
+        expected: '"format"',
+        label: "findTopAggregateBottleneck picks the highest aggregate, not the highest single-node selfTime",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "streaming-hydration-timeline-simulator",
+    conceptSlug: "streaming-ssr-hydration",
+    title: "Build a Streaming Hydration Timeline Simulator",
+    description: `Extends shell-position rendering into a full timeline: progressive snapshots as chunks arrive, plus a hydration mismatch check against what the client expects.
+
+## The problem
+
+Understanding one snapshot in time is a start, but a real streaming page changes over the course of several arrivals — and once everything has streamed in, the client still has to successfully hydrate it, which can fail if server and client disagree on what was rendered.
+
+## The idea
+
+Replay the arrival sequence one chunk at a time, recording a snapshot after each arrival, then separately check the final server-rendered order against what the client expects to hydrate.
+
+## Your task
+
+Write \`runStreamingTimeline(shellOrder, arrivalSequence, clientHydrationIds)\`, reusing \`renderedContentAt\` and a mismatch-finder, returning \`{ snapshots, finalOrder, hydrationMismatchIndex }\`:
+
+\`\`\`js
+runStreamingTimeline(
+  ["header", "sidebar", "main", "footer"],
+  ["footer", "header", "main", "sidebar"],
+  ["header", "sidebar", "main", "footer"]
+)
+// → { snapshots: [...4 progressive snapshots], finalOrder: ["header","sidebar","main","footer"], hydrationMismatchIndex: -1 }
+\`\`\``,
+    starterCode: `function renderedContentAt(shellOrder, arrivedIds) {
+  // same as the Challenge
+}
+function findHydrationMismatch(serverIds, clientIds) {
+  // return the first index where serverIds and clientIds differ, or -1 if none
+}
+function runStreamingTimeline(shellOrder, arrivalSequence, clientHydrationIds) {
+  // return { snapshots, finalOrder, hydrationMismatchIndex }
+}`,
+    solutionCode: `function renderedContentAt(shellOrder, arrivedIds) {
+  return shellOrder.map((id) => (arrivedIds.includes(id) ? id : "skeleton"));
+}
+function findHydrationMismatch(serverIds, clientIds) {
+  const len = Math.max(serverIds.length, clientIds.length);
+  for (let i = 0; i < len; i++) {
+    if (serverIds[i] !== clientIds[i]) return i;
+  }
+  return -1;
+}
+function runStreamingTimeline(shellOrder, arrivalSequence, clientHydrationIds) {
+  const snapshots = arrivalSequence.map((_, i) => renderedContentAt(shellOrder, arrivalSequence.slice(0, i + 1)));
+  return {
+    snapshots,
+    finalOrder: shellOrder,
+    hydrationMismatchIndex: findHydrationMismatch(shellOrder, clientHydrationIds),
+  };
+}`,
+    testCases: [
+      {
+        input: 'runStreamingTimeline(["header","sidebar","main","footer"], ["footer","header","main","sidebar"], ["header","sidebar","main","footer"]).snapshots',
+        expected: '[["skeleton","skeleton","skeleton","footer"],["header","skeleton","skeleton","footer"],["header","skeleton","main","footer"],["header","sidebar","main","footer"]]',
+        label: "snapshots show progressively more content filled in as each chunk arrives",
+      },
+      {
+        input: "the same call's hydrationMismatchIndex",
+        expected: "-1",
+        label: "No hydration mismatch when the client's ids match the shell order exactly",
+      },
+      {
+        input: 'runStreamingTimeline(["header","sidebar","main","footer"], ["footer","header","main","sidebar"], ["header","wrong","main","footer"]).hydrationMismatchIndex',
+        expected: "1",
+        label: "A client id that actually diverges from the shell order is caught at its exact index",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "budget-regression-reporter",
+    conceptSlug: "performance-budgets",
+    title: "Build a Budget Regression Reporter",
+    description: `Extends the pass/fail budget check into a CI-bot-style report: how much did each metric change versus the last build, and did any of that change cause a new failure?
+
+## The problem
+
+A flat pass/fail check doesn't tell a reviewer *why* something failed — a bundle that grew 15% since the last build and now exceeds budget is a much more actionable message than just "failed."
+
+## The idea
+
+Reuse the budget check for both the current and baseline builds, then compute the percentage change per metric and flag a **regression** specifically when the current build fails a budget that the baseline build had been passing.
+
+## Your task
+
+Write \`compareToBaseline(current, baseline, budgets)\`, reusing \`checkBudget\`, returning an array of \`{ metric, current, baseline, deltaPercent, passed, regressed }\` (deltaPercent rounded to 1 decimal):
+
+\`\`\`js
+compareToBaseline({ bundleSizeKb: 190 }, { bundleSizeKb: 150 }, { bundleSizeKb: 170 })
+// → [{ metric: "bundleSizeKb", current: 190, baseline: 150, deltaPercent: 26.7, passed: false, regressed: true }]
+\`\`\``,
+    starterCode: `function checkBudget(metrics, budgets) {
+  // same as the Challenge
+}
+function compareToBaseline(current, baseline, budgets) {
+  // return [{ metric, current, baseline, deltaPercent, passed, regressed }]
+}`,
+    solutionCode: `function checkBudget(metrics, budgets) {
+  return Object.keys(budgets).map((metric) => ({
+    metric,
+    actual: metrics[metric],
+    budget: budgets[metric],
+    passed: metrics[metric] <= budgets[metric],
+  }));
+}
+function compareToBaseline(current, baseline, budgets) {
+  const results = checkBudget(current, budgets);
+  const baselineResults = checkBudget(baseline, budgets);
+  return results.map((r, i) => {
+    const baselineVal = baselineResults[i].actual;
+    const deltaPercent = baselineVal === 0 ? 0 : Math.round(((r.actual - baselineVal) / baselineVal) * 1000) / 10;
+    return {
+      metric: r.metric,
+      current: r.actual,
+      baseline: baselineVal,
+      deltaPercent,
+      passed: r.passed,
+      regressed: !r.passed && baselineResults[i].passed,
+    };
+  });
+}`,
+    testCases: [
+      {
+        input: 'compareToBaseline({ bundleSizeKb: 190 }, { bundleSizeKb: 150 }, { bundleSizeKb: 170 })',
+        expected: '[{ metric: "bundleSizeKb", current: 190, baseline: 150, deltaPercent: 26.7, passed: false, regressed: true }]',
+        label: "A build that grew past budget after a passing baseline is flagged as a regression",
+      },
+      {
+        input: 'compareToBaseline({ bundleSizeKb: 160 }, { bundleSizeKb: 180 }, { bundleSizeKb: 170 })',
+        expected: '[{ metric: "bundleSizeKb", current: 160, baseline: 180, deltaPercent: -11.1, passed: true, regressed: false }]',
+        label: "An improvement shows a negative deltaPercent and is never a regression",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
   },
 ];
 

@@ -1,0 +1,37 @@
+---
+title: "Core Web Vitals"
+description: "Measure and optimize LCP, INP, and CLS — Google's metrics for real-world page experience and search ranking."
+category: "performance"
+difficulty: "intermediate"
+order: 4
+whatsHappening: "Core Web Vitals are three specific, standardized metrics Google measures from real users' browsers (not a lab simulation) to judge how a page actually feels to use: Largest Contentful Paint (LCP) measures how long the biggest visible element takes to render, Interaction to Next Paint (INP) measures how responsive the page is to clicks/taps/keypresses throughout the whole visit, and Cumulative Layout Shift (CLS) measures how much visible content unexpectedly jumps around. Each metric has published thresholds — good, needs improvement, poor — and because real users have wildly different devices and networks, Google doesn't judge a page by its best moment; it uses the 75th percentile across real visits, meaning at least 3 out of 4 real visits have to be that good or better."
+keyInsight: "The 75th-percentile rule means a page isn't 'fast' because it loaded fast once on a fast laptop on fast wifi — it's fast only if the slower quarter of real visits (older phones, worse networks) still clear the threshold. Optimizing for your own dev machine tells you almost nothing about your actual CWV score."
+memoryHook: "LCP asks 'when did the big thing show up,' INP asks 'did clicking anything feel instant,' CLS asks 'did anything jump while I was reading' — load, response, stability."
+inRealLife: "Like judging a restaurant not by its best five-star review but by whether the typical Tuesday-night table (not the empty-Monday-lunch table) gets served in reasonable time — the p75 rule is judging the normal-to-slightly-bad experience, not the best case."
+---
+
+## The three metrics
+
+| Metric | What it measures | Good | Poor |
+|---|---|---|---|
+| LCP (Largest Contentful Paint) | Time until the biggest visible element renders | ≤ 2.5s | > 4.0s |
+| INP (Interaction to Next Paint) | Delay between an interaction and the next visual update | ≤ 200ms | > 500ms |
+| CLS (Cumulative Layout Shift) | Sum of unexpected layout shift scores during the page's lifetime | ≤ 0.1 | > 0.25 |
+
+Values strictly between "good" and "poor" fall into a middle "needs improvement" bucket.
+
+## LCP: what usually causes it to be slow
+
+The largest element is often a hero image, a background image applied via CSS, or a large block of text. Common LCP killers: the image isn't preloaded so the browser discovers it late; render-blocking CSS/JS delays the whole page's first paint; the server itself is slow to respond with the initial HTML.
+
+## INP: replacing First Input Delay
+
+INP superseded an older metric (First Input Delay) because FID only measured the delay before an interaction *started* processing — INP measures the entire round trip from interaction to the next paint, across every interaction during the visit, not just the very first one. A page that feels fine on the first click but janky on the fifth now gets penalized correctly.
+
+## CLS: why it's cumulative, not just "did something move"
+
+CLS sums up every unexpected shift's score across the whole page lifetime, not just the worst single jump. An image with no reserved `width`/`height`, a web font that swaps in and reflows text, or an ad slot that loads late and pushes content down are the most common causes — all fixed the same way: reserve the space up front before the content that will fill it has actually loaded.
+
+## Why "real user" measurement, not a lab test
+
+A lab test (like a single Lighthouse run) measures one simulated device on one simulated network. Core Web Vitals are field metrics instead — collected from real visits on real devices and networks — which is why the 75th-percentile rule matters: it has to hold up across a real, messy distribution of conditions, not just the reviewer's own laptop. That field data can come from more than one source: Google publishes the Chrome User Experience Report (CrUX), an aggregated public dataset that powers tools like PageSpeed Insights and Search Console, but any site can also collect these same metrics directly from its own visitors with first-party RUM (the `web-vitals` JS library reporting to your own analytics) — the 75th-percentile methodology applies the same way to either source.

@@ -1943,6 +1943,194 @@ const MINI_A11Y_LINTER_TESTS: SandboxTest[] = [
   },
 ];
 
+const PICK_IMAGE_FORMAT_AND_SIZE_TESTS: SandboxTest[] = [
+  {
+    label: "An opaque photo picks AVIF for the best compression",
+    source: `
+      assert(typeof pickImageFormat === "function", "pickImageFormat is not defined");
+      assertEqual(pickImageFormat({ hasTransparency: false, isPhoto: true, needsAnimation: false }), "avif");
+    `,
+  },
+  {
+    label: "A transparent graphic picks WebP",
+    source: `assertEqual(pickImageFormat({ hasTransparency: true, isPhoto: false, needsAnimation: false }), "webp");`,
+  },
+  {
+    label: "800px target (400 x 2 dpr) picks the smallest width that still covers it, 960",
+    source: `
+      assert(typeof pickSrcsetWidth === "function", "pickSrcsetWidth is not defined");
+      assertEqual(pickSrcsetWidth(400, 2, [320, 640, 960, 1280]), 960);
+    `,
+  },
+  {
+    label: "When no candidate is big enough, fall back to the largest available",
+    source: `assertEqual(pickSrcsetWidth(1000, 3, [320, 640, 960]), 960);`,
+  },
+];
+
+const SPLIT_SHARED_CHUNKS_TESTS: SandboxTest[] = [
+  {
+    label: "A module used by three routes is shared; one used by a single route is not",
+    source: `
+      assert(typeof splitChunks === "function", "splitChunks is not defined");
+      assertEqual(
+        splitChunks({ "/a": ["react", "a1"], "/b": ["react", "b1"], "/c": ["react", "utils", "c1"] }),
+        { shared: ["react"], routes: { "/a": ["a1"], "/b": ["b1"], "/c": ["utils", "c1"] } }
+      );
+    `,
+  },
+  {
+    label: "Two modules shared across two routes both end up in the shared chunk",
+    source: `
+      assertEqual(
+        splitChunks({ "/home": ["react", "home-page", "utils"], "/about": ["react", "about-page", "utils"] }),
+        { shared: ["react", "utils"], routes: { "/home": ["home-page"], "/about": ["about-page"] } }
+      );
+    `,
+  },
+];
+
+const CLASSIFY_RESOURCE_LOADING_STRATEGY_TESTS: SandboxTest[] = [
+  {
+    label: "A plain script with no async/defer blocks rendering",
+    source: `
+      assert(typeof classifyResource === "function", "classifyResource is not defined");
+      assertEqual(classifyResource({ tag: "script" }), "render-blocking");
+    `,
+  },
+  {
+    label: "A deferred script does not block rendering",
+    source: `assertEqual(classifyResource({ tag: "script", defer: true }), "defer");`,
+  },
+  {
+    label: "A preconnect hint is its own strategy, not a blocker",
+    source: `assertEqual(classifyResource({ tag: "link", rel: "preconnect" }), "preconnect");`,
+  },
+  {
+    label: "totalParseBlockingTime sums only the render-blocking resources' durations",
+    source: `
+      assert(typeof totalParseBlockingTime === "function", "totalParseBlockingTime is not defined");
+      assertEqual(
+        totalParseBlockingTime([
+          { tag: "script", duration: 100 },
+          { tag: "script", async: true, duration: 50 },
+          { tag: "link", rel: "stylesheet", duration: 30 },
+        ]),
+        130
+      );
+    `,
+  },
+];
+
+const RATE_CORE_WEB_VITALS_TESTS: SandboxTest[] = [
+  {
+    label: "LCP between 2500 and 4000ms is needs-improvement",
+    source: `
+      assert(typeof classifyMetric === "function", "classifyMetric is not defined");
+      assertEqual(classifyMetric("LCP", 3000), "needs-improvement");
+    `,
+  },
+  {
+    label: "CLS over 0.25 is poor",
+    source: `assertEqual(classifyMetric("CLS", 0.3), "poor");`,
+  },
+  {
+    label: "All three good metrics rate the page good",
+    source: `
+      assert(typeof overallPageRating === "function", "overallPageRating is not defined");
+      assertEqual(overallPageRating({ LCP: 2000, INP: 150, CLS: 0.05 }), "good");
+    `,
+  },
+  {
+    label: "A single poor metric makes the whole page poor",
+    source: `assertEqual(overallPageRating({ LCP: 4500, INP: 150, CLS: 0.05 }), "poor");`,
+  },
+];
+
+const FIND_FLAME_CHART_BOTTLENECK_TESTS: SandboxTest[] = [
+  {
+    label: "totalTime sums selfTime across the whole tree",
+    source: `
+      assert(typeof totalTime === "function", "totalTime is not defined");
+      const trace = {
+        name: "render", selfTime: 10,
+        children: [
+          { name: "computeList", selfTime: 200, children: [] },
+          { name: "paint", selfTime: 5, children: [{ name: "reflow", selfTime: 15, children: [] }] },
+        ],
+      };
+      assertEqual(totalTime(trace), 230);
+    `,
+  },
+  {
+    label: "findBottleneck finds the highest selfTime anywhere in the tree, not just at the top level",
+    source: `
+      assert(typeof findBottleneck === "function", "findBottleneck is not defined");
+      const trace = {
+        name: "render", selfTime: 10,
+        children: [
+          { name: "computeList", selfTime: 200, children: [] },
+          { name: "paint", selfTime: 5, children: [{ name: "reflow", selfTime: 15, children: [] }] },
+        ],
+      };
+      assertEqual(findBottleneck(trace), "computeList");
+    `,
+  },
+];
+
+const RENDER_STREAMED_CONTENT_ORDER_TESTS: SandboxTest[] = [
+  {
+    label: "Content keeps its shell position regardless of arrival order",
+    source: `
+      assert(typeof renderedContentAt === "function", "renderedContentAt is not defined");
+      assertEqual(
+        renderedContentAt(["header", "sidebar", "main", "footer"], ["footer", "header"]),
+        ["header", "skeleton", "skeleton", "footer"]
+      );
+    `,
+  },
+  {
+    label: "Nothing arrived yet means every slot is still a skeleton",
+    source: `assertEqual(renderedContentAt(["a", "b", "c"], []), ["skeleton", "skeleton", "skeleton"]);`,
+  },
+  {
+    label: "Once everything has arrived, the result matches the shell order exactly",
+    source: `assertEqual(renderedContentAt(["a", "b", "c"], ["a", "b", "c"]), ["a", "b", "c"]);`,
+  },
+];
+
+const CHECK_PERFORMANCE_BUDGET_TESTS: SandboxTest[] = [
+  {
+    label: "A metric under its budget passes",
+    source: `
+      assert(typeof checkBudget === "function", "checkBudget is not defined");
+      assertEqual(
+        checkBudget({ bundleSizeKb: 150 }, { bundleSizeKb: 170 }),
+        [{ metric: "bundleSizeKb", actual: 150, budget: 170, passed: true }]
+      );
+    `,
+  },
+  {
+    label: "A metric over its budget fails",
+    source: `
+      assertEqual(
+        checkBudget({ bundleSizeKb: 180 }, { bundleSizeKb: 170 }),
+        [{ metric: "bundleSizeKb", actual: 180, budget: 170, passed: false }]
+      );
+    `,
+  },
+  {
+    label: "One failing metric fails the whole build, even if others pass",
+    source: `
+      assert(typeof overallBudgetStatus === "function", "overallBudgetStatus is not defined");
+      assertEqual(
+        overallBudgetStatus(checkBudget({ bundleSizeKb: 180, lcpMs: 2000 }, { bundleSizeKb: 170, lcpMs: 2500 })),
+        "fail"
+      );
+    `,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "implement-debounce": DEBOUNCE_TESTS,
   "specificity-calculator": SPECIFICITY_TESTS,
@@ -2004,6 +2192,13 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "live-region-announcer-queue": LIVE_REGION_ANNOUNCER_QUEUE_TESTS,
   "combobox-keyboard-handler": COMBOBOX_KEYBOARD_HANDLER_TESTS,
   "mini-a11y-linter": MINI_A11Y_LINTER_TESTS,
+  "pick-image-format-and-size": PICK_IMAGE_FORMAT_AND_SIZE_TESTS,
+  "split-shared-chunks": SPLIT_SHARED_CHUNKS_TESTS,
+  "classify-resource-loading-strategy": CLASSIFY_RESOURCE_LOADING_STRATEGY_TESTS,
+  "rate-core-web-vitals": RATE_CORE_WEB_VITALS_TESTS,
+  "find-flame-chart-bottleneck": FIND_FLAME_CHART_BOTTLENECK_TESTS,
+  "render-streamed-content-order": RENDER_STREAMED_CONTENT_ORDER_TESTS,
+  "check-performance-budget": CHECK_PERFORMANCE_BUDGET_TESTS,
 };
 
 export function getTestSpec(slug: string): SandboxTest[] | null {

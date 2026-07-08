@@ -2093,6 +2093,195 @@ const A11Y_RULE_REPORT_GENERATOR_TESTS: SandboxTest[] = [
   },
 ];
 
+const RESPONSIVE_IMAGE_CONFIG_BUILDER_TESTS: SandboxTest[] = [
+  {
+    label: "buildImageConfig combines format and width into one config",
+    source: `
+      assert(typeof buildImageConfig === "function", "buildImageConfig is not defined");
+      assertEqual(
+        buildImageConfig({ hasTransparency: false, isPhoto: true, needsAnimation: false, containerWidth: 400, dpr: 2, availableWidths: [320, 640, 960, 1280], baseUrl: "/img/hero" }),
+        { format: "avif", width: 960, src: "/img/hero?w=960&fmt=avif" }
+      );
+    `,
+  },
+  {
+    label: "buildSrcSet produces the full srcset string across every width",
+    source: `
+      assert(typeof buildSrcSet === "function", "buildSrcSet is not defined");
+      assertEqual(
+        buildSrcSet("/img/hero", "avif", [320, 640, 960]),
+        "/img/hero?w=320&fmt=avif 320w, /img/hero?w=640&fmt=avif 640w, /img/hero?w=960&fmt=avif 960w"
+      );
+    `,
+  },
+];
+
+const CHUNK_SIZE_REPORT_BUILDER_TESTS: SandboxTest[] = [
+  {
+    label: "computeChunkSizes attaches byte totals to the shared chunk and each route chunk",
+    source: `
+      assert(typeof computeChunkSizes === "function", "computeChunkSizes is not defined");
+      assertEqual(
+        computeChunkSizes(
+          { "/home": ["react", "home-page"], "/about": ["react", "about-page"] },
+          { react: 100, "home-page": 20, "about-page": 15 }
+        ),
+        { shared: { modules: ["react"], totalBytes: 100 }, routes: { "/home": { modules: ["home-page"], totalBytes: 20 }, "/about": { modules: ["about-page"], totalBytes: 15 } } }
+      );
+    `,
+  },
+];
+
+const RESOURCE_LOAD_STRATEGY_PLANNER_TESTS: SandboxTest[] = [
+  {
+    label: "groupResourcesByLoadStrategy buckets every resource id by its classification",
+    source: `
+      assert(typeof groupResourcesByLoadStrategy === "function", "groupResourcesByLoadStrategy is not defined");
+      assertEqual(
+        groupResourcesByLoadStrategy([
+          { id: "a", tag: "script", duration: 100 },
+          { id: "b", tag: "script", async: true, duration: 50 },
+          { id: "c", tag: "link", rel: "stylesheet", duration: 30 },
+          { id: "d", tag: "link", rel: "preload" },
+        ]),
+        { blocking: ["a", "c"], async: ["b"], deferred: [], background: ["d"] }
+      );
+    `,
+  },
+];
+
+const CORE_WEB_VITALS_PAGE_AUDITOR_TESTS: SandboxTest[] = [
+  {
+    label: "percentile computes the p75 value via nearest-rank",
+    source: `
+      assert(typeof percentile === "function", "percentile is not defined");
+      assertEqual(percentile([4000, 1000, 3000, 2000], 75), 3000);
+    `,
+  },
+  {
+    label: "auditPage rates the page off the p75 of each metric, matching real CWV methodology",
+    source: `
+      assert(typeof auditPage === "function", "auditPage is not defined");
+      assertEqual(
+        auditPage([
+          { LCP: 2000, INP: 100, CLS: 0.02 },
+          { LCP: 2400, INP: 150, CLS: 0.05 },
+          { LCP: 4800, INP: 600, CLS: 0.3 },
+          { LCP: 2600, INP: 180, CLS: 0.08 },
+        ]),
+        { LCP: { value: 2600, rating: "needs-improvement" }, INP: { value: 180, rating: "good" }, CLS: { value: 0.08, rating: "good" }, overall: "needs-improvement" }
+      );
+    `,
+  },
+];
+
+const VIRTUAL_LIST_CONTROLLER_TESTS: SandboxTest[] = [
+  {
+    label: "getVisibleRange reuses the same windowing math as the Challenge",
+    source: `
+      assert(typeof createVirtualList === "function", "createVirtualList is not defined");
+      const vl = createVirtualList({ rowHeight: 40, containerHeight: 400, totalRows: 10000, overscan: 3 });
+      assertEqual(vl.getVisibleRange(0), { start: 0, end: 13 });
+    `,
+  },
+  {
+    label: "scrollTopForIndex computes the scroll position needed to bring a given row to the top",
+    source: `
+      const vl = createVirtualList({ rowHeight: 40, containerHeight: 400, totalRows: 10000, overscan: 3 });
+      assertEqual(vl.scrollTopForIndex(50), 2000);
+    `,
+  },
+];
+
+const AGGREGATE_BOTTLENECK_FINDER_TESTS: SandboxTest[] = [
+  {
+    label: "aggregateSelfTime sums selfTime for a repeated function name across separate traces",
+    source: `
+      assert(typeof aggregateSelfTime === "function", "aggregateSelfTime is not defined");
+      const traces = [
+        { name: "a", selfTime: 5, children: [{ name: "format", selfTime: 20, children: [] }] },
+        { name: "b", selfTime: 5, children: [{ name: "format", selfTime: 25, children: [] }, { name: "render", selfTime: 10, children: [] }] },
+      ];
+      assertEqual(aggregateSelfTime(traces), { a: 5, format: 45, b: 5, render: 10 });
+    `,
+  },
+  {
+    label: "findTopAggregateBottleneck picks the highest aggregate, not the highest single-node selfTime",
+    source: `
+      assert(typeof findTopAggregateBottleneck === "function", "findTopAggregateBottleneck is not defined");
+      const traces = [
+        { name: "a", selfTime: 5, children: [{ name: "format", selfTime: 20, children: [] }] },
+        { name: "b", selfTime: 5, children: [{ name: "format", selfTime: 25, children: [] }, { name: "render", selfTime: 10, children: [] }] },
+      ];
+      assertEqual(findTopAggregateBottleneck(traces), "format");
+    `,
+  },
+];
+
+const STREAMING_HYDRATION_TIMELINE_SIMULATOR_TESTS: SandboxTest[] = [
+  {
+    label: "snapshots show progressively more content filled in as each chunk arrives",
+    source: `
+      assert(typeof runStreamingTimeline === "function", "runStreamingTimeline is not defined");
+      const result = runStreamingTimeline(
+        ["header", "sidebar", "main", "footer"],
+        ["footer", "header", "main", "sidebar"],
+        ["header", "sidebar", "main", "footer"]
+      );
+      assertEqual(result.snapshots, [
+        ["skeleton", "skeleton", "skeleton", "footer"],
+        ["header", "skeleton", "skeleton", "footer"],
+        ["header", "skeleton", "main", "footer"],
+        ["header", "sidebar", "main", "footer"],
+      ]);
+    `,
+  },
+  {
+    label: "No hydration mismatch when the client's ids match the shell order exactly",
+    source: `
+      const result = runStreamingTimeline(
+        ["header", "sidebar", "main", "footer"],
+        ["footer", "header", "main", "sidebar"],
+        ["header", "sidebar", "main", "footer"]
+      );
+      assertEqual(result.hydrationMismatchIndex, -1);
+    `,
+  },
+  {
+    label: "A client id that actually diverges from the shell order is caught at its exact index",
+    source: `
+      const result = runStreamingTimeline(
+        ["header", "sidebar", "main", "footer"],
+        ["footer", "header", "main", "sidebar"],
+        ["header", "wrong", "main", "footer"]
+      );
+      assertEqual(result.hydrationMismatchIndex, 1);
+    `,
+  },
+];
+
+const BUDGET_REGRESSION_REPORTER_TESTS: SandboxTest[] = [
+  {
+    label: "A build that grew past budget after a passing baseline is flagged as a regression",
+    source: `
+      assert(typeof compareToBaseline === "function", "compareToBaseline is not defined");
+      assertEqual(
+        compareToBaseline({ bundleSizeKb: 190 }, { bundleSizeKb: 150 }, { bundleSizeKb: 170 }),
+        [{ metric: "bundleSizeKb", current: 190, baseline: 150, deltaPercent: 26.7, passed: false, regressed: true }]
+      );
+    `,
+  },
+  {
+    label: "An improvement shows a negative deltaPercent and is never a regression",
+    source: `
+      assertEqual(
+        compareToBaseline({ bundleSizeKb: 160 }, { bundleSizeKb: 180 }, { bundleSizeKb: 170 }),
+        [{ metric: "bundleSizeKb", current: 160, baseline: 180, deltaPercent: -11.1, passed: true, regressed: false }]
+      );
+    `,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "kanban-board": KANBAN_BOARD_TESTS,
   "async-task-runner": ASYNC_TASK_RUNNER_TESTS,
@@ -2155,6 +2344,14 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "toast-announcer-service": TOAST_ANNOUNCER_SERVICE_TESTS,
   "accessible-combobox-controller": ACCESSIBLE_COMBOBOX_CONTROLLER_TESTS,
   "a11y-rule-report-generator": A11Y_RULE_REPORT_GENERATOR_TESTS,
+  "responsive-image-config-builder": RESPONSIVE_IMAGE_CONFIG_BUILDER_TESTS,
+  "chunk-size-report-builder": CHUNK_SIZE_REPORT_BUILDER_TESTS,
+  "resource-load-strategy-planner": RESOURCE_LOAD_STRATEGY_PLANNER_TESTS,
+  "core-web-vitals-page-auditor": CORE_WEB_VITALS_PAGE_AUDITOR_TESTS,
+  "virtual-list-controller": VIRTUAL_LIST_CONTROLLER_TESTS,
+  "aggregate-bottleneck-finder": AGGREGATE_BOTTLENECK_FINDER_TESTS,
+  "streaming-hydration-timeline-simulator": STREAMING_HYDRATION_TIMELINE_SIMULATOR_TESTS,
+  "budget-regression-reporter": BUDGET_REGRESSION_REPORTER_TESTS,
 };
 
 export function getBuildTestSpec(slug: string): SandboxTest[] | null {

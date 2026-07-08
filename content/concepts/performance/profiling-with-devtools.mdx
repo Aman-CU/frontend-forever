@@ -1,0 +1,36 @@
+---
+title: "Profiling with DevTools"
+description: "Learn how to read a Performance panel flame chart and the React DevTools Profiler to find the actual bottleneck instead of guessing."
+category: "performance"
+difficulty: "advanced"
+order: 6
+whatsHappening: "Chrome's Performance panel records a flame chart — a stack of horizontal bars where each bar is a function call, its width is how long it ran, and its vertical position shows what called what. The critical distinction for finding a real bottleneck is self time versus total time: total time is how long a function took including everything it called (its children), while self time is how long it took excluding its children — the actual work that function itself did. A function with huge total time but tiny self time isn't the problem; it's just a wrapper around something slower underneath it. React DevTools' own Profiler adds a React-specific view on top: which components re-rendered on a given commit and roughly how long each took, useful for catching unnecessary re-renders a generic flame chart wouldn't call out by name."
+keyInsight: "A wide bar in the flame chart doesn't mean that function is slow — it means that function's *subtree* took a long time. The bar to actually chase is the one with high self time, since that's where the CPU was genuinely doing work rather than just waiting on something it called."
+memoryHook: "Total time is 'how long everything under me took'; self time is 'how long I personally took' — chase self time, not total time, to find the real bottleneck."
+inRealLife: "Like a manager whose calendar shows an 8-hour 'project review' block — the block being 8 hours doesn't mean the manager personally worked 8 hours; most of that time might be delegated meetings. The manager's actual workload is only the slice they personally handled."
+---
+
+## Reading a flame chart
+
+Each horizontal bar represents one function call. Width = duration. Bars stacked below a bar are the functions it called. Scrolling and zooming through a real recording, the first instinct is often to chase the *widest* bar — but the widest bar is frequently just a high-level function (a render, an event handler) whose width is mostly its children's time, not its own.
+
+## Self time vs. total time
+
+- **Total time**: this function's duration, including every function it called.
+- **Self time**: this function's duration, *excluding* time spent inside anything it called — i.e., the work it actually did itself.
+
+A function that calls three slow helpers and does almost nothing else will show large total time but small self time. The helper that's actually slow is the one to fix — and it's identified by self time, not by which bar looks widest on screen.
+
+## The Bottom-Up view
+
+Because the same function can appear in many different call stacks across a recording (a `formatCurrency` helper called from a dozen different components, for instance), looking at any single flame chart node can undercount its real cost. DevTools' **Bottom-Up** tab aggregates self time for a function across every place it was called during the whole recording — surfacing "this function cost 400ms in total, spread across 200 tiny calls" even when no single call stack shows it as the obvious bottleneck.
+
+## React DevTools Profiler
+
+The generic Performance panel has no idea what a "component" is — it just sees function calls. React DevTools' own Profiler adds that layer back: it records a commit, shows which components rendered during it, and estimates how long each took, making it much faster to spot "this component re-rendered on every keystroke even though its props didn't change" than digging through a raw flame chart for the same insight.
+
+## The actual workflow
+
+1. Record a real interaction (not a synthetic guess at what's slow).
+2. In the flame chart or Bottom-Up view, sort by self time, not total time.
+3. Fix the highest self-time function first — it's the one with the best chance of being the genuine bottleneck, not just a slow wrapper around something else.

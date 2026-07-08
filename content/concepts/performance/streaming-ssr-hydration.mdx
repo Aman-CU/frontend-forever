@@ -1,0 +1,31 @@
+---
+title: "Streaming SSR & Hydration"
+description: "Understand how streaming SSR sends the page shell immediately and streams in slower content, and how hydration attaches React's event handlers to that server-rendered HTML."
+category: "performance"
+difficulty: "advanced"
+order: 7
+whatsHappening: "Traditional SSR has to finish rendering the *entire* page on the server — including any slow data fetch — before sending a single byte to the browser, so one slow section holds the whole response hostage. Streaming SSR instead sends the page shell (layout, nav, anything with no slow dependency) immediately, with placeholders for the slow parts, then streams each slow section's HTML in as it finishes on the server — in whatever order they happen to resolve, not necessarily the order they appear on the page. The browser slots each streamed chunk into its correct position using a placeholder id, regardless of arrival order. Hydration is the separate step where React walks that already-rendered HTML on the client and attaches real event handlers/state to it, turning static markup into an interactive app without re-building the DOM from scratch."
+keyInsight: "A streamed chunk's *arrival order* has nothing to do with its *final position on the page* — a footer's data might resolve and arrive before the main content's, but it still renders in the footer's spot, because the placeholder (not the arrival sequence) determines where each chunk lands."
+memoryHook: "Streaming decouples 'when it arrives' from 'where it goes' — arrival order is about speed, placeholder id is about position."
+inRealLife: "Like a restaurant sending out appetizers, mains, and dessert as each is ready instead of holding the entire order until the slowest dish is plated — whichever dish finishes first goes out first, but it still lands on the correct part of the table setting, not wherever's convenient."
+---
+
+## The problem streaming solves
+
+Without streaming, a page with one slow data dependency (a personalized recommendations widget, a slow third-party API call) delays the *entire* response — the fast, static parts of the page (header, nav, most of the layout) wait on the single slowest piece even though they had nothing left to do.
+
+## Suspense boundaries as the unit of streaming
+
+A `<Suspense>` boundary marks a section of the tree that's allowed to "not be ready yet." The server sends the shell immediately with a fallback in that boundary's place, then streams the real content in — replacing the fallback — the moment that boundary's data resolves. Multiple boundaries can resolve and stream in whatever order their own data finishes, independent of each other and independent of their document position.
+
+## Why arrival order doesn't determine final order
+
+Each streamed chunk is tagged with the id of the placeholder it belongs to. The browser doesn't append streamed content to the end of the page — it slots each chunk into its already-reserved position. A footer that finishes fast still ends up in the footer, even if it streamed in before the (slower) main content did.
+
+## Hydration: attaching behavior to markup that already exists
+
+Once HTML has streamed in — from the server, already visible as static markup — hydration is React walking that same tree on the client, matching it up node-for-node with what the client-side render would have produced, and attaching real event handlers and internal state without throwing away and rebuilding the DOM. This is why SSR content is visible before it's *interactive*: paint happens first, hydration happens after (and streaming lets each piece hydrate as its own chunk arrives, rather than waiting for the whole page).
+
+## Hydration mismatches
+
+If the server-rendered markup and what the client expects to hydrate don't actually match — different text, different element, different order — React can't just silently reconcile it the way a normal re-render would; it has to detect the mismatch and recover (typically by discarding the mismatched section and re-rendering it client-side), which is slower and can cause a visible flash. Common causes: rendering something that depends on `Date.now()` or `Math.random()` differently on server vs. client, or reading browser-only globals (`window`, `localStorage`) during the server render.
