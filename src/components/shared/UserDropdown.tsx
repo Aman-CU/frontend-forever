@@ -73,6 +73,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
           <AvatarImage
             src={user.image ?? undefined}
             alt={user.name ?? user.email}
+            referrerPolicy="no-referrer"
           />
           <AvatarFallback className="bg-accent-muted text-xs font-semibold text-accent">
             {getInitials(user.name, user.email)}
