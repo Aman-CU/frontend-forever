@@ -4,8 +4,8 @@ description: "See how splitting a bundle by route or component lets the browser 
 category: "performance"
 difficulty: "intermediate"
 order: 2
-whatsHappening: "A naive build ships one giant JS file containing every route, every component, and every dependency the app will ever need — so a user landing on the login page downloads the checkout flow, the admin dashboard, and everything else, unused. Code splitting breaks that single bundle into smaller chunks: one per route (loaded only when that route is visited) plus a shared chunk for code multiple routes actually use in common (React itself, a UI library, shared utilities). The bundler decides the shared chunk by looking at which modules appear in more than one route's dependency graph."
-keyInsight: "A module doesn't belong in the shared chunk because it's 'important' — it belongs there because more than one route's code actually imports it. Anything imported by exactly one route belongs in that route's own chunk, full stop."
+whatsHappening: "A naive build ships one giant JS file containing every route, every component, and every dependency the app will ever need — so a user landing on the login page downloads the checkout flow, the admin dashboard, and everything else, unused. Code splitting breaks that single bundle into smaller chunks: one per route (loaded only when that route is visited) plus a shared chunk for code multiple routes actually use in common (React itself, a UI library, shared utilities). The core signal the bundler starts from is usage count — which modules appear in more than one route's dependency graph — though a real bundler layers extra thresholds (minimum size, maximum request count) on top before it actually splits something out."
+keyInsight: "A module doesn't belong in the shared chunk just because it's 'important' — the starting signal is that more than one route's code actually imports it. A real bundler still weighs that against size/request thresholds before acting on it, but a module imported by exactly one route never qualifies for the shared chunk at all, regardless of those thresholds."
 memoryHook: "Route chunks are what only that page needs; the shared chunk is what every page needed anyway — splitting just stops paying for the second one twice."
 inRealLife: "Like a shared office supply closet versus each department's own equipment — printer paper (used by everyone) lives in the shared closet once, while the design team's drawing tablets stay in the design team's own room instead of being duplicated everywhere."
 ---
@@ -20,7 +20,9 @@ Most modern frameworks split automatically at the route boundary: visiting `/log
 
 ## Shared chunks: the modules multiple routes actually use
 
-If `/login`, `/checkout`, and `/admin` all import React and a shared `Button` component, the bundler pulls those into one shared chunk instead of duplicating them into all three route chunks. The rule that decides this is purely about usage count: a module used by more than one entry point graduates to shared; a module used by exactly one stays local to it.
+If `/login`, `/checkout`, and `/admin` all import React and a shared `Button` component, the bundler pulls those into one shared chunk instead of duplicating them into all three route chunks. The starting signal is usage count: a module used by exactly one entry point always stays local to it, and only a module used by more than one entry point is even a *candidate* for the shared chunk.
+
+> **This is the simplified core idea, not a real bundler's full algorithm.** Tools like webpack's `SplitChunksPlugin` don't split out every multi-use candidate automatically — they gate it behind extra thresholds too (a minimum chunk size, a cap on how many parallel requests a page can make), so a tiny module used twice might still get inlined into both routes rather than pulled into its own chunk. Usage count decides *eligibility*; size and request-count thresholds decide whether splitting it out is actually worth the extra network request.
 
 ## Component-level splitting with dynamic import
 

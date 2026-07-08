@@ -4592,7 +4592,7 @@ function pickSrcsetWidth(containerWidth, dpr, availableWidths) {
     slug: "split-shared-chunks",
     conceptSlug: "bundle-size-code-splitting",
     title: "Split a bundle into shared and per-route chunks",
-    description: `The actual rule a bundler uses to decide what goes in the shared chunk versus each route's own chunk.
+    description: `The core signal a bundler starts from when deciding what goes in the shared chunk versus each route's own chunk.
 
 ## The problem
 
@@ -4600,7 +4600,7 @@ Given which modules each route imports, a naive bundle would duplicate every sha
 
 ## The idea
 
-A module belongs in the shared chunk if — and only if — more than one route imports it. Anything imported by exactly one route stays in that route's own chunk.
+A module used by exactly one route always stays in that route's own chunk. A module used by more than one route is at least a *candidate* for the shared chunk — real bundlers add size/request-count thresholds on top of this before actually splitting it out, but usage count is the starting signal this exercise models.
 
 ## Your task
 
