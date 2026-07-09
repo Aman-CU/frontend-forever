@@ -5385,7 +5385,7 @@ Write \`classifyStateLayer({ isServerData, isSharedAcrossRoutes })\`, returning 
 - \`isServerData: true\` → \`"server"\`, regardless of the other flag
 - otherwise, \`isSharedAcrossRoutes: true\` → \`"global"\`
 - otherwise → \`"local"\``,
-    difficulty: "medium",
+    difficulty: "hard",
     starterCode: `function classifyStateLayer({ isServerData, isSharedAcrossRoutes }) {
   // isServerData wins first; isSharedAcrossRoutes decides the rest
 }`,
@@ -6534,6 +6534,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
       "**First question: does the client ever send data back over the same channel?** No — scores only flow server-to-client. That rules out needing a WebSocket's bidirectional complexity by default.\n\n**Between SSE and polling:**\n- Update frequency during a live game is high enough (every few seconds) that polling would mean frequent wasted requests when nothing's changed between polls\n- SSE (`EventSource`) keeps one connection open, built on plain HTTP — works through standard proxies/load balancers, reconnects automatically on drop, and the server only sends a message when a score actually changes\n\n**Architecture:**\n1. A score-change event publishes to a pub/sub channel (Redis/Kafka) keyed by game id\n2. Each server holding open SSE connections for that game subscribes and forwards the event to its connected clients\n3. Client falls back to a single poll on reconnect to catch anything missed while disconnected\n\n**Why not WebSockets here:** they'd work, but the operational cost (heartbeats, backpressure, WebSocket-aware load balancing) buys nothing this feature actually uses, since the client never talks back over that channel.\n\n**When it would change:** if the feature grew to include live chat or reactions alongside the score feed, that bidirectional need would justify a WebSocket for that part of the connection.",
     difficulty: "medium",
     companies: ["ESPN", "Amazon", "Google"],
+    isPremium: true,
     orderIndex: 7,
   },
   {
