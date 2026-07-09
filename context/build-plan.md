@@ -832,19 +832,36 @@ Every concept eventually gets a hand-built Simulate experience, but each one is 
 
 ---
 
+## Phase 11 — Simulator Reimagining (Long-Term Vision)
+
+**Not scheduled. No numbered features yet — this is a direction to pick up later, not a build queue.** Added 2026-07-09 after a product-direction discussion (see `progress-tracker.md` → Decisions Made for the full context). Explicitly long-term, not a redirect of current work — Phase 10 (Features 40–48) and the Simulator Backlog continue as planned in the meantime.
+
+**The gap:** the platform's founding idea was for every concept to be *seen* working — playful, game-like, interactive — not just read about or drilled interview-style. Today only 4 of 76 concepts have any Simulate tab (Features 09–12), and even those 4 are scripted walkthroughs — Play/Step/Restart/Speed controls over one fixed scenario — not something the learner can actually manipulate. Confirmed directly against `designs/hero-section-1-react-rendering.png`: it's a clean SaaS-dashboard diagram (thin-border cards, small line icons, dotted connector arrows), the "Real DOM" panel is a static text mockup, not an actual rendered browser canvas, and there's no code editor anywhere in the simulator.
+
+**The vision** (prompted by comparing to paperdraw.dev, a system-design tool where users build their own architecture and watch it react live rather than pressing play on someone else's): reimagine each concept's Simulate tab as three layers working together, in an illustrated/cartoonish "white paper canvas" visual style, not the current SaaS-panel look:
+
+1. **A real code editor as the input** — the learner writes or edits actual code, not a fixed example.
+2. **The internal pipeline animated like a process happening, interactively** — game/video-like motion and pacing; pause it, poke at it, change a value and watch it react — not steps highlighting in sequence on a static diagram.
+3. **A genuine rendered-output canvas** — an actual mini browser preview painting the real page live, not an abstract node diagram or a static mockup card standing in for "the DOM."
+
+**When this gets picked up:** likely means revisiting the original 4 simulators' design too, not just applying a new standard to future ones. No features are numbered here yet — defining those is the first step whenever this phase actually starts.
+
+---
+
 ## Feature Count
 
-| Phase                          | Features |
-| ------------------------------ | -------- |
-| Phase 0 — Foundation           | 2        |
-| Phase 1 — Homepage             | 11       |
-| Phase 2 — Auth                 | 4        |
-| Phase 3 — Database             | 2        |
-| Phase 4 — Learn                | 8        |
-| Phase 5 — Practice             | 2        |
-| Phase 6 — Interview Prep       | 3        |
-| Phase 7 — Explore + Roadmaps   | 3        |
-| Phase 8 — Leaderboard          | 2        |
-| Phase 9 — Premium              | 2        |
-| Phase 10 — Concept Curriculum  | 9        |
-| **Total**                      | **48**   |
+| Phase                                        | Features |
+| --------------------------------------------- | -------- |
+| Phase 0 — Foundation                          | 2        |
+| Phase 1 — Homepage                            | 11       |
+| Phase 2 — Auth                                | 4        |
+| Phase 3 — Database                            | 2        |
+| Phase 4 — Learn                               | 8        |
+| Phase 5 — Practice                            | 2        |
+| Phase 6 — Interview Prep                      | 3        |
+| Phase 7 — Explore + Roadmaps                  | 3        |
+| Phase 8 — Leaderboard                         | 2        |
+| Phase 9 — Premium                             | 2        |
+| Phase 10 — Concept Curriculum                 | 9        |
+| Phase 11 — Simulator Reimagining (long-term)  | TBD — unscheduled, not counted below |
+| **Total**                                     | **48**   |
