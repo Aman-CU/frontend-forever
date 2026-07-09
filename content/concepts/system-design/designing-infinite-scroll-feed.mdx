@@ -1,0 +1,31 @@
+---
+title: "Designing an Infinite-Scroll Feed"
+description: "Design the pagination, caching, and scroll-position contract behind a feed that loads more content as the user scrolls, without janky re-fetches or lost position."
+category: "system-design"
+difficulty: "advanced"
+order: 4
+whatsHappening: "An infinite-scroll feed is really three separate contracts working together: how pages are requested (pagination), what happens to already-fetched pages when the user navigates away and back (caching), and where the viewport was when they left (scroll position). Getting the first one wrong causes duplicate or skipped items as new posts get inserted; getting the other two wrong causes a full re-fetch and a jump back to the top on every back-navigation."
+keyInsight: "Cursor-based pagination, not offset-based, is what makes a feed stable while it's actively changing. An offset (\"give me items 20-40\") shifts every subsequent page the moment a new item gets inserted above position 20 — the same items can be skipped or repeated. A cursor (an opaque pointer to a specific item, e.g. an encoded id + timestamp) stays valid regardless of what gets inserted before or after it, because it points at a specific row, not a shifting position."
+memoryHook: "Offset pagination is a shifting queue: cut the line and everyone's position number changes. Cursor pagination is a bookmark stuck in a specific page: it doesn't move even if new pages get added to the book."
+inRealLife: "Offset pagination is like numbering people in a line by their current position — if someone cuts in near the front, everyone behind shifts by one, and page 2 no longer contains who it used to. A cursor is a claim ticket tied to one specific person — it still points at that same person no matter how many people join or leave the line."
+---
+
+## The pagination contract: cursor, not offset
+
+`GET /feed?after=<cursor>&limit=20` — the cursor is an opaque server-generated token (commonly an encoded `(timestamp, id)` pair) representing "everything after this specific item." Because it's tied to a row's identity rather than its numeric position, inserting new items above it never shifts what the next page returns — unlike `GET /feed?offset=20&limit=20`, where a single new insert above position 20 duplicates or skips an item across the boundary.
+
+## The caching contract: don't refetch on back-navigation
+
+Every page fetched so far should be cached client-side (a library like React Query/SWR does this by request key) so that navigating away and pressing back restores the feed instantly from cache rather than re-fetching from page 1. Without this, infinite scroll effectively punishes the browser's back button — exactly the navigation a feed relies on most.
+
+## The scroll-position contract
+
+Restoring from cache is only half the fix — the scroll position itself has to be remembered too (commonly in `sessionStorage`, keyed by route), and restored *after* the cached items have rendered, not before — restoring scroll position against an empty or partially-rendered list just lands somewhere wrong.
+
+## Freshness without disrupting the reading position
+
+New items appearing at the top while someone is mid-scroll, read is one of infinite scroll's worst UX failures — the content under their eyes visually shifts. The fix is to poll for new items at a low frequency without inserting them automatically; surface a small "X new posts" banner instead, and only insert on an explicit tap, so the feed's current, already-being-read content never moves out from under the user.
+
+## Why it matters
+
+"How would you design an infinite-scroll feed?" tests whether pagination, caching, and scroll position get treated as one connected contract or three unrelated afterthoughts — a correct cursor-based API paired with no client-side cache still refetches everything and loses scroll position on back-navigation, so all three pieces have to hold at once for the feature to actually feel seamless.

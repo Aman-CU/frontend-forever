@@ -1,0 +1,43 @@
+---
+title: "Component-Driven Architecture"
+description: "See how building a UI from small, independently testable components — often backed by a shared design system — scales better than one big page-level component."
+category: "system-design"
+difficulty: "intermediate"
+order: 1
+whatsHappening: "Component-driven architecture builds a UI bottom-up: small, single-responsibility components first (a Button, an Avatar, a Field), composed into larger ones (a Card, a Form), composed into whole pages — instead of top-down, where one page component owns everything and grows until nobody can safely touch it. Each component is built, previewed, and tested in isolation (often in Storybook) before it's ever wired into a real page."
+keyInsight: "The dependency direction is the whole architecture: small, generic components at the bottom never import anything above them, and every layer only depends on the layer below it. A Button never knows a Form exists — that's what makes the Button reusable in a hundred different forms, and what makes a change to the Form safe to make without touching the Button."
+memoryHook: "Bricks, not one poured slab. Small standardized bricks (components) recombine into any wall (page); one poured slab can only ever be that one slab."
+inRealLife: "Like a car built from standardized, independently-tested parts — the same alternator model ships in a dozen different car models, and swapping a headlight doesn't require re-engineering the engine. A car built as one fused block would work, but replacing one part means rebuilding the whole thing."
+---
+
+## Bottom-up, not top-down
+
+A page-level component that grows organically tends to accumulate everything: layout, business logic, API calls, and one-off styling, all in a single file that only gets bigger. Component-driven architecture inverts the build order — start with the smallest reusable pieces, and compose upward:
+
+```
+Button, Input, Avatar        (primitives — no business logic, fully generic)
+  └── FormField, Card         (composed from primitives)
+        └── SignupForm        (composed from FormField/Card, some page-specific logic)
+              └── SignupPage  (layout + data-fetching, thin)
+```
+
+Each layer only imports from the layer below it — never sideways, never up. A `Button` has no idea `SignupForm` exists, which is exactly what lets `Button` show up unmodified in a hundred different forms.
+
+## Why isolation is the point, not a nice-to-have
+
+Building and testing a component in isolation (tools like Storybook render a component with mock props, no real page, no real API) forces two properties that make an architecture scale as a team grows:
+
+- **Props are the entire contract.** If a component only renders correctly when embedded in one specific page's data shape, it isn't actually reusable — it's just page code that got moved to a different file.
+- **Independent testability.** A `Button`'s tests don't need a running API, a router, or a logged-in session — just props in, rendered output out. That's what keeps a growing test suite fast.
+
+## The shared design system as the floor
+
+A design system (shared tokens, primitives, and patterns — the platform's own `ui-tokens.md`/`ui-registry.md` are exactly this) is what stops every team from re-inventing `Button` slightly differently. Every composed component built on top inherits consistency for free, and a visual change to the token layer (a color, a spacing scale) propagates to every consumer without touching each one individually.
+
+## The cost: more files, more indirection
+
+Component-driven architecture isn't free — a feature that could be "one big function" becomes several files and a prop-drilling or composition decision at every layer boundary. It pays off once a codebase has enough surface area that duplication (three near-identical buttons) becomes more expensive than the extra indirection. On a small enough app, a monolithic page component is genuinely fine.
+
+## Why it matters
+
+The most common real-world failure isn't "no components" — it's components that were split by file, not by responsibility, so the isolation and reusability never actually materialize; a `UserProfileCard` that reaches into a global session store internally is not meaningfully different from one big page component, just spread across more files.

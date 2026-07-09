@@ -1,0 +1,33 @@
+---
+title: "Frontend Architecture Patterns"
+description: "Compare component-driven, micro-frontend, and monorepo architectures and know when to use each at scale."
+category: "system-design"
+difficulty: "advanced"
+order: 6
+whatsHappening: "As a frontend codebase and the team building it both grow, the architecture question stops being \"how is one app organized\" and becomes \"how do multiple teams ship to the same product without blocking each other.\" A monorepo keeps everything in one repository with shared tooling and versioning; a micro-frontend architecture goes further and splits the *runtime* application itself into independently deployable pieces owned by separate teams."
+keyInsight: "A monorepo is a code-organization choice — one repository, one shared build/lint/test setup — that says nothing about how the app is deployed. Micro-frontends are a runtime-deployment choice — separate apps composed together in the browser — that says nothing about which repository the code lives in. The two are frequently confused because they're often adopted together, but a monorepo can ship a single monolithic app, and micro-frontends can be split across entirely separate repos."
+memoryHook: "Monorepo = one shared toolbox, still building one house. Micro-frontend = separate crews building separate wings of the house, each able to renovate their own wing without the others' permission — and without necessarily sharing a toolbox at all."
+inRealLife: "A monorepo is a company with every department under one building and one shared set of tools and processes, still delivering one product together. Micro-frontends are more like a shopping mall — each store is independently owned, staffed, and renovated on its own schedule, and they're only unified by shared entrances and a common architecture holding the building together."
+---
+
+## Component-driven architecture, one level up
+
+Component-driven architecture (previous concept) organizes one application's internal code into composable pieces. The patterns here answer a different question: once an organization has multiple teams and multiple products, how does the *codebase itself* — not just one app's components — get structured so those teams can ship independently?
+
+## Monorepo: one repository, shared tooling, independent packages
+
+A monorepo (managed with Turborepo, Nx, or similar) holds many packages — a shared `ui` library, several apps, internal tooling — in one repository with unified dependency versions, a shared CI pipeline, and atomic cross-package commits (a breaking change to a shared component and every consumer's fix land in the same PR). The tradeoff is coordination cost at scale: CI has to be smart about only building/testing what a given change actually affects, or every commit re-runs the entire repository's pipeline.
+
+## Micro-frontends: independently deployable at runtime
+
+A micro-frontend architecture splits the running application into separately built and deployed pieces — a checkout flow owned by one team, a product catalog owned by another — composed together at runtime (via Module Federation, iframes, or server-side composition) into what the user experiences as one app. The core benefit is deployment independence: team A ships a fix without waiting on team B's release train. The core cost is exactly the problems that independence creates — shared dependency versions (does everyone agree on which React version?), consistent design system usage across teams that no longer share a single build, and cross-app navigation/state that has to be deliberately designed rather than assumed.
+
+## When each pattern earns its cost
+
+- A single team, one product → neither pattern is worth its coordination overhead; one well-organized app is simpler.
+- Multiple teams, one product, shared release cadence → a monorepo captures most of the benefit (shared code, atomic changes) without runtime-composition complexity.
+- Multiple teams needing independent release schedules on one product → micro-frontends solve the actual bottleneck (a shared deploy pipeline blocking every team on every other team's readiness), at the cost of managing shared dependencies and consistency across boundaries that used to be enforced by a single build.
+
+## Why it matters
+
+Reaching for micro-frontends because a codebase is "big" — rather than because separate teams are blocked by a shared deploy pipeline — trades a code-organization problem (which a monorepo already solves) for a genuinely harder distributed-systems problem (dependency drift, design consistency, and composition) that doesn't need to exist yet.

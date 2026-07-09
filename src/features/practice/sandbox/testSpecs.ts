@@ -2131,6 +2131,170 @@ const CHECK_PERFORMANCE_BUDGET_TESTS: SandboxTest[] = [
   },
 ];
 
+const FIND_CIRCULAR_COMPONENT_IMPORTS_TESTS: SandboxTest[] = [
+  {
+    label: "Detects a 3-node cycle",
+    source: `
+      assert(typeof findCycle === "function", "findCycle is not defined");
+      assertEqual(findCycle({ A: ["B"], B: ["C"], C: ["A"] }), ["A", "B", "C", "A"]);
+    `,
+  },
+  {
+    label: "Returns null for a simple chain",
+    source: `assertEqual(findCycle({ A: ["B"], B: ["C"], C: [] }), null);`,
+  },
+  {
+    label: "Returns null with no edges at all",
+    source: `assertEqual(findCycle({ A: [], B: [] }), null);`,
+  },
+];
+
+const PLAN_FETCH_WATERFALL_TESTS: SandboxTest[] = [
+  {
+    label: "A linear chain produces one request per wave",
+    source: `
+      assert(typeof planFetchWaterfall === "function", "planFetchWaterfall is not defined");
+      assertEqual(
+        planFetchWaterfall([
+          { name: "user", dependsOn: [] },
+          { name: "posts", dependsOn: ["user"] },
+          { name: "comments", dependsOn: ["posts"] },
+        ]),
+        [["user"], ["posts"], ["comments"]]
+      );
+    `,
+  },
+  {
+    label: "Independent requests share the first wave",
+    source: `
+      assertEqual(
+        planFetchWaterfall([
+          { name: "user", dependsOn: [] },
+          { name: "settings", dependsOn: [] },
+          { name: "posts", dependsOn: ["user"] },
+        ]),
+        [["settings", "user"], ["posts"]]
+      );
+    `,
+  },
+];
+
+const PICK_REALTIME_TRANSPORT_TESTS: SandboxTest[] = [
+  {
+    label: "Bidirectional always wins, regardless of frequency",
+    source: `
+      assert(typeof chooseTransport === "function", "chooseTransport is not defined");
+      assertEqual(
+        chooseTransport({ needsBidirectional: true, updateFrequencySec: 1, browserSupportRequired: "modern" }),
+        "websocket"
+      );
+    `,
+  },
+  {
+    label: "Frequent one-way updates pick SSE",
+    source: `
+      assertEqual(
+        chooseTransport({ needsBidirectional: false, updateFrequencySec: 2, browserSupportRequired: "modern" }),
+        "sse"
+      );
+    `,
+  },
+  {
+    label: "Infrequent updates fall back to polling",
+    source: `
+      assertEqual(
+        chooseTransport({ needsBidirectional: false, updateFrequencySec: 60, browserSupportRequired: "modern" }),
+        "polling"
+      );
+    `,
+  },
+  {
+    label: "Legacy browser support forces polling even at high frequency",
+    source: `
+      assertEqual(
+        chooseTransport({ needsBidirectional: false, updateFrequencySec: 2, browserSupportRequired: "legacy" }),
+        "polling"
+      );
+    `,
+  },
+];
+
+const MERGE_FEED_PAGE_TESTS: SandboxTest[] = [
+  {
+    label: "Duplicate ids across the boundary aren't repeated",
+    source: `
+      assert(typeof mergeFeedPage === "function", "mergeFeedPage is not defined");
+      assertEqual(
+        mergeFeedPage([{ id: 1 }, { id: 2 }], { items: [{ id: 2 }, { id: 3 }], nextCursor: "c3" }),
+        { items: [{ id: 1 }, { id: 2 }, { id: 3 }], nextCursor: "c3" }
+      );
+    `,
+  },
+  {
+    label: "An empty starting feed just takes the new page",
+    source: `
+      assertEqual(
+        mergeFeedPage([], { items: [{ id: 1 }], nextCursor: "c1" }),
+        { items: [{ id: 1 }], nextCursor: "c1" }
+      );
+    `,
+  },
+];
+
+const TRANSFORM_INSERT_OPERATIONS_TESTS: SandboxTest[] = [
+  {
+    label: "A same-position concurrent insert shifts after the applied one",
+    source: `
+      assert(typeof transform === "function", "transform is not defined");
+      assertEqual(transform({ pos: 5, text: "X" }, { pos: 5, text: "Y" }), { pos: 6, text: "Y" });
+    `,
+  },
+  {
+    label: "An insert before the applied position is left untouched",
+    source: `assertEqual(transform({ pos: 5, text: "X" }, { pos: 2, text: "Y" }), { pos: 2, text: "Y" });`,
+  },
+  {
+    label: "The shift amount always equals the applied op's text length",
+    source: `assertEqual(transform({ pos: 2, text: "Hi" }, { pos: 5, text: "Y" }), { pos: 7, text: "Y" });`,
+  },
+];
+
+const CLASSIFY_ARCHITECTURE_FIT_TESTS: SandboxTest[] = [
+  {
+    label: "A single team never needs more than a monolith",
+    source: `
+      assert(typeof classifyArchitectureFit === "function", "classifyArchitectureFit is not defined");
+      assertEqual(classifyArchitectureFit({ teamCount: 1, independentDeployNeeded: false }), "monolith");
+    `,
+  },
+  {
+    label: "Multiple teams sharing a release cadence fit a monorepo",
+    source: `assertEqual(classifyArchitectureFit({ teamCount: 3, independentDeployNeeded: false }), "monorepo");`,
+  },
+  {
+    label: "Independent deploy requirements push toward micro-frontends",
+    source: `assertEqual(classifyArchitectureFit({ teamCount: 3, independentDeployNeeded: true }), "micro-frontend");`,
+  },
+];
+
+const CLASSIFY_STATE_LAYER_TESTS: SandboxTest[] = [
+  {
+    label: "Server-owned data is always server state",
+    source: `
+      assert(typeof classifyStateLayer === "function", "classifyStateLayer is not defined");
+      assertEqual(classifyStateLayer({ isServerData: true, isSharedAcrossRoutes: false }), "server");
+    `,
+  },
+  {
+    label: "Non-server state shared across routes is global",
+    source: `assertEqual(classifyStateLayer({ isServerData: false, isSharedAcrossRoutes: true }), "global");`,
+  },
+  {
+    label: "Everything else defaults to local",
+    source: `assertEqual(classifyStateLayer({ isServerData: false, isSharedAcrossRoutes: false }), "local");`,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "implement-debounce": DEBOUNCE_TESTS,
   "specificity-calculator": SPECIFICITY_TESTS,
@@ -2199,6 +2363,13 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "find-flame-chart-bottleneck": FIND_FLAME_CHART_BOTTLENECK_TESTS,
   "render-streamed-content-order": RENDER_STREAMED_CONTENT_ORDER_TESTS,
   "check-performance-budget": CHECK_PERFORMANCE_BUDGET_TESTS,
+  "find-circular-component-imports": FIND_CIRCULAR_COMPONENT_IMPORTS_TESTS,
+  "plan-fetch-waterfall": PLAN_FETCH_WATERFALL_TESTS,
+  "pick-realtime-transport": PICK_REALTIME_TRANSPORT_TESTS,
+  "merge-feed-page": MERGE_FEED_PAGE_TESTS,
+  "transform-insert-operations": TRANSFORM_INSERT_OPERATIONS_TESTS,
+  "classify-architecture-fit": CLASSIFY_ARCHITECTURE_FIT_TESTS,
+  "classify-state-layer": CLASSIFY_STATE_LAYER_TESTS,
 };
 
 export function getTestSpec(slug: string): SandboxTest[] | null {

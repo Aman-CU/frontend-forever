@@ -1,0 +1,33 @@
+---
+title: "Designing Real-Time Updates (WebSockets, SSE, polling)"
+description: "Compare polling, Server-Sent Events, and WebSockets for pushing live updates to a client, and when each one's tradeoffs make it the right choice."
+category: "system-design"
+difficulty: "advanced"
+order: 3
+whatsHappening: "Real-time updates need the server to tell the client something changed, rather than the client repeatedly asking. Three mechanisms do this with very different cost and complexity: polling (the client keeps asking on a timer), Server-Sent Events (one open one-way stream, server-to-client only), and WebSockets (one open two-way stream, either side can send anytime)."
+keyInsight: "The deciding question is direction, not just frequency: does the client ever need to send data back over that same live channel? If updates only ever flow server-to-client (a live score, a notification feed), SSE gets full-duplex's benefits with a simpler protocol built on plain HTTP. Reaching for a WebSocket for a one-directional feed adds bidirectional complexity — and its own reconnection/backpressure handling — that nothing in the feature actually uses."
+memoryHook: "Polling = calling the front desk every 5 minutes to ask if your package arrived. SSE = the front desk calls you the moment it arrives, but you can't call them back on that same line. WebSocket = an open phone line either side can talk on anytime."
+inRealLife: "Polling is a delivery app forcing you to refresh the tracking page every minute. SSE is that same app pushing you a notification the second your order status changes, with no action on your part. A WebSocket is a live customer support chat, where you and the agent are both typing on the same open connection."
+---
+
+## Three ways to get updates to a client
+
+- **Polling** — the client re-fetches on an interval. Zero new infrastructure (it's a regular HTTP request repeated), but wastes requests when nothing changed and adds latency up to the polling interval before an update is seen.
+- **Server-Sent Events (SSE)** — the client opens one long-lived HTTP connection (`EventSource`); the server pushes events down it as they happen. Built on plain HTTP, so it works through most proxies/load balancers with no special handling and reconnects automatically on drop — but it's server-to-client only.
+- **WebSockets** — a persistent, full-duplex connection over its own protocol (upgraded from an HTTP handshake). Either side can send at any time with minimal per-message overhead, at the cost of needing your own reconnection, heartbeat, and backpressure handling, and infrastructure (load balancers, proxies) that's WebSocket-aware.
+
+## Matching the mechanism to the actual data flow
+
+Choosing the heaviest option "to be safe" is the most common mistake: a live notification badge or a stock ticker never needs the client to talk back over that channel, so SSE gets the real-time behavior without a bidirectional protocol's operational cost. A WebSocket earns its complexity when the client genuinely sends frequent messages back — a chat app, a collaborative cursor, a multiplayer game — where a whole new HTTP request per client message would be far more overhead than one open socket.
+
+## What polling still gets right
+
+Polling isn't obsolete — for updates that are naturally infrequent (a build status that changes every few minutes) or for a client that can't hold a persistent connection reliably, a short-interval poll is simpler to build, simpler to scale (any stateless HTTP infrastructure handles it, no sticky sessions), and easier to reason about when something goes wrong, at the cost of wasted requests and update latency bounded by the interval.
+
+## Reconnection is not optional
+
+Any persistent-connection approach (SSE or WebSocket) will drop — a phone goes to sleep, a network switches from WiFi to cellular, a load balancer recycles a connection. A real implementation always needs a reconnect-with-backoff strategy (retry with increasing delay, capped, so a server outage doesn't get hammered by every client reconnecting every second) and a way to resync any updates missed while disconnected, not just an assumption that the connection stays open forever.
+
+## Why it matters
+
+The interview version of this question is rarely "which one is best" — it's "given these specific constraints (data volume, direction, client reliability), which one, and why the others are worse fits here." Picking WebSockets by default without being asked "does the client ever send data back?" is the most common tell that the direction question was skipped.

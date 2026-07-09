@@ -791,6 +791,7 @@ const CONCEPTS: ConceptSeed[] = [
       "See how building a UI from small, independently testable components — often backed by a shared design system — scales better than one big page-level component.",
     category: "system-design",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 1,
   },
   {
@@ -800,6 +801,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Compare REST, GraphQL, and RPC-style APIs, and the client-side tradeoffs of fetching data on the server, on mount, or via a cache-aware library.",
     category: "system-design",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 2,
   },
   {
@@ -809,6 +811,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Compare polling, Server-Sent Events, and WebSockets for pushing live updates to a client, and when each one's tradeoffs make it the right choice.",
     category: "system-design",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 3,
   },
   {
@@ -818,6 +821,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Design the pagination, caching, and scroll-position contract behind a feed that loads more content as the user scrolls, without janky re-fetches or lost position.",
     category: "system-design",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 4,
   },
   {
@@ -827,6 +831,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Design the conflict-resolution layer — Operational Transformation or CRDTs — behind a document multiple users can edit at once without corrupting each other's changes.",
     category: "system-design",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 5,
   },
   {
@@ -836,6 +841,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Compare component-driven, micro-frontend, and monorepo architectures and know when to use each at scale.",
     category: "system-design",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 6,
   },
   {
@@ -845,6 +851,7 @@ const CONCEPTS: ConceptSeed[] = [
       "Compare how server state, UI state, and global app state should be layered differently as a frontend codebase and team both grow.",
     category: "system-design",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 7,
   },
 ];
@@ -4967,6 +4974,451 @@ function overallBudgetStatus(results) {
     isPremium: true,
     orderIndex: 67,
   },
+  // ── system-design (Feature 48) ────────────────────────────────────────────
+  {
+    slug: "find-circular-component-imports",
+    conceptSlug: "component-driven-architecture",
+    title: "Find a circular dependency in a component import graph",
+    description: `The bug that turns a clean component tree into a tangled one: a cycle in the import graph.
+
+## The problem
+
+Component-driven architecture only stays reusable if the dependency direction is one-way — small components never import anything above them. When that breaks down (a shared \`Card\` accidentally imports a page-level component for "just one thing"), the import graph gets a cycle, and cycles cause real bundler/runtime problems (circular \`require\`s resolving to partially-initialized modules).
+
+## The idea
+
+Walk the graph with a depth-first search, tracking which nodes are on the *current* path (not just visited ever) — a node reappearing on the current path is exactly a cycle.
+
+## Your task
+
+Write \`findCycle(graph)\`, where \`graph\` is an adjacency list (\`{ [component]: string[] }\` of what it imports). Return the cycle as an array of component names, starting and ending on the repeated node, or \`null\` if the graph has none:
+
+\`\`\`js
+findCycle({ A: ["B"], B: ["C"], C: ["A"] })
+// → ["A", "B", "C", "A"]
+findCycle({ A: ["B"], B: ["C"], C: [] })
+// → null
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function findCycle(graph) {
+  // DFS, tracking the current path — a repeated node on the path is a cycle
+}`,
+    solutionCode: `function findCycle(graph) {
+  const visited = new Set();
+  const stack = new Set();
+  const path = [];
+  function dfs(node) {
+    visited.add(node);
+    stack.add(node);
+    path.push(node);
+    for (const neighbor of graph[node] || []) {
+      if (stack.has(neighbor)) {
+        return [...path.slice(path.indexOf(neighbor)), neighbor];
+      }
+      if (!visited.has(neighbor)) {
+        const result = dfs(neighbor);
+        if (result) return result;
+      }
+    }
+    stack.delete(node);
+    path.pop();
+    return null;
+  }
+  for (const node of Object.keys(graph)) {
+    if (!visited.has(node)) {
+      const result = dfs(node);
+      if (result) return result;
+    }
+  }
+  return null;
+}`,
+    testCases: [
+      {
+        input: 'findCycle({ A: ["B"], B: ["C"], C: ["A"] })',
+        expected: '["A", "B", "C", "A"]',
+        label: "Detects a 3-node cycle",
+      },
+      {
+        input: 'findCycle({ A: ["B"], B: ["C"], C: [] })',
+        expected: "null",
+        label: "Returns null for a simple chain",
+      },
+      {
+        input: 'findCycle({ A: [], B: [] })',
+        expected: "null",
+        label: "Returns null with no edges at all",
+      },
+    ],
+    hints: [
+      "Track two sets: every node visited ever, and only the nodes currently on the path from the DFS root.",
+      "A neighbor already visited but not on the current path is fine — it just means two components share a dependency, not a cycle.",
+      "The cycle path is the slice of the current path starting from where the repeated node first appeared, plus that node again at the end.",
+    ],
+    isPremium: true,
+    orderIndex: 68,
+  },
+  {
+    slug: "plan-fetch-waterfall",
+    conceptSlug: "api-design-data-fetching-strategy",
+    title: "Group dependent data requests into parallel fetch waves",
+    description: `The core planning step behind avoiding a request waterfall: figure out which requests can actually run at the same time.
+
+## The problem
+
+Fetching \`user\`, then \`posts\` (which needs \`user\`), then \`comments\` (which needs \`posts\`) one after another is a waterfall — but two independent requests with no dependency on each other shouldn't be forced to wait in line just because they were fetched at the same layer.
+
+## The idea
+
+Requests that have no unresolved dependencies can fire in the same wave. Once a wave resolves, some requests that depended only on that wave become fetchable in the next one.
+
+## Your task
+
+Write \`planFetchWaterfall(requests)\`, where \`requests\` is \`{ name, dependsOn: string[] }[]\`. Return an array of waves — each wave an array of names that can fetch in parallel — sorting names alphabetically within a wave for a deterministic result:
+
+\`\`\`js
+planFetchWaterfall([
+  { name: "user", dependsOn: [] },
+  { name: "settings", dependsOn: [] },
+  { name: "posts", dependsOn: ["user"] },
+])
+// → [["settings", "user"], ["posts"]]
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function planFetchWaterfall(requests) {
+  // Repeatedly pull out every request whose dependsOn are all already resolved
+}`,
+    solutionCode: `function planFetchWaterfall(requests) {
+  const byName = Object.fromEntries(requests.map((r) => [r.name, r]));
+  const resolved = new Set();
+  const waves = [];
+  const remaining = new Set(requests.map((r) => r.name));
+  while (remaining.size) {
+    const wave = [...remaining].filter((name) => byName[name].dependsOn.every((d) => resolved.has(d)));
+    if (wave.length === 0) throw new Error("circular dependency");
+    wave.sort();
+    for (const name of wave) { remaining.delete(name); resolved.add(name); }
+    waves.push(wave);
+  }
+  return waves;
+}`,
+    testCases: [
+      {
+        input:
+          'planFetchWaterfall([{ name: "user", dependsOn: [] }, { name: "posts", dependsOn: ["user"] }, { name: "comments", dependsOn: ["posts"] }])',
+        expected: '[["user"], ["posts"], ["comments"]]',
+        label: "A linear chain produces one request per wave",
+      },
+      {
+        input:
+          'planFetchWaterfall([{ name: "user", dependsOn: [] }, { name: "settings", dependsOn: [] }, { name: "posts", dependsOn: ["user"] }])',
+        expected: '[["settings", "user"], ["posts"]]',
+        label: "Independent requests share the first wave",
+      },
+    ],
+    hints: [
+      "A request belongs in the current wave if every name in its dependsOn has already been resolved in an earlier wave.",
+      "Move every eligible request into the wave at once, not one at a time — that's what makes them parallel rather than sequential.",
+      "Sort each wave's names before pushing it, so the result is deterministic regardless of the input array's order.",
+    ],
+    isPremium: true,
+    orderIndex: 69,
+  },
+  {
+    slug: "pick-realtime-transport",
+    conceptSlug: "designing-real-time-updates",
+    title: "Choose the right real-time transport for the constraints",
+    description: `The decision behind every "polling vs. SSE vs. WebSocket" system design question, made concrete.
+
+## The problem
+
+Reaching for WebSockets "to be safe" adds bidirectional complexity a one-way feed never uses. The right transport depends on the actual constraints, not a default.
+
+## The idea
+
+Direction is the first fork: if the client ever needs to send data back over the same live channel, only a WebSocket does that. Otherwise, frequency and browser support decide between SSE and plain polling.
+
+## Your task
+
+Write \`chooseTransport({ needsBidirectional, updateFrequencySec, browserSupportRequired })\`, returning \`"websocket"\`, \`"sse"\`, or \`"polling"\`:
+
+- \`needsBidirectional: true\` → \`"websocket"\`, always
+- otherwise, \`browserSupportRequired: "legacy"\` → \`"polling"\` (no SSE/WebSocket support assumed)
+- otherwise, \`updateFrequencySec <= 10\` → \`"sse"\`
+- otherwise → \`"polling"\``,
+    difficulty: "hard",
+    starterCode: `function chooseTransport({ needsBidirectional, updateFrequencySec, browserSupportRequired }) {
+  // bidirectional first, then legacy support, then frequency
+}`,
+    solutionCode: `function chooseTransport({ needsBidirectional, updateFrequencySec, browserSupportRequired }) {
+  if (needsBidirectional) return "websocket";
+  if (browserSupportRequired === "legacy") return "polling";
+  if (updateFrequencySec <= 10) return "sse";
+  return "polling";
+}`,
+    testCases: [
+      {
+        input:
+          'chooseTransport({ needsBidirectional: true, updateFrequencySec: 1, browserSupportRequired: "modern" })',
+        expected: '"websocket"',
+        label: "Bidirectional always wins, regardless of frequency",
+      },
+      {
+        input:
+          'chooseTransport({ needsBidirectional: false, updateFrequencySec: 2, browserSupportRequired: "modern" })',
+        expected: '"sse"',
+        label: "Frequent one-way updates pick SSE",
+      },
+      {
+        input:
+          'chooseTransport({ needsBidirectional: false, updateFrequencySec: 60, browserSupportRequired: "modern" })',
+        expected: '"polling"',
+        label: "Infrequent updates fall back to polling",
+      },
+      {
+        input:
+          'chooseTransport({ needsBidirectional: false, updateFrequencySec: 2, browserSupportRequired: "legacy" })',
+        expected: '"polling"',
+        label: "Legacy browser support forces polling even at high frequency",
+      },
+    ],
+    hints: [
+      "Check needsBidirectional first — nothing else matters if the client has to send data back over the same channel.",
+      "browserSupportRequired === 'legacy' should short-circuit to polling before frequency is even considered.",
+      "The frequency threshold only decides between SSE and polling, never between either of those and WebSocket.",
+    ],
+    isPremium: true,
+    orderIndex: 70,
+  },
+  {
+    slug: "merge-feed-page",
+    conceptSlug: "designing-infinite-scroll-feed",
+    title: "Merge a newly fetched feed page without duplicates",
+    description: `The core operation behind a stable infinite-scroll feed: merging in a new page without corrupting what's already loaded.
+
+## The problem
+
+A feed re-fetching or re-rendering shouldn't duplicate an item that was already loaded — and it needs to remember the new cursor for the next fetch.
+
+## The idea
+
+Track which ids are already present. Append only the new page's items whose id hasn't been seen yet, preserving the existing order, then carry forward the new cursor.
+
+## Your task
+
+Write \`mergeFeedPage(existingItems, newPage)\`, where \`newPage\` is \`{ items: {id}[], nextCursor }\`. Return \`{ items, nextCursor }\`:
+
+\`\`\`js
+mergeFeedPage(
+  [{ id: 1 }, { id: 2 }],
+  { items: [{ id: 2 }, { id: 3 }], nextCursor: "c3" }
+)
+// → { items: [{ id: 1 }, { id: 2 }, { id: 3 }], nextCursor: "c3" }
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function mergeFeedPage(existingItems, newPage) {
+  // Append only items whose id isn't already present; carry forward nextCursor
+}`,
+    solutionCode: `function mergeFeedPage(existingItems, newPage) {
+  const seen = new Set(existingItems.map((i) => i.id));
+  const merged = [...existingItems];
+  for (const item of newPage.items) {
+    if (!seen.has(item.id)) {
+      merged.push(item);
+      seen.add(item.id);
+    }
+  }
+  return { items: merged, nextCursor: newPage.nextCursor };
+}`,
+    testCases: [
+      {
+        input:
+          'mergeFeedPage([{ id: 1 }, { id: 2 }], { items: [{ id: 2 }, { id: 3 }], nextCursor: "c3" })',
+        expected: '{ items: [{ id: 1 }, { id: 2 }, { id: 3 }], nextCursor: "c3" }',
+        label: "Duplicate ids across the boundary aren't repeated",
+      },
+      {
+        input: 'mergeFeedPage([], { items: [{ id: 1 }], nextCursor: "c1" })',
+        expected: '{ items: [{ id: 1 }], nextCursor: "c1" }',
+        label: "An empty starting feed just takes the new page",
+      },
+    ],
+    hints: [
+      "Build the seen-id set from existingItems before looking at newPage's items.",
+      "Existing items keep their original order; only new, unseen items get appended at the end.",
+      "The returned nextCursor always comes from newPage, never from the existing state.",
+    ],
+    isPremium: true,
+    orderIndex: 71,
+  },
+  {
+    slug: "transform-insert-operations",
+    conceptSlug: "designing-realtime-collaborative-editor",
+    title: "Transform a concurrent insert operation (Operational Transformation)",
+    description: `The core mechanism behind Operational Transformation, reduced to its simplest case: two concurrent plain-text inserts.
+
+## The problem
+
+Two inserts computed against the same original text, both targeting position 5, can't both be applied at position 5 literally — one has to shift to account for the other already being there.
+
+## The idea
+
+Given an operation \`opA\` that's already been applied, adjust a concurrently-authored \`opB\` so that applying it next lands in the right place: if \`opB\`'s position is at or after \`opA\`'s, shift it forward by \`opA\`'s inserted text length; otherwise it's unaffected.
+
+## Your task
+
+Write \`transform(opA, opB)\`, where each op is \`{ pos, text }\`, returning the adjusted \`opB\`:
+
+\`\`\`js
+transform({ pos: 5, text: "X" }, { pos: 5, text: "Y" })
+// → { pos: 6, text: "Y" } — Y now lands after X, not on top of it
+transform({ pos: 5, text: "X" }, { pos: 2, text: "Y" })
+// → { pos: 2, text: "Y" } — unaffected, Y was before X's position
+\`\`\``,
+    difficulty: "hard",
+    starterCode: `function transform(opA, opB) {
+  // Shift opB's position forward by opA's text length if opB.pos >= opA.pos
+}`,
+    solutionCode: `function transform(opA, opB) {
+  if (opB.pos >= opA.pos) {
+    return { ...opB, pos: opB.pos + opA.text.length };
+  }
+  return { ...opB };
+}`,
+    testCases: [
+      {
+        input: 'transform({ pos: 5, text: "X" }, { pos: 5, text: "Y" })',
+        expected: '{ pos: 6, text: "Y" }',
+        label: "A same-position concurrent insert shifts after the applied one",
+      },
+      {
+        input: 'transform({ pos: 5, text: "X" }, { pos: 2, text: "Y" })',
+        expected: '{ pos: 2, text: "Y" }',
+        label: "An insert before the applied position is left untouched",
+      },
+      {
+        input: 'transform({ pos: 2, text: "Hi" }, { pos: 5, text: "Y" })',
+        expected: '{ pos: 7, text: "Y" }',
+        label: "The shift amount always equals the applied op's text length",
+      },
+    ],
+    hints: [
+      "The comparison is opB.pos >= opA.pos, not just > — a tie means opB is treated as landing after opA.",
+      "The shift amount is opA.text.length, not a fixed amount — a longer inserted string shifts everything after it further.",
+      "An op whose position is strictly before opA's position is returned unchanged.",
+    ],
+    isPremium: true,
+    orderIndex: 72,
+  },
+  {
+    slug: "classify-architecture-fit",
+    conceptSlug: "frontend-architecture-patterns",
+    title: "Pick the right architecture for a team's actual constraints",
+    description: `The decision tree behind "should this be a monolith, a monorepo, or micro-frontends?"
+
+## The problem
+
+Reaching for micro-frontends because a codebase feels big — rather than because separate teams are genuinely blocked by a shared deploy pipeline — trades a solvable code-organization problem for a harder distributed-systems one.
+
+## The idea
+
+Team count and the need for independent deploys are the two facts that actually decide this, not codebase size.
+
+## Your task
+
+Write \`classifyArchitectureFit({ teamCount, independentDeployNeeded })\`, returning \`"monolith"\`, \`"monorepo"\`, or \`"micro-frontend"\`:
+
+- \`teamCount <= 1\` → \`"monolith"\`
+- more than one team, no independent-deploy requirement → \`"monorepo"\`
+- more than one team, independent deploys required → \`"micro-frontend"\``,
+    difficulty: "hard",
+    starterCode: `function classifyArchitectureFit({ teamCount, independentDeployNeeded }) {
+  // teamCount decides monolith vs. multi-team; independentDeployNeeded decides the rest
+}`,
+    solutionCode: `function classifyArchitectureFit({ teamCount, independentDeployNeeded }) {
+  if (teamCount <= 1) return "monolith";
+  if (independentDeployNeeded) return "micro-frontend";
+  return "monorepo";
+}`,
+    testCases: [
+      {
+        input: 'classifyArchitectureFit({ teamCount: 1, independentDeployNeeded: false })',
+        expected: '"monolith"',
+        label: "A single team never needs more than a monolith",
+      },
+      {
+        input: 'classifyArchitectureFit({ teamCount: 3, independentDeployNeeded: false })',
+        expected: '"monorepo"',
+        label: "Multiple teams sharing a release cadence fit a monorepo",
+      },
+      {
+        input: 'classifyArchitectureFit({ teamCount: 3, independentDeployNeeded: true })',
+        expected: '"micro-frontend"',
+        label: "Independent deploy requirements push toward micro-frontends",
+      },
+    ],
+    hints: [
+      "teamCount <= 1 short-circuits to monolith before independentDeployNeeded is even checked.",
+      "The remaining split is entirely about independentDeployNeeded, not team count.",
+      "There's no path back to monolith once teamCount > 1 — the choice is only monorepo vs. micro-frontend from there.",
+    ],
+    isPremium: true,
+    orderIndex: 73,
+  },
+  {
+    slug: "classify-state-layer",
+    conceptSlug: "state-management-at-scale",
+    title: "Classify a piece of state into its correct layer",
+    description: `The decision every "where should this state live?" question ultimately reduces to.
+
+## The problem
+
+Putting server state in a generic global store — or hoisting local UI state into one — is the most common state-management mistake at scale.
+
+## The idea
+
+Whether data's source of truth is the server is checked first; then whether it's genuinely shared across the app; everything else is local.
+
+## Your task
+
+Write \`classifyStateLayer({ isServerData, isSharedAcrossRoutes })\`, returning \`"server"\`, \`"global"\`, or \`"local"\`:
+
+- \`isServerData: true\` → \`"server"\`, regardless of the other flag
+- otherwise, \`isSharedAcrossRoutes: true\` → \`"global"\`
+- otherwise → \`"local"\``,
+    difficulty: "medium",
+    starterCode: `function classifyStateLayer({ isServerData, isSharedAcrossRoutes }) {
+  // isServerData wins first; isSharedAcrossRoutes decides the rest
+}`,
+    solutionCode: `function classifyStateLayer({ isServerData, isSharedAcrossRoutes }) {
+  if (isServerData) return "server";
+  if (isSharedAcrossRoutes) return "global";
+  return "local";
+}`,
+    testCases: [
+      {
+        input: 'classifyStateLayer({ isServerData: true, isSharedAcrossRoutes: false })',
+        expected: '"server"',
+        label: "Server-owned data is always server state",
+      },
+      {
+        input: 'classifyStateLayer({ isServerData: false, isSharedAcrossRoutes: true })',
+        expected: '"global"',
+        label: "Non-server state shared across routes is global",
+      },
+      {
+        input: 'classifyStateLayer({ isServerData: false, isSharedAcrossRoutes: false })',
+        expected: '"local"',
+        label: "Everything else defaults to local",
+      },
+    ],
+    hints: [
+      "isServerData is checked first and short-circuits everything else — a server-backed value is never global or local state.",
+      "isSharedAcrossRoutes only matters once isServerData is false.",
+      "The default case (neither flag set) is local, not global.",
+    ],
+    isPremium: true,
+    orderIndex: 74,
+  },
 ];
 
 // ── Interview questions (5 per collection, plus concept-linked top-ups) ────────
@@ -6010,6 +6462,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
   // ff-system-design
   {
     collection: "ff-system-design",
+    conceptSlug: "designing-realtime-collaborative-editor",
     question: "How would you design a real-time collaborative text editor (like Google Docs)?",
     answer:
       "**Core challenge:** multiple users editing simultaneously without conflicting changes corrupting the document.\n\n**Approach: Operational Transformation (OT) or CRDTs**\n- OT transforms each operation relative to concurrent operations so they converge. Requires a central server to order operations.\n- CRDTs (e.g. Yjs, Automerge) allow peer-to-peer convergence without a central arbiter.\n\n**Architecture:**\n1. **Client** — local optimistic updates; send ops to server via WebSocket\n2. **Server** — orders ops, broadcasts to other clients, persists to DB\n3. **Transport** — WebSocket for real-time; HTTP fallback / periodic snapshots\n4. **Persistence** — store the op log + periodic document snapshots for efficient load\n5. **Presence** — cursor positions, user selections (ephemeral, not in op log)\n\n**Scalability:** Shard documents across servers; use a pub/sub (Redis, Kafka) to fan out ops to all connections for a given document.",
@@ -6020,6 +6473,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
   },
   {
     collection: "ff-system-design",
+    conceptSlug: "designing-infinite-scroll-feed",
     question: "How would you design an infinite-scroll news feed?",
     answer:
       "**Requirements:** fast initial load, smooth scrolling, fresh content, back-navigation restores position.\n\n**API design:** cursor-based pagination (not offset) — `GET /feed?after=<cursor>&limit=20`. Cursor is an opaque server token (e.g. encoded timestamp + id) that's stable even if new posts are inserted.\n\n**Client:**\n- Fetch the first page on load; fetch the next page when the user scrolls near the bottom (IntersectionObserver on a sentinel element)\n- Cache pages in memory (React Query, SWR) — don't refetch on back-navigation\n- Virtualise the list with a library like `react-window` if posts are numerous\n- Store scroll position + cursor in session storage so the browser's back button restores the position\n\n**Freshness:** Poll for new items at the top at a low frequency (30s) without resetting the cursor; surface a 'X new posts' banner rather than auto-inserting and shifting the user's reading position.\n\n**CDN:** Edge-cache feed responses for a short TTL (5–30s) to reduce origin load.",
@@ -6029,6 +6483,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
   },
   {
     collection: "ff-system-design",
+    conceptSlug: "state-management-at-scale",
     question: "How would you design a client-side caching strategy for a large React application?",
     answer:
       "**Layers:**\n\n1. **Server state** (async, remote) — use a library (React Query, SWR, Apollo). They handle deduplication, background refetch, stale-while-revalidate, and cache invalidation. Never put server state in Redux/Zustand — that's the leading cause of stale data bugs.\n\n2. **UI state** (ephemeral, local) — useState, useReducer, or a lightweight store (Zustand, Jotai). Keep it as close to the consuming component as possible.\n\n3. **HTTP caching** — set correct `Cache-Control` headers on API responses. `stale-while-revalidate` allows serving a cached response while fetching a fresh one.\n\n4. **Persistent cache** — for offline support or faster first paint, serialise the React Query cache to `localStorage`/`IndexedDB` on unload and restore it on load (react-query's `persistQueryClient` plugin).\n\n**Cache invalidation strategy:** invalidate by tag (not by URL) — after a mutation, mark all queries with a given tag as stale so they refetch on next access. Optimistic updates (mutate the cache immediately, roll back on error) make mutations feel instant.",
@@ -6039,6 +6494,7 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
   },
   {
     collection: "ff-system-design",
+    conceptSlug: "component-driven-architecture",
     question: "How would you design a component library for a large organisation?",
     answer:
       "**Goals:** consistency, accessibility, performance, developer ergonomics, and independently versioned releases.\n\n**Structure:**\n- Monorepo (Turborepo/Nx) — one package per logical group (`@org/button`, `@org/form`) or a single `@org/ui` bundle\n- Design token layer — spacing, color, typography as CSS variables or a token file; consumed by all components\n- Accessibility by default — every interactive component passes axe/Playwright accessibility checks in CI\n- Headless primitives layer (Radix UI, Base UI, Ariakit) for complex widgets (menus, dialogs, comboboxes) to avoid reimplementing keyboard navigation and ARIA\n\n**Distribution:**\n- Build to ESM + CJS with tree-shaking support (Rollup/tsup)\n- Ship TypeScript types, not just `.d.ts` declarations\n- Publish to a private npm registry or Verdaccio for internal use\n\n**Governance:**\n- Changelog discipline (Changesets) — never break APIs without a major bump\n- Visual regression tests (Chromatic/Percy) — screenshot every story in CI\n- Storybook — living documentation and interaction tests",
@@ -6054,6 +6510,42 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     difficulty: "medium",
     companies: ["Google", "Stripe", "Amazon"],
     orderIndex: 5,
+  },
+  // Left unlinked deliberately (Feature 48): this question is a Performance topic
+  // (TTFB/LCP), not a System Design one — none of the 7 system-design concepts
+  // are a real fit for it, and Performance's own Feature 47 didn't cover it either
+  // since it lives in this collection, not ff-75. Noted rather than force-linked.
+  {
+    collection: "ff-system-design",
+    conceptSlug: "api-design-data-fetching-strategy",
+    question: "How would you decide between REST and GraphQL when designing a new API?",
+    answer:
+      "**Start from the client's actual access pattern, not a default preference.**\n\n**REST fits when:**\n- Resources map cleanly to URLs and CRUD operations\n- HTTP/CDN-level caching by URL is valuable (public, mostly-static resources)\n- Multiple independent client teams need a stable, documented contract they don't control the evolution of\n\n**GraphQL fits when:**\n- Clients have very different data needs from the same resources (a mobile app wanting a thin payload, a dashboard wanting a deep nested one) — one query shape per client instead of new REST endpoints per shape\n- Reducing round trips matters (one GraphQL query replaces several REST calls for related resources)\n- The frontend and backend teams evolve together, since the schema is the contract\n\n**What GraphQL costs:** the server does more work resolving arbitrary queries (N+1 query risk without a dataloader/batching layer), URL-based HTTP caching mostly disappears (client-side caching, keyed by query+variables, has to pick up the slack), and query complexity itself needs guarding against (depth limiting, query cost analysis) to stop a client from requesting something disproportionately expensive.\n\n**In practice:** a public API with many external, uncoordinated consumers leans REST; an internal API serving several first-party clients with divergent data needs leans GraphQL. Neither is a strictly superior default.",
+    difficulty: "hard",
+    companies: ["Meta", "GitHub", "Shopify"],
+    isPremium: true,
+    orderIndex: 6,
+  },
+  {
+    collection: "ff-system-design",
+    conceptSlug: "designing-real-time-updates",
+    question: "How would you design a live sports score update feature — polling, SSE, or WebSockets?",
+    answer:
+      "**First question: does the client ever send data back over the same channel?** No — scores only flow server-to-client. That rules out needing a WebSocket's bidirectional complexity by default.\n\n**Between SSE and polling:**\n- Update frequency during a live game is high enough (every few seconds) that polling would mean frequent wasted requests when nothing's changed between polls\n- SSE (`EventSource`) keeps one connection open, built on plain HTTP — works through standard proxies/load balancers, reconnects automatically on drop, and the server only sends a message when a score actually changes\n\n**Architecture:**\n1. A score-change event publishes to a pub/sub channel (Redis/Kafka) keyed by game id\n2. Each server holding open SSE connections for that game subscribes and forwards the event to its connected clients\n3. Client falls back to a single poll on reconnect to catch anything missed while disconnected\n\n**Why not WebSockets here:** they'd work, but the operational cost (heartbeats, backpressure, WebSocket-aware load balancing) buys nothing this feature actually uses, since the client never talks back over that channel.\n\n**When it would change:** if the feature grew to include live chat or reactions alongside the score feed, that bidirectional need would justify a WebSocket for that part of the connection.",
+    difficulty: "medium",
+    companies: ["ESPN", "Amazon", "Google"],
+    orderIndex: 7,
+  },
+  {
+    collection: "ff-system-design",
+    conceptSlug: "frontend-architecture-patterns",
+    question: "How would you decide between a monorepo and micro-frontends for a growing frontend organization?",
+    answer:
+      "**These answer different questions — check which one is actually blocking the team first.**\n\n**A monorepo solves a code-organization problem:** shared tooling, atomic cross-package commits, unified dependency versions. It says nothing about deployment — a monorepo can still ship one single deployed app.\n\n**Micro-frontends solve a deployment-independence problem:** separate teams shipping on separate schedules without waiting on a shared release train. This is a runtime-composition decision, independent of which repository the code lives in.\n\n**Decision path:**\n1. Is the actual pain point 'our shared tooling/dependency versions are inconsistent and PRs conflict across teams'? → a monorepo (Turborepo/Nx) solves this without touching how the app is deployed.\n2. Is the actual pain point 'team A can't ship without team B's approval/release cycle'? → that's a deployment bottleneck a monorepo alone doesn't fix — micro-frontends (Module Federation, or server-side composition) address it directly.\n3. Is the org small enough that no team is genuinely blocked by another's release cadence? → neither pattern is worth its overhead yet; a single well-organized app is simpler.\n\n**The real cost of getting it wrong:** adopting micro-frontends for a 'big codebase' rather than a genuine deploy-independence need trades a solved problem (code organization) for a harder one (shared dependency versions, design consistency, and composition across teams that no longer share a single build).",
+    difficulty: "hard",
+    companies: ["Spotify", "Zalando", "Microsoft"],
+    isPremium: true,
+    orderIndex: 8,
   },
 
   // Phase 10 (Feature 42) — Browser Internals, 5 flagship questions per new concept
@@ -8677,6 +9169,296 @@ const INTERVIEW_QUESTIONS: InterviewQuestionSeed[] = [
     difficulty: "medium",
     companies: ["Meta", "Amazon"],
     orderIndex: 252,
+  },
+
+  // Phase 10 (Feature 48) — System Design, 4 ff-75 top-ups per concept (each
+  // concept's flagship question already lives in the ff-system-design collection
+  // above, either an existing re-linked one or one of the 3 written for this feature)
+  {
+    collection: "ff-75",
+    conceptSlug: "component-driven-architecture",
+    question: "What's the difference between a presentational and a container component?",
+    answer:
+      "A **presentational** component only cares about how things look — it receives data and callbacks via props and renders UI, with no knowledge of where that data came from. A **container** component owns data-fetching, state, or business logic, and passes the results down to presentational components as props.\n\nThis split is what makes a presentational component reusable across completely different data sources — a `UserCard` that just renders `{ name, avatarUrl }` works identically whether the data came from a REST call, a GraphQL query, or a Storybook mock. Hooks blurred the strict 1990s-style split (a component can now both fetch and render), but the underlying principle — keep the reusable, generic rendering logic free of business/data concerns — still holds.",
+    difficulty: "easy",
+    companies: ["Meta", "Airbnb"],
+    orderIndex: 253,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "component-driven-architecture",
+    question: "Why shouldn't a design system's base components (Button, Input) contain business logic?",
+    answer:
+      "A base component's entire value is that it's reusable in contexts its author never anticipated. The moment a `Button` reaches into a specific feature's state or API — even something as small as logging a specific analytics event — it stops being generic and becomes coupled to that one feature, and every other consumer either inherits logic it doesn't need or has to work around it.\n\nThe fix is keeping the base layer prop-driven and side-effect-free: an `onClick` prop, not a hardcoded call to a specific tracking function. Anything feature-specific belongs one layer up, in the component that composes the base primitive for that particular use case.",
+    difficulty: "easy",
+    companies: ["Stripe", "Shopify"],
+    orderIndex: 254,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "component-driven-architecture",
+    question: "How do you decide whether a piece of UI is worth extracting into its own component?",
+    answer:
+      "Two independent signals, not one: **reuse** (is this markup/logic duplicated, or likely to be, in more than one place?) and **isolation of complexity** (is this piece of the tree independently complex enough that separating it makes the parent easier to read, even with only one caller?).\n\nExtracting purely on 'this file got long' without either signal tends to produce components that are only separated by file boundary, not by responsibility — they still reach into the same parent state and can't be tested or reused independently. A component earns its extraction when its props are a genuinely sufficient contract, not just when it's been cut out of a bigger file.",
+    difficulty: "medium",
+    companies: ["Google", "Netflix"],
+    orderIndex: 255,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "component-driven-architecture",
+    question: "How does component composition help avoid prop drilling without reaching for global state?",
+    answer:
+      "Prop drilling happens when a value is threaded through several layers that don't use it themselves, just to reach a deeply nested consumer. Composition sidesteps this by passing the *already-rendered* consumer down as a prop or `children`, rather than passing the raw data down and re-rendering it at each layer.\n\n```jsx\n// Drilled: Layout must know about `user` just to forward it\n<Layout user={user}><Sidebar user={user} /></Layout>\n\n// Composed: Layout never touches `user` at all\n<Layout>\n  <Sidebar>{<UserBadge user={user} />}</Sidebar>\n</Layout>\n```\n\nThis isn't a universal fix — a value genuinely needed at many unrelated points in the tree is still a real case for Context or a shared store — but it eliminates the large share of 'prop drilling' that's really just intermediate components blindly forwarding something they never use.",
+    difficulty: "medium",
+    companies: ["Meta", "Vercel"],
+    orderIndex: 256,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "api-design-data-fetching-strategy",
+    question: "What are over-fetching and under-fetching, and which API style is each usually associated with?",
+    answer:
+      "**Over-fetching** is receiving more data than the screen actually needs (a REST `/users/1` endpoint returning 20 fields when a list view only renders 3). **Under-fetching** is the opposite — needing data from several endpoints to render one screen, forcing multiple round trips or a chain of dependent requests.\n\nREST's fixed-shape-per-endpoint design is the classic source of both, since one endpoint has to serve every consumer's needs. GraphQL was designed specifically to eliminate both by letting the client specify the exact fields and relationships it wants in a single query — at the cost of the server doing more work to resolve an arbitrary shape.",
+    difficulty: "easy",
+    companies: ["Meta", "GitHub"],
+    orderIndex: 257,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "api-design-data-fetching-strategy",
+    question: "Why does request deduplication matter in a data-fetching library like React Query?",
+    answer:
+      "Without it, two components independently requesting the same resource (say, both rendering after the same navigation) each fire their own network request for identical data — wasted bandwidth, wasted server load, and a real risk the two responses arrive out of order and momentarily show inconsistent data.\n\nA cache-aware library keys in-flight requests by their arguments: a second request for the same key while the first is still pending is handed the same in-flight promise instead of starting a new one. This is invisible to the calling components — each just calls the hook normally — but collapses what would've been N network calls into 1.",
+    difficulty: "medium",
+    companies: ["Airbnb", "Uber"],
+    orderIndex: 258,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "api-design-data-fetching-strategy",
+    question: "What's the tradeoff of an RPC-style API (like tRPC) compared to REST?",
+    answer:
+      "RPC-style APIs make a network call look like calling a local function (`getUserPosts(userId)`), often with end-to-end type inference — the client gets the server's real return type with zero manually-maintained schema. This removes an entire class of client/server type-mismatch bugs.\n\nThe cost: it's tightly coupled to that specific backend's function signatures rather than a documented, stable resource contract. It works well for a first-party frontend and backend shipped by the same team, but isn't suited to a public API other, independent teams need to consume without being coupled to internal implementation details.",
+    difficulty: "medium",
+    companies: ["Vercel", "Linear"],
+    orderIndex: 259,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "api-design-data-fetching-strategy",
+    question: "What is stale-while-revalidate and why does it help perceived performance?",
+    answer:
+      "Stale-while-revalidate serves the cached (possibly outdated) response immediately, then fetches a fresh copy in the background and updates the UI once it resolves. The user sees data instantly instead of a loading spinner, and gets corrected data moments later if anything changed.\n\nIt's the default behavior in cache-aware libraries like React Query/SWR (the acronym is literally the library's name), and is also a real HTTP `Cache-Control` directive CDNs respect — both layers apply the same idea: prefer showing something now over blocking on a guaranteed-fresh response.",
+    difficulty: "easy",
+    companies: ["Vercel", "Cloudflare"],
+    orderIndex: 260,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-real-time-updates",
+    question: "What's the key architectural difference between Server-Sent Events and WebSockets?",
+    answer:
+      "SSE is one-directional (server-to-client only) and built entirely on plain HTTP — the client opens a long-lived connection via `EventSource`, and the server streams events down it. It reconnects automatically on drop and works through nearly any HTTP-aware proxy or load balancer with no special handling.\n\nWebSockets are full-duplex over their own protocol (upgraded from an HTTP handshake) — either side can send at any time. That flexibility costs more: your own reconnection, heartbeat, and backpressure handling, plus infrastructure that's aware WebSocket connections need to stay pinned rather than load-balanced per-request like normal HTTP.",
+    difficulty: "medium",
+    companies: ["Slack", "Discord"],
+    orderIndex: 261,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-real-time-updates",
+    question: "Why does polling waste resources even when nothing has changed?",
+    answer:
+      "Every poll is a full request/response cycle — DNS, TLS, server processing, a response body — even if the answer is 'nothing changed since last time.' At scale, that's a constant baseline of load proportional to (client count × poll frequency), regardless of how often data actually changes.\n\nA push-based mechanism (SSE or WebSocket) inverts this: the server only sends something when there's actually something to send, so idle periods cost nothing beyond holding an open connection — which is far cheaper than a repeated full request cycle.",
+    difficulty: "easy",
+    companies: ["Amazon", "Google"],
+    orderIndex: 262,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-real-time-updates",
+    question: "What is exponential backoff, and why does a real-time client's reconnect logic need it?",
+    answer:
+      "Exponential backoff increases the delay between retry attempts after each failure (e.g. 1s, 2s, 4s, 8s...), typically capped at a maximum. For a dropped WebSocket or SSE connection, this matters because a connection often drops *because* the server is struggling — every client immediately retrying at a fixed short interval is exactly the pattern that turns a brief server hiccup into a thundering-herd outage.\n\nA real implementation also caps the number of attempts (giving up and surfacing an error after enough failures) rather than retrying forever, and often adds jitter (a small random offset) so many clients' retries don't all land in the same instant.",
+    difficulty: "medium",
+    companies: ["Netflix", "Cloudflare"],
+    orderIndex: 263,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-real-time-updates",
+    question: "Can a WebSocket connection pass through a corporate proxy or load balancer without extra configuration?",
+    answer:
+      "Not reliably. A WebSocket starts as a normal HTTP request that gets upgraded to a persistent connection — some older or strictly-configured proxies don't support the upgrade at all, and load balancers need to be explicitly configured to keep a WebSocket connection pinned to the same backend instance for its whole lifetime, rather than load-balancing it per-request the way they do normal HTTP.\n\nThis is one reason SSE is sometimes preferred for one-directional use cases: since it's just a long-lived plain HTTP response, it needs none of that special-case infrastructure support.",
+    difficulty: "hard",
+    companies: ["Microsoft", "Cisco"],
+    orderIndex: 264,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-infinite-scroll-feed",
+    question: "Why is cursor-based pagination preferred over offset-based pagination for a live feed?",
+    answer:
+      "Offset pagination (`?offset=20&limit=20`) identifies a page by numeric position — if a new item gets inserted above position 20 between two requests, every subsequent page shifts by one, causing duplicated or skipped items. A cursor (an opaque token pointing at a specific item, commonly an encoded `(timestamp, id)`) identifies 'everything after this specific row,' so it stays correct regardless of what gets inserted before or after it.\n\nThe cost is that cursors don't support jumping to an arbitrary page number the way offsets do — but a feed's UI (scroll, not page numbers) never needed that capability in the first place.",
+    difficulty: "medium",
+    companies: ["Meta", "Twitter"],
+    orderIndex: 265,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-infinite-scroll-feed",
+    question: "How do you preserve a feed's scroll position when a user navigates away and back?",
+    answer:
+      "Two things have to both be cached: the fetched pages themselves (so returning doesn't refetch from page 1 — a cache-aware library keyed by request handles this) and the scroll offset itself, typically stored in `sessionStorage` keyed by route.\n\nThe order matters: the scroll position has to be restored *after* the cached items have re-rendered, not before — restoring a scroll offset against an empty or partially-rendered list just lands in the wrong place once the real content finishes rendering underneath it.",
+    difficulty: "medium",
+    companies: ["LinkedIn", "Reddit"],
+    orderIndex: 266,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-infinite-scroll-feed",
+    question: "What UX pattern avoids disrupting a user's reading position when new items arrive at the top of a feed?",
+    answer:
+      "Auto-inserting new items at the top shifts everything the user is currently reading further down the screen — a jarring, disorienting jump. The standard fix is polling for new items in the background without inserting them automatically, and instead surfacing a small 'X new posts' banner at the top.\n\nThe user only sees the new content — and the layout shift that comes with it — after an explicit tap, at a moment they're prepared for it rather than mid-read.",
+    difficulty: "easy",
+    companies: ["Meta", "Twitter"],
+    orderIndex: 267,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-infinite-scroll-feed",
+    question: "What role does IntersectionObserver play in implementing infinite scroll?",
+    answer:
+      "A sentinel element (an otherwise-invisible element) is placed near the bottom of the rendered list, and an `IntersectionObserver` watches when it enters the viewport. When it does, that's the trigger to fetch the next page — no manual scroll-event math (comparing `scrollTop`/`scrollHeight`/`clientHeight` on every scroll tick) required.\n\nThis is significantly cheaper than a `scroll` event listener, since the browser only needs to notify the callback on actual intersection changes rather than firing on every pixel of scroll movement, which matters a lot for scroll-performance-sensitive feeds.",
+    difficulty: "medium",
+    companies: ["Google", "Pinterest"],
+    orderIndex: 268,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-realtime-collaborative-editor",
+    question: "What problem does Operational Transformation solve that naive last-write-wins doesn't?",
+    answer:
+      "Last-write-wins simply lets whichever edit arrives last overwrite everything before it — for a shared document, that silently discards other users' concurrent edits rather than merging them. OT instead transforms each incoming operation's position against every operation already applied ahead of it, so two users' concurrent inserts both end up present in the final document, in a well-defined order, rather than one clobbering the other.",
+    difficulty: "medium",
+    companies: ["Google", "Notion"],
+    orderIndex: 269,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-realtime-collaborative-editor",
+    question: "How do CRDTs achieve conflict-free merging without a central server?",
+    answer:
+      "A CRDT designs the data structure itself so that operations commute — applying the same set of edits in any order produces the same final result. For text, this typically means giving every character a unique, globally-ordered identifier rather than a plain array index, so inserting 'between' two characters is well-defined regardless of what else got inserted concurrently elsewhere.\n\nBecause the merge rule is baked into the structure rather than enforced by a server ordering operations, any two replicas (even offline, peer-to-peer copies) can exchange their edits directly and converge to the same state with no arbiter required.",
+    difficulty: "hard",
+    companies: ["Figma", "Linear"],
+    orderIndex: 270,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-realtime-collaborative-editor",
+    question: "Why aren't cursor positions and user presence stored in the same persisted log as document edits?",
+    answer:
+      "Cursor position and presence (who's online, where their selection is) are ephemeral — useful only while a user is actively connected, and meaningless once they leave. Persisting them in the same op log or snapshot as real document content would bloat storage with data that's never meant to be replayed or restored on reload.\n\nThey're broadcast live (typically over the same WebSocket connection) but kept entirely separate from the durable edit history, which only needs to reconstruct the document's actual content.",
+    difficulty: "medium",
+    companies: ["Figma", "Google"],
+    orderIndex: 271,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "designing-realtime-collaborative-editor",
+    question: "What tradeoff do CRDTs make compared to OT in terms of overhead?",
+    answer:
+      "CRDTs avoid needing a central ordering server, but typically carry more per-character metadata (a unique id, sometimes tombstones for deleted characters that can't simply be removed without breaking convergence) than an OT-based document needs, since OT relies on a server enforcing a single authoritative order instead of encoding that guarantee into every character.\n\nIn practice this shows up as larger documents in memory/storage for a CRDT-backed editor, traded against not needing (and not being bottlenecked by) a single ordering server.",
+    difficulty: "hard",
+    companies: ["Figma", "Notion"],
+    orderIndex: 272,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "frontend-architecture-patterns",
+    question: "What's the difference between a monorepo and a micro-frontend architecture?",
+    answer:
+      "A monorepo is a code-organization choice — many packages in one repository with shared tooling and dependency versions. It says nothing about how the app is deployed; a monorepo can still ship one single monolithic app.\n\nMicro-frontends are a runtime-deployment choice — the running application itself is split into separately built and deployed pieces, composed together in the browser. They're frequently adopted together, but a monorepo doesn't require micro-frontends, and micro-frontends can be built from entirely separate repositories.",
+    difficulty: "medium",
+    companies: ["Spotify", "IKEA"],
+    orderIndex: 273,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "frontend-architecture-patterns",
+    question: "What is Module Federation, and what problem does it solve for micro-frontends?",
+    answer:
+      "Module Federation (a webpack/Rspack feature) lets one independently-built and independently-deployed application load code — a component, a whole page — from another application at runtime, without either being compiled together at build time. It's what makes 'separately deployed pieces composed into one experience' actually work in the browser, rather than requiring a full page reload or an iframe boundary between them.\n\nIt solves the practical composition problem micro-frontends need: how does the checkout team's independently-deployed bundle actually end up rendering inside the shell app the user loaded, sharing the same page without a hard iframe boundary.",
+    difficulty: "hard",
+    companies: ["Zalando", "American Express"],
+    orderIndex: 274,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "frontend-architecture-patterns",
+    question: "What's the biggest operational cost micro-frontends introduce that a monolith doesn't have?",
+    answer:
+      "Shared dependency drift. Once teams deploy independently, nothing forces every micro-frontend to agree on a shared library's version — one team upgrading React while another hasn't can mean two different React instances loaded on the same page at once, a common real-world source of subtle bugs (broken hooks, duplicated context) that a monolith's single build simply can't have, since it only ever has one version of anything installed.",
+    difficulty: "medium",
+    companies: ["Microsoft", "Zalando"],
+    orderIndex: 275,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "frontend-architecture-patterns",
+    question: "When is splitting an application into micro-frontends premature?",
+    answer:
+      "When no team is actually blocked by another team's release schedule. If the real pain is inconsistent tooling or dependency versions across teams sharing one product, a monorepo solves that without runtime-composition complexity. Micro-frontends earn their cost specifically when independent deploy schedules are the bottleneck — reaching for them just because a codebase feels large trades a solvable code-organization problem for a genuinely harder distributed-systems one (dependency drift, cross-team design consistency, runtime composition).",
+    difficulty: "medium",
+    companies: ["Spotify", "Amazon"],
+    orderIndex: 276,
+  },
+
+  {
+    collection: "ff-75",
+    conceptSlug: "state-management-at-scale",
+    question: "Why shouldn't server data (like an API response) be stored directly in Redux or Zustand?",
+    answer:
+      "A generic global store has no built-in concept of staleness — it just holds whatever was put there. Server data, by definition, can change on the backend without the client doing anything, so storing it in a plain store either goes silently stale forever, or the team ends up hand-rolling refetch-on-mount/refetch-on-focus logic that a dedicated server-state library (React Query, SWR, Apollo) already solves correctly, once, with cache invalidation and background revalidation built in.",
+    difficulty: "medium",
+    companies: ["Airbnb", "Google"],
+    orderIndex: 277,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "state-management-at-scale",
+    question: "What's the difference between UI state and global app state?",
+    answer:
+      "UI state is ephemeral and local to a specific interaction — a dropdown being open, an unsubmitted form field's current value. It doesn't need to survive a refresh or be visible anywhere outside the component (or its nearest shared ancestor) that owns it.\n\nGlobal app state is genuinely shared across the whole session but small — the logged-in user, the active theme, feature flags. The defining trait isn't 'used in a few places'; it's 'there's exactly one source of truth for the entire app,' unlike UI state (many independent, unrelated instances) or server state (many independent remote resources).",
+    difficulty: "easy",
+    companies: ["Meta", "Netflix"],
+    orderIndex: 278,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "state-management-at-scale",
+    question: "What problems come from putting every piece of state into one global store?",
+    answer:
+      "Two, both from treating fundamentally different kinds of state the same way: server data goes stale silently (no built-in revalidation), and hoisting local UI state (a single dropdown's open/closed flag) into the shared store causes unrelated components to re-render whenever unrelated global state changes, since a plain store typically notifies all subscribers on any update rather than only the ones reading the specific slice that changed.",
+    difficulty: "medium",
+    companies: ["Amazon", "Uber"],
+    orderIndex: 279,
+  },
+  {
+    collection: "ff-75",
+    conceptSlug: "state-management-at-scale",
+    question: "What does 'colocate state as close to where it's used as possible' mean in practice?",
+    answer:
+      "State should live in the lowest component in the tree that both needs it and is a common ancestor of everything that needs it — not hoisted further up (or all the way into a global store) by default. A form field's value only read by that one input stays in that input's own `useState`; it only moves up once a sibling genuinely needs to read or react to it too.\n\nThe payoff is fewer unrelated re-renders (a state change only affects the subtree that actually owns it) and a codebase where finding 'what can change this value' means reading one component, not searching the entire app for every dispatch to a shared store.",
+    difficulty: "medium",
+    companies: ["Meta", "Vercel"],
+    orderIndex: 280,
   },
 ];
 
@@ -13288,6 +14070,458 @@ function compareToBaseline(current, baseline, budgets) {
         input: 'compareToBaseline({ bundleSizeKb: 160 }, { bundleSizeKb: 180 }, { bundleSizeKb: 170 })',
         expected: '[{ metric: "bundleSizeKb", current: 160, baseline: 180, deltaPercent: -11.1, passed: true, regressed: false }]',
         label: "An improvement shows a negative deltaPercent and is never a regression",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  // ── system-design (Feature 48) ────────────────────────────────────────────
+  {
+    slug: "resolve-build-order",
+    conceptSlug: "component-driven-architecture",
+    title: "Resolve a safe build order from a component dependency graph",
+    description: `Extends the cycle detector into the tool a real build system needs: not just "is there a cycle," but "what order should things build in."
+
+## The problem
+
+Once a component import graph is known to be cycle-free, a build system (or a bundler resolving module order) still needs an actual order to build in — every dependency has to build before whatever depends on it.
+
+## The idea
+
+A topological sort produces exactly that order: visit each node's dependencies first (depth-first), then add the node itself once all its dependencies are already in the result. If a node is revisited while it's still being visited (not yet finished), that's a cycle.
+
+## Your task
+
+Write \`resolveBuildOrder(graph)\`, the same adjacency-list shape as the Challenge's \`findCycle\`. Return a valid build order (dependencies before dependents), or \`null\` if the graph has a cycle:
+
+\`\`\`js
+resolveBuildOrder({ A: ["B"], B: ["C"], C: [] })
+// → ["C", "B", "A"]
+resolveBuildOrder({ A: ["B"], B: ["A"] })
+// → null
+\`\`\``,
+    starterCode: `function resolveBuildOrder(graph) {
+  // DFS post-order: a node is added to the result only after all its deps are
+}`,
+    solutionCode: `function resolveBuildOrder(graph) {
+  const visited = new Set();
+  const visiting = new Set();
+  const order = [];
+  function dfs(node) {
+    if (visited.has(node)) return true;
+    if (visiting.has(node)) return false;
+    visiting.add(node);
+    for (const dep of graph[node] || []) {
+      if (!dfs(dep)) return false;
+    }
+    visiting.delete(node);
+    visited.add(node);
+    order.push(node);
+    return true;
+  }
+  for (const node of Object.keys(graph)) {
+    if (!dfs(node)) return null;
+  }
+  return order;
+}`,
+    testCases: [
+      {
+        input: 'resolveBuildOrder({ A: ["B"], B: ["C"], C: [] })',
+        expected: '["C", "B", "A"]',
+        label: "Dependencies always appear before whatever depends on them",
+      },
+      {
+        input: 'resolveBuildOrder({ A: ["B"], B: ["A"] })',
+        expected: "null",
+        label: "A cycle makes a valid build order impossible",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "dedupe-and-cache-fetcher",
+    conceptSlug: "api-design-data-fetching-strategy",
+    title: "Build a request-deduplicating, caching fetcher",
+    description: `The single mechanism that fixes the most common real-world data-fetching bug: two components independently requesting the same resource at the same time.
+
+## The problem
+
+Without deduplication, two components mounting at once and both asking for the same resource fire two separate network requests for identical data — wasted work, and a real risk of the two responses arriving in a different order than they were sent.
+
+## The idea
+
+A fetcher keyed by request key tracks in-flight promises: a second \`get(key)\` call while the first is still pending returns the *same* promise instead of starting a new fetch. Once resolved, the value is cached so later calls skip the network entirely — until explicitly invalidated.
+
+## Your task
+
+Write \`createFetcher(fetchFn)\`, returning \`{ get(key), invalidate(key) }\`. Concurrent \`get\` calls for the same key must only invoke \`fetchFn\` once; a resolved value must be served from cache on subsequent calls; \`invalidate(key)\` clears the cache so the next \`get\` re-fetches.`,
+    starterCode: `function createFetcher(fetchFn) {
+  // track in-flight promises per key, plus a resolved-value cache
+}`,
+    solutionCode: `function createFetcher(fetchFn) {
+  const cache = new Map();
+  const inflight = new Map();
+  return {
+    async get(key) {
+      if (cache.has(key)) return cache.get(key);
+      if (inflight.has(key)) return inflight.get(key);
+      const promise = fetchFn(key).then((value) => {
+        cache.set(key, value);
+        inflight.delete(key);
+        return value;
+      });
+      inflight.set(key, promise);
+      return promise;
+    },
+    invalidate(key) {
+      cache.delete(key);
+    },
+  };
+}`,
+    testCases: [
+      {
+        input: "two concurrent get(\\\"x\\\") calls against a counting fetchFn",
+        expected: "fetchFn called exactly once",
+        label: "Concurrent gets for the same key dedupe to a single underlying call",
+      },
+      {
+        input: "get(key) called again after invalidate(key)",
+        expected: "fetchFn called again",
+        label: "invalidate() forces the next get() to re-fetch",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "reconnect-scheduler",
+    conceptSlug: "designing-real-time-updates",
+    title: "Build a capped exponential-backoff reconnect scheduler",
+    description: `The reconnection logic every persistent-connection client (WebSocket or SSE) needs, since a dropped connection is a certainty, not an edge case.
+
+## The problem
+
+Reconnecting immediately after every drop hammers the server the moment it's struggling (which is often exactly when connections are dropping in the first place). Reconnecting on a fixed delay wastes time once the server has recovered.
+
+## The idea
+
+Exponential backoff increases the delay after each failed attempt, capped at a maximum so it never grows unbounded — and gives up entirely after too many attempts rather than retrying forever.
+
+## Your task
+
+Write \`nextRetryDelay(attempt, { baseMs, maxMs })\`, doubling the delay for each attempt starting at \`baseMs\`, capped at \`maxMs\`. Write \`shouldGiveUp(attempt, maxAttempts)\`, returning whether the attempt count has reached the cap:
+
+\`\`\`js
+nextRetryDelay(1, { baseMs: 100, maxMs: 5000 }) // → 100
+nextRetryDelay(3, { baseMs: 100, maxMs: 5000 }) // → 400
+nextRetryDelay(10, { baseMs: 100, maxMs: 5000 }) // → 5000 (capped)
+\`\`\``,
+    starterCode: `function nextRetryDelay(attempt, { baseMs, maxMs }) {
+  // baseMs * 2^(attempt - 1), capped at maxMs
+}
+function shouldGiveUp(attempt, maxAttempts) {
+  // true once attempt has reached maxAttempts
+}`,
+    solutionCode: `function nextRetryDelay(attempt, { baseMs, maxMs }) {
+  const delay = baseMs * Math.pow(2, attempt - 1);
+  return Math.min(delay, maxMs);
+}
+function shouldGiveUp(attempt, maxAttempts) {
+  return attempt >= maxAttempts;
+}`,
+    testCases: [
+      {
+        input: "nextRetryDelay(3, { baseMs: 100, maxMs: 5000 })",
+        expected: "400",
+        label: "Delay doubles with each attempt",
+      },
+      {
+        input: "nextRetryDelay(10, { baseMs: 100, maxMs: 5000 })",
+        expected: "5000",
+        label: "Delay never exceeds maxMs",
+      },
+      {
+        input: "shouldGiveUp(5, 5)",
+        expected: "true",
+        label: "Giving up triggers once the attempt count reaches the cap",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "infinite-scroll-controller",
+    conceptSlug: "designing-infinite-scroll-feed",
+    title: "Build a stateful infinite-scroll feed controller",
+    description: `Extends the page-merge Challenge into the full controller a real infinite-scroll feed needs: accumulated state, plus the scroll-threshold check that decides when to fetch the next page.
+
+## The problem
+
+Merging one page into the next is only half the feature — something also has to decide *when* to trigger the next fetch based on how close the user has scrolled to the bottom, and hold the running feed state across however many pages have loaded.
+
+## The idea
+
+A small stateful controller wraps the page-merge logic, tracking the accumulated items and current cursor, plus a pure scroll-threshold check that's easy to test independent of any real DOM scroll event.
+
+## Your task
+
+Write \`createFeedController()\`, returning \`{ loadPage(newPage), getState(), shouldFetchNext(scrollTop, scrollHeight, clientHeight, thresholdPx = 200) }\`. \`loadPage\` merges a new page into the running state (same dedup-by-id rule as the Challenge) and returns the updated state; \`shouldFetchNext\` returns whether the remaining scroll distance is at or under the threshold:
+
+\`\`\`js
+const feed = createFeedController();
+feed.loadPage({ items: [{ id: 1 }, { id: 2 }], nextCursor: "c1" });
+feed.loadPage({ items: [{ id: 2 }, { id: 3 }], nextCursor: "c2" });
+feed.getState() // → { items: [{id:1},{id:2},{id:3}], cursor: "c2" }
+\`\`\``,
+    starterCode: `function createFeedController() {
+  // wrap mergeFeedPage-style logic in running state, plus shouldFetchNext
+}`,
+    solutionCode: `function mergeFeedPage(existingItems, newPage) {
+  const seen = new Set(existingItems.map((i) => i.id));
+  const merged = [...existingItems];
+  for (const item of newPage.items) {
+    if (!seen.has(item.id)) {
+      merged.push(item);
+      seen.add(item.id);
+    }
+  }
+  return { items: merged, nextCursor: newPage.nextCursor };
+}
+function shouldFetchNext(scrollTop, scrollHeight, clientHeight, thresholdPx = 200) {
+  return scrollHeight - scrollTop - clientHeight <= thresholdPx;
+}
+function createFeedController() {
+  let items = [];
+  let cursor = null;
+  return {
+    loadPage(newPage) {
+      const merged = mergeFeedPage(items, newPage);
+      items = merged.items;
+      cursor = merged.nextCursor;
+      return { items, cursor };
+    },
+    getState() {
+      return { items, cursor };
+    },
+    shouldFetchNext,
+  };
+}`,
+    testCases: [
+      {
+        input: "two loadPage() calls with an overlapping id",
+        expected: "state.items has no duplicate ids, cursor is the latest nextCursor",
+        label: "The controller accumulates pages without duplicating items",
+      },
+      {
+        input: "shouldFetchNext(100, 1000, 800, 200)",
+        expected: "true",
+        label: "Scrolling within the threshold of the bottom triggers a fetch",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "apply-collab-ops",
+    conceptSlug: "designing-realtime-collaborative-editor",
+    title: "Apply a log of concurrent insert operations to converge on one document",
+    description: `Extends the single-pair transform Challenge into the real OT loop: a whole log of concurrent operations, applied so every one lands correctly relative to everything already applied.
+
+## The problem
+
+A single \`transform(opA, opB)\` call only handles two operations. A real document has to apply an arbitrary-length stream of operations, each one authored against the document as it looked *before* any of the concurrent ones were applied.
+
+## The idea
+
+Apply operations one at a time. Before applying each one, transform it against every operation already applied so far, in the order they were applied — folding the transform across the growing "already applied" list.
+
+## Your task
+
+Write \`applyOps(initialText, ops)\`, where \`ops\` is a list of \`{ pos, text }\` insert operations, all authored against \`initialText\`. Return the final text after applying all of them, each correctly transformed against every operation applied before it:
+
+\`\`\`js
+applyOps("Hello", [{ pos: 5, text: " World" }, { pos: 5, text: "!" }])
+// → "Hello World!"
+\`\`\``,
+    starterCode: `function transform(opA, opB) {
+  // same as the Challenge
+}
+function applyOps(initialText, ops) {
+  // apply each op after folding transform() across all previously applied ops
+}`,
+    solutionCode: `function transform(opA, opB) {
+  if (opB.pos >= opA.pos) {
+    return { ...opB, pos: opB.pos + opA.text.length };
+  }
+  return { ...opB };
+}
+function applyOps(initialText, ops) {
+  let text = initialText;
+  const applied = [];
+  for (const rawOp of ops) {
+    let op = rawOp;
+    for (const prev of applied) {
+      op = transform(prev, op);
+    }
+    text = text.slice(0, op.pos) + op.text + text.slice(op.pos);
+    applied.push(op);
+  }
+  return text;
+}`,
+    testCases: [
+      {
+        input: 'applyOps("Hello", [{ pos: 5, text: " World" }, { pos: 5, text: "!" }])',
+        expected: '"Hello World!"',
+        label: "Concurrent inserts at the same position converge without corrupting the text",
+      },
+      {
+        input: 'applyOps("ab", [{ pos: 1, text: "X" }, { pos: 0, text: "Y" }])',
+        expected: '"YaXb"',
+        label: "An earlier-position insert is unaffected by a later concurrent one",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "find-shared-dependency-conflicts",
+    conceptSlug: "frontend-architecture-patterns",
+    title: "Find mismatched shared dependency versions across micro-frontends",
+    description: `The concrete cost micro-frontends pay for their deployment independence: nothing forces every app to agree on a shared dependency's version.
+
+## The problem
+
+Once separate teams own separate deploys, one app upgrading React while another hasn't creates two different React instances loaded at once — a real, common source of "why are hooks broken" bugs in production micro-frontend setups.
+
+## The idea
+
+Collect every app's declared dependency versions, grouped by dependency name. Any dependency with more than one distinct version across apps is a conflict that needs a resolution strategy (a shared singleton version, or accepting the duplication).
+
+## Your task
+
+Write \`findSharedDependencyConflicts(apps)\`, where \`apps\` is \`{ name, dependencies: Record<string, string> }[]\`. Return an array of \`{ dependency, versions }\` (versions keyed by app name) for every dependency where apps disagree:
+
+\`\`\`js
+findSharedDependencyConflicts([
+  { name: "checkout", dependencies: { react: "18.2.0" } },
+  { name: "catalog", dependencies: { react: "17.0.0" } },
+])
+// → [{ dependency: "react", versions: { checkout: "18.2.0", catalog: "17.0.0" } }]
+\`\`\``,
+    starterCode: `function findSharedDependencyConflicts(apps) {
+  // group versions by dependency name, flag any with more than one distinct value
+}`,
+    solutionCode: `function findSharedDependencyConflicts(apps) {
+  const depVersions = {};
+  for (const app of apps) {
+    for (const [dep, version] of Object.entries(app.dependencies)) {
+      if (!depVersions[dep]) depVersions[dep] = {};
+      depVersions[dep][app.name] = version;
+    }
+  }
+  const conflicts = [];
+  for (const [dep, versions] of Object.entries(depVersions)) {
+    const uniqueVersions = new Set(Object.values(versions));
+    if (uniqueVersions.size > 1) conflicts.push({ dependency: dep, versions });
+  }
+  return conflicts;
+}`,
+    testCases: [
+      {
+        input:
+          'findSharedDependencyConflicts([{ name: "checkout", dependencies: { react: "18.2.0" } }, { name: "catalog", dependencies: { react: "17.0.0" } }])',
+        expected:
+          '[{ dependency: "react", versions: { checkout: "18.2.0", catalog: "17.0.0" } }]',
+        label: "A mismatched shared dependency version is flagged",
+      },
+      {
+        input:
+          'findSharedDependencyConflicts([{ name: "checkout", dependencies: { react: "18.2.0" } }, { name: "catalog", dependencies: { react: "18.2.0" } }])',
+        expected: "[]",
+        label: "Matching versions across every app produce no conflicts",
+      },
+    ],
+    isPremium: true,
+    orderIndex: 1,
+  },
+  {
+    slug: "memoized-store-selector",
+    conceptSlug: "state-management-at-scale",
+    title: "Build a tiny store with a memoized selector",
+    description: `The mechanism behind why a well-layered global store doesn't cause unrelated re-renders: selectors that only "change" when the slice they read actually changes.
+
+## The problem
+
+A naive global store re-renders every subscriber whenever *any* part of the state changes — a component reading only \`user\` shouldn't recompute or re-render when an unrelated \`theme\` field changes.
+
+## The idea
+
+A selector wraps a plain function over the store's state, but only counts as having "changed" when the value it extracts is different from last time — an unrelated state change still calls the selector function, but its result is recognized as unchanged.
+
+## Your task
+
+Write \`createStore(initialState)\`, returning \`{ getState(), setState(partial), subscribe(listener) }\` (a shallow-merging store). Write \`createSelector(store, selectorFn)\`, returning a \`select()\` function whose \`.getComputeCount()\` only increments when \`selectorFn\`'s result actually differs from the previous call:
+
+\`\`\`js
+const store = createStore({ user: "Alice", theme: "dark" });
+const selectUser = createSelector(store, (s) => s.user);
+selectUser(); // "Alice", computeCount → 1
+store.setState({ theme: "light" }); // unrelated change
+selectUser(); // "Alice", computeCount still 1
+store.setState({ user: "Bob" });
+selectUser(); // "Bob", computeCount → 2
+\`\`\``,
+    starterCode: `function createStore(initialState) {
+  // getState/setState (shallow merge)/subscribe
+}
+function createSelector(store, selectorFn) {
+  // select() recomputes selectorFn every call, but only bumps computeCount
+  // when the result actually differs from the previous one
+}`,
+    solutionCode: `function createStore(initialState) {
+  let state = initialState;
+  const listeners = new Set();
+  return {
+    getState() {
+      return state;
+    },
+    setState(partial) {
+      state = { ...state, ...partial };
+      listeners.forEach((l) => l());
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}
+function createSelector(store, selectorFn) {
+  let lastResult;
+  let hasRun = false;
+  let computeCount = 0;
+  function select() {
+    const result = selectorFn(store.getState());
+    if (!hasRun || result !== lastResult) {
+      computeCount++;
+      lastResult = result;
+      hasRun = true;
+    }
+    return lastResult;
+  }
+  select.getComputeCount = () => computeCount;
+  return select;
+}`,
+    testCases: [
+      {
+        input: "an unrelated setState() call after selecting once",
+        expected: "getComputeCount() stays the same",
+        label: "A change to a different field never bumps the selector's compute count",
+      },
+      {
+        input: "a setState() call that changes the selected field",
+        expected: "getComputeCount() increments",
+        label: "A change to the selected field itself bumps the compute count",
       },
     ],
     isPremium: true,

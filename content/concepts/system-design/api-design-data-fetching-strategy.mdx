@@ -1,0 +1,33 @@
+---
+title: "API Design & Data-Fetching Strategy"
+description: "Compare REST, GraphQL, and RPC-style APIs, and the client-side tradeoffs of fetching data on the server, on mount, or via a cache-aware library."
+category: "system-design"
+difficulty: "advanced"
+order: 2
+whatsHappening: "An API's shape (REST, GraphQL, RPC) decides what a client can ask for and how much it gets back; a data-fetching strategy decides when and how often the client asks. The two are separate decisions that compound — a chatty REST API fetched on every component mount with no caching produces the worst of both worlds: too many requests, each one over- or under-fetching."
+keyInsight: "Over-fetching and under-fetching are the two failure modes any API design is really trading off against each other. REST's fixed per-resource shape tends to over-fetch (the endpoint returns fields this screen doesn't need) or under-fetch (this screen needs three endpoints' worth of data); GraphQL lets the client specify the exact shape, trading that flexibility for query complexity and cache-ability living in the client instead of at the URL level."
+memoryHook: "REST = ordering off a fixed menu (fast, cacheable, sometimes not quite what you wanted). GraphQL = telling the kitchen exactly what to plate (exactly what you wanted, more work per order)."
+inRealLife: "A REST endpoint is like a grocery store's pre-packed produce box — convenient, cacheable on the truck, but you get the whole box even if you only wanted the carrots. GraphQL is like a deli counter where you specify exactly what goes in your order — precise, but the person behind the counter does more work per customer, and it's harder for the store to pre-stage identical boxes in advance."
+---
+
+## Three shapes of "ask the server for data"
+
+- **REST** — resources at fixed URLs (`GET /users/1/posts`), a fixed response shape per endpoint. Cacheable by URL at the HTTP/CDN layer for free, but the client is stuck with whatever shape the endpoint returns.
+- **GraphQL** — one endpoint, the client specifies the exact fields it wants in the query. Solves over/under-fetching directly, at the cost of the server doing more per-request work to resolve an arbitrary query, and losing simple URL-based HTTP caching (most GraphQL caching happens client-side, keyed by query+variables).
+- **RPC-style** (gRPC, tRPC) — the client calls what looks like a function (`getUserPosts(userId)`); the network boundary disappears from the calling code's perspective. Strong end-to-end typing (tRPC infers types from the server) at the cost of being tightly coupled to that specific backend's function signatures — it isn't a public API contract other teams' clients can consume independently.
+
+## When each fetch happens
+
+Independent of API shape, a client has to decide *when* to fetch:
+
+- **On the server, before the page is sent** (SSR) — fastest perceived load, best for SEO, but the request-response round trip blocks the whole page until it resolves unless streaming is used.
+- **On mount, client-side** — simplest to reason about, but means a loading spinner on every navigation and no data until JS has run.
+- **Via a cache-aware library** (React Query, SWR, Apollo) — the library owns request deduplication, background refetch-on-focus, and stale-while-revalidate: showing cached data instantly while a fresh copy fetches behind it.
+
+## Deduplication is the strategy that matters most
+
+Two components on the same page independently fetching the same resource is the single most common real-world data-fetching bug — without a shared cache keyed by request, that's two network calls doing one job. A cache-aware library solves this by keying in-flight and resolved requests by their arguments: any component asking for the same key gets the same in-flight promise or cached value, not a new request.
+
+## Why it matters
+
+The API shape decision and the fetch-timing decision are made by different people at different times (backend team picks REST/GraphQL; frontend team picks SSR/client-fetch/library) but they interact — a GraphQL API's per-query shape flexibility is wasted if the client re-fetches the same query on every mount with no cache, and an SSR-first REST app needs a plan for revalidating stale data after the initial load, not just the first request.
