@@ -1,0 +1,33 @@
+---
+title: "State Management at Scale"
+description: "Compare how server state, UI state, and global app state should be layered differently as a frontend codebase and team both grow."
+category: "system-design"
+difficulty: "advanced"
+order: 7
+whatsHappening: "Not all state in an app is the same kind of thing, even though it's tempting to put all of it in one store. Server state (data that lives on a backend and can go stale) behaves completely differently from UI state (a dropdown being open, a form field's current value) and from genuinely global app state (the logged-in user, the active theme) — and treating all three the same way is the single most common source of stale-data and unnecessary-re-render bugs as an app grows."
+keyInsight: "Server state doesn't belong in Redux/Zustand/Context at all, even though it's tempting to put it there because \"it's global too.\" Server state has a source of truth that lives outside the client and can change without the client doing anything — a purpose-built library (React Query, SWR, Apollo) handles staleness, background refetch, and cache invalidation for exactly that reason. A generic global store has no concept of \"this data might be stale\" built in, so server data stored there either goes stale silently or needs its own hand-rolled refetch logic that a dedicated library already solved."
+memoryHook: "Server state is a library book — it's not really yours, it can be recalled/updated, and you need a system that tracks whether your copy is current. UI state is a sticky note — cheap, local, thrown away the moment it's not needed. Global state is the office thermostat setting — shared, but genuinely few things need to read or change it."
+inRealLife: "Server state is like checking a shared calendar that other people can also edit — you need to know if your view is stale, not just store a snapshot forever. UI state is like remembering which tab you have open on your own screen — nobody else needs to know or care. Global app state is like the building's front-door access code — shared by everyone, but there's only one of it, and it doesn't change from a specific dropdown being open somewhere."
+---
+
+## Three kinds of state, three different jobs
+
+- **Server state** — data whose source of truth is a backend: a user's posts, a product catalog, an order status. It can change underneath the client (another user edited it, a background job updated it), so it needs staleness tracking and revalidation, not just storage.
+- **UI state** — ephemeral, local to a specific interaction: is this dropdown open, what's currently typed in this unsubmitted field, which tab is selected. It doesn't need to survive a page refresh or be visible to unrelated parts of the app.
+- **Global app state** — genuinely shared across the whole app, but small: the logged-in user, the active theme, feature flags. Its defining trait isn't "used in many places" — it's "there is exactly one source of truth for the whole session," unlike server state (many independent resources) or UI state (many independent, unrelated instances).
+
+## Why mixing them causes the classic bugs
+
+Putting server state in a plain global store is the most common mistake at scale: the store has no idea the underlying data can go stale, so either nothing ever refetches (a stale product price shown forever) or the team hand-rolls ad hoc refetch-on-mount logic in every component that needed it — reinventing exactly what a server-state library already solved once, correctly, in one place.
+
+The opposite mistake — lifting UI state (a single dropdown's open/closed flag) into a shared global store — causes unrelated components to re-render whenever that flag changes, and makes state that should be trivially disposable outlive the component that owns it.
+
+## Layering it correctly
+
+- Server state → a dedicated library (React Query/SWR/Apollo) that owns fetching, caching, staleness, and invalidation.
+- UI state → `useState`/`useReducer` scoped to the component (or its nearest shared ancestor) that actually needs it — not hoisted further than the components that read it.
+- Global app state → a lightweight store (Context for rarely-changing values, or Zustand/Jotai for anything that changes more often) reserved for the genuinely session-wide handful of values, kept deliberately small.
+
+## Why it matters
+
+"Where should this piece of state live?" is really three separate questions bundled into one: is its source of truth the server (use the server-state library), is it local to one interaction (keep it local), or is it truly global (the smallest of the three categories, by far, in most real apps)? Skipping straight to "put it in the global store" for all three is what makes state management feel unmanageable as an app grows — not the amount of state itself.

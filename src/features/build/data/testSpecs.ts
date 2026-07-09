@@ -2282,6 +2282,160 @@ const BUDGET_REGRESSION_REPORTER_TESTS: SandboxTest[] = [
   },
 ];
 
+const RESOLVE_BUILD_ORDER_TESTS: SandboxTest[] = [
+  {
+    label: "Dependencies always appear before whatever depends on them",
+    source: `
+      assert(typeof resolveBuildOrder === "function", "resolveBuildOrder is not defined");
+      assertEqual(resolveBuildOrder({ A: ["B"], B: ["C"], C: [] }), ["C", "B", "A"]);
+    `,
+  },
+  {
+    label: "A cycle makes a valid build order impossible",
+    source: `assertEqual(resolveBuildOrder({ A: ["B"], B: ["A"] }), null);`,
+  },
+];
+
+const DEDUPE_AND_CACHE_FETCHER_TESTS: SandboxTest[] = [
+  {
+    label: "Concurrent gets for the same key dedupe to a single underlying call",
+    source: `
+      assert(typeof createFetcher === "function", "createFetcher is not defined");
+      let calls = 0;
+      const fetcher = createFetcher(async (key) => { calls++; await delay(20); return "value-" + key; });
+      const [a, b] = await Promise.all([fetcher.get("x"), fetcher.get("x")]);
+      assertEqual(a, "value-x");
+      assertEqual(b, "value-x");
+      assertEqual(calls, 1, "two concurrent gets for the same key should only call fetchFn once");
+    `,
+  },
+  {
+    label: "invalidate() forces the next get() to re-fetch",
+    source: `
+      let calls = 0;
+      const fetcher = createFetcher(async (key) => { calls++; return "v" + calls; });
+      await fetcher.get("z");
+      fetcher.invalidate("z");
+      const result = await fetcher.get("z");
+      assertEqual(calls, 2);
+      assertEqual(result, "v2");
+    `,
+  },
+];
+
+const RECONNECT_SCHEDULER_TESTS: SandboxTest[] = [
+  {
+    label: "Delay doubles with each attempt",
+    source: `
+      assert(typeof nextRetryDelay === "function", "nextRetryDelay is not defined");
+      assertEqual(nextRetryDelay(3, { baseMs: 100, maxMs: 5000 }), 400);
+    `,
+  },
+  {
+    label: "Delay never exceeds maxMs",
+    source: `assertEqual(nextRetryDelay(10, { baseMs: 100, maxMs: 5000 }), 5000);`,
+  },
+  {
+    label: "Giving up triggers once the attempt count reaches the cap",
+    source: `
+      assert(typeof shouldGiveUp === "function", "shouldGiveUp is not defined");
+      assertEqual(shouldGiveUp(5, 5), true);
+      assertEqual(shouldGiveUp(4, 5), false);
+    `,
+  },
+];
+
+const INFINITE_SCROLL_CONTROLLER_TESTS: SandboxTest[] = [
+  {
+    label: "The controller accumulates pages without duplicating items",
+    source: `
+      assert(typeof createFeedController === "function", "createFeedController is not defined");
+      const feed = createFeedController();
+      feed.loadPage({ items: [{ id: 1 }, { id: 2 }], nextCursor: "c1" });
+      feed.loadPage({ items: [{ id: 2 }, { id: 3 }], nextCursor: "c2" });
+      assertEqual(feed.getState(), { items: [{ id: 1 }, { id: 2 }, { id: 3 }], cursor: "c2" });
+    `,
+  },
+  {
+    label: "Scrolling within the threshold of the bottom triggers a fetch",
+    source: `
+      const feed = createFeedController();
+      assertEqual(feed.shouldFetchNext(100, 1000, 800, 200), true);
+      assertEqual(feed.shouldFetchNext(100, 2000, 800, 200), false);
+    `,
+  },
+];
+
+const APPLY_COLLAB_OPS_TESTS: SandboxTest[] = [
+  {
+    label: "Concurrent inserts at the same position converge without corrupting the text",
+    source: `
+      assert(typeof applyOps === "function", "applyOps is not defined");
+      assertEqual(applyOps("Hello", [{ pos: 5, text: " World" }, { pos: 5, text: "!" }]), "Hello World!");
+    `,
+  },
+  {
+    label: "An earlier-position insert is unaffected by a later concurrent one",
+    source: `assertEqual(applyOps("ab", [{ pos: 1, text: "X" }, { pos: 0, text: "Y" }]), "YaXb");`,
+  },
+];
+
+const FIND_SHARED_DEPENDENCY_CONFLICTS_TESTS: SandboxTest[] = [
+  {
+    label: "A mismatched shared dependency version is flagged",
+    source: `
+      assert(typeof findSharedDependencyConflicts === "function", "findSharedDependencyConflicts is not defined");
+      assertEqual(
+        findSharedDependencyConflicts([
+          { name: "checkout", dependencies: { react: "18.2.0" } },
+          { name: "catalog", dependencies: { react: "17.0.0" } },
+        ]),
+        [{ dependency: "react", versions: { checkout: "18.2.0", catalog: "17.0.0" } }]
+      );
+    `,
+  },
+  {
+    label: "Matching versions across every app produce no conflicts",
+    source: `
+      assertEqual(
+        findSharedDependencyConflicts([
+          { name: "checkout", dependencies: { react: "18.2.0" } },
+          { name: "catalog", dependencies: { react: "18.2.0" } },
+        ]),
+        []
+      );
+    `,
+  },
+];
+
+const MEMOIZED_STORE_SELECTOR_TESTS: SandboxTest[] = [
+  {
+    label: "A change to a different field never bumps the selector's compute count",
+    source: `
+      assert(typeof createStore === "function", "createStore is not defined");
+      assert(typeof createSelector === "function", "createSelector is not defined");
+      const store = createStore({ user: "Alice", theme: "dark" });
+      const selectUser = createSelector(store, (s) => s.user);
+      assertEqual(selectUser(), "Alice");
+      assertEqual(selectUser.getComputeCount(), 1);
+      store.setState({ theme: "light" });
+      assertEqual(selectUser(), "Alice");
+      assertEqual(selectUser.getComputeCount(), 1, "an unrelated state change should not bump the compute count");
+    `,
+  },
+  {
+    label: "A change to the selected field itself bumps the compute count",
+    source: `
+      const store = createStore({ user: "Alice", theme: "dark" });
+      const selectUser = createSelector(store, (s) => s.user);
+      selectUser();
+      store.setState({ user: "Bob" });
+      assertEqual(selectUser(), "Bob");
+      assertEqual(selectUser.getComputeCount(), 2);
+    `,
+  },
+];
+
 const TEST_SPECS: Record<string, SandboxTest[]> = {
   "kanban-board": KANBAN_BOARD_TESTS,
   "async-task-runner": ASYNC_TASK_RUNNER_TESTS,
@@ -2352,6 +2506,13 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "aggregate-bottleneck-finder": AGGREGATE_BOTTLENECK_FINDER_TESTS,
   "streaming-hydration-timeline-simulator": STREAMING_HYDRATION_TIMELINE_SIMULATOR_TESTS,
   "budget-regression-reporter": BUDGET_REGRESSION_REPORTER_TESTS,
+  "resolve-build-order": RESOLVE_BUILD_ORDER_TESTS,
+  "dedupe-and-cache-fetcher": DEDUPE_AND_CACHE_FETCHER_TESTS,
+  "reconnect-scheduler": RECONNECT_SCHEDULER_TESTS,
+  "infinite-scroll-controller": INFINITE_SCROLL_CONTROLLER_TESTS,
+  "apply-collab-ops": APPLY_COLLAB_OPS_TESTS,
+  "find-shared-dependency-conflicts": FIND_SHARED_DEPENDENCY_CONFLICTS_TESTS,
+  "memoized-store-selector": MEMOIZED_STORE_SELECTOR_TESTS,
 };
 
 export function getBuildTestSpec(slug: string): SandboxTest[] | null {
