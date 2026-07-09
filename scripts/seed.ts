@@ -14167,11 +14167,14 @@ Write \`createFetcher(fetchFn)\`, returning \`{ get(key), invalidate(key) }\`. C
     async get(key) {
       if (cache.has(key)) return cache.get(key);
       if (inflight.has(key)) return inflight.get(key);
-      const promise = fetchFn(key).then((value) => {
-        cache.set(key, value);
-        inflight.delete(key);
-        return value;
-      });
+      const promise = fetchFn(key)
+        .then((value) => {
+          cache.set(key, value);
+          return value;
+        })
+        .finally(() => {
+          inflight.delete(key);
+        });
       inflight.set(key, promise);
       return promise;
     },
