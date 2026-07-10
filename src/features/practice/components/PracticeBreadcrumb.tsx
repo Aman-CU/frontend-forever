@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 
 type Props = {
   currentLabel: string;
@@ -10,12 +10,21 @@ type Props = {
 // a single consumer. Promote if a second feature needs the same pattern.
 export function PracticeBreadcrumb({ currentLabel }: Props) {
   return (
-    <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1.5 text-sm">
-      <Link href="/practice" className="text-text-muted transition-colors hover:text-text-primary">
-        Practice
+    <div className="mb-4 flex items-center gap-2.5">
+      <Link
+        href="/practice"
+        aria-label="Back to Practice categories"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-secondary hover:text-text-primary"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden />
       </Link>
-      <ChevronRight className="h-3.5 w-3.5 text-text-muted" aria-hidden />
-      <span className="font-medium text-text-primary">{currentLabel}</span>
-    </nav>
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm">
+        <Link href="/practice" className="text-text-muted transition-colors hover:text-text-primary">
+          Practice
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5 text-text-muted" aria-hidden />
+        <span className="font-medium text-text-primary">{currentLabel}</span>
+      </nav>
+    </div>
   );
 }

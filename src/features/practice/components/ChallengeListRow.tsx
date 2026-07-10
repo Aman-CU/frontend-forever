@@ -46,11 +46,15 @@ export function ChallengeListRow({
       // overflows its container on narrow viewports). grid-cols with an
       // explicit minmax(0,1fr) column is the standard fix — it forces the
       // title column's minimum to 0 so it actually truncates.
-      className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 px-4 py-3 transition-colors hover:bg-surface-secondary/50"
+      // items-center (not items-start): the number badge and difficulty pill
+      // are separate outer columns from the (variable-height, title+tags)
+      // content column, so they center against its full height instead of
+      // pinning to the top of a row that can be one or two lines tall.
+      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-secondary/50"
     >
       <span
         className={cn(
-          "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
           completed ? "bg-success text-white" : "bg-surface-secondary text-text-secondary",
         )}
       >
@@ -58,19 +62,7 @@ export function ChallengeListRow({
       </span>
 
       <span className="min-w-0">
-        {/* Title always shares its line with the difficulty badge — title
-            truncates instead of ever letting the badge get pushed off-screen. */}
-        <span className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-          <span className="truncate text-sm font-medium text-text-primary">{title}</span>
-          <span
-            className={cn(
-              "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize",
-              DIFFICULTY_STYLES[difficulty],
-            )}
-          >
-            {difficulty}
-          </span>
-        </span>
+        <span className="block truncate text-sm font-medium text-text-primary">{title}</span>
 
         <span className="mt-1 flex flex-wrap items-center gap-1.5">
           <span className="text-xs text-text-muted">{conceptTitle}</span>
@@ -83,6 +75,15 @@ export function ChallengeListRow({
             </span>
           ))}
         </span>
+      </span>
+
+      <span
+        className={cn(
+          "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize",
+          DIFFICULTY_STYLES[difficulty],
+        )}
+      >
+        {difficulty}
       </span>
     </Link>
   );
