@@ -10,13 +10,13 @@ type Props = {
 // a single consumer. Promote if a second feature needs the same pattern.
 export function PracticeBreadcrumb({ currentLabel }: Props) {
   return (
-    <div className="mb-4 flex items-center gap-2.5">
+    <div className="mb-4 flex items-center gap-5">
       <Link
         href="/practice"
         aria-label="Back to Practice categories"
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-secondary hover:text-text-primary"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-text-muted transition-colors hover:bg-surface-secondary hover:text-text-primary"
       >
-        <ArrowLeft className="h-4 w-4" aria-hidden />
+        <ArrowLeft className="h-5 w-5" aria-hidden />
       </Link>
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm">
         <Link href="/practice" className="text-text-muted transition-colors hover:text-text-primary">
