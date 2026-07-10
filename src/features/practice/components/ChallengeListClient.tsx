@@ -1,12 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Building2, ChevronDown, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useSafeReducedMotion } from "@/hooks/useSafeReducedMotion";
 import { CHALLENGE_DIFFICULTIES, type ChallengeDifficulty } from "@/lib/constants";
-import { ChallengeCard } from "@/features/practice/components/ChallengeCard";
+import { ChallengeListRow } from "@/features/practice/components/ChallengeListRow";
 import type { MockChallenge } from "@/features/practice/lib/mockPracticeData";
 
 type DifficultyFilter = "all" | ChallengeDifficulty;
@@ -27,9 +35,16 @@ type Props = {
 // logic. A follow-up pass swaps MockChallenge[] for a real query result and
 // this component's filtering logic carries over unchanged.
 export function ChallengeListClient({ challenges }: Props) {
+  const reduceMotion = useSafeReducedMotion();
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState<DifficultyFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
+  const [companies, setCompanies] = useState<Set<string>>(new Set());
+
+  const availableCompanies = useMemo(
+    () => Array.from(new Set(challenges.flatMap((c) => c.companies))).sort(),
+    [challenges],
+  );
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -38,9 +53,19 @@ export function ChallengeListClient({ challenges }: Props) {
       if (difficulty !== "all" && challenge.difficulty !== difficulty) return false;
       if (status === "solved" && !challenge.completed) return false;
       if (status === "unsolved" && challenge.completed) return false;
+      if (companies.size > 0 && !challenge.companies.some((c) => companies.has(c))) return false;
       return true;
     });
-  }, [challenges, search, difficulty, status]);
+  }, [challenges, search, difficulty, status, companies]);
+
+  function toggleCompany(company: string) {
+    setCompanies((prev) => {
+      const next = new Set(prev);
+      if (next.has(company)) next.delete(company);
+      else next.add(company);
+      return next;
+    });
+  }
 
   return (
     <div>
@@ -69,6 +94,12 @@ export function ChallengeListClient({ challenges }: Props) {
           />
           <div className="h-4 w-px bg-border" aria-hidden />
           <FilterPillGroup value={status} onChange={setStatus} options={STATUS_FILTERS} />
+          <div className="h-4 w-px bg-border" aria-hidden />
+          <CompanyFilterDropdown
+            availableCompanies={availableCompanies}
+            selected={companies}
+            onToggle={toggleCompany}
+          />
         </div>
       </div>
 
@@ -77,13 +108,62 @@ export function ChallengeListClient({ challenges }: Props) {
           <p className="text-sm text-text-secondary">No challenges match those filters.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((challenge) => (
-            <ChallengeCard key={challenge.slug} {...challenge} />
-          ))}
+        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+          <AnimatePresence initial={false} mode="popLayout">
+            {filtered.map((challenge) => (
+              <motion.div
+                key={challenge.slug}
+                layout
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.15 }}
+              >
+                <ChallengeListRow {...challenge} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>
+  );
+}
+
+function CompanyFilterDropdown({
+  availableCompanies,
+  selected,
+  onToggle,
+}: {
+  availableCompanies: string[];
+  selected: Set<string>;
+  onToggle: (company: string) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          "flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-text-primary",
+          selected.size > 0 && "border-accent text-accent",
+        )}
+      >
+        <Building2 className="h-3.5 w-3.5" aria-hidden />
+        Company
+        {selected.size > 0 && <span className="font-semibold">({selected.size})</span>}
+        <ChevronDown className="h-3 w-3" aria-hidden />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="max-h-72 w-48">
+        {availableCompanies.map((company) => (
+          <DropdownMenuCheckboxItem
+            key={company}
+            checked={selected.has(company)}
+            onCheckedChange={() => onToggle(company)}
+            onSelect={(e) => e.preventDefault()}
+          >
+            {company}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

@@ -1,17 +1,21 @@
-import type { ChallengeDifficulty, ConceptCategory } from "@/lib/constants";
+import type { ChallengeDifficulty } from "@/lib/constants";
+import type { PracticeCategory } from "@/features/practice/lib/practiceCategories";
 
 // UI-first placeholder data for Feature 28 (Practice Hub + Category List).
 // Real data comes from a follow-up logic pass: challenge counts and solved
 // state will be computed by joining `challenges` -> `concepts` and
 // aggregating `user_challenge_submissions` (see progress-tracker.md).
+// Scoped to PRACTICE_CATEGORIES only (javascript-runtime, react, css,
+// typescript, system-design) -- see practiceCategories.ts.
 
 export type MockChallenge = {
   slug: string;
   title: string;
   difficulty: ChallengeDifficulty;
-  category: ConceptCategory;
+  category: PracticeCategory;
   conceptTitle: string;
   completed: boolean;
+  companies: string[];
 };
 
 export const MOCK_CHALLENGES: MockChallenge[] = [
@@ -23,6 +27,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "javascript-runtime",
     conceptTitle: "Debouncing & Throttling",
     completed: true,
+    companies: ["Google", "Uber"],
   },
   {
     slug: "closure-counter-factory",
@@ -31,6 +36,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "javascript-runtime",
     conceptTitle: "Closures",
     completed: true,
+    companies: ["Meta"],
   },
   {
     slug: "async-task-queue",
@@ -39,6 +45,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "javascript-runtime",
     conceptTitle: "Promises & Async/Await",
     completed: false,
+    companies: ["Amazon", "Stripe"],
   },
   {
     slug: "curry-function",
@@ -47,31 +54,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "javascript-runtime",
     conceptTitle: "Function Composition & Currying",
     completed: false,
-  },
-  // Browser Internals
-  {
-    slug: "event-delegation-list",
-    title: "Delegate Clicks Across a Dynamic List",
-    difficulty: "easy",
-    category: "browser-internals",
-    conceptTitle: "Event Delegation, Bubbling & Capturing",
-    completed: true,
-  },
-  {
-    slug: "render-blocking-analyzer",
-    title: "Classify Render-Blocking Resources",
-    difficulty: "medium",
-    category: "browser-internals",
-    conceptTitle: "Browser Rendering Pipeline",
-    completed: false,
-  },
-  {
-    slug: "find-leaked-listeners",
-    title: "Find Leaked Event Listeners",
-    difficulty: "hard",
-    category: "browser-internals",
-    conceptTitle: "Memory Management & Leaks",
-    completed: false,
+    companies: ["Airbnb"],
   },
   // React
   {
@@ -81,6 +64,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "react",
     conceptTitle: "Component Composition Patterns",
     completed: false,
+    companies: ["LinkedIn"],
   },
   {
     slug: "use-debounced-value",
@@ -89,6 +73,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "react",
     conceptTitle: "Custom Hooks & Composition",
     completed: true,
+    companies: ["Meta", "TikTok"],
   },
   {
     slug: "controlled-form-validator",
@@ -97,6 +82,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "react",
     conceptTitle: "Forms: Controlled vs. Uncontrolled",
     completed: false,
+    companies: ["Google"],
   },
   // CSS
   {
@@ -106,6 +92,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "css",
     conceptTitle: "Flexbox vs. Grid",
     completed: true,
+    companies: ["Adobe"],
   },
   {
     slug: "specificity-showdown",
@@ -114,6 +101,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "css",
     conceptTitle: "CSS Specificity",
     completed: true,
+    companies: ["Apple"],
   },
   {
     slug: "stacking-context-debugger",
@@ -122,6 +110,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "css",
     conceptTitle: "Positioning & Stacking Contexts",
     completed: false,
+    companies: ["Microsoft"],
   },
   // TypeScript
   {
@@ -131,6 +120,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "typescript",
     conceptTitle: "Generics",
     completed: false,
+    companies: ["Stripe"],
   },
   {
     slug: "discriminated-union-reducer",
@@ -139,40 +129,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "typescript",
     conceptTitle: "Discriminated Unions in Practice",
     completed: false,
-  },
-  // Accessibility
-  {
-    slug: "focus-trap-modal",
-    title: "Build a Focus Trap for a Modal",
-    difficulty: "medium",
-    category: "accessibility",
-    conceptTitle: "Keyboard Navigation & Focus Management",
-    completed: false,
-  },
-  {
-    slug: "aria-live-toast",
-    title: "Announce Toasts with ARIA Live Regions",
-    difficulty: "medium",
-    category: "accessibility",
-    conceptTitle: "ARIA Live Regions",
-    completed: true,
-  },
-  // Performance
-  {
-    slug: "virtual-list",
-    title: "Render 10,000 Rows at 60fps",
-    difficulty: "medium",
-    category: "performance",
-    conceptTitle: "List Virtualization",
-    completed: true,
-  },
-  {
-    slug: "lcp-inp-cls-rater",
-    title: "Build a Real-Threshold Core Web Vitals Rater",
-    difficulty: "medium",
-    category: "performance",
-    conceptTitle: "Core Web Vitals",
-    completed: false,
+    companies: ["Amazon"],
   },
   // System Design
   {
@@ -182,6 +139,7 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "system-design",
     conceptTitle: "API Design & Data-Fetching Strategy",
     completed: false,
+    companies: ["Uber", "Snap"],
   },
   {
     slug: "classify-state-layer",
@@ -190,16 +148,17 @@ export const MOCK_CHALLENGES: MockChallenge[] = [
     category: "system-design",
     conceptTitle: "State Management at Scale",
     completed: false,
+    companies: ["Airbnb"],
   },
 ];
 
-export function getCategoryStats(category: ConceptCategory) {
+export function getCategoryStats(category: PracticeCategory) {
   const challenges = MOCK_CHALLENGES.filter((c) => c.category === category);
   const completedCount = challenges.filter((c) => c.completed).length;
   return { challengeCount: challenges.length, completedCount };
 }
 
-export function getChallengesByCategory(category: ConceptCategory) {
+export function getChallengesByCategory(category: PracticeCategory) {
   return MOCK_CHALLENGES.filter((c) => c.category === category);
 }
 

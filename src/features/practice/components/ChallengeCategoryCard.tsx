@@ -7,6 +7,8 @@ import { COLOR_CLASSES, type CategoryMeta } from "@/features/learn/lib/categoryM
 type Props = {
   category: string;
   meta: CategoryMeta;
+  /** Practice-specific display name — overrides meta.label without renaming Learn's card. */
+  label: string;
   challengeCount: number;
   completedCount: number;
   isLoggedIn: boolean;
@@ -20,11 +22,12 @@ type Props = {
 export function ChallengeCategoryCard({
   category,
   meta,
+  label,
   challengeCount,
   completedCount,
   isLoggedIn,
 }: Props) {
-  const { icon: Icon, label, description, colorKey, badge, badgeStyle } = meta;
+  const { icon: Icon, description, colorKey, badge, badgeStyle } = meta;
   const { iconBg, iconText, cardBorder } = COLOR_CLASSES[colorKey];
   const isAllDone = isLoggedIn && completedCount > 0 && completedCount === challengeCount;
 
@@ -37,34 +40,36 @@ export function ChallengeCategoryCard({
         cardBorder,
       )}
     >
-      <div
-        className={cn(
-          "flex h-11 w-11 items-center justify-center rounded-xl",
-          badgeStyle ? badgeStyle.bg : iconBg,
-        )}
-      >
-        {badge ? (
-          <span
-            className={cn(
-              "text-sm font-bold leading-none",
-              badgeStyle ? badgeStyle.text : iconText,
-            )}
-          >
-            {badge}
-          </span>
-        ) : (
-          <Icon className={cn("h-5 w-5", iconText)} aria-hidden />
-        )}
+      <div className="flex items-start justify-between">
+        <div
+          className={cn(
+            "flex h-11 w-11 items-center justify-center rounded-xl",
+            badgeStyle ? badgeStyle.bg : iconBg,
+          )}
+        >
+          {badge ? (
+            <span
+              className={cn(
+                "text-sm font-bold leading-none",
+                badgeStyle ? badgeStyle.text : iconText,
+              )}
+            >
+              {badge}
+            </span>
+          ) : (
+            <Icon className={cn("h-5 w-5", iconText)} aria-hidden />
+          )}
+        </div>
+
+        <span className="rounded-full bg-surface-secondary px-2.5 py-1 text-xs font-semibold text-text-secondary">
+          {challengeCount}
+        </span>
       </div>
 
       <h3 className="mt-3.5 text-sm font-semibold text-text-primary">{label}</h3>
       <p className="mt-1 text-xs leading-relaxed text-text-muted">{description}</p>
 
-      <div className="mt-4 flex items-center justify-between">
-        <span className="text-xs text-text-muted">
-          {challengeCount} {challengeCount === 1 ? "challenge" : "challenges"}
-        </span>
-
+      <div className="mt-4">
         {isLoggedIn ? (
           isAllDone ? (
             <span className="flex items-center gap-1 text-xs font-medium text-success">

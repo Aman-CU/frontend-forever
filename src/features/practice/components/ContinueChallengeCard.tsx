@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Play } from "lucide-react";
 
-import { CATEGORY_META } from "@/features/learn/lib/categoryMeta";
+import { PRACTICE_CATEGORY_LABELS } from "@/features/practice/lib/practiceCategories";
 import type { MockChallenge } from "@/features/practice/lib/mockPracticeData";
 
 type Props = {
@@ -12,7 +12,7 @@ type Props = {
 // in-progress (attempted, not-yet-passed) challenge. Real version reads the
 // most recent non-passing user_challenge_submissions row.
 export function ContinueChallengeCard({ challenge }: Props) {
-  const meta = CATEGORY_META[challenge.category];
+  const categoryLabel = PRACTICE_CATEGORY_LABELS[challenge.category];
 
   return (
     <Link
@@ -26,7 +26,7 @@ export function ContinueChallengeCard({ challenge }: Props) {
         <p className="text-xs font-medium text-text-muted">Continue where you left off</p>
         <p className="truncate text-sm font-semibold text-text-primary">
           {challenge.title}
-          <span className="ml-2 font-normal text-text-muted">· {meta.label}</span>
+          <span className="ml-2 font-normal text-text-muted">· {categoryLabel}</span>
         </p>
       </div>
       <ArrowRight

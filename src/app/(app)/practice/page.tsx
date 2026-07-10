@@ -1,10 +1,10 @@
 import { CheckCircle2, Flame } from "lucide-react";
 
 import { getCachedSession } from "@/lib/auth/server";
-import { CONCEPT_CATEGORIES } from "@/lib/constants";
 import { CATEGORY_META } from "@/features/learn/lib/categoryMeta";
 import { ChallengeCategoryCard } from "@/features/practice/components/ChallengeCategoryCard";
 import { ContinueChallengeCard } from "@/features/practice/components/ContinueChallengeCard";
+import { PRACTICE_CATEGORIES, PRACTICE_CATEGORY_LABELS } from "@/features/practice/lib/practiceCategories";
 import {
   MOCK_CHALLENGES,
   MOCK_CONTINUE_CHALLENGE,
@@ -45,14 +45,15 @@ export default async function PracticePage() {
 
       {isLoggedIn && <ContinueChallengeCard challenge={MOCK_CONTINUE_CHALLENGE} />}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {CONCEPT_CATEGORIES.map((category) => {
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {PRACTICE_CATEGORIES.map((category) => {
           const { challengeCount, completedCount } = getCategoryStats(category);
           return (
             <ChallengeCategoryCard
               key={category}
               category={category}
               meta={CATEGORY_META[category]}
+              label={PRACTICE_CATEGORY_LABELS[category]}
               challengeCount={challengeCount}
               completedCount={completedCount}
               isLoggedIn={isLoggedIn}
