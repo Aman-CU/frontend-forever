@@ -110,7 +110,7 @@ export function ChallengeListClient({ challenges }: Props) {
       ) : (
         <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
           <AnimatePresence initial={false} mode="popLayout">
-            {filtered.map((challenge) => (
+            {filtered.map((challenge, i) => (
               <motion.div
                 key={challenge.slug}
                 layout
@@ -119,7 +119,7 @@ export function ChallengeListClient({ challenges }: Props) {
                 exit={{ opacity: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.15 }}
               >
-                <ChallengeListRow {...challenge} />
+                <ChallengeListRow index={i + 1} {...challenge} />
               </motion.div>
             ))}
           </AnimatePresence>
