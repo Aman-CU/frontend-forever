@@ -69,38 +69,38 @@ export function ChallengeListClient({ challenges }: Props) {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <Search
-            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-text-muted"
-            aria-hidden
-          />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search challenges…"
-            className="h-9 pl-8"
-          />
-        </div>
+      {/* Search — full width, its own row */}
+      <div className="relative mb-3">
+        <Search
+          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+          aria-hidden
+        />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search challenges…"
+          className="h-11 w-full pl-10 text-sm"
+        />
+      </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <FilterPillGroup
-            value={difficulty}
-            onChange={setDifficulty}
-            options={[
-              { value: "all", label: "All" },
-              ...CHALLENGE_DIFFICULTIES.map((d) => ({ value: d, label: capitalize(d) })),
-            ]}
-          />
-          <div className="h-4 w-px bg-border" aria-hidden />
-          <FilterPillGroup value={status} onChange={setStatus} options={STATUS_FILTERS} />
-          <div className="h-4 w-px bg-border" aria-hidden />
-          <CompanyFilterDropdown
-            availableCompanies={availableCompanies}
-            selected={companies}
-            onToggle={toggleCompany}
-          />
-        </div>
+      {/* Filters — below the search bar, all on one row */}
+      <div className="mb-6 flex flex-wrap items-center gap-2">
+        <FilterPillGroup
+          value={difficulty}
+          onChange={setDifficulty}
+          options={[
+            { value: "all", label: "All" },
+            ...CHALLENGE_DIFFICULTIES.map((d) => ({ value: d, label: capitalize(d) })),
+          ]}
+        />
+        <div className="h-4 w-px bg-border" aria-hidden />
+        <FilterPillGroup value={status} onChange={setStatus} options={STATUS_FILTERS} />
+        <div className="h-4 w-px bg-border" aria-hidden />
+        <CompanyFilterDropdown
+          availableCompanies={availableCompanies}
+          selected={companies}
+          onToggle={toggleCompany}
+        />
       </div>
 
       {filtered.length === 0 ? (
@@ -108,7 +108,7 @@ export function ChallengeListClient({ challenges }: Props) {
           <p className="text-sm text-text-secondary">No challenges match those filters.</p>
         </div>
       ) : (
-        <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+        <div className="flex flex-col gap-2">
           <AnimatePresence initial={false} mode="popLayout">
             {filtered.map((challenge, i) => (
               <motion.div

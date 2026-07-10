@@ -21,12 +21,12 @@ type Props = {
   companies: string[];
 };
 
-// Compact, single-line-where-possible list row (replaces the earlier
-// two-line version — user wanted tighter density and numbering, matching
-// BFE.dev's numbered-list convention). The numbered badge (same shape as
-// QuestionCard's index circle from Interview Prep) swaps to a green check
-// once solved, so ranking and completion share one slot instead of
-// competing for space. See progress-tracker.md Post-Feature-28 entry.
+// Each row is its own bordered card (the list container is a gap-2 stack,
+// not a shared divide-y box) — matches the reference design the user
+// supplied. Numbering is plain muted text (zero-padded, tabular-nums), not
+// a circular badge; completion is a separate checkbox square on the far
+// right, so ranking and solved-state no longer share one slot the way the
+// earlier version did. See progress-tracker.md Post-Feature-28 entry.
 export function ChallengeListRow({
   index,
   slug,
@@ -46,19 +46,12 @@ export function ChallengeListRow({
       // overflows its container on narrow viewports). grid-cols with an
       // explicit minmax(0,1fr) column is the standard fix — it forces the
       // title column's minimum to 0 so it actually truncates.
-      // items-center (not items-start): the number badge and difficulty pill
-      // are separate outer columns from the (variable-height, title+tags)
-      // content column, so they center against its full height instead of
-      // pinning to the top of a row that can be one or two lines tall.
-      className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-secondary/50"
+      // items-center: every column centers against the (variable-height,
+      // one-or-two-line) content column's full height, not just its top line.
+      className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3 transition-colors hover:border-accent/40 hover:bg-surface-secondary/40"
     >
-      <span
-        className={cn(
-          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-          completed ? "bg-success text-white" : "bg-surface-secondary text-text-secondary",
-        )}
-      >
-        {completed ? <Check className="h-3.5 w-3.5" aria-hidden /> : index}
+      <span className="text-xs font-medium tabular-nums text-text-muted">
+        {String(index).padStart(2, "0")}
       </span>
 
       <span className="min-w-0">
@@ -84,6 +77,16 @@ export function ChallengeListRow({
         )}
       >
         {difficulty}
+      </span>
+
+      <span
+        className={cn(
+          "flex h-5 w-5 shrink-0 items-center justify-center rounded",
+          completed ? "bg-success" : "border-2 border-border",
+        )}
+        aria-hidden
+      >
+        {completed && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
       </span>
     </Link>
   );
