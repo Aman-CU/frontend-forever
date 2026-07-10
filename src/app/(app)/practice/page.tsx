@@ -21,7 +21,7 @@ export default async function PracticePage() {
   const totalSolved = MOCK_CHALLENGES.filter((c) => c.completed).length;
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8">
+    <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Practice</h1>

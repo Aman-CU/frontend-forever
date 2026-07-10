@@ -28,7 +28,7 @@ export default async function PracticeCategoryPage({ params }: { params: Promise
   const challenges = getChallengesByCategory(category);
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-6 py-10 lg:px-8">
+    <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
       <PracticeBreadcrumb currentLabel={label} />
 
       <div className="mb-8">
