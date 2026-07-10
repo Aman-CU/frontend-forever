@@ -512,11 +512,21 @@ Each simulator tracks `simulate_completed` when the user plays through all steps
 
 ## Phase 5 — Practice Section
 
-### 28 Practice List Page
+### 28 Practice Hub + Category List Pages
 
-**UI:**
+**Restructured from a single flat list into a two-level browse flow** — see `progress-tracker.md` → Decisions Made, Pre-Feature-28 entry, for the full reasoning. Structurally inspired by BFE.dev's category → filtered list flow, but built on FF's own 8-concept-category taxonomy (the same one driving Learn) and FF's own design system — card-based, no dense text rows, no ad clutter.
 
-- Search/filter bar: text search, difficulty filter (all/easy/medium/hard), category filter
+**UI — Practice Hub (`/practice`):**
+
+- Page heading: "Practice"
+- Stats strip for logged-in users: total challenges solved, current streak
+- Category grid: 8 category cards (one per concept category), same visual pattern as Feature 20's Learn Index cards — icon + name + challenge count + completion percentage for logged-in users
+- "Continue where you left off" card at top if the user has an in-progress attempt (omit if none)
+
+**UI — Category List (`/practice/[category]`):**
+
+- Breadcrumb: Practice → [Category]
+- Filter bar: text search, difficulty filter (all/easy/medium/hard), solved status filter (all/solved/unsolved)
 - Grid of challenge cards: title, difficulty badge, concept tag, completion state
 - "Completed" green check overlay on completed challenges
 
@@ -526,9 +536,10 @@ Each simulator tracks `simulate_completed` when the user plays through all steps
 
 **UI:**
 
-- Left: problem description (Markdown), hints panel, test cases spec
+- Left panel, tabbed: Description (Markdown) | Hints (progressive reveal) | Test Cases spec — tabbed rather than all-visible-at-once, keeps the panel calm instead of BFE's cluttered always-on row of icon buttons
 - Right: Monaco editor + Run Tests button + output panel
 - Header: challenge title, difficulty badge, back to practice link
+- **Future, out of scope for this feature:** a single reserved slot for one tastefully-positioned sponsor/premium banner (not a scattered ad-network style) — deferred until real traffic justifies it; do not build placeholder ad UI now
 
 **Logic:**
 
