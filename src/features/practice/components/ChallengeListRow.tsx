@@ -16,7 +16,6 @@ type Props = {
   title: string;
   difficulty: ChallengeDifficulty;
   category: ConceptCategory;
-  conceptTitle: string;
   completed: boolean;
   companies: string[];
 };
@@ -27,13 +26,15 @@ type Props = {
 // a circular badge; completion is a separate checkbox square on the far
 // right, so ranking and solved-state no longer share one slot the way the
 // earlier version did. See progress-tracker.md Post-Feature-28 entry.
+// No concept-tag subtitle — Practice questions are standalone (not linked
+// to a Learn concept), per the same entry's standalone-vs-concept-linked
+// decision.
 export function ChallengeListRow({
   index,
   slug,
   title,
   difficulty,
   category,
-  conceptTitle,
   completed,
   companies,
 }: Props) {
@@ -57,17 +58,18 @@ export function ChallengeListRow({
       <span className="min-w-0">
         <span className="block truncate text-sm font-medium text-text-primary">{title}</span>
 
-        <span className="mt-1 flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-text-muted">{conceptTitle}</span>
-          {companies.map((company) => (
-            <span
-              key={company}
-              className="rounded-full bg-surface-secondary px-2 py-0.5 text-[0.6875rem] font-medium text-text-muted"
-            >
-              {company}
-            </span>
-          ))}
-        </span>
+        {companies.length > 0 && (
+          <span className="mt-1 flex flex-wrap items-center gap-1.5">
+            {companies.map((company) => (
+              <span
+                key={company}
+                className="rounded-full bg-surface-secondary px-2 py-0.5 text-[0.6875rem] font-medium text-text-muted"
+              >
+                {company}
+              </span>
+            ))}
+          </span>
+        )}
       </span>
 
       <span

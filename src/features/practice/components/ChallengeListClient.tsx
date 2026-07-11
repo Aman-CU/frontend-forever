@@ -67,6 +67,14 @@ export function ChallengeListClient({ challenges }: Props) {
     });
   }
 
+  if (challenges.length === 0) {
+    return (
+      <div className="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface-secondary/40 px-6 py-12 text-center">
+        <p className="text-sm text-text-secondary">Challenges for this category are coming soon.</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Search — full width, its own row */}

@@ -3,17 +3,16 @@ import { unstable_cache } from "next/cache";
 import { and, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { challenges, concepts, userConceptProgress } from "@/lib/schema";
+import { challenges, userChallengeSubmissions } from "@/lib/schema";
 import type { ChallengeDifficulty } from "@/lib/constants";
 import { PRACTICE_CATEGORIES, type PracticeCategory } from "@/features/practice/lib/practiceCategories";
 
 export type PracticeChallengeSummary = {
+  id: string;
   slug: string;
   title: string;
   difficulty: ChallengeDifficulty;
   category: PracticeCategory;
-  conceptId: string;
-  conceptTitle: string;
   companies: string[];
   completed: boolean;
 };
@@ -26,26 +25,25 @@ export type PracticeCategorySummary = {
 
 type CatalogChallenge = Omit<PracticeChallengeSummary, "completed">;
 
-// Static catalog — every challenge in the 5 Practice categories, joined to its
-// concept for title/category. Identical for every user, so it's cached across
-// requests like Learn's getConceptCatalog (same "concepts" tag: challenges are
-// seeded alongside concepts, so a reseed invalidates both together).
+// Static catalog — standalone Practice questions, tagged directly via
+// challenges.category (not via a concept join: these are Practice's own
+// content, not Learn's per-concept Challenge-tab challenges). Cached across
+// requests like Learn's getConceptCatalog (same "concepts" tag, since a
+// reseed touches both).
 const getPracticeCatalog = unstable_cache(
   async (): Promise<Record<PracticeCategory, CatalogChallenge[]>> => {
     const rows = await db
       .select({
+        id: challenges.id,
         slug: challenges.slug,
         title: challenges.title,
         difficulty: challenges.difficulty,
         companies: challenges.companies,
-        conceptId: concepts.id,
-        conceptTitle: concepts.title,
-        category: concepts.category,
+        category: challenges.category,
         orderIndex: challenges.orderIndex,
       })
       .from(challenges)
-      .innerJoin(concepts, eq(challenges.conceptId, concepts.id))
-      .where(inArray(concepts.category, PRACTICE_CATEGORIES))
+      .where(inArray(challenges.category, PRACTICE_CATEGORIES))
       .orderBy(challenges.orderIndex);
 
     const grouped = Object.fromEntries(
@@ -55,12 +53,11 @@ const getPracticeCatalog = unstable_cache(
     for (const row of rows) {
       const category = row.category as PracticeCategory;
       grouped[category]?.push({
+        id: row.id,
         slug: row.slug,
         title: row.title,
         difficulty: row.difficulty as ChallengeDifficulty,
         category,
-        conceptId: row.conceptId,
-        conceptTitle: row.conceptTitle,
         companies: row.companies,
       });
     }
@@ -71,30 +68,33 @@ const getPracticeCatalog = unstable_cache(
   { tags: ["concepts"], revalidate: 3600 },
 );
 
-// Live, per-user, per-request dedupe: which concepts' Challenge tab this user
-// has completed — used as Practice's "solved" signal. `user_challenge_submissions`
-// (a raw attempt log) exists in the schema but nothing writes to it anywhere in
-// the app yet — that's Feature 29's Editor page. `userConceptProgress.challengeCompleted`
-// is the real signal today, already set by Learn's Challenge tab flow, and
-// Practice's challenges are those same rows (same `challenges` table).
-const getCompletedChallengeConceptIds = cache(
+// Live, per-user, per-request dedupe: which challenge IDs this user has a
+// passing submission for. This is the correct signal for standalone Practice
+// questions (keyed by challengeId directly, no concept involved) — it just
+// returns empty today since nothing writes to user_challenge_submissions
+// anywhere in the app yet (that's Feature 29's Editor page); it becomes real
+// with zero query changes once that write path exists.
+const getSolvedChallengeIds = cache(
   async (userId: string | null): Promise<Set<string>> => {
     if (!userId) return new Set();
     const rows = await db
-      .select({ conceptId: userConceptProgress.conceptId })
-      .from(userConceptProgress)
+      .select({ challengeId: userChallengeSubmissions.challengeId })
+      .from(userChallengeSubmissions)
       .where(
-        and(eq(userConceptProgress.userId, userId), eq(userConceptProgress.challengeCompleted, true)),
+        and(
+          eq(userChallengeSubmissions.userId, userId),
+          eq(userChallengeSubmissions.status, "passed"),
+        ),
       );
-    return new Set(rows.map((r) => r.conceptId));
+    return new Set(rows.map((r) => r.challengeId));
   },
 );
 
 export const getPracticeCategorySummaries = cache(
   async (userId: string | null): Promise<PracticeCategorySummary[]> => {
-    const [catalog, completedConceptIds] = await Promise.all([
+    const [catalog, solvedIds] = await Promise.all([
       getPracticeCatalog(),
-      getCompletedChallengeConceptIds(userId),
+      getSolvedChallengeIds(userId),
     ]);
 
     return PRACTICE_CATEGORIES.map((category) => {
@@ -102,7 +102,7 @@ export const getPracticeCategorySummaries = cache(
       return {
         category,
         challengeCount: items.length,
-        completedCount: items.filter((c) => completedConceptIds.has(c.conceptId)).length,
+        completedCount: items.filter((c) => solvedIds.has(c.id)).length,
       };
     });
   },
@@ -110,12 +110,12 @@ export const getPracticeCategorySummaries = cache(
 
 export const getPracticeChallengesByCategory = cache(
   async (category: PracticeCategory, userId: string | null): Promise<PracticeChallengeSummary[]> => {
-    const [catalog, completedConceptIds] = await Promise.all([
+    const [catalog, solvedIds] = await Promise.all([
       getPracticeCatalog(),
-      getCompletedChallengeConceptIds(userId),
+      getSolvedChallengeIds(userId),
     ]);
     const items = catalog[category] ?? [];
-    return items.map((c) => ({ ...c, completed: completedConceptIds.has(c.conceptId) }));
+    return items.map((c) => ({ ...c, completed: solvedIds.has(c.id) }));
   },
 );
 

@@ -366,7 +366,8 @@ Accessed via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), 
 | Column | Type | Notes |
 |---|---|---|
 | id | uuid | |
-| concept_id | uuid | References concepts (nullable for standalone) |
+| concept_id | uuid | References concepts (nullable — null for Practice's standalone questions) |
+| category | text | Nullable, `CHECK` against the 8 concept categories, migration `0011_cuddly_microbe`. Practice's own topic tag for standalone challenges (no `concept_id`) — Practice queries this column directly, not via a `concepts` join. Concept-linked challenges (Learn's Challenge tab) leave this null |
 | slug | text | Unique |
 | title | text | |
 | description | text | Markdown |
@@ -375,14 +376,14 @@ Accessed via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), 
 | solution_code | text | Reference solution (hidden from users) |
 | test_cases | jsonb | Array of {input, expected, label} |
 | hints | text[] | Progressive hints, ordered |
-| companies | text[] | Companies attributed to the challenge (Practice's Company filter, Feature 28) — added migration `0010_wakeful_raider`, same shape as `interview_questions.companies` below. Default `[]`; only populated for challenges in Practice's 5 kept categories so far |
+| companies | text[] | Companies attributed to the challenge (Practice's Company filter, Feature 28) — added migration `0010_wakeful_raider`, same shape as `interview_questions.companies` below. Default `[]`. Currently populated only on the 49 concept-linked challenges from Feature 28's first (superseded) design — orphaned there now that Practice no longer queries concept-linked rows; will apply to real standalone Practice content going forward |
 | is_premium | boolean | Default false |
 | order_index | integer | |
 | created_at | timestamptz | |
 
 ### `user_challenge_submissions`
 
-**Currently unwritten — schema exists, nothing inserts into it yet.** Reserved for Feature 29's Editor page ("Run Tests"/submit flow). Practice's "solved" state (Feature 28) intentionally does *not* read this table — it reads `user_concept_progress.challenge_completed` instead, since every current Practice challenge is the same row Learn's Challenge tab already completes and tracks. Revisit once Feature 29 gives this table a real write path.
+**Currently unwritten — schema exists, nothing inserts into it yet.** Reserved for Feature 29's Editor page ("Run Tests"/submit flow). This *is* the correct table for Practice's "solved" state (Feature 28) — Practice questions are standalone (no `concept_id`), so `user_concept_progress` doesn't apply to them at all; `getSolvedChallengeIds` reads this table keyed by `challenge_id` directly. It's just empty until Feature 29 gives it a real write path, so every Practice challenge correctly shows as unsolved until then — an honest empty state, not a bug.
 
 | Column | Type | Notes |
 |---|---|---|
