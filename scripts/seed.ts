@@ -50,6 +50,9 @@ type ChallengeSeed = {
   solutionCode: string;
   testCases: { input: string; expected: string; label: string }[];
   hints: string[];
+  // Companies the challenge is attributed to (Practice's Company filter,
+  // Feature 28) — omitted entries default to [] via the column default.
+  companies?: string[];
   isPremium?: boolean;
   orderIndex: number;
 };
@@ -861,6 +864,7 @@ const CONCEPTS: ConceptSeed[] = [
 const CHALLENGES: ChallengeSeed[] = [
   {
     slug: "implement-debounce",
+    companies: ["Google", "Uber"],
     conceptSlug: "debouncing-throttling",
     title: "Implement debounce",
     description: `**Debounce** delays running a function until the user *stops* triggering it. It's the standard fix for "this is firing way too often."
@@ -992,6 +996,7 @@ Scroll the list in the playground below — your window keeps the DOM-node count
   },
   {
     slug: "specificity-calculator",
+    companies: ["Apple"],
     conceptSlug: "css-specificity",
     title: "CSS specificity calculator",
     description: `**Specificity** is how the browser breaks ties when several CSS rules target the same element. It's the answer to "why isn't my style applying?"
@@ -1054,6 +1059,7 @@ Watch four selectors fight over one button in the playground below — your scor
   },
   {
     slug: "classify-hoisting-access",
+    companies: ["Google"],
     conceptSlug: "hoisting-temporal-dead-zone",
     title: "Classify a hoisting access",
     description: `**Hoisting** determines whether code "sees" a declaration before its line runs — but *how* it sees it differs by declaration kind. This challenge tests that difference directly.
@@ -1127,6 +1133,7 @@ Try it in the playground below — pass in functions that access variables befor
   },
   {
     slug: "implement-loose-equals",
+    companies: ["Amazon"],
     conceptSlug: "equality-type-coercion",
     title: "Implement loose equals",
     description: `JavaScript's \`==\` operator has a bad reputation, but its actual coercion rules are learnable — and implementing them yourself is the fastest way to stop being surprised by them.
@@ -1193,6 +1200,7 @@ Try it in the playground below against the same tricky pairs that trip up \`==\`
   },
   {
     slug: "implement-once",
+    companies: ["Meta"],
     conceptSlug: "closures",
     title: "Implement once",
     description: `Some functions should only ever do their real work the first time they're called — a closure is exactly the tool that makes that possible.
@@ -1265,6 +1273,7 @@ Try it in the playground below and confirm the wrapped function's side effect on
   },
   {
     slug: "implement-my-map",
+    companies: ["Airbnb"],
     conceptSlug: "callbacks-higher-order-functions",
     title: "Implement your own map",
     description: `\`Array.prototype.map\` looks like magic until you've built it yourself — underneath, it's just a loop and a callback.
@@ -1326,6 +1335,7 @@ Try it in the playground below — your implementation should be indistinguishab
   },
   {
     slug: "implement-update-item",
+    companies: ["Stripe"],
     conceptSlug: "array-object-methods-immutability",
     title: "Immutably update one item in a list",
     description: `Updating one item in a list without mutating the list — or the item — is the single most common immutability exercise, because it's the pattern behind almost every "edit" feature.
@@ -1390,6 +1400,7 @@ Try it in the playground below on a small todo list and confirm untouched items 
   },
   {
     slug: "implement-my-bind",
+    companies: ["Uber"],
     conceptSlug: "this-binding-execution-context",
     title: "Implement your own bind",
     description: `\`.bind()\` looks like a built-in convenience method until you realize it's really just a closure holding onto a fixed \`this\` and a set of preset arguments.
@@ -1456,6 +1467,7 @@ Try it in the playground below — detach a method from its object, bind it back
   },
   {
     slug: "implement-inherit",
+    companies: ["Microsoft"],
     conceptSlug: "prototypal-inheritance",
     title: "Wire up prototypal inheritance",
     description: `Before \`class extends\` existed, setting up inheritance meant wiring the prototype chain by hand — and that's still exactly what \`extends\` compiles down to.
@@ -1525,6 +1537,7 @@ Try it in the playground below — confirm \`Dog\`'s own methods win, and inheri
   },
   {
     slug: "predict-execution-order",
+    companies: ["Google", "TikTok"],
     conceptSlug: "event-loop",
     title: "Predict execution order",
     description: `Reasoning about execution order — sync code, then microtasks, then macrotasks — is the single most-tested event loop skill. This challenge turns that reasoning into a function instead of a guessing game.
@@ -1596,6 +1609,7 @@ Try it in the playground below with a scrambled list and confirm your function r
   },
   {
     slug: "implement-promise-all",
+    companies: ["Meta", "Amazon"],
     conceptSlug: "promises-async-await",
     title: "Implement your own Promise.all",
     description: `\`Promise.all\` looks like a black box until you build it — underneath, it's just counting settled promises and failing fast on the first rejection.
@@ -1676,6 +1690,7 @@ Try it in the playground below with a mix of fast and slow promises, and one tha
   },
   {
     slug: "implement-curry",
+    companies: ["Stripe"],
     conceptSlug: "function-composition-currying",
     title: "Implement a generic curry",
     description: `A generic \`curry\` function is one of the more genuinely hard interview challenges — it has to work for *any* function, of *any* arity, without knowing in advance how many arguments it needs.
@@ -1742,6 +1757,7 @@ Try it in the playground below — curry a 3-argument function and call it with 
   },
   {
     slug: "implement-take",
+    companies: ["Netflix"],
     conceptSlug: "generators-iterators",
     title: "Implement take for lazy iterables",
     description: `Generators are lazy by nature, which makes them the only reasonable way to work with a sequence that might be infinite — as long as whatever consumes them knows to stop asking.
@@ -1815,6 +1831,7 @@ Try it in the playground below against an infinite generator — confirm it retu
   },
   {
     slug: "find-leaked-listeners",
+    companies: ["Adobe"],
     conceptSlug: "memory-management-leaks",
     title: "Detect leaked event listeners",
     description: `Not every memory leak needs a heap snapshot to catch — the most common one (a forgotten \`removeEventListener\`) is really just a bookkeeping problem, and bookkeeping problems are exactly what code can check for you automatically.
@@ -2454,6 +2471,7 @@ Write \`cloneMessage(value)\` implementing this behavior.`,
   },
   {
     slug: "build-create-element",
+    companies: ["Meta"],
     conceptSlug: "jsx-virtual-dom",
     title: "Build a Mini createElement",
     description: `Build the function every JSX tag actually compiles down to — the one that turns a description like \`<button className="primary">Save</button>\` into a plain Virtual DOM object.
@@ -2514,6 +2532,7 @@ Write \`createElement(type, props, ...children)\` returning \`{ type, props }\`,
   },
   {
     slug: "should-run-effect",
+    companies: ["Airbnb"],
     conceptSlug: "usestate-useeffect-fundamentals",
     title: "Implement useEffect's Dependency Comparison",
     description: `Build the comparison React itself runs on every render to decide whether an effect fires again — the actual logic behind the dependency array.
@@ -2564,6 +2583,7 @@ Write \`shouldRunEffect(prevDeps, nextDeps)\` returning \`true\` if the effect s
   },
   {
     slug: "detect-controlled-switch",
+    companies: ["Google"],
     conceptSlug: "controlled-vs-uncontrolled-forms",
     title: "Detect a Controlled/Uncontrolled Switch",
     description: `Build the check behind React's real "a component is changing from uncontrolled to controlled" warning — given an input's value across two renders, decide whether its controlled-ness just flipped.
@@ -2612,6 +2632,7 @@ Write \`isSwitchingControlled(prevValue, nextValue)\` returning \`true\` if the 
   },
   {
     slug: "implement-merge-refs",
+    companies: ["Microsoft"],
     conceptSlug: "useref-imperative-handles",
     title: "Implement mergeRefs",
     description: `Build a small utility that comes up constantly once a component needs to attach more than one ref to the same DOM node — a real gap in React's API, not a toy problem.
@@ -2671,6 +2692,7 @@ Write \`mergeRefs(...refs)\` returning a single callback ref that, when called w
   },
   {
     slug: "implement-context-store",
+    companies: ["Stripe"],
     conceptSlug: "context-api-prop-drilling",
     title: "Implement a Minimal Context Store",
     description: `Build the subscribe/notify mechanism that Context uses under the hood to propagate a value to every consumer without any component in between passing it along.
@@ -2734,6 +2756,7 @@ Write \`createStore(initialValue)\` returning \`{ getValue, setValue, subscribe 
   },
   {
     slug: "implement-map-children",
+    companies: ["LinkedIn"],
     conceptSlug: "component-composition-patterns",
     title: "Implement a Children-Mapping Utility",
     description: `Build the normalization logic behind \`React.Children.map\` — the utility that lets a component safely transform \`props.children\` no matter what shape it arrives in.
@@ -2788,6 +2811,7 @@ Write \`mapChildren(children, mapFn)\` returning the normalized, filtered array 
   },
   {
     slug: "detect-conditional-hook-call",
+    companies: ["Meta", "TikTok"],
     conceptSlug: "custom-hooks-composition",
     title: "Detect a Rules-of-Hooks Violation",
     description: `Build a simplified version of what eslint-plugin-react-hooks checks at runtime-equivalent logic — given the sequence of hooks called on each render, detect the render where that sequence first diverges from the baseline.
@@ -2846,6 +2870,7 @@ Write \`findHookOrderViolation(renders)\`, where \`renders\` is an array of arra
   },
   {
     slug: "find-error-boundary",
+    companies: ["Amazon"],
     conceptSlug: "error-boundaries",
     title: "Find the Catching Error Boundary",
     description: `Build the lookup behind "which Error Boundary actually catches this crash" — given a component tree and where an error is thrown, find the nearest ancestor boundary.
@@ -2913,6 +2938,7 @@ Write \`findErrorBoundary(tree, throwingId)\`, where each tree node is \`{ id, i
   },
   {
     slug: "implement-shallow-equal",
+    companies: ["Meta"],
     conceptSlug: "render-performance-memoization",
     title: "Implement shallowEqual",
     description: `Build the comparison \`React.memo\` runs by default on every prop object — the actual algorithm behind "did this component's props really change?"
@@ -2971,6 +2997,7 @@ Write \`shallowEqual(objA, objB)\` implementing this comparison.`,
   },
   {
     slug: "schedule-updates-by-priority",
+    companies: ["Meta", "Netflix"],
     conceptSlug: "concurrent-react-suspense",
     title: "Schedule Updates by Priority",
     description: `Build the ordering logic behind Concurrent React's priority model — given a batch of pending updates, decide which run first.
@@ -3022,6 +3049,7 @@ Write \`scheduleUpdates(updates)\`, where each update is \`{ id, priority: 'urge
   },
   {
     slug: "find-shared-state-ancestor",
+    companies: ["Airbnb"],
     conceptSlug: "state-management-tradeoffs",
     title: "Find Where Shared State Should Live",
     description: `Build the lookup behind "lift state up" — given a component tree and two components that need to share a value, find the lowest common ancestor state should move to.
@@ -3089,6 +3117,7 @@ Write \`findLowestCommonAncestor(tree, idA, idB)\`, where each tree node is \`{ 
   // ── Phase 10 (Feature 44) — CSS Concepts ──────────────────────────────────
   {
     slug: "rendered-box-width",
+    companies: ["Google"],
     conceptSlug: "the-box-model",
     title: "Compute a rendered box's width",
     description: `**box-sizing** decides what \`width\` actually measures — and getting it wrong is why elements mysteriously grow past their declared size.
@@ -3135,6 +3164,7 @@ renderedWidth({ width: 200, padding: 20, border: 2 }, "border-box")  // 200
   },
   {
     slug: "resolve-css-length",
+    companies: ["Adobe"],
     conceptSlug: "units-sizing",
     title: "Resolve a CSS length to pixels",
     description: `Every relative CSS unit ultimately resolves to a pixel value — the only question is *what it's relative to*.
@@ -3192,6 +3222,7 @@ resolveLength(10, "px", {})                                // 10
   },
   {
     slug: "resolve-cascade-winner",
+    companies: ["Airbnb"],
     conceptSlug: "the-cascade-inheritance",
     title: "Resolve which declaration wins the cascade",
     description: `When multiple rules target the same element and property, the cascade picks exactly one winner — through a fixed, ordered set of tiebreaks.
@@ -3266,6 +3297,7 @@ function resolveCascade(declarations) {
   },
   {
     slug: "distribute-flex-space",
+    companies: ["Microsoft"],
     conceptSlug: "flexbox-vs-grid",
     title: "Distribute space across flex items",
     description: `Flexbox's \`flex-grow\`/\`flex-shrink\`/\`flex-basis\` decide each item's final size — the same three numbers the browser itself computes on every layout pass.
@@ -3323,6 +3355,7 @@ distributeFlexSpace([
   },
   {
     slug: "resolve-stacking-order",
+    companies: ["Adobe"],
     conceptSlug: "positioning-stacking-contexts",
     title: "Find the topmost element across nested stacking contexts",
     description: `\`z-index: 9999\` can still lose to a sibling's \`z-index: 2\` — if that 9999 is trapped inside its own ancestor's stacking context.
@@ -3400,6 +3433,7 @@ resolveTopmost([
   },
   {
     slug: "resolve-container-query",
+    companies: ["Shopify"],
     conceptSlug: "responsive-design-container-queries",
     title: "Resolve the matching container query",
     description: `A container query asks "how wide is *this component's own container*?" — not the viewport. Matching one is just finding the right breakpoint for a given width.
@@ -3454,6 +3488,7 @@ resolveContainerValue(300, queries) // "compact"
   },
   {
     slug: "resolve-custom-property",
+    companies: ["Airbnb"],
     conceptSlug: "custom-properties-theming",
     title: "Resolve a custom property through the cascade",
     description: `A custom property resolves by walking up from wherever \`var()\` is used — not from wherever \`--name\` was declared. That's what makes runtime theming possible.
@@ -3519,6 +3554,7 @@ resolveVar("card", "--accent", tree, {
   },
   {
     slug: "implement-has-matcher",
+    companies: ["Google"],
     conceptSlug: "pseudo-classes-pseudo-elements-has",
     title: "Implement a simplified :has() matcher",
     description: `Every CSS combinator before \`:has()\` only reached downward or sideways. \`:has()\` is the first one that lets a selector match a parent based on its children.
@@ -3569,6 +3605,7 @@ hasDescendantMatching(form, (n) => n.valid === false) // true — i2 is invalid
   },
   {
     slug: "classify-animation-cost",
+    companies: ["Apple"],
     conceptSlug: "animation-performance",
     title: "Classify the cost of an animated property list",
     description: `Not every animated CSS property costs the same — and animating just one expensive property drags the whole frame down, even if every other property is cheap.
@@ -3638,6 +3675,7 @@ function classifyAnimationCost(properties) {
   // matching the JS-simulation pattern Feature 44 established for CSS.
   {
     slug: "narrow-unknown-to-number",
+    companies: ["Microsoft"],
     conceptSlug: "basic-types-inference",
     title: "Narrow unknown to a safe number",
     description: `\`unknown\` forces you to prove what a value actually is before you can use it — this is that proof, written as a function.
@@ -3690,6 +3728,7 @@ safeParseNumber(NaN)             // null
   },
   {
     slug: "merge-declarations",
+    companies: ["Stripe"],
     conceptSlug: "interfaces-vs-type-aliases",
     title: "Simulate declaration merging",
     description: `Two separate \`interface Config { ... }\` blocks with the same name silently combine into one — this models what that merge actually does to the resulting shape.
@@ -3748,6 +3787,7 @@ mergeDeclarations([{ id: "string" }, { id: "number" }])
   },
   {
     slug: "create-typed-stack",
+    companies: ["Microsoft"],
     conceptSlug: "generics",
     title: "Build a self-typing stack",
     description: `A generic collection doesn't know its element type until the first value goes in — after that, it holds every later value to the same type.
@@ -3819,6 +3859,7 @@ s.push("oops"); // throws
   },
   {
     slug: "pick-keys",
+    companies: ["Amazon"],
     conceptSlug: "utility-types",
     title: "Implement Pick at runtime",
     description: `\`Pick<T, K>\` keeps only a chosen subset of an object's keys — this is that same idea, applied to an actual object instead of a type.
@@ -3866,6 +3907,7 @@ pick({ id: 1, name: "Ada", email: "a@x.com" }, ["id", "name"])
   },
   {
     slug: "narrow-value-length",
+    companies: ["Stripe"],
     conceptSlug: "type-narrowing",
     title: "Narrow a union to compute its length",
     description: `A chain of narrowing checks is how real code safely handles a value that could be several different shapes.
@@ -3914,6 +3956,7 @@ getLength(42)                 // 0
   },
   {
     slug: "discriminated-union-reducer",
+    companies: ["Amazon"],
     conceptSlug: "discriminated-unions",
     title: "Write a discriminated-union reducer",
     description: `A shared \`type\` field is what lets a single \`switch\` safely branch across several differently-shaped actions — the exact pattern behind every Redux-style reducer.
@@ -3967,6 +4010,7 @@ reducer(5, { type: "set", value: 100 }) // 100
   },
   {
     slug: "map-values",
+    companies: ["Microsoft"],
     conceptSlug: "conditional-mapped-types",
     title: "Implement a mapped-type-style value transformer",
     description: `A mapped type applies the same transformation to every property of a type — this is that same idea, applied to an actual object's values at runtime.
@@ -4012,6 +4056,7 @@ mapValues({ a: 1, b: 2 }, (v) => v * 2)
   },
   {
     slug: "match-event-name-pattern",
+    companies: ["Stripe"],
     conceptSlug: "template-literal-branded-types",
     title: "Validate a template-literal string pattern",
     description: `A template literal type like \`\`on\${Capitalize<string>}\`\` describes every string matching a pattern, checked at compile time — this validates the same pattern at runtime.
@@ -4977,6 +5022,7 @@ function overallBudgetStatus(results) {
   // ── system-design (Feature 48) ────────────────────────────────────────────
   {
     slug: "find-circular-component-imports",
+    companies: ["LinkedIn"],
     conceptSlug: "component-driven-architecture",
     title: "Find a circular dependency in a component import graph",
     description: `The bug that turns a clean component tree into a tangled one: a cycle in the import graph.
@@ -5059,6 +5105,7 @@ findCycle({ A: ["B"], B: ["C"], C: [] })
   },
   {
     slug: "plan-fetch-waterfall",
+    companies: ["Uber", "Amazon"],
     conceptSlug: "api-design-data-fetching-strategy",
     title: "Group dependent data requests into parallel fetch waves",
     description: `The core planning step behind avoiding a request waterfall: figure out which requests can actually run at the same time.
@@ -5125,6 +5172,7 @@ planFetchWaterfall([
   },
   {
     slug: "pick-realtime-transport",
+    companies: ["Uber"],
     conceptSlug: "designing-real-time-updates",
     title: "Choose the right real-time transport for the constraints",
     description: `The decision behind every "polling vs. SSE vs. WebSocket" system design question, made concrete.
@@ -5191,6 +5239,7 @@ Write \`chooseTransport({ needsBidirectional, updateFrequencySec, browserSupport
   },
   {
     slug: "merge-feed-page",
+    companies: ["Meta", "TikTok"],
     conceptSlug: "designing-infinite-scroll-feed",
     title: "Merge a newly fetched feed page without duplicates",
     description: `The core operation behind a stable infinite-scroll feed: merging in a new page without corrupting what's already loaded.
@@ -5252,6 +5301,7 @@ mergeFeedPage(
   },
   {
     slug: "transform-insert-operations",
+    companies: ["Dropbox"],
     conceptSlug: "designing-realtime-collaborative-editor",
     title: "Transform a concurrent insert operation (Operational Transformation)",
     description: `The core mechanism behind Operational Transformation, reduced to its simplest case: two concurrent plain-text inserts.
@@ -5311,6 +5361,7 @@ transform({ pos: 5, text: "X" }, { pos: 2, text: "Y" })
   },
   {
     slug: "classify-architecture-fit",
+    companies: ["Airbnb"],
     conceptSlug: "frontend-architecture-patterns",
     title: "Pick the right architecture for a team's actual constraints",
     description: `The decision tree behind "should this be a monolith, a monorepo, or micro-frontends?"
@@ -5366,6 +5417,7 @@ Write \`classifyArchitectureFit({ teamCount, independentDeployNeeded })\`, retur
   },
   {
     slug: "classify-state-layer",
+    companies: ["Airbnb"],
     conceptSlug: "state-management-at-scale",
     title: "Classify a piece of state into its correct layer",
     description: `The decision every "where should this state live?" question ultimately reduces to.
@@ -14618,6 +14670,7 @@ async function seed() {
         solutionCode: sql`excluded.solution_code`,
         testCases: sql`excluded.test_cases`,
         hints: sql`excluded.hints`,
+        companies: sql`excluded.companies`,
         isPremium: sql`excluded.is_premium`,
         orderIndex: sql`excluded.order_index`,
       },

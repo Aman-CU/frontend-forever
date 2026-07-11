@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import { getCachedSession } from "@/lib/auth/server";
 import { CATEGORY_META } from "@/features/learn/lib/categoryMeta";
 import { PracticeBreadcrumb } from "@/features/practice/components/PracticeBreadcrumb";
 import { ChallengeListClient } from "@/features/practice/components/ChallengeListClient";
@@ -8,7 +9,7 @@ import {
   PRACTICE_CATEGORY_LABELS,
   type PracticeCategory,
 } from "@/features/practice/lib/practiceCategories";
-import { getChallengesByCategory } from "@/features/practice/lib/mockPracticeData";
+import { getPracticeChallengesByCategory } from "@/features/practice/lib/queries";
 
 type Params = { category: string };
 
@@ -23,9 +24,12 @@ export default async function PracticeCategoryPage({ params }: { params: Promise
     notFound();
   }
 
+  const session = await getCachedSession();
+  const userId = session?.user?.id ?? null;
+
   const meta = CATEGORY_META[category];
   const label = PRACTICE_CATEGORY_LABELS[category];
-  const challenges = getChallengesByCategory(category);
+  const challenges = await getPracticeChallengesByCategory(category, userId);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">

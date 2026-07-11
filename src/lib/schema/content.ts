@@ -77,6 +77,9 @@ export const challenges = pgTable(
       .notNull()
       .default([]),
     hints: text("hints").array().notNull().default([]),
+    // Companies the challenge is attributed to (Practice's Company filter,
+    // Feature 28) — same shape/precedent as interviewQuestions.companies below.
+    companies: text("companies").array().notNull().default([]),
     isPremium: boolean("is_premium").notNull().default(false),
     orderIndex: integer("order_index").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

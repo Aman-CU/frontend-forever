@@ -15,7 +15,7 @@ import {
 import { useSafeReducedMotion } from "@/hooks/useSafeReducedMotion";
 import { CHALLENGE_DIFFICULTIES, type ChallengeDifficulty } from "@/lib/constants";
 import { ChallengeListRow } from "@/features/practice/components/ChallengeListRow";
-import type { MockChallenge } from "@/features/practice/lib/mockPracticeData";
+import type { PracticeChallengeSummary } from "@/features/practice/lib/queries";
 
 type DifficultyFilter = "all" | ChallengeDifficulty;
 type StatusFilter = "all" | "solved" | "unsolved";
@@ -27,7 +27,7 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
 ];
 
 type Props = {
-  challenges: MockChallenge[];
+  challenges: PracticeChallengeSummary[];
 };
 
 // Filters the (mock, for now) challenge list client-side — this is still a

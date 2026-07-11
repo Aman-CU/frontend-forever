@@ -375,11 +375,14 @@ Accessed via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), 
 | solution_code | text | Reference solution (hidden from users) |
 | test_cases | jsonb | Array of {input, expected, label} |
 | hints | text[] | Progressive hints, ordered |
+| companies | text[] | Companies attributed to the challenge (Practice's Company filter, Feature 28) — added migration `0010_wakeful_raider`, same shape as `interview_questions.companies` below. Default `[]`; only populated for challenges in Practice's 5 kept categories so far |
 | is_premium | boolean | Default false |
 | order_index | integer | |
 | created_at | timestamptz | |
 
 ### `user_challenge_submissions`
+
+**Currently unwritten — schema exists, nothing inserts into it yet.** Reserved for Feature 29's Editor page ("Run Tests"/submit flow). Practice's "solved" state (Feature 28) intentionally does *not* read this table — it reads `user_concept_progress.challenge_completed` instead, since every current Practice challenge is the same row Learn's Challenge tab already completes and tracks. Revisit once Feature 29 gives this table a real write path.
 
 | Column | Type | Notes |
 |---|---|---|
