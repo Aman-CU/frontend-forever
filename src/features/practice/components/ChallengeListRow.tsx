@@ -55,11 +55,11 @@ export function ChallengeListRow({
         {String(index).padStart(2, "0")}
       </span>
 
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-medium text-text-primary">{title}</span>
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="truncate text-sm font-medium text-text-primary">{title}</span>
 
         {companies.length > 0 && (
-          <span className="mt-1 flex flex-wrap items-center gap-1.5">
+          <span className="flex shrink-0 items-center gap-1.5">
             {companies.map((company) => (
               <span
                 key={company}

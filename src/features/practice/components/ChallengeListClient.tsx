@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Building2, ChevronDown, Search } from "lucide-react";
 
@@ -37,6 +37,13 @@ type Props = {
 export function ChallengeListClient({ challenges }: Props) {
   const reduceMotion = useSafeReducedMotion();
   const [search, setSearch] = useState("");
+  // Deferred, not the raw keystroke value: with a category running into the
+  // hundreds of rows (see Practice's javascript-runtime category), the
+  // filtered re-render below is expensive enough (each row is a Framer
+  // Motion layout-animated element) that recomputing it on every keystroke
+  // makes typing feel laggy. useDeferredValue lets the input stay instantly
+  // responsive while React deprioritizes the filtered list's re-render.
+  const deferredSearch = useDeferredValue(search);
   const [difficulty, setDifficulty] = useState<DifficultyFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [companies, setCompanies] = useState<Set<string>>(new Set());
@@ -47,7 +54,7 @@ export function ChallengeListClient({ challenges }: Props) {
   );
 
   const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = deferredSearch.trim().toLowerCase();
     return challenges.filter((challenge) => {
       if (query && !challenge.title.toLowerCase().includes(query)) return false;
       if (difficulty !== "all" && challenge.difficulty !== difficulty) return false;
@@ -56,7 +63,7 @@ export function ChallengeListClient({ challenges }: Props) {
       if (companies.size > 0 && !challenge.companies.some((c) => companies.has(c))) return false;
       return true;
     });
-  }, [challenges, search, difficulty, status, companies]);
+  }, [challenges, deferredSearch, difficulty, status, companies]);
 
   function toggleCompany(company: string) {
     setCompanies((prev) => {
@@ -121,7 +128,12 @@ export function ChallengeListClient({ challenges }: Props) {
             {filtered.map((challenge, i) => (
               <motion.div
                 key={challenge.slug}
-                layout
+                // "position" (not the default full layout animation): skips
+                // measuring each row's size on every re-render and only
+                // animates its position, which is the only thing that
+                // actually changes when filtering reorders/removes rows.
+                // Meaningfully cheaper at the row counts this list can hit.
+                layout="position"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}

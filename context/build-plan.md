@@ -541,11 +541,12 @@ Each simulator tracks `simulate_completed` when the user plays through all steps
 - Header: challenge title, difficulty badge, back to practice link
 - **Future, out of scope for this feature:** a single reserved slot for one tastefully-positioned sponsor/premium banner (not a scattered ad-network style) — deferred until real traffic justifies it; do not build placeholder ad UI now
 
-**Logic:**
+**Logic — two grading paths, chosen by category:**
 
-- Code execution in iframe sandbox
-- Test runner compares output to expected values
-- On all pass: write to `user_challenge_submissions` + XP event
+- **JS / React / CSS / System Design:** code execution in the iframe sandbox (`allow-scripts` only), test runner compares output to expected values against the `SandboxTest[]` entries in `src/features/practice/sandbox/testSpecs.ts`.
+- **TypeScript:** no runtime to execute — instead, `POST /api/practice/grade-type-challenge` runs the real TypeScript Compiler API server-side (`src/lib/typeChecker/gradeTypeChallenge.ts`) against the `TypeChallengeTest[]` entries in `src/features/practice/sandbox/typeChallengeSpecs.ts`, and returns pass/fail per assertion based on real compiler diagnostics. See `context/security.md` → "Server-Side Compiler Execution" for the risk model this path introduces (distinct from the iframe sandbox's).
+- The Editor page must pick the grading path by the challenge's category, not assume the iframe path universally.
+- On all pass (either path): write to `user_challenge_submissions` + XP event.
 
 ---
 
