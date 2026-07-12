@@ -1,0 +1,3 @@
+ALTER TABLE "challenges" ADD COLUMN "category" text;--> statement-breakpoint
+CREATE INDEX "challenges_category_idx" ON "challenges" USING btree ("category");--> statement-breakpoint
+ALTER TABLE "challenges" ADD CONSTRAINT "challenges_category_check" CHECK ("challenges"."category" IN ('javascript-runtime', 'browser-internals', 'react', 'css', 'typescript', 'accessibility', 'performance', 'system-design'));

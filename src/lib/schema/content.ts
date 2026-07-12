@@ -65,6 +65,10 @@ export const challenges = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     // nullable — some challenges are standalone, not linked to a concept
     conceptId: uuid("concept_id").references(() => concepts.id, { onDelete: "set null" }),
+    // Practice's own topic tag (Feature 28) — set directly on standalone
+    // Practice questions (no conceptId), since they don't inherit a category
+    // via a concept join the way Learn's Challenge-tab challenges do.
+    category: text("category"),
     slug: text("slug").notNull().unique(),
     title: text("title").notNull(),
     description: text("description").notNull(),
@@ -77,6 +81,9 @@ export const challenges = pgTable(
       .notNull()
       .default([]),
     hints: text("hints").array().notNull().default([]),
+    // Companies the challenge is attributed to (Practice's Company filter,
+    // Feature 28) — same shape/precedent as interviewQuestions.companies below.
+    companies: text("companies").array().notNull().default([]),
     isPremium: boolean("is_premium").notNull().default(false),
     orderIndex: integer("order_index").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -84,10 +91,20 @@ export const challenges = pgTable(
   (table) => [
     index("challenges_concept_id_idx").on(table.conceptId),
     index("challenges_difficulty_idx").on(table.difficulty),
+    index("challenges_category_idx").on(table.category),
     check(
       "challenges_difficulty_check",
       sql`${table.difficulty} IN (${sql.join(
         CHALLENGE_DIFFICULTIES.map((d) => sql.raw(`'${d}'`)),
+        sql`, `,
+      )})`,
+    ),
+    // NULL passes any CHECK by SQL's three-valued logic, so this only
+    // constrains rows that do set a category — no separate "OR IS NULL" needed.
+    check(
+      "challenges_category_check",
+      sql`${table.category} IN (${sql.join(
+        CONCEPT_CATEGORIES.map((c) => sql.raw(`'${c}'`)),
         sql`, `,
       )})`,
     ),

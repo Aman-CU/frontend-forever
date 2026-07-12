@@ -71,6 +71,20 @@
       "when": 1783445751320,
       "tag": "0009_secret_king_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783759663803,
+      "tag": "0010_wakeful_raider",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1783764580746,
+      "tag": "0011_cuddly_microbe",
+      "breakpoints": true
     }
   ]
 }

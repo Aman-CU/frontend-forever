@@ -261,6 +261,27 @@ try {
 
 ---
 
+## Server-Side Compiler Execution (TypeScript Practice Grading)
+
+The TypeScript category of Practice can't be graded by running code in the browser sandbox above — there's nothing to execute, only types to check. `POST /api/practice/grade-type-challenge` (`src/lib/typeChecker/gradeTypeChallenge.ts`) instead runs the real TypeScript Compiler API (`ts.createProgram`) **server-side** against user-submitted source. This is a different risk category from the iframe model: the input never leaves the server process, so the browser sandbox's rules (`allow-scripts` only, postMessage, etc.) don't apply here — the compiler itself is the sandbox, and its guarantees are different.
+
+### Why this is safe to run server-side
+
+- **No code execution, only type-checking.** `noEmit: true` and `ts.getPreEmitDiagnostics` mean user input is only ever parsed and type-checked, never compiled to JS or run. There is no `eval`-equivalent risk here.
+- **The compiler has its own recursion-depth guards.** Empirically confirmed (this project, 2026): a genuinely infinite recursive type resolves to a clean diagnostic in ~2.5–4.5s, not a hang. This is TypeScript's own defense, not something this project built — but it's load-bearing, so don't remove reliance on it without replacing it with an explicit timeout/worker-isolation mechanism.
+- **Gated behind auth + a dedicated rate-limit bucket** (`grade-type-challenge:${userId}`, same as any other write route) — this is CPU-heavy enough that it must never be reachable by logged-out traffic.
+- **Input size capped** at `MAX_CODE_LENGTH` (20,000 chars) before it ever reaches the compiler — rejected with a clean error, not silently truncated.
+
+### What this route must never do
+
+- Never `eval()`, `new Function()`, or otherwise execute the compiled output — there is no compiled output; `noEmit: true` must never be changed to emit and run.
+- Never log the user's submitted code (`code` in the request body) — same rule as never logging tokens or secrets. Log error messages only.
+- Never skip the auth/rate-limit gate on this route, even though it feels like a "read-only" type-check — it's still unauthenticated-CPU-exhaustion-shaped without them.
+
+If a future change makes this route (or a similar one) run code rather than just type-check it, that crosses back into the iframe sandbox model above — do not add a second execution path for actual code without the same `allow-scripts`-only isolation.
+
+---
+
 ## Environment Variables
 
 ### Public vs Private
@@ -382,6 +403,7 @@ function isSafeUrl(url: string): boolean {
 |---|---|---|
 | `/api/progress` | 20 requests | 10 seconds |
 | `/api/auth/*` | 5 requests | 60 seconds |
+| `/api/practice/grade-type-challenge` | 20 requests | 10 seconds |
 | All other write routes | 20 requests | 10 seconds |
 
 Rate limit key is always `user.id` — never IP address for authenticated routes.

@@ -23,6 +23,7 @@ import type {
   ChallengeDifficulty,
   InterviewCollection,
 } from "../src/lib/constants";
+import type { PracticeCategory } from "../src/features/practice/lib/practiceCategories";
 
 type ConceptSeed = {
   slug: string;
@@ -50,6 +51,13 @@ type ChallengeSeed = {
   solutionCode: string;
   testCases: { input: string; expected: string; label: string }[];
   hints: string[];
+  // Companies the challenge is attributed to (Practice's Company filter,
+  // Feature 28) — omitted entries default to [] via the column default.
+  companies?: string[];
+  // Practice's own topic tag (Feature 28 standalone rework) — set only on
+  // challenges meant to appear in Practice; omitted (→ null) keeps a
+  // concept-linked challenge purely a Learn Challenge-tab entry.
+  category?: PracticeCategory;
   isPremium?: boolean;
   orderIndex: number;
 };
@@ -861,6 +869,7 @@ const CONCEPTS: ConceptSeed[] = [
 const CHALLENGES: ChallengeSeed[] = [
   {
     slug: "implement-debounce",
+    companies: ["Google", "Uber"],
     conceptSlug: "debouncing-throttling",
     title: "Implement debounce",
     description: `**Debounce** delays running a function until the user *stops* triggering it. It's the standard fix for "this is firing way too often."
@@ -992,6 +1001,7 @@ Scroll the list in the playground below — your window keeps the DOM-node count
   },
   {
     slug: "specificity-calculator",
+    companies: ["Apple"],
     conceptSlug: "css-specificity",
     title: "CSS specificity calculator",
     description: `**Specificity** is how the browser breaks ties when several CSS rules target the same element. It's the answer to "why isn't my style applying?"
@@ -1054,6 +1064,7 @@ Watch four selectors fight over one button in the playground below — your scor
   },
   {
     slug: "classify-hoisting-access",
+    companies: ["Google"],
     conceptSlug: "hoisting-temporal-dead-zone",
     title: "Classify a hoisting access",
     description: `**Hoisting** determines whether code "sees" a declaration before its line runs — but *how* it sees it differs by declaration kind. This challenge tests that difference directly.
@@ -1127,6 +1138,7 @@ Try it in the playground below — pass in functions that access variables befor
   },
   {
     slug: "implement-loose-equals",
+    companies: ["Amazon"],
     conceptSlug: "equality-type-coercion",
     title: "Implement loose equals",
     description: `JavaScript's \`==\` operator has a bad reputation, but its actual coercion rules are learnable — and implementing them yourself is the fastest way to stop being surprised by them.
@@ -1193,6 +1205,7 @@ Try it in the playground below against the same tricky pairs that trip up \`==\`
   },
   {
     slug: "implement-once",
+    companies: ["Meta"],
     conceptSlug: "closures",
     title: "Implement once",
     description: `Some functions should only ever do their real work the first time they're called — a closure is exactly the tool that makes that possible.
@@ -1265,6 +1278,7 @@ Try it in the playground below and confirm the wrapped function's side effect on
   },
   {
     slug: "implement-my-map",
+    companies: ["Airbnb"],
     conceptSlug: "callbacks-higher-order-functions",
     title: "Implement your own map",
     description: `\`Array.prototype.map\` looks like magic until you've built it yourself — underneath, it's just a loop and a callback.
@@ -1326,6 +1340,7 @@ Try it in the playground below — your implementation should be indistinguishab
   },
   {
     slug: "implement-update-item",
+    companies: ["Stripe"],
     conceptSlug: "array-object-methods-immutability",
     title: "Immutably update one item in a list",
     description: `Updating one item in a list without mutating the list — or the item — is the single most common immutability exercise, because it's the pattern behind almost every "edit" feature.
@@ -1390,6 +1405,7 @@ Try it in the playground below on a small todo list and confirm untouched items 
   },
   {
     slug: "implement-my-bind",
+    companies: ["Uber"],
     conceptSlug: "this-binding-execution-context",
     title: "Implement your own bind",
     description: `\`.bind()\` looks like a built-in convenience method until you realize it's really just a closure holding onto a fixed \`this\` and a set of preset arguments.
@@ -1456,6 +1472,7 @@ Try it in the playground below — detach a method from its object, bind it back
   },
   {
     slug: "implement-inherit",
+    companies: ["Microsoft"],
     conceptSlug: "prototypal-inheritance",
     title: "Wire up prototypal inheritance",
     description: `Before \`class extends\` existed, setting up inheritance meant wiring the prototype chain by hand — and that's still exactly what \`extends\` compiles down to.
@@ -1525,6 +1542,7 @@ Try it in the playground below — confirm \`Dog\`'s own methods win, and inheri
   },
   {
     slug: "predict-execution-order",
+    companies: ["Google", "TikTok"],
     conceptSlug: "event-loop",
     title: "Predict execution order",
     description: `Reasoning about execution order — sync code, then microtasks, then macrotasks — is the single most-tested event loop skill. This challenge turns that reasoning into a function instead of a guessing game.
@@ -1596,6 +1614,7 @@ Try it in the playground below with a scrambled list and confirm your function r
   },
   {
     slug: "implement-promise-all",
+    companies: ["Meta", "Amazon"],
     conceptSlug: "promises-async-await",
     title: "Implement your own Promise.all",
     description: `\`Promise.all\` looks like a black box until you build it — underneath, it's just counting settled promises and failing fast on the first rejection.
@@ -1676,6 +1695,7 @@ Try it in the playground below with a mix of fast and slow promises, and one tha
   },
   {
     slug: "implement-curry",
+    companies: ["Stripe"],
     conceptSlug: "function-composition-currying",
     title: "Implement a generic curry",
     description: `A generic \`curry\` function is one of the more genuinely hard interview challenges — it has to work for *any* function, of *any* arity, without knowing in advance how many arguments it needs.
@@ -1742,6 +1762,7 @@ Try it in the playground below — curry a 3-argument function and call it with 
   },
   {
     slug: "implement-take",
+    companies: ["Netflix"],
     conceptSlug: "generators-iterators",
     title: "Implement take for lazy iterables",
     description: `Generators are lazy by nature, which makes them the only reasonable way to work with a sequence that might be infinite — as long as whatever consumes them knows to stop asking.
@@ -1815,6 +1836,7 @@ Try it in the playground below against an infinite generator — confirm it retu
   },
   {
     slug: "find-leaked-listeners",
+    companies: ["Adobe"],
     conceptSlug: "memory-management-leaks",
     title: "Detect leaked event listeners",
     description: `Not every memory leak needs a heap snapshot to catch — the most common one (a forgotten \`removeEventListener\`) is really just a bookkeeping problem, and bookkeeping problems are exactly what code can check for you automatically.
@@ -2454,6 +2476,7 @@ Write \`cloneMessage(value)\` implementing this behavior.`,
   },
   {
     slug: "build-create-element",
+    companies: ["Meta"],
     conceptSlug: "jsx-virtual-dom",
     title: "Build a Mini createElement",
     description: `Build the function every JSX tag actually compiles down to — the one that turns a description like \`<button className="primary">Save</button>\` into a plain Virtual DOM object.
@@ -2514,6 +2537,7 @@ Write \`createElement(type, props, ...children)\` returning \`{ type, props }\`,
   },
   {
     slug: "should-run-effect",
+    companies: ["Airbnb"],
     conceptSlug: "usestate-useeffect-fundamentals",
     title: "Implement useEffect's Dependency Comparison",
     description: `Build the comparison React itself runs on every render to decide whether an effect fires again — the actual logic behind the dependency array.
@@ -2564,6 +2588,7 @@ Write \`shouldRunEffect(prevDeps, nextDeps)\` returning \`true\` if the effect s
   },
   {
     slug: "detect-controlled-switch",
+    companies: ["Google"],
     conceptSlug: "controlled-vs-uncontrolled-forms",
     title: "Detect a Controlled/Uncontrolled Switch",
     description: `Build the check behind React's real "a component is changing from uncontrolled to controlled" warning — given an input's value across two renders, decide whether its controlled-ness just flipped.
@@ -2612,6 +2637,7 @@ Write \`isSwitchingControlled(prevValue, nextValue)\` returning \`true\` if the 
   },
   {
     slug: "implement-merge-refs",
+    companies: ["Microsoft"],
     conceptSlug: "useref-imperative-handles",
     title: "Implement mergeRefs",
     description: `Build a small utility that comes up constantly once a component needs to attach more than one ref to the same DOM node — a real gap in React's API, not a toy problem.
@@ -2671,6 +2697,7 @@ Write \`mergeRefs(...refs)\` returning a single callback ref that, when called w
   },
   {
     slug: "implement-context-store",
+    companies: ["Stripe"],
     conceptSlug: "context-api-prop-drilling",
     title: "Implement a Minimal Context Store",
     description: `Build the subscribe/notify mechanism that Context uses under the hood to propagate a value to every consumer without any component in between passing it along.
@@ -2734,6 +2761,7 @@ Write \`createStore(initialValue)\` returning \`{ getValue, setValue, subscribe 
   },
   {
     slug: "implement-map-children",
+    companies: ["LinkedIn"],
     conceptSlug: "component-composition-patterns",
     title: "Implement a Children-Mapping Utility",
     description: `Build the normalization logic behind \`React.Children.map\` — the utility that lets a component safely transform \`props.children\` no matter what shape it arrives in.
@@ -2788,6 +2816,7 @@ Write \`mapChildren(children, mapFn)\` returning the normalized, filtered array 
   },
   {
     slug: "detect-conditional-hook-call",
+    companies: ["Meta", "TikTok"],
     conceptSlug: "custom-hooks-composition",
     title: "Detect a Rules-of-Hooks Violation",
     description: `Build a simplified version of what eslint-plugin-react-hooks checks at runtime-equivalent logic — given the sequence of hooks called on each render, detect the render where that sequence first diverges from the baseline.
@@ -2846,6 +2875,7 @@ Write \`findHookOrderViolation(renders)\`, where \`renders\` is an array of arra
   },
   {
     slug: "find-error-boundary",
+    companies: ["Amazon"],
     conceptSlug: "error-boundaries",
     title: "Find the Catching Error Boundary",
     description: `Build the lookup behind "which Error Boundary actually catches this crash" — given a component tree and where an error is thrown, find the nearest ancestor boundary.
@@ -2913,6 +2943,7 @@ Write \`findErrorBoundary(tree, throwingId)\`, where each tree node is \`{ id, i
   },
   {
     slug: "implement-shallow-equal",
+    companies: ["Meta"],
     conceptSlug: "render-performance-memoization",
     title: "Implement shallowEqual",
     description: `Build the comparison \`React.memo\` runs by default on every prop object — the actual algorithm behind "did this component's props really change?"
@@ -2971,6 +3002,7 @@ Write \`shallowEqual(objA, objB)\` implementing this comparison.`,
   },
   {
     slug: "schedule-updates-by-priority",
+    companies: ["Meta", "Netflix"],
     conceptSlug: "concurrent-react-suspense",
     title: "Schedule Updates by Priority",
     description: `Build the ordering logic behind Concurrent React's priority model — given a batch of pending updates, decide which run first.
@@ -3022,6 +3054,7 @@ Write \`scheduleUpdates(updates)\`, where each update is \`{ id, priority: 'urge
   },
   {
     slug: "find-shared-state-ancestor",
+    companies: ["Airbnb"],
     conceptSlug: "state-management-tradeoffs",
     title: "Find Where Shared State Should Live",
     description: `Build the lookup behind "lift state up" — given a component tree and two components that need to share a value, find the lowest common ancestor state should move to.
@@ -3089,6 +3122,7 @@ Write \`findLowestCommonAncestor(tree, idA, idB)\`, where each tree node is \`{ 
   // ── Phase 10 (Feature 44) — CSS Concepts ──────────────────────────────────
   {
     slug: "rendered-box-width",
+    companies: ["Google"],
     conceptSlug: "the-box-model",
     title: "Compute a rendered box's width",
     description: `**box-sizing** decides what \`width\` actually measures — and getting it wrong is why elements mysteriously grow past their declared size.
@@ -3135,6 +3169,7 @@ renderedWidth({ width: 200, padding: 20, border: 2 }, "border-box")  // 200
   },
   {
     slug: "resolve-css-length",
+    companies: ["Adobe"],
     conceptSlug: "units-sizing",
     title: "Resolve a CSS length to pixels",
     description: `Every relative CSS unit ultimately resolves to a pixel value — the only question is *what it's relative to*.
@@ -3192,6 +3227,7 @@ resolveLength(10, "px", {})                                // 10
   },
   {
     slug: "resolve-cascade-winner",
+    companies: ["Airbnb"],
     conceptSlug: "the-cascade-inheritance",
     title: "Resolve which declaration wins the cascade",
     description: `When multiple rules target the same element and property, the cascade picks exactly one winner — through a fixed, ordered set of tiebreaks.
@@ -3266,6 +3302,7 @@ function resolveCascade(declarations) {
   },
   {
     slug: "distribute-flex-space",
+    companies: ["Microsoft"],
     conceptSlug: "flexbox-vs-grid",
     title: "Distribute space across flex items",
     description: `Flexbox's \`flex-grow\`/\`flex-shrink\`/\`flex-basis\` decide each item's final size — the same three numbers the browser itself computes on every layout pass.
@@ -3323,6 +3360,7 @@ distributeFlexSpace([
   },
   {
     slug: "resolve-stacking-order",
+    companies: ["Adobe"],
     conceptSlug: "positioning-stacking-contexts",
     title: "Find the topmost element across nested stacking contexts",
     description: `\`z-index: 9999\` can still lose to a sibling's \`z-index: 2\` — if that 9999 is trapped inside its own ancestor's stacking context.
@@ -3400,6 +3438,7 @@ resolveTopmost([
   },
   {
     slug: "resolve-container-query",
+    companies: ["Shopify"],
     conceptSlug: "responsive-design-container-queries",
     title: "Resolve the matching container query",
     description: `A container query asks "how wide is *this component's own container*?" — not the viewport. Matching one is just finding the right breakpoint for a given width.
@@ -3454,6 +3493,7 @@ resolveContainerValue(300, queries) // "compact"
   },
   {
     slug: "resolve-custom-property",
+    companies: ["Airbnb"],
     conceptSlug: "custom-properties-theming",
     title: "Resolve a custom property through the cascade",
     description: `A custom property resolves by walking up from wherever \`var()\` is used — not from wherever \`--name\` was declared. That's what makes runtime theming possible.
@@ -3519,6 +3559,7 @@ resolveVar("card", "--accent", tree, {
   },
   {
     slug: "implement-has-matcher",
+    companies: ["Google"],
     conceptSlug: "pseudo-classes-pseudo-elements-has",
     title: "Implement a simplified :has() matcher",
     description: `Every CSS combinator before \`:has()\` only reached downward or sideways. \`:has()\` is the first one that lets a selector match a parent based on its children.
@@ -3569,6 +3610,7 @@ hasDescendantMatching(form, (n) => n.valid === false) // true — i2 is invalid
   },
   {
     slug: "classify-animation-cost",
+    companies: ["Apple"],
     conceptSlug: "animation-performance",
     title: "Classify the cost of an animated property list",
     description: `Not every animated CSS property costs the same — and animating just one expensive property drags the whole frame down, even if every other property is cheap.
@@ -3638,6 +3680,7 @@ function classifyAnimationCost(properties) {
   // matching the JS-simulation pattern Feature 44 established for CSS.
   {
     slug: "narrow-unknown-to-number",
+    companies: ["Microsoft"],
     conceptSlug: "basic-types-inference",
     title: "Narrow unknown to a safe number",
     description: `\`unknown\` forces you to prove what a value actually is before you can use it — this is that proof, written as a function.
@@ -3690,6 +3733,7 @@ safeParseNumber(NaN)             // null
   },
   {
     slug: "merge-declarations",
+    companies: ["Stripe"],
     conceptSlug: "interfaces-vs-type-aliases",
     title: "Simulate declaration merging",
     description: `Two separate \`interface Config { ... }\` blocks with the same name silently combine into one — this models what that merge actually does to the resulting shape.
@@ -3748,6 +3792,7 @@ mergeDeclarations([{ id: "string" }, { id: "number" }])
   },
   {
     slug: "create-typed-stack",
+    companies: ["Microsoft"],
     conceptSlug: "generics",
     title: "Build a self-typing stack",
     description: `A generic collection doesn't know its element type until the first value goes in — after that, it holds every later value to the same type.
@@ -3819,6 +3864,7 @@ s.push("oops"); // throws
   },
   {
     slug: "pick-keys",
+    companies: ["Amazon"],
     conceptSlug: "utility-types",
     title: "Implement Pick at runtime",
     description: `\`Pick<T, K>\` keeps only a chosen subset of an object's keys — this is that same idea, applied to an actual object instead of a type.
@@ -3866,6 +3912,7 @@ pick({ id: 1, name: "Ada", email: "a@x.com" }, ["id", "name"])
   },
   {
     slug: "narrow-value-length",
+    companies: ["Stripe"],
     conceptSlug: "type-narrowing",
     title: "Narrow a union to compute its length",
     description: `A chain of narrowing checks is how real code safely handles a value that could be several different shapes.
@@ -3914,6 +3961,7 @@ getLength(42)                 // 0
   },
   {
     slug: "discriminated-union-reducer",
+    companies: ["Amazon"],
     conceptSlug: "discriminated-unions",
     title: "Write a discriminated-union reducer",
     description: `A shared \`type\` field is what lets a single \`switch\` safely branch across several differently-shaped actions — the exact pattern behind every Redux-style reducer.
@@ -3967,6 +4015,7 @@ reducer(5, { type: "set", value: 100 }) // 100
   },
   {
     slug: "map-values",
+    companies: ["Microsoft"],
     conceptSlug: "conditional-mapped-types",
     title: "Implement a mapped-type-style value transformer",
     description: `A mapped type applies the same transformation to every property of a type — this is that same idea, applied to an actual object's values at runtime.
@@ -4012,6 +4061,7 @@ mapValues({ a: 1, b: 2 }, (v) => v * 2)
   },
   {
     slug: "match-event-name-pattern",
+    companies: ["Stripe"],
     conceptSlug: "template-literal-branded-types",
     title: "Validate a template-literal string pattern",
     description: `A template literal type like \`\`on\${Capitalize<string>}\`\` describes every string matching a pattern, checked at compile time — this validates the same pattern at runtime.
@@ -4977,6 +5027,7 @@ function overallBudgetStatus(results) {
   // ── system-design (Feature 48) ────────────────────────────────────────────
   {
     slug: "find-circular-component-imports",
+    companies: ["LinkedIn"],
     conceptSlug: "component-driven-architecture",
     title: "Find a circular dependency in a component import graph",
     description: `The bug that turns a clean component tree into a tangled one: a cycle in the import graph.
@@ -5059,6 +5110,7 @@ findCycle({ A: ["B"], B: ["C"], C: [] })
   },
   {
     slug: "plan-fetch-waterfall",
+    companies: ["Uber", "Amazon"],
     conceptSlug: "api-design-data-fetching-strategy",
     title: "Group dependent data requests into parallel fetch waves",
     description: `The core planning step behind avoiding a request waterfall: figure out which requests can actually run at the same time.
@@ -5125,6 +5177,7 @@ planFetchWaterfall([
   },
   {
     slug: "pick-realtime-transport",
+    companies: ["Uber"],
     conceptSlug: "designing-real-time-updates",
     title: "Choose the right real-time transport for the constraints",
     description: `The decision behind every "polling vs. SSE vs. WebSocket" system design question, made concrete.
@@ -5191,6 +5244,7 @@ Write \`chooseTransport({ needsBidirectional, updateFrequencySec, browserSupport
   },
   {
     slug: "merge-feed-page",
+    companies: ["Meta", "TikTok"],
     conceptSlug: "designing-infinite-scroll-feed",
     title: "Merge a newly fetched feed page without duplicates",
     description: `The core operation behind a stable infinite-scroll feed: merging in a new page without corrupting what's already loaded.
@@ -5252,6 +5306,7 @@ mergeFeedPage(
   },
   {
     slug: "transform-insert-operations",
+    companies: ["Dropbox"],
     conceptSlug: "designing-realtime-collaborative-editor",
     title: "Transform a concurrent insert operation (Operational Transformation)",
     description: `The core mechanism behind Operational Transformation, reduced to its simplest case: two concurrent plain-text inserts.
@@ -5311,6 +5366,7 @@ transform({ pos: 5, text: "X" }, { pos: 2, text: "Y" })
   },
   {
     slug: "classify-architecture-fit",
+    companies: ["Airbnb"],
     conceptSlug: "frontend-architecture-patterns",
     title: "Pick the right architecture for a team's actual constraints",
     description: `The decision tree behind "should this be a monolith, a monorepo, or micro-frontends?"
@@ -5366,6 +5422,7 @@ Write \`classifyArchitectureFit({ teamCount, independentDeployNeeded })\`, retur
   },
   {
     slug: "classify-state-layer",
+    companies: ["Airbnb"],
     conceptSlug: "state-management-at-scale",
     title: "Classify a piece of state into its correct layer",
     description: `The decision every "where should this state live?" question ultimately reduces to.
@@ -5418,6 +5475,12920 @@ Write \`classifyStateLayer({ isServerData, isSharedAcrossRoutes })\`, returning 
     ],
     isPremium: true,
     orderIndex: 74,
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Practice — standalone JavaScript Interview Roadmap (Feature 28 follow-up).
+  // These have no conceptSlug: they exist only for Practice's own catalog,
+  // never for a Learn Challenge tab. orderIndex follows the roadmap's stage
+  // sequence (Stage 1 = 1..13, Stage 2 = 14..22, ...) so Practice's per-
+  // category list renders in the roadmap's intended learning order.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Stage 1 — Core Mechanics of JavaScript
+  {
+    slug: "improve-full-name-formatter",
+    category: "javascript-runtime",
+    title: "Improve a Function: Safe Full Name",
+    description: `A warm-up in cleaning up a naive function so it handles the inputs real data actually throws at it.
+
+## The problem
+
+\`getFullName(user)\` needs to join whichever name parts a user actually has — some users have no middle name, some have an empty string instead of \`undefined\`, some are missing a first name entirely.
+
+## Your task
+
+Write \`getFullName(user)\`, where \`user\` may have \`first\`, \`middle\`, and \`last\` string fields, any of which can be missing or falsy. Join the parts that exist with single spaces, in order.
+
+\`\`\`js
+getFullName({ first: "Ada", last: "Lovelace" }) // "Ada Lovelace"
+getFullName({ last: "Turing" }) // "Turing"
+\`\`\``,
+    difficulty: "easy",
+    starterCode: `function getFullName(user) {
+  // user: { first, middle, last } — any of these may be missing or falsy
+}`,
+    solutionCode: `function getFullName(user) {
+  return [user.first, user.middle, user.last].filter(Boolean).join(" ");
+}`,
+    testCases: [
+      { input: '{ first: "Ada", last: "Lovelace" }', expected: '"Ada Lovelace"', label: "Joins first and last" },
+      { input: '{ first: "Ada", middle: "", last: "Lovelace" }', expected: '"Ada Lovelace"', label: "Skips an empty middle name" },
+      { input: '{ first: "Grace", middle: "Brewster", last: "Hopper" }', expected: '"Grace Brewster Hopper"', label: "Joins all three parts" },
+      { input: '{ last: "Turing" }', expected: '"Turing"', label: "A single available part with no extra spaces" },
+    ],
+    hints: [
+      "Build an array of the three fields, filter out the falsy ones, then join.",
+      "Boolean is a handy filter predicate for dropping undefined, null, and empty strings in one pass.",
+    ],
+    orderIndex: 1001,
+  },
+  {
+    slug: "classify-nullish-value",
+    companies: ["Amazon", "Bloomberg"],
+    category: "javascript-runtime",
+    title: "undefined vs null: Classify a Value",
+    description: `\`typeof null === "object"\` is JavaScript's most infamous gotcha. This exercise makes sure the distinction is second nature.
+
+## Your task
+
+Write \`classifyNullish(value)\` that returns:
+
+- \`"undefined"\` if the value is exactly \`undefined\`
+- \`"null"\` if the value is exactly \`null\`
+- \`"value"\` for anything else (including \`0\`, \`""\`, and \`NaN\`, which are falsy but **not** nullish)`,
+    difficulty: "easy",
+    starterCode: `function classifyNullish(value) {
+  // return "undefined", "null", or "value"
+}`,
+    solutionCode: `function classifyNullish(value) {
+  if (value === undefined) return "undefined";
+  if (value === null) return "null";
+  return "value";
+}`,
+    testCases: [
+      { input: "undefined", expected: '"undefined"', label: "undefined is classified as undefined" },
+      { input: "null", expected: '"null"', label: "null is classified as null" },
+      { input: "0", expected: '"value"', label: "0 is falsy but not nullish" },
+      { input: "NaN", expected: '"value"', label: "NaN is not nullish either" },
+    ],
+    hints: [
+      "Use strict equality (===) — typeof won't distinguish null from an object.",
+      "Falsy is not the same thing as nullish: 0, '', and NaN are all falsy but real values.",
+    ],
+    orderIndex: 1002,
+  },
+  {
+    slug: "custom-object-is",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Implement Object.is()",
+    description: `\`Object.is()\` looks like \`===\`, but fixes its two edge cases: \`NaN\` and signed zero.
+
+## Your task
+
+Write \`myObjectIs(a, b)\` that replicates \`Object.is\`:
+
+- \`NaN\` is equal to itself (unlike \`===\`)
+- \`+0\` and \`-0\` are **not** equal to each other (unlike \`===\`)
+- everything else behaves exactly like \`===\``,
+    difficulty: "easy",
+    starterCode: `function myObjectIs(a, b) {
+}`,
+    solutionCode: `function myObjectIs(a, b) {
+  if (a === b) return a !== 0 || 1 / a === 1 / b;
+  return a !== a && b !== b;
+}`,
+    testCases: [
+      { input: "NaN, NaN", expected: "true", label: "NaN is equal to itself" },
+      { input: "0, -0", expected: "false", label: "+0 and -0 are not equal" },
+      { input: "1, 1", expected: "true", label: "Identical primitives are equal" },
+      { input: "{}, {}", expected: "false", label: "Two different object references are never equal" },
+    ],
+    hints: [
+      "1 / 0 is Infinity, but 1 / -0 is -Infinity — that's how you can tell them apart when === says they're equal.",
+      "a !== a is only true when a is NaN.",
+    ],
+    orderIndex: 1003,
+  },
+  {
+    slug: "custom-object-create",
+    companies: ["Google", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Implement your own Object.create()",
+    description: `\`Object.create(proto)\` builds a new object whose prototype is exactly the object you pass in — including \`null\`, for a prototype-less object.
+
+## Your task
+
+Write \`myObjectCreate(proto)\` without using the real \`Object.create\`. It must support \`proto\` being \`null\`.`,
+    difficulty: "easy",
+    starterCode: `function myObjectCreate(proto) {
+}`,
+    solutionCode: `function myObjectCreate(proto) {
+  const obj = {};
+  Object.setPrototypeOf(obj, proto);
+  return obj;
+}`,
+    testCases: [
+      { input: "proto = { greet() { return 'hi'; } }", expected: "Object.getPrototypeOf(result) === proto", label: "The prototype is set to the given object" },
+      { input: "same proto", expected: "'hi'", label: "Inherited methods are callable through the prototype" },
+      { input: "null", expected: "null", label: "A null prototype is preserved, not silently upgraded" },
+      { input: "proto = { a: 1 }", expected: "0", label: "The new object has no own enumerable properties of its own" },
+    ],
+    hints: [
+      "Object.setPrototypeOf lets you set a prototype after creation, including null.",
+      "A naive `function F(){}; F.prototype = proto; new F()` trick actually fails for proto = null — the engine silently falls back to Object.prototype.",
+    ],
+    orderIndex: 1004,
+  },
+  {
+    slug: "custom-new-operator",
+    companies: ["Google", "Meta", "Amazon"],
+    category: "javascript-runtime",
+    title: "Create your own new operator",
+    description: `The \`new\` keyword does four things under the hood. This exercise makes each one explicit.
+
+## Your task
+
+Write \`myNew(Ctor, ...args)\` that:
+
+1. creates a new object linked to \`Ctor.prototype\`
+2. calls \`Ctor\` with \`this\` bound to that object and \`args\` forwarded
+3. returns the constructor's own return value **only if it's an object**
+4. otherwise returns the newly created object`,
+    difficulty: "easy",
+    starterCode: `function myNew(Ctor, ...args) {
+}`,
+    solutionCode: `function myNew(Ctor, ...args) {
+  const obj = Object.create(Ctor.prototype);
+  const result = Ctor.apply(obj, args);
+  return typeof result === "object" && result !== null ? result : obj;
+}`,
+    testCases: [
+      { input: "function Person(name){this.name=name;}", expected: "instanceof Person, name = 'Ada'", label: "Constructs a linked instance with fields set" },
+      { input: "constructor returns an object", expected: "the returned object, not the new instance", label: "An object return value overrides the new instance" },
+      { input: "constructor returns a primitive", expected: "the new instance, primitive ignored", label: "A primitive return value is ignored" },
+    ],
+    hints: [
+      "Object.create(Ctor.prototype) gives you the linked object without calling the constructor.",
+      "Ctor.apply(obj, args) runs the constructor body with `this` set to obj.",
+      "Only object return values (not primitives, not null) override the new instance — this is a real spec rule.",
+    ],
+    orderIndex: 1005,
+  },
+  {
+    slug: "custom-spy-on",
+    companies: ["Amazon", "Stripe"],
+    category: "javascript-runtime",
+    title: "Implement jest.spyOn()",
+    description: `A spy wraps a real method so you can observe how it was called, without losing its real behavior.
+
+## Your task
+
+Write \`mySpyOn(obj, methodName)\`, which replaces \`obj[methodName]\` with a wrapper that:
+
+- still calls through to the original implementation and returns its result
+- records every call's arguments on a \`.calls\` array
+- exposes \`.restore()\` to put the original method back`,
+    difficulty: "easy",
+    starterCode: `function mySpyOn(obj, methodName) {
+}`,
+    solutionCode: `function mySpyOn(obj, methodName) {
+  const original = obj[methodName];
+  const calls = [];
+  const spy = function (...args) {
+    calls.push(args);
+    return original.apply(this, args);
+  };
+  spy.calls = calls;
+  spy.restore = function () {
+    obj[methodName] = original;
+  };
+  obj[methodName] = spy;
+  return spy;
+}`,
+    testCases: [
+      { input: "obj.add(2, 3)", expected: "5", label: "The real behavior still runs" },
+      { input: "spy.calls after one call", expected: "[[2, 3]]", label: "Call arguments are recorded" },
+      { input: "spy.restore(); obj.add", expected: "the original function", label: "restore() puts the original method back" },
+    ],
+    hints: [
+      "The wrapper needs to call the saved original with the same `this` and arguments, then return its result.",
+      "restore() just needs to reassign obj[methodName] back to the closed-over original.",
+    ],
+    orderIndex: 1006,
+  },
+  {
+    slug: "detect-data-type",
+    companies: ["Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Detect data type in JavaScript",
+    description: `\`typeof\` alone can't tell an array from a plain object, or null from anything — this problem builds a type detector that actually can.
+
+## Your task
+
+Write \`getType(value)\`, returning a precise lowercase type string: \`"array"\`, \`"null"\`, \`"date"\`, \`"regexp"\`, \`"object"\`, \`"function"\`, \`"number"\`, \`"string"\`, \`"boolean"\`, or \`"undefined"\`.`,
+    difficulty: "medium",
+    starterCode: `function getType(value) {
+}`,
+    solutionCode: `function getType(value) {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "array";
+  return Object.prototype.toString.call(value).slice(8, -1).toLowerCase();
+}`,
+    testCases: [
+      { input: "[]", expected: '"array"', label: "An array is array, not object" },
+      { input: "null", expected: '"null"', label: "null is its own category, not object" },
+      { input: "new Date()", expected: '"date"', label: "A Date instance is date" },
+      { input: "/abc/", expected: '"regexp"', label: "A regex literal is regexp" },
+      { input: "function(){}", expected: '"function"', label: "A function is function" },
+      { input: "42", expected: '"number"', label: "A primitive number is number" },
+    ],
+    hints: [
+      "Object.prototype.toString.call(value) returns a string like \"[object Array]\" for every value, including primitives.",
+      "Slice out the middle word between \"[object \" and \"]\" and lowercase it.",
+    ],
+    orderIndex: 1007,
+  },
+  {
+    slug: "custom-function-call",
+    companies: ["Google", "Meta", "Uber"],
+    category: "javascript-runtime",
+    title: "Create your own Function.prototype.call",
+    description: `\`Function.prototype.call\` invokes a function with a given \`this\` and individually-listed arguments. This exercise rebuilds it from scratch.
+
+## Your task
+
+Add \`myCall(context, ...args)\` to \`Function.prototype\`, invoking the function it's called on with \`this\` set to \`context\` and \`args\` forwarded, returning its result.`,
+    difficulty: "medium",
+    starterCode: `Function.prototype.myCall = function (context, ...args) {
+};`,
+    solutionCode: `Function.prototype.myCall = function (context, ...args) {
+  const ctx = context && typeof context === "object" ? context : {};
+  const key = Symbol("fn");
+  ctx[key] = this;
+  const result = ctx[key](...args);
+  delete ctx[key];
+  return result;
+};`,
+    testCases: [
+      { input: "getName.myCall({ name: 'Ada' }, 'Hello')", expected: '"Hello, Ada"', label: "this and the argument are forwarded correctly" },
+      { input: "the context object after the call", expected: "no leaked temporary key", label: "The context object isn't left with a leftover property" },
+      { input: "sum3.myCall(null, 1, 2, 3)", expected: "6", label: "Multiple arguments are forwarded in order" },
+    ],
+    hints: [
+      "Temporarily attach the function to the context object under a unique key, call it as a method, then delete the key.",
+      "A Symbol makes an excellent temporary key — it can't collide with a real property name.",
+    ],
+    orderIndex: 1008,
+  },
+  {
+    slug: "custom-function-apply",
+    companies: ["Google", "Meta"],
+    category: "javascript-runtime",
+    title: "Implement your own Function.prototype.apply",
+    description: `Same idea as \`call\`, but arguments arrive as a single array instead of a flat list.
+
+## Your task
+
+Add \`myApply(context, argsArray)\` to \`Function.prototype\`. \`argsArray\` may be omitted, in which case the function is called with no arguments.`,
+    difficulty: "medium",
+    starterCode: `Function.prototype.myApply = function (context, argsArray) {
+};`,
+    solutionCode: `Function.prototype.myApply = function (context, argsArray) {
+  const ctx = context && typeof context === "object" ? context : {};
+  const args = argsArray || [];
+  const key = Symbol("fn");
+  ctx[key] = this;
+  const result = ctx[key](...args);
+  delete ctx[key];
+  return result;
+};`,
+    testCases: [
+      { input: "getName.myApply({ name: 'Ada' }, ['Hello'])", expected: '"Hello, Ada"', label: "Array arguments are spread onto the call" },
+      { input: "noArgs.myApply({})", expected: "0", label: "A missing args array calls the function with no arguments" },
+      { input: "the context object after the call", expected: "no leaked temporary key", label: "The context object isn't left with a leftover property" },
+    ],
+    hints: [
+      "Default argsArray to an empty array before spreading it into the call.",
+      "The rest of the implementation is identical to myCall.",
+    ],
+    orderIndex: 1009,
+  },
+  {
+    slug: "custom-function-bind",
+    companies: ["Meta", "Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Create your own Function.prototype.bind",
+    description: `\`bind\` returns a brand-new function permanently locked to a given \`this\` and a set of preset leading arguments — and it still has to work correctly when called with \`new\`.
+
+## Your task
+
+Add \`myBind(context, ...boundArgs)\` to \`Function.prototype\`, returning a new function that:
+
+- always calls the original with \`this\` set to \`context\`
+- prepends \`boundArgs\` before any arguments passed at call time
+- when invoked with \`new\`, ignores the bound \`context\` and behaves like a normal constructor call instead`,
+    difficulty: "medium",
+    starterCode: `Function.prototype.myBind = function (context, ...boundArgs) {
+};`,
+    solutionCode: `Function.prototype.myBind = function (context, ...boundArgs) {
+  const fn = this;
+  function bound(...callArgs) {
+    const isNew = this instanceof bound;
+    return fn.apply(isNew ? this : context, [...boundArgs, ...callArgs]);
+  }
+  bound.prototype = Object.create(fn.prototype || Object.prototype);
+  return bound;
+};`,
+    testCases: [
+      { input: "getThis.myBind(ctx)()", expected: "ctx", label: "this stays locked to the bound context" },
+      { input: "greet.myBind({ name: 'Ada' }, 'Hello')('!')", expected: '"Hello, Ada!"', label: "Preset arguments come before call-time arguments" },
+      { input: "new (Point.myBind({}, 10))(20)", expected: "{ x: 10, y: 20 }, instanceof Point", label: "Called with new, the bound context is ignored" },
+    ],
+    hints: [
+      "Check `this instanceof bound` inside the returned function to detect a `new` call.",
+      "Set bound.prototype to a new object linked to the original function's prototype, so instanceof still works after binding.",
+    ],
+    orderIndex: 1010,
+  },
+  {
+    slug: "custom-instanceof",
+    companies: ["Google", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Write your own instanceof",
+    description: `\`instanceof\` walks the prototype chain looking for a match — nothing more magical than that.
+
+## Your task
+
+Write \`myInstanceof(obj, Ctor)\`, replicating \`obj instanceof Ctor\` by walking \`Object.getPrototypeOf\`.`,
+    difficulty: "medium",
+    starterCode: `function myInstanceof(obj, Ctor) {
+}`,
+    solutionCode: `function myInstanceof(obj, Ctor) {
+  if (obj === null || (typeof obj !== "object" && typeof obj !== "function")) return false;
+  let proto = Object.getPrototypeOf(obj);
+  while (proto !== null) {
+    if (proto === Ctor.prototype) return true;
+    proto = Object.getPrototypeOf(proto);
+  }
+  return false;
+}`,
+    testCases: [
+      { input: "myInstanceof([], Array)", expected: "true", label: "An array is an instance of Array" },
+      { input: "myInstanceof([], Object)", expected: "true", label: "An array is also an instance of Object, further up the chain" },
+      { input: "myInstanceof({}, Array)", expected: "false", label: "A plain object is not an instance of Array" },
+      { input: "myInstanceof(5, Number)", expected: "false", label: "A primitive is never an instance of anything" },
+    ],
+    hints: [
+      "Primitives (non-objects) always return false, even for their apparent wrapper type.",
+      "Walk up via Object.getPrototypeOf until you either match Ctor.prototype or hit null.",
+    ],
+    orderIndex: 1011,
+  },
+  {
+    slug: "es5-class-extends",
+    companies: ["Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Write your own extends in ES5",
+    description: `Before \`class\`/\`extends\` existed, inheritance was wired up by hand with prototype chains. Understanding that wiring makes the \`class\` sugar much less mysterious.
+
+## Your task
+
+Write \`es5Extend(Child, Parent)\` that makes \`Child\` inherit from \`Parent\`:
+
+- instances of \`Child\` can call methods defined on \`Parent.prototype\`
+- \`Child.prototype\` methods still take priority over inherited ones
+- \`Child.prototype.constructor\` correctly points back to \`Child\`, not \`Parent\`
+- \`instanceof\` correctly recognizes \`Child\` instances as \`Parent\` instances too`,
+    difficulty: "medium",
+    starterCode: `function es5Extend(Child, Parent) {
+}`,
+    solutionCode: `function es5Extend(Child, Parent) {
+  Child.prototype = Object.create(Parent.prototype);
+  Child.prototype.constructor = Child;
+}`,
+    testCases: [
+      { input: "es5Extend(Dog, Animal); new Dog('Rex').speak()", expected: '"Rex makes a sound."', label: "Inherited methods are reachable" },
+      { input: "Dog.prototype.speak overridden", expected: '"Rex barks."', label: "Child's own method takes priority" },
+      { input: "new Dog('Rex').constructor", expected: "Dog", label: "constructor points back to Child" },
+      { input: "new Dog('Rex') instanceof Animal", expected: "true", label: "instanceof recognizes the prototype chain" },
+    ],
+    hints: [
+      "Object.create(Parent.prototype) gives Child.prototype the right chain without invoking Parent's constructor.",
+      "Reassigning Child.prototype wipes out its constructor property — set it back explicitly afterward.",
+    ],
+    orderIndex: 1012,
+  },
+  {
+    slug: "mini-expect-matcher",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "toBe() or not.toBe()",
+    description: `A tiny slice of a real assertion library — enough to see how \`expect(x).toBe(y)\` and its \`.not\` variant actually work under the hood.
+
+## Your task
+
+Write \`expect(actual)\`, returning an object with:
+
+- \`toBe(expected)\` — throws if \`actual\` and \`expected\` aren't \`Object.is\`-equal
+- \`not.toBe(expected)\` — throws if they **are** equal`,
+    difficulty: "medium",
+    starterCode: `function expect(actual) {
+}`,
+    solutionCode: `function expect(actual) {
+  function check(expected, negate) {
+    const pass = Object.is(actual, expected);
+    if (negate ? pass : !pass) {
+      throw new Error(negate ? "expected values to differ" : "expected values to match");
+    }
+  }
+  return {
+    toBe: (expected) => check(expected, false),
+    not: { toBe: (expected) => check(expected, true) },
+  };
+}`,
+    testCases: [
+      { input: "expect(1).toBe(1)", expected: "does not throw", label: "Matching values pass" },
+      { input: "expect(1).toBe(2)", expected: "throws", label: "Mismatched values throw" },
+      { input: "expect(NaN).toBe(NaN)", expected: "does not throw", label: "Uses Object.is semantics, so NaN matches itself" },
+      { input: "expect(1).not.toBe(2)", expected: "does not throw", label: "not.toBe passes when values differ" },
+      { input: "expect(1).not.toBe(1)", expected: "throws", label: "not.toBe throws when values match" },
+    ],
+    hints: [
+      "Use Object.is for the comparison, not ===, so NaN matches itself and +0/-0 stay distinct.",
+      "not.toBe is just the same check with the pass/fail condition inverted.",
+    ],
+    orderIndex: 1013,
+  },
+
+  // Stage 2 — Functional Programming Basics
+  {
+    slug: "build-counter-object",
+    category: "javascript-runtime",
+    title: "Create a counter object",
+    description: `A closure-backed object that tracks its own private count — the private state exists only in a variable captured by the returned methods.
+
+## Your task
+
+Write \`createCounter(start = 0)\`, returning an object with:
+
+- \`increment(step = 1)\` — adds \`step\`, returns the object (chainable)
+- \`decrement(step = 1)\` — subtracts \`step\`, returns the object (chainable)
+- \`reset()\` — resets back to \`start\`, returns the object (chainable)
+- \`get()\` — returns the current count`,
+    difficulty: "easy",
+    starterCode: `function createCounter(start = 0) {
+}`,
+    solutionCode: `function createCounter(start = 0) {
+  let count = start;
+  const counter = {
+    increment(step = 1) { count += step; return counter; },
+    decrement(step = 1) { count -= step; return counter; },
+    reset() { count = start; return counter; },
+    get() { return count; },
+  };
+  return counter;
+}`,
+    testCases: [
+      { input: "createCounter().increment().increment().get()", expected: "2", label: "Default step increments by 1" },
+      { input: "createCounter().decrement(5).get()", expected: "-5", label: "A custom step is respected" },
+      { input: "createCounter(10).increment(3).reset().get()", expected: "10", label: "reset() returns to the starting value" },
+      { input: "createCounter().increment().increment().get()", expected: "counter().get() chains", label: "Every method returns the counter itself for chaining" },
+    ],
+    hints: [
+      "The count only needs to live in a closure variable — no need to store it on the returned object itself.",
+      "Returning the counter object from every mutator method is what makes .increment().increment() chainable.",
+    ],
+    orderIndex: 1014,
+  },
+  {
+    slug: "build-count-function",
+    category: "javascript-runtime",
+    title: "Create a count function",
+    description: `Not every counter needs to be an object — sometimes a single callable function that increments on every call is exactly the right shape.
+
+## Your task
+
+Write \`createCountFunction()\`, returning a **function** that returns \`1\` on its first call, \`2\` on its second, and so on. The returned function also has a \`.reset()\` method that starts it back at \`1\`. Each call to \`createCountFunction()\` must produce an independent counter.`,
+    difficulty: "easy",
+    starterCode: `function createCountFunction() {
+}`,
+    solutionCode: `function createCountFunction() {
+  let n = 0;
+  function count() {
+    n += 1;
+    return n;
+  }
+  count.reset = () => { n = 0; };
+  return count;
+}`,
+    testCases: [
+      { input: "count(); count(); count()", expected: "1, 2, 3", label: "Each call returns the next integer" },
+      { input: "count.reset(); count()", expected: "1", label: "reset() starts the sequence over" },
+      { input: "two separate createCountFunction() calls", expected: "independent counts", label: "Separate instances don't share state" },
+    ],
+    hints: [
+      "A function is just another value — it can have its own properties, like .reset.",
+      "Each call to createCountFunction() should create a brand-new closure variable.",
+    ],
+    orderIndex: 1015,
+  },
+  {
+    slug: "implement-pipe-composition",
+    companies: ["Airbnb", "Uber", "Stripe"],
+    category: "javascript-runtime",
+    title: "Composition: create a pipe()",
+    description: `\`pipe\` is function composition read left to right: each function's output feeds the next one's input, in the order they were listed.
+
+## Your task
+
+Write \`pipe(...fns)\`, returning a single function that runs \`fns\` left to right, passing each result to the next. With no functions, it should act as the identity function.
+
+\`\`\`js
+const addOne = (x) => x + 1;
+const double = (x) => x * 2;
+pipe(addOne, double)(3) // (3 + 1) * 2 = 8
+\`\`\``,
+    difficulty: "easy",
+    starterCode: `function pipe(...fns) {
+}`,
+    solutionCode: `function pipe(...fns) {
+  return function (input) {
+    return fns.reduce((value, fn) => fn(value), input);
+  };
+}`,
+    testCases: [
+      { input: "pipe(x => x + 1, x => x * 2)(3)", expected: "8", label: "Runs functions left to right" },
+      { input: "pipe()(5)", expected: "5", label: "No functions acts as the identity" },
+      { input: "pipe(x => x.toUpperCase())('hi')", expected: '"HI"', label: "Works for a single function too" },
+    ],
+    hints: [
+      "Array.prototype.reduce is a natural fit: the accumulator is the running value, each function transforms it further.",
+      "pipe (left-to-right) and compose (right-to-left) are the same reduce, just in a different starting order of fns.",
+    ],
+    orderIndex: 1016,
+  },
+  {
+    slug: "lodash-once-polyfill",
+    companies: ["Amazon", "Uber"],
+    category: "javascript-runtime",
+    title: "Implement _.once()",
+    description: `A function wrapped in \`once\` runs its real logic exactly one time, no matter how many times it's called afterward — every later call just replays the first result.
+
+## Your task
+
+Write \`once(fn)\`, returning a wrapped function that invokes \`fn\` only on its first call and returns that same cached result on every subsequent call, **even if called with different arguments**.`,
+    difficulty: "easy",
+    starterCode: `function once(fn) {
+}`,
+    solutionCode: `function once(fn) {
+  let called = false;
+  let result;
+  return function (...args) {
+    if (!called) {
+      result = fn.apply(this, args);
+      called = true;
+    }
+    return result;
+  };
+}`,
+    testCases: [
+      { input: "called 5 times total", expected: "fn's real logic runs exactly once", label: "The wrapped function only runs once" },
+      { input: "second call with different arguments", expected: "the first call's cached result", label: "Later calls return the cached result regardless of new arguments" },
+      { input: "this binding on the first call", expected: "forwarded correctly", label: "this is forwarded on the call that actually runs" },
+    ],
+    hints: [
+      "A boolean flag in the closure is enough to know whether the real function has already run.",
+      "Once called is true, ignore whatever arguments come in — always return the stored result.",
+    ],
+    orderIndex: 1017,
+  },
+  {
+    slug: "curry-classic",
+    companies: ["Airbnb", "Uber", "TikTok"],
+    category: "javascript-runtime",
+    title: "Implement curry()",
+    description: `Currying turns a function of several arguments into a chain of functions, each taking one argument at a time, using the original function's arity (\`fn.length\`) to know when enough arguments have arrived.
+
+## Your task
+
+Write \`curry(fn)\`, returning a curried version of \`fn\` that collects one argument per call until it has \`fn.length\` arguments, then invokes \`fn\` with all of them.`,
+    difficulty: "easy",
+    starterCode: `function curry(fn) {
+}`,
+    solutionCode: `function curry(fn) {
+  return function curried(...args) {
+    if (args.length >= fn.length) return fn.apply(this, args);
+    return (...next) => curried(...args, ...next);
+  };
+}`,
+    testCases: [
+      { input: "function multiply(a,b){return a*b;} curry(multiply)(2)(3)", expected: "6", label: "One argument at a time" },
+      { input: "curry(multiply)(2, 3)", expected: "6", label: "All arguments at once also works" },
+      { input: "function add4(a,b,c,d){return a+b+c+d;} curry(add4)(1)(2)(3)(4)", expected: "10", label: "Works for any arity, driven by fn.length" },
+    ],
+    hints: [
+      "fn.length gives you the declared parameter count — that's how curry knows when it has enough arguments without you hardcoding a number.",
+      "Each call that isn't yet complete should return a new function that concatenates its own arguments onto what's already collected.",
+    ],
+    orderIndex: 1018,
+  },
+  {
+    slug: "curry-with-placeholder",
+    companies: ["Airbnb", "TikTok"],
+    category: "javascript-runtime",
+    title: "curry() with placeholder support",
+    description: `Real-world curry implementations (like Lodash's) support a placeholder value that reserves a slot to be filled in on a later call — letting you skip over an argument now and supply it afterward.
+
+## Your task
+
+Write \`curryWithPlaceholder(fn)\`, exposing its placeholder marker as \`curryWithPlaceholder.PLACEHOLDER\`. Any argument slot filled with the placeholder gets resolved from the **next** call's arguments, in order, before falling back to appending leftover arguments at the end.
+
+\`\`\`js
+const _ = curryWithPlaceholder.PLACEHOLDER;
+const curried = curryWithPlaceholder((a, b, c) => a * 100 + b * 10 + c);
+curried(1, _, 3)(2) // 123 — the placeholder is filled by 2
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function curryWithPlaceholder(fn) {
+}
+curryWithPlaceholder.PLACEHOLDER = Symbol("placeholder");`,
+    solutionCode: `function curryWithPlaceholder(fn) {
+  const PLACEHOLDER = curryWithPlaceholder.PLACEHOLDER;
+  function curried(...args) {
+    const hasPlaceholder = args.slice(0, fn.length).includes(PLACEHOLDER);
+    if (args.length >= fn.length && !hasPlaceholder) {
+      return fn.apply(this, args);
+    }
+    return (...next) => {
+      const nextQueue = [...next];
+      const merged = args.map((a) => (a === PLACEHOLDER && nextQueue.length ? nextQueue.shift() : a));
+      return curried(...merged, ...nextQueue);
+    };
+  }
+  return curried;
+}
+curryWithPlaceholder.PLACEHOLDER = Symbol("placeholder");`,
+    testCases: [
+      { input: "combine(1)(2)(3) for a*100+b*10+c", expected: "123", label: "Works exactly like plain curry with no placeholders" },
+      { input: "combine(1, _, 3)(2)", expected: "123", label: "A placeholder in the middle is filled by the next call" },
+      { input: "combine(_, 2)(1, 3)", expected: "123", label: "A leading placeholder is filled first, extra args are appended after" },
+    ],
+    hints: [
+      "Check for the placeholder only within the first fn.length arguments — a call is only 'complete' once every required slot has a real value.",
+      "When resolving placeholders, walk the existing args in order and pull from the front of the new arguments to fill each one; anything left over gets appended at the end.",
+    ],
+    orderIndex: 1019,
+  },
+  {
+    slug: "chainable-curried-sum",
+    companies: ["Amazon", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Create sum()",
+    description: `A curried \`sum\` that keeps accepting more numbers through repeated calls, and produces its total either through a final empty call or through implicit numeric coercion.
+
+## Your task
+
+Write \`sum(a)\`, returning a function that:
+
+- when called again with a number, adds it and returns itself (chainable)
+- when called with no arguments, returns the running total
+- also converts to its running total via \`valueOf\`, so \`Number(sum(1)(2))\` works too`,
+    difficulty: "medium",
+    starterCode: `function sum(a) {
+}`,
+    solutionCode: `function sum(a) {
+  let total = a;
+  function inner(b) {
+    if (b === undefined) return total;
+    total += b;
+    return inner;
+  }
+  inner.valueOf = () => total;
+  return inner;
+}`,
+    testCases: [
+      { input: "sum(1)(2)(3)()", expected: "6", label: "A trailing empty call returns the total" },
+      { input: "Number(sum(1)(2)(3))", expected: "6", label: "valueOf lets it coerce to a number directly" },
+      { input: "sum(5)()", expected: "5", label: "A single argument with no chaining still works" },
+    ],
+    hints: [
+      "Calling with undefined (no argument) is your signal to stop accumulating and return the total.",
+      "valueOf is what JavaScript calls automatically during numeric coercion (Number(), +, etc.) — it doesn't need to be called explicitly.",
+    ],
+    orderIndex: 1020,
+  },
+  {
+    slug: "general-memoization",
+    companies: ["Google", "Meta"],
+    category: "javascript-runtime",
+    title: "Implement a general memoization function memo()",
+    description: `Memoization trades memory for speed: cache a pure function's result by its arguments, so an expensive call never runs twice for the same input.
+
+## Your task
+
+Write \`memo(fn)\`, returning a wrapped function that caches results keyed by all of its arguments (any number of them), returning the cached value on a repeat call instead of invoking \`fn\` again.`,
+    difficulty: "medium",
+    starterCode: `function memo(fn) {
+}`,
+    solutionCode: `function memo(fn) {
+  const cache = new Map();
+  return function (...args) {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) return cache.get(key);
+    const result = fn.apply(this, args);
+    cache.set(key, result);
+    return result;
+  };
+}`,
+    testCases: [
+      { input: "memoized(4) called twice", expected: "the underlying function runs only once", label: "Repeated identical calls hit the cache" },
+      { input: "memoized(4) then memoized(5)", expected: "computed independently", label: "Different arguments are cached separately" },
+      { input: "cached call's return value", expected: "matches the original computation exactly", label: "The cached value is correct, not just present" },
+    ],
+    hints: [
+      "JSON.stringify(args) is a simple, effective cache key for any number of primitive/plain-object arguments.",
+      "A Map (rather than a plain object) avoids prototype-pollution edge cases with string keys like \"__proto__\".",
+    ],
+    orderIndex: 1021,
+  },
+  {
+    slug: "memoize-one",
+    companies: ["Meta", "Airbnb"],
+    category: "javascript-runtime",
+    title: "Implement memoizeOne()",
+    description: `Unlike a general memoizer that remembers every call it's ever seen, \`memoizeOne\` only remembers the single most recent call — a lighter-weight cache that's ideal for a function re-run every render with the same last-seen arguments.
+
+## Your task
+
+Write \`memoizeOne(fn)\`. It should skip recomputation only when the new call's arguments shallow-equal the **immediately preceding** call's arguments — a call sandwiched between two different ones always recomputes, even if its arguments repeat an older call.`,
+    difficulty: "medium",
+    starterCode: `function memoizeOne(fn) {
+}`,
+    solutionCode: `function memoizeOne(fn) {
+  let lastArgs = null;
+  let lastResult;
+  let called = false;
+  return function (...args) {
+    const sameAsLast =
+      called &&
+      lastArgs.length === args.length &&
+      lastArgs.every((a, i) => a === args[i]);
+    if (sameAsLast) return lastResult;
+    lastResult = fn.apply(this, args);
+    lastArgs = args;
+    called = true;
+    return lastResult;
+  };
+}`,
+    testCases: [
+      { input: "memoized(1,2) called twice in a row", expected: "underlying fn runs once", label: "Consecutive identical calls reuse the cache" },
+      { input: "memoized(1,2), memoized(3,4), memoized(1,2)", expected: "underlying fn runs three times", label: "A different call in between forces recomputation, even for previously-seen args" },
+      { input: "memoized('a') twice in a row", expected: "underlying fn runs once", label: "Works correctly for primitive arguments, not just numbers" },
+    ],
+    hints: [
+      "Only the arguments from the single most recent call matter — there's no history beyond that.",
+      "Shallow-compare with === element by element; a deep-equality check would be a different (and heavier) design choice.",
+    ],
+    orderIndex: 1022,
+  },
+
+  // Stage 3 — Array & Object Utilities (Lodash-style polyfills)
+  {
+    slug: "shuffle-array-fisher-yates",
+    companies: ["Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "shuffle() an array (Fisher–Yates)",
+    description: `The naive "sort by Math.random() - 0.5" shuffle is famously **not** uniformly random. The Fisher–Yates algorithm is the correct, well-known way to shuffle an array in place with a truly even distribution.
+
+## Your task
+
+Write \`shuffle(arr)\`, returning a new array containing the same elements as \`arr\` in a randomized order. \`arr\` itself must not be mutated.`,
+    difficulty: "easy",
+    starterCode: `function shuffle(arr) {
+}`,
+    solutionCode: `function shuffle(arr) {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "shuffle([1,2,3,4,5]).length", expected: "5", label: "The result has the same length as the input" },
+      { input: "shuffle([1,2,3,4,5]) sorted", expected: "[1,2,3,4,5]", label: "The result contains exactly the same elements, just reordered" },
+      { input: "arr after shuffle(arr)", expected: "unchanged", label: "The original array is never mutated" },
+    ],
+    hints: [
+      "Walk the array backward, and for each index swap it with a random earlier-or-equal index — that's the whole algorithm.",
+      "Work on a copy of the array so the original is left untouched.",
+    ],
+    orderIndex: 1023,
+  },
+  {
+    slug: "array-prototype-filter-polyfill",
+    companies: ["Google", "Amazon"],
+    category: "javascript-runtime",
+    title: "Implement Array.prototype.filter()",
+    description: `A from-scratch \`filter\`, including one detail most naive polyfills miss: real \`filter\` skips holes in a sparse array instead of calling the callback on them.
+
+## Your task
+
+Add \`myFilter(callback)\` to \`Array.prototype\`, keeping only the elements for which \`callback(element, index, array)\` is truthy.`,
+    difficulty: "easy",
+    starterCode: `Array.prototype.myFilter = function (callback) {
+};`,
+    solutionCode: `Array.prototype.myFilter = function (callback) {
+  const result = [];
+  for (let i = 0; i < this.length; i++) {
+    if (i in this && callback(this[i], i, this)) result.push(this[i]);
+  }
+  return result;
+};`,
+    testCases: [
+      { input: "[1,2,3,4].myFilter(x => x % 2 === 0)", expected: "[2, 4]", label: "Keeps only elements matching the predicate" },
+      { input: "[10,20].myFilter((v,i) => i === 0)", expected: "[10]", label: "The index is forwarded as the callback's second argument" },
+      { input: "[1, , 3].myFilter(() => true).length", expected: "2", label: "A hole in a sparse array is skipped, not treated as undefined" },
+    ],
+    hints: [
+      "`i in this` is true only for indices that actually exist — a hole in a sparse array fails that check.",
+      "Push the original element (this[i]), not the callback's return value.",
+    ],
+    orderIndex: 1024,
+  },
+  {
+    slug: "array-prototype-map-polyfill",
+    companies: ["Google", "Amazon", "Meta"],
+    category: "javascript-runtime",
+    title: "Implement Array.prototype.map()",
+    description: `Similar spirit to \`filter\`, but \`map\` preserves the array's shape — including its holes — rather than removing anything.
+
+## Your task
+
+Add \`myMap(callback, thisArg)\` to \`Array.prototype\`. \`thisArg\`, if given, becomes \`this\` inside \`callback\`. A hole in the input array should stay a hole in the output, not become \`undefined\`.`,
+    difficulty: "medium",
+    starterCode: `Array.prototype.myMap = function (callback, thisArg) {
+};`,
+    solutionCode: `Array.prototype.myMap = function (callback, thisArg) {
+  const result = [];
+  for (let i = 0; i < this.length; i++) {
+    if (i in this) result[i] = callback.call(thisArg, this[i], i, this);
+  }
+  return result;
+};`,
+    testCases: [
+      { input: "[1,2,3].myMap(x => x * 2)", expected: "[2, 4, 6]", label: "Transforms every element" },
+      { input: "[1].myMap(function(){ return this.mult; }, { mult: 5 })", expected: "[5]", label: "thisArg becomes this inside the callback" },
+      { input: "[1, , 3].myMap(x => x)", expected: "length 3, index 1 is a hole", label: "Holes in the input stay holes in the output" },
+    ],
+    hints: [
+      "result[i] = ... only when i in this — never assign into a hole's index, or you'll fill it with undefined and defeat the point.",
+      "callback.call(thisArg, ...) is how you forward an optional this without an extra branch.",
+    ],
+    orderIndex: 1025,
+  },
+  {
+    slug: "array-prototype-reduce-polyfill",
+    companies: ["Google", "Meta", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Implement Array.prototype.reduce()",
+    description: `\`reduce\`'s trickiest detail isn't the accumulation loop — it's correctly handling a missing initial value, which changes both the starting accumulator and what happens on an empty array.
+
+## Your task
+
+Add \`myReduce(callback, initialValue)\` to \`Array.prototype\`:
+
+- with an initial value, start there and iterate every element
+- without one, use the first element as the initial accumulator and start from the second
+- calling on an empty array with no initial value must throw a \`TypeError\``,
+    difficulty: "medium",
+    starterCode: `Array.prototype.myReduce = function (callback, initialValue) {
+};`,
+    solutionCode: `Array.prototype.myReduce = function (callback, initialValue) {
+  let acc = initialValue;
+  let startIndex = 0;
+  if (arguments.length < 2) {
+    if (this.length === 0) throw new TypeError("Reduce of empty array with no initial value");
+    acc = this[0];
+    startIndex = 1;
+  }
+  for (let i = startIndex; i < this.length; i++) {
+    acc = callback(acc, this[i], i, this);
+  }
+  return acc;
+};`,
+    testCases: [
+      { input: "[1,2,3,4].myReduce((a,b) => a + b, 0)", expected: "10", label: "Sums with an explicit initial value" },
+      { input: "[1,2,3,4].myReduce((a,b) => a + b)", expected: "10", label: "Uses the first element as the initial value when omitted" },
+      { input: "[].myReduce((a,b) => a + b, 5)", expected: "5", label: "An empty array with an initial value just returns it" },
+      { input: "[].myReduce((a,b) => a + b)", expected: "throws TypeError", label: "An empty array with no initial value throws" },
+    ],
+    hints: [
+      "arguments.length lets you distinguish 'initialValue omitted' from 'initialValue is 0 or undefined on purpose'.",
+      "When there's no initial value, the loop must start at index 1, not 0 — the first element is already the seed.",
+    ],
+    orderIndex: 1026,
+  },
+  {
+    slug: "array-prototype-flat-polyfill",
+    companies: ["Meta", "Amazon", "TikTok"],
+    category: "javascript-runtime",
+    title: "Implement Array.prototype.flat()",
+    description: `Flattening a nested array recursively, stopping after a configurable number of levels.
+
+## Your task
+
+Add \`myFlat(depth = 1)\` to \`Array.prototype\`, flattening nested arrays up to \`depth\` levels deep. Support \`Infinity\` for a fully flat result.`,
+    difficulty: "medium",
+    starterCode: `Array.prototype.myFlat = function (depth = 1) {
+};`,
+    solutionCode: `Array.prototype.myFlat = function (depth = 1) {
+  if (depth < 1) return this.slice();
+  return this.reduce((acc, item) => {
+    if (Array.isArray(item)) acc.push(...item.myFlat(depth - 1));
+    else acc.push(item);
+    return acc;
+  }, []);
+};`,
+    testCases: [
+      { input: "[1, [2, 3], [4, [5, 6]]].myFlat()", expected: "[1, 2, 3, 4, [5, 6]]", label: "Default depth of 1 flattens only the top level" },
+      { input: "[1, [2, [3, [4]]]].myFlat(Infinity)", expected: "[1, 2, 3, 4]", label: "Infinity flattens every level" },
+      { input: "[1, [2]].myFlat(0)", expected: "[1, [2]]", label: "A depth of 0 does nothing" },
+    ],
+    hints: [
+      "Recursion is the natural fit: flatten each nested array one level shallower, then concatenate.",
+      "Depth 0 is the base case — just return a shallow copy, unflattened.",
+    ],
+    orderIndex: 1027,
+  },
+  {
+    slug: "array-prototype-flatmap-polyfill",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Implement Array.prototype.flatMap()",
+    description: `\`flatMap\` is \`map\` immediately followed by a flatten — but only ever one level deep, no matter how the array flattening API is configured elsewhere.
+
+## Your task
+
+Add \`myFlatMap(callback, thisArg)\` to \`Array.prototype\`: map every element, then flatten exactly one level.`,
+    difficulty: "medium",
+    starterCode: `Array.prototype.myFlatMap = function (callback, thisArg) {
+};`,
+    solutionCode: `Array.prototype.myFlatMap = function (callback, thisArg) {
+  const result = [];
+  for (let i = 0; i < this.length; i++) {
+    const mapped = callback.call(thisArg, this[i], i, this);
+    if (Array.isArray(mapped)) result.push(...mapped);
+    else result.push(mapped);
+  }
+  return result;
+};`,
+    testCases: [
+      { input: "[1,2,3].myFlatMap(x => [x, x * 2])", expected: "[1, 2, 2, 4, 3, 6]", label: "Maps and flattens in one pass" },
+      { input: "[1,2].myFlatMap(x => [[x]])", expected: "[[1], [2]]", label: "Only flattens one level, however deep the mapped result is" },
+      { input: "[1,2].myFlatMap(x => x * 10)", expected: "[10, 20]", label: "Non-array return values pass through unchanged" },
+    ],
+    hints: [
+      "There's no recursive flatten needed here — just push the mapped array's items directly, or the single value if it isn't an array.",
+      "The one-level-only rule is what distinguishes flatMap from map(...).flat(Infinity).",
+    ],
+    orderIndex: 1028,
+  },
+  {
+    slug: "object-assign-polyfill",
+    companies: ["Microsoft", "Google"],
+    category: "javascript-runtime",
+    title: "Implement Object.assign()",
+    description: `Copies own enumerable properties from one or more source objects onto a target, later sources winning over earlier ones, mutating and returning the target itself.
+
+## Your task
+
+Write \`myObjectAssign(target, ...sources)\`. \`null\`/\`undefined\` sources should be silently skipped, matching the real \`Object.assign\`.`,
+    difficulty: "medium",
+    starterCode: `function myObjectAssign(target, ...sources) {
+}`,
+    solutionCode: `function myObjectAssign(target, ...sources) {
+  sources.forEach((source) => {
+    if (source == null) return;
+    Object.keys(source).forEach((key) => {
+      target[key] = source[key];
+    });
+  });
+  return target;
+}`,
+    testCases: [
+      { input: "myObjectAssign({a:1}, {b:2}, {c:3})", expected: "{a:1, b:2, c:3}", label: "Merges every source onto the target" },
+      { input: "myObjectAssign({}, {a:1}, {a:2})", expected: "{a:2}", label: "A later source overwrites an earlier one" },
+      { input: "const t = {}; myObjectAssign(t, {x:1}) === t", expected: "true", label: "Mutates and returns the exact same target reference" },
+      { input: "myObjectAssign({a:1}, null, undefined)", expected: "{a:1}", label: "null/undefined sources are skipped harmlessly" },
+    ],
+    hints: [
+      "The target is mutated in place and also returned — both matter.",
+      "== null (loose) catches both null and undefined in a single check.",
+    ],
+    orderIndex: 1029,
+  },
+  {
+    slug: "complete-assign-descriptors",
+    companies: ["Microsoft"],
+    category: "javascript-runtime",
+    title: "Implement completeAssign()",
+    description: `\`Object.assign\` copies property *values*, which silently invokes any getter on the source and always produces a plain data property on the target. \`completeAssign\` copies the full property *descriptor* instead, preserving getters/setters as getters/setters.
+
+## Your task
+
+Write \`completeAssign(target, ...sources)\` using \`Object.getOwnPropertyDescriptor\` and \`Object.defineProperties\` so accessor properties stay accessors on the target. Only a source's own **enumerable** properties should be copied.`,
+    difficulty: "medium",
+    starterCode: `function completeAssign(target, ...sources) {
+}`,
+    solutionCode: `function completeAssign(target, ...sources) {
+  sources.forEach((source) => {
+    const descriptors = Object.keys(source).reduce((acc, key) => {
+      acc[key] = Object.getOwnPropertyDescriptor(source, key);
+      return acc;
+    }, {});
+    Object.defineProperties(target, descriptors);
+  });
+  return target;
+}`,
+    testCases: [
+      { input: "completeAssign({}, { get double() { return 4; } }).double", expected: "4", label: "A copied getter still produces the right value" },
+      { input: "typeof Object.getOwnPropertyDescriptor(result, 'double').get", expected: '"function"', label: "The property stays a real getter, not a plain value" },
+      { input: "source with a non-enumerable property", expected: "not copied", label: "Only enumerable own properties are copied" },
+    ],
+    hints: [
+      "Object.keys(source) already only lists enumerable own properties — a non-enumerable one is never in that list.",
+      "Object.defineProperties (not plain assignment) is what preserves a get/set pair as an accessor instead of collapsing it to a value.",
+    ],
+    orderIndex: 1030,
+  },
+  {
+    slug: "object-group-by-polyfill",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Implement Object.groupBy()",
+    description: `Groups an iterable's items into buckets keyed by whatever a callback returns for each item — a small utility that shows up constantly in data-shaping code.
+
+## Your task
+
+Write \`myGroupBy(items, keyFn)\`, returning a plain object whose keys are the distinct results of \`keyFn(item)\`, and whose values are arrays of the matching items, in their original relative order.`,
+    difficulty: "medium",
+    starterCode: `function myGroupBy(items, keyFn) {
+}`,
+    solutionCode: `function myGroupBy(items, keyFn) {
+  const result = {};
+  for (const item of items) {
+    const key = keyFn(item);
+    if (!result[key]) result[key] = [];
+    result[key].push(item);
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "myGroupBy([1,2,3,4], n => n % 2 === 0 ? 'even' : 'odd')", expected: "{ odd: [1,3], even: [2,4] }", label: "Groups items by the callback's key" },
+      { input: "myGroupBy(['aa','b','cc'], s => s.length)", expected: "{ 2: ['aa','cc'], 1: ['b'] }", label: "Preserves each item's original relative order within its group" },
+      { input: "myGroupBy([], () => 'x')", expected: "{}", label: "An empty input produces an empty result" },
+    ],
+    hints: [
+      "A plain object with array values, built up as you iterate once, is all this needs.",
+      "Push into an existing bucket if one exists for that key, otherwise create it first.",
+    ],
+    orderIndex: 1031,
+  },
+  {
+    slug: "lodash-get-polyfill",
+    companies: ["Airbnb", "LinkedIn"],
+    category: "javascript-runtime",
+    title: "Implement _.get()",
+    description: `Safely read a deeply nested property without a long chain of \`&&\` guards, using a path like \`"a.b[0].c"\` or an equivalent array of keys.
+
+## Your task
+
+Write \`myGet(obj, path, defaultValue)\`. \`path\` may be a dot/bracket string or an array of keys. If any part of the path is missing, return \`defaultValue\` instead of throwing.`,
+    difficulty: "medium",
+    starterCode: `function myGet(obj, path, defaultValue) {
+}`,
+    solutionCode: `function myGet(obj, path, defaultValue) {
+  const keys = Array.isArray(path)
+    ? path
+    : path.replace(/\\[(\\d+)\\]/g, ".$1").split(".").filter(Boolean);
+  let result = obj;
+  for (const key of keys) {
+    if (result == null) return defaultValue;
+    result = result[key];
+  }
+  return result === undefined ? defaultValue : result;
+}`,
+    testCases: [
+      { input: "myGet({a:{b:{c:42}}}, 'a.b.c')", expected: "42", label: "Reads a deeply nested value with a dot path" },
+      { input: "myGet({a:[{b:1}]}, 'a[0].b')", expected: "1", label: "Bracket notation reaches into an array" },
+      { input: "myGet({a:1}, 'x.y.z', 'fallback')", expected: '"fallback"', label: "A missing path returns the default instead of throwing" },
+      { input: "myGet({a:{b:2}}, ['a','b'])", expected: "2", label: "An array path works the same as a string path" },
+    ],
+    hints: [
+      "Normalize a string path into an array of keys first — converting [0] into .0 makes bracket and dot notation the same problem.",
+      "Bail out to the default the moment you hit null/undefined mid-path, before trying to index into it.",
+    ],
+    orderIndex: 1032,
+  },
+  {
+    slug: "lodash-set-polyfill",
+    companies: ["Airbnb", "LinkedIn"],
+    category: "javascript-runtime",
+    title: "Implement _.set()",
+    description: `The write counterpart to \`_.get()\`: assign a value at a deep path, creating any missing intermediate objects (or arrays, for numeric segments) along the way.
+
+## Your task
+
+Write \`mySet(obj, path, value)\`, mutating and returning \`obj\` with \`value\` written at the given dot/bracket path. Missing intermediate containers should be created as arrays for numeric path segments, objects otherwise.`,
+    difficulty: "medium",
+    starterCode: `function mySet(obj, path, value) {
+}`,
+    solutionCode: `function mySet(obj, path, value) {
+  const keys = Array.isArray(path)
+    ? path
+    : path.replace(/\\[(\\d+)\\]/g, ".$1").split(".").filter(Boolean);
+  let curr = obj;
+  keys.forEach((key, i) => {
+    if (i === keys.length - 1) {
+      curr[key] = value;
+    } else {
+      if (curr[key] == null) curr[key] = /^\\d+$/.test(keys[i + 1]) ? [] : {};
+      curr = curr[key];
+    }
+  });
+  return obj;
+}`,
+    testCases: [
+      { input: "mySet({}, 'a.b.c', 42)", expected: "{ a: { b: { c: 42 } } }", label: "Creates every missing intermediate object" },
+      { input: "mySet({}, 'a[0].b', 1)", expected: "{ a: [ { b: 1 } ] }", label: "A numeric segment creates an array, not an object" },
+      { input: "mySet({a:{b:1}}, 'a.b', 2)", expected: "{ a: { b: 2 } }", label: "Overwrites an existing value at the path" },
+    ],
+    hints: [
+      "Walk the path one key at a time, creating the right kind of container (array vs object) based on whether the *next* key looks numeric.",
+      "The final key in the path is a plain assignment — no container creation needed there.",
+    ],
+    orderIndex: 1033,
+  },
+  {
+    slug: "lodash-partial-polyfill",
+    companies: ["Uber"],
+    category: "javascript-runtime",
+    title: "Implement _.partial()",
+    description: `Partial application locks in some of a function's leading arguments ahead of time, returning a smaller function that only needs the rest.
+
+## Your task
+
+Write \`myPartial(fn, ...presetArgs)\`, returning a function that calls \`fn\` with \`presetArgs\` followed by whatever arguments it's called with, forwarding \`this\` too.`,
+    difficulty: "medium",
+    starterCode: `function myPartial(fn, ...presetArgs) {
+}`,
+    solutionCode: `function myPartial(fn, ...presetArgs) {
+  return function (...laterArgs) {
+    return fn.apply(this, [...presetArgs, ...laterArgs]);
+  };
+}`,
+    testCases: [
+      { input: "function greet(greeting,name){return greeting+', '+name+'!';} myPartial(greet,'Hello')('Ada')", expected: '"Hello, Ada!"', label: "Preset arguments come before the call-time ones" },
+      { input: "function add3(a,b,c){return a+b+c;} myPartial(add3,1,2)(3)", expected: "6", label: "Multiple preset arguments work" },
+      { input: "obj.method = myPartial(function(x){return this.base+x;}, 5); obj.method()", expected: "obj.base + 5", label: "this is forwarded from the eventual call site" },
+    ],
+    hints: [
+      "Unlike curry, partial doesn't care about the function's arity — it just always calls through with whatever it's got.",
+      "fn.apply(this, ...) inside the returned function is what preserves the caller's this.",
+    ],
+    orderIndex: 1034,
+  },
+  {
+    slug: "lodash-chunk-polyfill",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Implement _.chunk()",
+    description: `Splits an array into consecutive groups of a given size, with the final group holding whatever's left over.
+
+## Your task
+
+Write \`myChunk(arr, size)\`. If \`size\` is less than 1, return an empty array.`,
+    difficulty: "medium",
+    starterCode: `function myChunk(arr, size) {
+}`,
+    solutionCode: `function myChunk(arr, size) {
+  if (size < 1) return [];
+  const result = [];
+  for (let i = 0; i < arr.length; i += size) {
+    result.push(arr.slice(i, i + size));
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "myChunk([1,2,3,4,5], 2)", expected: "[[1,2],[3,4],[5]]", label: "The last chunk holds the remainder" },
+      { input: "myChunk([1,2,3,4], 2)", expected: "[[1,2],[3,4]]", label: "Divides evenly when the length is a multiple of size" },
+      { input: "myChunk([1,2], 5)", expected: "[[1,2]]", label: "A size larger than the array produces a single chunk" },
+      { input: "myChunk([1,2,3], 0)", expected: "[]", label: "A size under 1 produces no chunks" },
+    ],
+    hints: [
+      "Array.prototype.slice(i, i + size) naturally clamps at the array's end — no special-casing the last chunk is needed.",
+      "Step the loop by size, not by 1.",
+    ],
+    orderIndex: 1035,
+  },
+  {
+    slug: "lodash-is-equal-polyfill",
+    companies: ["Meta", "Amazon"],
+    category: "javascript-runtime",
+    title: "Implement deep equal _.isEqual()",
+    description: `Structural (deep) equality: two values are equal if they have the same shape and the same values all the way down, not just the same reference.
+
+## Your task
+
+Write \`myIsEqual(a, b)\`, recursively comparing plain objects, arrays, and primitives. Use \`Object.is\` semantics at the primitive level, so \`myIsEqual(NaN, NaN)\` is \`true\`.`,
+    difficulty: "medium",
+    starterCode: `function myIsEqual(a, b) {
+}`,
+    solutionCode: `function myIsEqual(a, b) {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every((key) => myIsEqual(a[key], b[key]));
+}`,
+    testCases: [
+      { input: "myIsEqual({a:1,b:{c:2}}, {a:1,b:{c:2}})", expected: "true", label: "Deeply equal nested objects match" },
+      { input: "myIsEqual({a:1}, {a:2})", expected: "false", label: "A differing value at any depth breaks equality" },
+      { input: "myIsEqual([1,2,3], [1,2,3])", expected: "true", label: "Arrays are compared element by element" },
+      { input: "myIsEqual(NaN, NaN)", expected: "true", label: "Uses Object.is semantics, so NaN equals itself" },
+    ],
+    hints: [
+      "Object.is handles the primitive base case correctly, including the NaN and signed-zero edge cases === gets wrong.",
+      "Comparing key counts before recursing is a cheap way to reject objects with extra/missing keys early.",
+    ],
+    orderIndex: 1036,
+  },
+  {
+    slug: "lodash-clone-deep-polyfill",
+    companies: ["Meta", "Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Create _.cloneDeep()",
+    description: `A deep clone produces a completely independent copy — mutating any part of the clone must never affect the original, no matter how deeply nested.
+
+## Your task
+
+Write \`myCloneDeep(value)\`, recursively cloning plain objects, arrays, and \`Date\` instances. Primitives pass through unchanged.`,
+    difficulty: "medium",
+    starterCode: `function myCloneDeep(value) {
+}`,
+    solutionCode: `function myCloneDeep(value) {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(myCloneDeep);
+  if (value instanceof Date) return new Date(value.getTime());
+  const result = {};
+  for (const key in value) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      result[key] = myCloneDeep(value[key]);
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "clone.nested.x = 999 after cloning {nested:{x:1}}", expected: "original.nested.x is still 1", label: "Mutating the clone never affects the original, at any depth" },
+      { input: "myCloneDeep([1,[2,3]])[1] === original[1]", expected: "false", label: "Nested arrays are cloned too, not shared by reference" },
+      { input: "myCloneDeep(new Date(2020, 0, 1)).getTime()", expected: "same as the original Date's getTime()", label: "A Date instance is cloned as a real new Date with the same time" },
+      { input: "myCloneDeep(42)", expected: "42", label: "Primitives pass through unchanged" },
+    ],
+    hints: [
+      "Recurse into arrays and plain objects; primitives (including null) are already immutable, so just return them as-is.",
+      "A Date needs special handling — cloning it as a plain object would lose its Date-ness.",
+    ],
+    orderIndex: 1037,
+  },
+  {
+    slug: "immutability-update-helper",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Implement an Immutability helper",
+    description: `A small subset of React's classic \`update()\` immutability helper — a declarative way to produce a changed copy of a nested structure without hand-writing spreads at every level.
+
+## Your task
+
+Write \`update(value, spec)\` supporting three commands:
+
+- \`{ $set: x }\` — replace \`value\` with \`x\`
+- \`{ $push: [...] }\` — return a new array with those items appended
+- \`{ $merge: {...} }\` — shallow-merge those keys into \`value\`
+
+Any other key in \`spec\` is treated as a path to recurse into.
+
+\`\`\`js
+update({ a: { b: 1 } }, { a: { b: { $set: 2 } } }) // { a: { b: 2 } }
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function update(value, spec) {
+}`,
+    solutionCode: `function update(value, spec) {
+  if (spec.$set !== undefined) return spec.$set;
+  if (spec.$push) return [...value, ...spec.$push];
+  if (spec.$merge) return { ...value, ...spec.$merge };
+  const result = Array.isArray(value) ? [...value] : { ...value };
+  for (const key in spec) {
+    result[key] = update(value[key], spec[key]);
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "update({a:1}, {a:{$set:2}})", expected: "{a:2}", label: "$set replaces a nested value" },
+      { input: "update([1,2,3], {$push:[4]})", expected: "[1,2,3,4]", label: "$push appends without mutating the original array" },
+      { input: "update({a:{b:1}}, {a:{b:{$set:2}}})", expected: "{a:{b:2}}", label: "Commands recurse correctly through nested paths" },
+      { input: "update({a:1,b:2}, {$merge:{b:3,c:4}})", expected: "{a:1,b:3,c:4}", label: "$merge shallow-merges new keys" },
+      { input: "original object after update()", expected: "completely unchanged", label: "The source value is never mutated" },
+    ],
+    hints: [
+      "Check for $set, $push, and $merge first — only fall through to recursion if none of them are present at this level.",
+      "The recursive branch needs to shallow-copy value before writing into it, or you'll mutate the original.",
+    ],
+    orderIndex: 1038,
+  },
+  {
+    slug: "mini-immer-produce",
+    companies: ["Meta", "Airbnb"],
+    category: "javascript-runtime",
+    title: "Implement a mini Immer produce()",
+    description: `Immer lets you write mutation-style code against a "draft" and get an immutable update back — the real library does this with Proxies for structural sharing, but a simplified clone-then-mutate version demonstrates the same core idea.
+
+## Your task
+
+Write \`produce(base, recipe)\`, where \`recipe(draft)\` is called with a deep clone of \`base\` and may mutate that draft freely. \`produce\` returns the mutated draft, leaving \`base\` completely untouched.`,
+    difficulty: "medium",
+    starterCode: `function produce(base, recipe) {
+}`,
+    solutionCode: `function produce(base, recipe) {
+  function clone(value) {
+    if (value === null || typeof value !== "object") return value;
+    if (Array.isArray(value)) return value.map(clone);
+    const result = {};
+    for (const key in value) result[key] = clone(value[key]);
+    return result;
+  }
+  const draft = clone(base);
+  recipe(draft);
+  return draft;
+}`,
+    testCases: [
+      { input: "produce({count:1}, draft => { draft.count++; })", expected: "{count:2}", label: "Mutating the draft produces the updated value" },
+      { input: "base.count after that call", expected: "still 1", label: "The base object is never mutated" },
+      { input: "produce({a:{b:1}}, draft => { draft.a.b = 99; })", expected: "{a:{b:99}}, original a.b still 1", label: "Nested mutations are also isolated from the base" },
+      { input: "produce({items:[1,2]}, draft => { draft.items.push(3); })", expected: "{items:[1,2,3]}, original items still length 2", label: "Array mutations inside the recipe work too" },
+    ],
+    hints: [
+      "This simplified version clones eagerly rather than using Proxies for lazy structural sharing — it produces the same observable result for these tests, just without real Immer's performance characteristics.",
+      "The recipe function's return value is ignored on purpose — mutating the draft in place is the whole point.",
+    ],
+    orderIndex: 1039,
+  },
+
+  // Stage 4 — String & Number Algorithms
+  {
+    slug: "count-binary-ones",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Count \"1\"s in binary form",
+    description: `A bit-manipulation warm-up: count how many \`1\` bits a number has in its binary representation.
+
+## Your task
+
+Write \`countBinaryOnes(n)\` for a non-negative integer \`n\`.`,
+    difficulty: "easy",
+    starterCode: `function countBinaryOnes(n) {
+}`,
+    solutionCode: `function countBinaryOnes(n) {
+  let count = 0;
+  while (n > 0) {
+    count += n & 1;
+    n >>>= 1;
+  }
+  return count;
+}`,
+    testCases: [
+      { input: "7", expected: "3", label: "7 is 111 in binary" },
+      { input: "8", expected: "1", label: "8 is 1000 in binary" },
+      { input: "0", expected: "0", label: "0 has no set bits" },
+      { input: "255", expected: "8", label: "255 is eight 1s in binary" },
+    ],
+    hints: [
+      "n & 1 checks the lowest bit; n >>>= 1 shifts everything one place to the right.",
+      "Use the unsigned right shift (>>>) so the loop terminates cleanly for any non-negative integer.",
+    ],
+    orderIndex: 1040,
+  },
+  {
+    slug: "compress-string-rle",
+    companies: ["Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Compress a string",
+    description: `Basic run-length encoding: collapse consecutive repeated characters into a character followed by its run length — but only if that's actually shorter.
+
+## Your task
+
+Write \`compressString(str)\`. A run of 1 doesn't get a number written after it. If the compressed form isn't shorter than the original, return the original string unchanged.
+
+\`\`\`js
+compressString("aaabbbccd") // "a3b3c2d"
+compressString("aabbcc")    // "aabbcc" — compression doesn't help here
+\`\`\``,
+    difficulty: "easy",
+    starterCode: `function compressString(str) {
+}`,
+    solutionCode: `function compressString(str) {
+  let result = "";
+  let i = 0;
+  while (i < str.length) {
+    let j = i;
+    while (j < str.length && str[j] === str[i]) j++;
+    result += str[i] + (j - i > 1 ? j - i : "");
+    i = j;
+  }
+  return result.length < str.length ? result : str;
+}`,
+    testCases: [
+      { input: '"aaabbbccd"', expected: '"a3b3c2d"', label: "Runs of 2+ get their count appended" },
+      { input: '"aaaa"', expected: '"a4"', label: "A single long run compresses well" },
+      { input: '"aabbcc"', expected: '"aabbcc"', label: "Returns the original when compression doesn't shrink it" },
+    ],
+    hints: [
+      "Walk the string tracking runs of identical consecutive characters, similar to a two-pointer scan.",
+      "Compare lengths at the end — the fallback to the original is part of the spec, not just a nice-to-have.",
+    ],
+    orderIndex: 1041,
+  },
+  {
+    slug: "first-duplicate-character",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Find the first duplicate character in a string",
+    description: `Scanning left to right, find the character whose **second** occurrence comes earliest.
+
+## Your task
+
+Write \`firstDuplicateChar(str)\`, returning that character, or \`null\` if every character is unique.`,
+    difficulty: "easy",
+    starterCode: `function firstDuplicateChar(str) {
+}`,
+    solutionCode: `function firstDuplicateChar(str) {
+  const seen = new Set();
+  for (const ch of str) {
+    if (seen.has(ch)) return ch;
+    seen.add(ch);
+  }
+  return null;
+}`,
+    testCases: [
+      { input: '"abcba"', expected: '"b"', label: "b's second occurrence comes before a's" },
+      { input: '"abcdef"', expected: "null", label: "No repeats returns null" },
+      { input: '"aabbcc"', expected: '"a"', label: "a repeats immediately" },
+    ],
+    hints: [
+      "A Set tracking characters seen so far makes each lookup O(1).",
+      "Return as soon as you find a repeat — the first one encountered while scanning left to right is the answer.",
+    ],
+    orderIndex: 1042,
+  },
+  {
+    slug: "roman-to-integer",
+    companies: ["Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Roman numerals to integer",
+    description: `Roman numerals are mostly additive, with one twist: a smaller symbol placed before a larger one is subtracted instead (like \`IV\` = 4, not 6).
+
+## Your task
+
+Write \`romanToInt(s)\`, converting a valid Roman numeral string to its integer value.`,
+    difficulty: "easy",
+    starterCode: `function romanToInt(s) {
+}`,
+    solutionCode: `function romanToInt(s) {
+  const values = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+  let total = 0;
+  for (let i = 0; i < s.length; i++) {
+    const curr = values[s[i]];
+    const next = values[s[i + 1]];
+    if (next && curr < next) total -= curr;
+    else total += curr;
+  }
+  return total;
+}`,
+    testCases: [
+      { input: '"III"', expected: "3", label: "A purely additive case" },
+      { input: '"IV"', expected: "4", label: "A smaller symbol before a larger one subtracts" },
+      { input: '"LVIII"', expected: "58", label: "Mixed additive symbols: L + V + III" },
+      { input: '"MCMXCIV"', expected: "1994", label: "Multiple subtractive pairs in one numeral" },
+    ],
+    hints: [
+      "Compare each symbol to the one right after it — if the current value is smaller, it's being subtracted.",
+      "A lookup table from symbol to value keeps the comparison logic simple.",
+    ],
+    orderIndex: 1043,
+  },
+  {
+    slug: "integer-to-roman",
+    companies: ["Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Integer to roman numerals",
+    description: `The reverse conversion: greedily subtract the largest Roman value (including the subtractive pairs like \`CM\` = 900) that still fits.
+
+## Your task
+
+Write \`intToRoman(num)\` for \`1 <= num <= 3999\`.`,
+    difficulty: "easy",
+    starterCode: `function intToRoman(num) {
+}`,
+    solutionCode: `function intToRoman(num) {
+  const values = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+  const symbols = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"];
+  let result = "";
+  for (let i = 0; i < values.length; i++) {
+    while (num >= values[i]) {
+      result += symbols[i];
+      num -= values[i];
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "3", expected: '"III"', label: "A purely additive case" },
+      { input: "58", expected: '"LVIII"', label: "Mixed additive symbols" },
+      { input: "1994", expected: '"MCMXCIV"', label: "Multiple subtractive pairs" },
+    ],
+    hints: [
+      "Include the subtractive pairs (CM, CD, XC, XL, IX, IV) directly in your value/symbol table — it avoids special-casing them separately.",
+      "Greedily take the biggest value that still fits, repeatedly, before moving to the next smaller one.",
+    ],
+    orderIndex: 1044,
+  },
+  {
+    slug: "semver-compare",
+    category: "javascript-runtime",
+    title: "semver compare",
+    description: `Comparing two semantic version strings correctly means comparing each segment **numerically**, not as strings — \`"1.10.0"\` is newer than \`"1.9.0"\`, even though \`"9" > "1"\` as characters.
+
+## Your task
+
+Write \`compareSemver(a, b)\` for \`"major.minor.patch"\` strings, returning \`-1\`, \`0\`, or \`1\`.`,
+    difficulty: "easy",
+    starterCode: `function compareSemver(a, b) {
+}`,
+    solutionCode: `function compareSemver(a, b) {
+  const pa = a.split(".").map(Number);
+  const pb = b.split(".").map(Number);
+  for (let i = 0; i < 3; i++) {
+    if (pa[i] > pb[i]) return 1;
+    if (pa[i] < pb[i]) return -1;
+  }
+  return 0;
+}`,
+    testCases: [
+      { input: '"1.2.3", "1.2.4"', expected: "-1", label: "A smaller patch version is less than" },
+      { input: '"2.0.0", "1.9.9"', expected: "1", label: "A higher major version wins regardless of the rest" },
+      { input: '"1.0.0", "1.0.0"', expected: "0", label: "Identical versions are equal" },
+      { input: '"1.10.0", "1.9.0"', expected: "1", label: "Minor versions compare numerically, not as strings" },
+    ],
+    hints: [
+      "Split on '.' and convert each segment with Number() before comparing — comparing the raw strings would break on double-digit segments.",
+      "Compare major, then minor, then patch, returning as soon as one segment differs.",
+    ],
+    orderIndex: 1045,
+  },
+  {
+    slug: "reorder-array-with-indexes",
+    companies: ["Uber"],
+    category: "javascript-runtime",
+    title: "Reorder array with new indexes",
+    description: `Given a parallel array of target positions, rearrange the original array so each element lands exactly where it was told to go.
+
+## Your task
+
+Write \`reorder(arr, indices)\`, where \`indices[i]\` is the position \`arr[i]\` should occupy in the result.`,
+    difficulty: "easy",
+    starterCode: `function reorder(arr, indices) {
+}`,
+    solutionCode: `function reorder(arr, indices) {
+  const result = new Array(arr.length);
+  arr.forEach((value, i) => {
+    result[indices[i]] = value;
+  });
+  return result;
+}`,
+    testCases: [
+      { input: '["a","b","c"], [2,0,1]', expected: '["b","c","a"]', label: "Each element moves to its target index" },
+      { input: "[1,2,3], [0,1,2]", expected: "[1,2,3]", label: "Identity indices leave the array unchanged" },
+      { input: '["x","y"], [1,0]', expected: '["y","x"]', label: "A simple two-element swap" },
+    ],
+    hints: [
+      "Pre-allocate a result array of the right length, then write each element directly to its target index — no sorting needed.",
+    ],
+    orderIndex: 1046,
+  },
+  {
+    slug: "most-frequent-character",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Most frequently occurring character",
+    description: `Find which character shows up the most, breaking ties by whichever of the tied characters appears first in the string.
+
+## Your task
+
+Write \`mostFrequentChar(str)\`. Return \`null\` for an empty string.`,
+    difficulty: "easy",
+    starterCode: `function mostFrequentChar(str) {
+}`,
+    solutionCode: `function mostFrequentChar(str) {
+  const counts = {};
+  for (const ch of str) counts[ch] = (counts[ch] || 0) + 1;
+  let best = null;
+  let bestCount = 0;
+  for (const ch of str) {
+    if (counts[ch] > bestCount) {
+      best = ch;
+      bestCount = counts[ch];
+    }
+  }
+  return best;
+}`,
+    testCases: [
+      { input: '"aabbbcc"', expected: '"b"', label: "The character with the clear highest count wins" },
+      { input: '"abcabc"', expected: '"a"', label: "On a tie, the character appearing first in the string wins" },
+      { input: '""', expected: "null", label: "An empty string returns null" },
+    ],
+    hints: [
+      "Two passes make this simple: first count every character, then scan again to find the first one hitting the max count.",
+      "Scanning the original string (not Object.keys of the counts) for the second pass is what guarantees the tie-break is 'first in the string'.",
+    ],
+    orderIndex: 1047,
+  },
+  {
+    slug: "add-commas-to-number",
+    companies: ["Amazon", "Stripe"],
+    category: "javascript-runtime",
+    title: "Add comma to number",
+    description: `Format a number with thousands separators, the way you'd display a price or a large count — handling negative numbers and decimals correctly.
+
+## Your task
+
+Write \`addCommas(num)\`.
+
+\`\`\`js
+addCommas(1234567)   // "1,234,567"
+addCommas(-1234)     // "-1,234"
+addCommas(1234.56)   // "1,234.56"
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function addCommas(num) {
+}`,
+    solutionCode: `function addCommas(num) {
+  const [intPart, decPart] = String(num).split(".");
+  const sign = intPart.startsWith("-") ? "-" : "";
+  const digits = sign ? intPart.slice(1) : intPart;
+  const withCommas = digits.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",");
+  return sign + withCommas + (decPart ? "." + decPart : "");
+}`,
+    testCases: [
+      { input: "1234567", expected: '"1,234,567"', label: "Groups digits in threes from the right" },
+      { input: "-1234", expected: '"-1,234"', label: "The negative sign stays outside the grouping" },
+      { input: "999", expected: '"999"', label: "Fewer than four digits needs no comma" },
+      { input: "1234.56", expected: '"1,234.56"', label: "The decimal part is untouched by grouping" },
+    ],
+    hints: [
+      "The regex \\\\B(?=(\\\\d{3})+(?!\\\\d)) finds every position that has a multiple-of-3 digits to its right, without being at the very start.",
+      "Strip the sign and decimal part off before running the comma regex, then reattach them afterward.",
+    ],
+    orderIndex: 1048,
+  },
+  {
+    slug: "hex-to-rgba",
+    companies: ["Meta", "Adobe"],
+    category: "javascript-runtime",
+    title: "Convert HEX color to RGBA",
+    description: `Convert a hex color (either shorthand \`#RGB\` or full \`#RRGGBB\`) into an \`rgba(...)\` string with a given alpha.
+
+## Your task
+
+Write \`hexToRgba(hex, alpha = 1)\`.
+
+\`\`\`js
+hexToRgba("#FF0000")      // "rgba(255, 0, 0, 1)"
+hexToRgba("#00FF00", 0.5) // "rgba(0, 255, 0, 0.5)"
+\`\`\``,
+    difficulty: "medium",
+    starterCode: `function hexToRgba(hex, alpha = 1) {
+}`,
+    solutionCode: `function hexToRgba(hex, alpha = 1) {
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
+}`,
+    testCases: [
+      { input: '"#FF0000"', expected: '"rgba(255, 0, 0, 1)"', label: "Full-length hex with default alpha" },
+      { input: '"#00FF00", 0.5', expected: '"rgba(0, 255, 0, 0.5)"', label: "A custom alpha is used as-is" },
+      { input: '"#03F"', expected: '"rgba(0, 51, 255, 1)"', label: "Shorthand 3-digit hex expands each digit" },
+    ],
+    hints: [
+      "Shorthand hex doubles each digit: #03F becomes #0033FF before parsing.",
+      "parseInt(pair, 16) converts each two-character hex pair to its decimal value.",
+    ],
+    orderIndex: 1049,
+  },
+  {
+    slug: "snake-to-camel-case",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Convert snake_case to camelCase",
+    description: `A common data-shaping task when an API returns \`snake_case\` keys but your codebase wants \`camelCase\`.
+
+## Your task
+
+Write \`snakeToCamel(str)\`.`,
+    difficulty: "medium",
+    starterCode: `function snakeToCamel(str) {
+}`,
+    solutionCode: `function snakeToCamel(str) {
+  return str.replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase());
+}`,
+    testCases: [
+      { input: '"hello_world"', expected: '"helloWorld"', label: "A single underscore boundary" },
+      { input: '"user_first_name"', expected: '"userFirstName"', label: "Multiple underscore boundaries" },
+      { input: '"already"', expected: '"already"', label: "A string with no underscores is unchanged" },
+    ],
+    hints: [
+      "A regex replace with a capture group lets you uppercase just the letter right after each underscore.",
+    ],
+    orderIndex: 1050,
+  },
+  {
+    slug: "negative-array-index-get",
+    companies: ["Airbnb"],
+    category: "javascript-runtime",
+    title: "Support negative array index in JavaScript",
+    description: `Python-style negative indexing — \`-1\` means the last element, \`-2\` the second-to-last, and so on.
+
+## Your task
+
+Write \`getAt(arr, index)\`, treating a negative \`index\` as counting from the end. Return \`undefined\` if it's still out of range after that adjustment.`,
+    difficulty: "medium",
+    starterCode: `function getAt(arr, index) {
+}`,
+    solutionCode: `function getAt(arr, index) {
+  return index < 0 ? arr[arr.length + index] : arr[index];
+}`,
+    testCases: [
+      { input: "[1,2,3], -1", expected: "3", label: "-1 is the last element" },
+      { input: "[1,2,3], 0", expected: "1", label: "A non-negative index behaves normally" },
+      { input: "[1,2,3], -3", expected: "1", label: "-3 reaches all the way to the first element" },
+      { input: "[1,2,3], -10", expected: "undefined", label: "An index still out of range returns undefined" },
+    ],
+    hints: [
+      "arr.length + index converts a negative index into the equivalent positive one.",
+    ],
+    orderIndex: 1051,
+  },
+  {
+    slug: "string-trim-polyfill",
+    companies: ["Microsoft"],
+    category: "javascript-runtime",
+    title: "Implement String.prototype.trim()",
+    description: `Strip leading and trailing whitespace, including tabs and newlines, without touching whitespace in the middle of the string.
+
+## Your task
+
+Add \`myTrim()\` to \`String.prototype\`.`,
+    difficulty: "medium",
+    starterCode: `String.prototype.myTrim = function () {
+};`,
+    solutionCode: `String.prototype.myTrim = function () {
+  return this.replace(/^\\s+|\\s+$/g, "");
+};`,
+    testCases: [
+      { input: '"  hi  "', expected: '"hi"', label: "Strips leading and trailing spaces" },
+      { input: '"\\t\\nhello\\n"', expected: '"hello"', label: "Strips tabs and newlines too" },
+      { input: '"noSpaces"', expected: '"noSpaces"', label: "A string with no surrounding whitespace is unchanged" },
+    ],
+    hints: [
+      "\\\\s matches any whitespace character, including tabs and newlines, not just the space character.",
+      "Two anchored alternatives (^\\\\s+ and \\\\s+$) let a single replace handle both ends in one pass.",
+    ],
+    orderIndex: 1052,
+  },
+  {
+    slug: "validate-ip-address",
+    companies: ["Amazon", "Microsoft", "Cisco"],
+    category: "javascript-runtime",
+    title: "Validate an IP address",
+    description: `A valid IPv4 address has exactly four dot-separated octets, each a number from 0 to 255 with no leading zeros (other than the literal \`"0"\` itself).
+
+## Your task
+
+Write \`isValidIp(str)\`.`,
+    difficulty: "medium",
+    starterCode: `function isValidIp(str) {
+}`,
+    solutionCode: `function isValidIp(str) {
+  const parts = str.split(".");
+  if (parts.length !== 4) return false;
+  return parts.every((part) => {
+    if (!/^\\d+$/.test(part)) return false;
+    if (part.length > 1 && part[0] === "0") return false;
+    const n = Number(part);
+    return n >= 0 && n <= 255;
+  });
+}`,
+    testCases: [
+      { input: '"192.168.1.1"', expected: "true", label: "A well-formed address is valid" },
+      { input: '"256.1.1.1"', expected: "false", label: "An octet over 255 is invalid" },
+      { input: '"01.1.1.1"', expected: "false", label: "A leading zero on a multi-digit octet is invalid" },
+      { input: '"1.1.1"', expected: "false", label: "Fewer than four octets is invalid" },
+    ],
+    hints: [
+      "Split on '.' first and reject anything that isn't exactly four parts.",
+      "A leading zero is only a problem when the octet has more than one digit — '0' by itself is fine.",
+    ],
+    orderIndex: 1053,
+  },
+  {
+    slug: "remove-duplicate-characters",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Remove duplicate characters in a string",
+    description: `Keep only each character's first occurrence, preserving the original order.
+
+## Your task
+
+Write \`removeDuplicateChars(str)\`.`,
+    difficulty: "medium",
+    starterCode: `function removeDuplicateChars(str) {
+}`,
+    solutionCode: `function removeDuplicateChars(str) {
+  return [...new Set(str)].join("");
+}`,
+    testCases: [
+      { input: '"mississippi"', expected: '"misp"', label: "Only the first occurrence of each letter survives" },
+      { input: '"aabbcc"', expected: '"abc"', label: "Adjacent duplicates collapse too" },
+      { input: '""', expected: '""', label: "An empty string stays empty" },
+    ],
+    hints: [
+      "A Set built from the string's characters already discards duplicates while preserving first-seen order.",
+    ],
+    orderIndex: 1054,
+  },
+  {
+    slug: "validate-number-string",
+    companies: ["Stripe", "Amazon"],
+    category: "javascript-runtime",
+    title: "Validate number string",
+    description: `Check whether a string represents a valid decimal number: an optional leading sign, digits, and an optional decimal point that must have digits on at least one side of it.
+
+## Your task
+
+Write \`isValidNumberString(str)\`.`,
+    difficulty: "medium",
+    starterCode: `function isValidNumberString(str) {
+}`,
+    solutionCode: `function isValidNumberString(str) {
+  return /^[+-]?(\\d+(\\.\\d+)?|\\.\\d+)$/.test(str);
+}`,
+    testCases: [
+      { input: '"123"', expected: "true", label: "A plain integer is valid" },
+      { input: '"-12.5"', expected: "true", label: "A signed decimal is valid" },
+      { input: '"12."', expected: "false", label: "A trailing decimal point with no digits after it is invalid" },
+      { input: '"abc"', expected: "false", label: "Non-numeric text is invalid" },
+      { input: '".5"', expected: "true", label: "A leading decimal point with digits after it is valid" },
+    ],
+    hints: [
+      "The alternation between \\\\d+(\\\\.\\\\d+)? and \\\\.\\\\d+ is what allows both '12.5' and '.5', while rejecting a bare '.' or a trailing '.'.",
+    ],
+    orderIndex: 1055,
+  },
+  {
+    slug: "remove-characters",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Remove characters",
+    description: `Strip out every character that appears in a given "characters to remove" set.
+
+## Your task
+
+Write \`removeChars(str, charsToRemove)\`.`,
+    difficulty: "medium",
+    starterCode: `function removeChars(str, charsToRemove) {
+}`,
+    solutionCode: `function removeChars(str, charsToRemove) {
+  const removeSet = new Set(charsToRemove);
+  return [...str].filter((ch) => !removeSet.has(ch)).join("");
+}`,
+    testCases: [
+      { input: '"hello world", "lo"', expected: '"he wrd"', label: "Removes every occurrence of each character in the set" },
+      { input: '"abcdef", ""', expected: '"abcdef"', label: "An empty removal set leaves the string unchanged" },
+      { input: '"aaa", "a"', expected: '""', label: "Removing every character leaves an empty string" },
+    ],
+    hints: [
+      "A Set of the characters to remove makes the per-character check O(1).",
+    ],
+    orderIndex: 1056,
+  },
+  {
+    slug: "uncompress-string-rle",
+    companies: ["Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Uncompress a string",
+    description: `The inverse of run-length encoding: expand each character followed by an optional count back into that many repetitions. A character with no number after it appears exactly once.
+
+## Your task
+
+Write \`uncompressString(str)\`, handling multi-digit counts (like \`"a10"\` meaning ten \`a\`s).`,
+    difficulty: "medium",
+    starterCode: `function uncompressString(str) {
+}`,
+    solutionCode: `function uncompressString(str) {
+  let result = "";
+  let i = 0;
+  while (i < str.length) {
+    const ch = str[i];
+    i++;
+    let numStr = "";
+    while (i < str.length && /\\d/.test(str[i])) {
+      numStr += str[i];
+      i++;
+    }
+    const count = numStr ? Number(numStr) : 1;
+    result += ch.repeat(count);
+  }
+  return result;
+}`,
+    testCases: [
+      { input: '"a3b2c"', expected: '"aaabbc"', label: "Expands counted runs, and an uncounted trailing character" },
+      { input: '"a10"', expected: '"aaaaaaaaaa"', label: "Handles a multi-digit count correctly" },
+      { input: '"abc"', expected: '"abc"', label: "No counts at all means every character appears once" },
+    ],
+    hints: [
+      "After reading a character, keep consuming digits for as long as they appear — that's what makes multi-digit counts like '10' work, not just single digits.",
+      "String.prototype.repeat(count) is the cleanest way to expand each run.",
+    ],
+    orderIndex: 1057,
+  },
+
+  // Stage 5 — Timing & Rate-Limiting Functions
+  {
+    slug: "clear-all-timeout-registry",
+    companies: ["Uber"],
+    category: "javascript-runtime",
+    title: "Implement clearAllTimeout()",
+    description: `A small registry layered on top of \`setTimeout\` so every pending timeout scheduled through it can be cancelled in one shot — useful for cleaning up on unmount or navigation.
+
+## Your task
+
+Write \`trackedSetTimeout(fn, delay)\` (works like \`setTimeout\`, but records the id) and \`clearAllTimeout()\` (cancels every timeout \`trackedSetTimeout\` has scheduled so far). Timeouts scheduled *after* \`clearAllTimeout()\` runs must be unaffected.`,
+    difficulty: "easy",
+    starterCode: `const timeoutIds = [];
+function trackedSetTimeout(fn, delay) {
+}
+function clearAllTimeout() {
+}`,
+    solutionCode: `const timeoutIds = [];
+function trackedSetTimeout(fn, delay) {
+  const id = setTimeout(fn, delay);
+  timeoutIds.push(id);
+  return id;
+}
+function clearAllTimeout() {
+  timeoutIds.forEach((id) => clearTimeout(id));
+  timeoutIds.length = 0;
+}`,
+    testCases: [
+      { input: "3 timeouts scheduled, then clearAllTimeout()", expected: "none of them fire", label: "Cancels every previously scheduled timeout" },
+      { input: "a timeout scheduled after clearAllTimeout()", expected: "still fires normally", label: "Doesn't affect timeouts scheduled afterward" },
+      { input: "a timeout left uncancelled", expected: "fires as normal", label: "A normal, un-cleared timeout still fires" },
+    ],
+    hints: [
+      "Keep a module-level array of every id returned by the real setTimeout.",
+      "clearAllTimeout should also empty the tracked list afterward, so old (already-cleared) ids don't linger.",
+    ],
+    orderIndex: 1058,
+  },
+  {
+    slug: "basic-debounce-warmup",
+    category: "javascript-runtime",
+    title: "Implement basic debounce()",
+    description: `The most commonly asked question in front-end interviews, in its simplest form: coalesce a burst of calls into one, using only the most recent call's arguments.
+
+## Your task
+
+Write \`debounce(fn, delay)\`. Each new call resets the wait; \`fn\` only runs once \`delay\` ms pass with no further calls, using that last call's arguments and \`this\`.`,
+    difficulty: "easy",
+    starterCode: `function debounce(fn, delay) {
+}`,
+    solutionCode: `function debounce(fn, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}`,
+    testCases: [
+      { input: "3 rapid calls within the delay window", expected: "fn runs once, with the last call's arguments", label: "Coalesces a burst into a single call" },
+      { input: "two bursts separated by more than the delay", expected: "fn runs once per burst", label: "Separate bursts each produce their own call" },
+      { input: "this binding", expected: "forwarded from the triggering call", label: "this is forwarded correctly" },
+    ],
+    hints: [
+      "clearTimeout + setTimeout on every call is the entire mechanism — no cancel() or leading/trailing options needed for this version.",
+    ],
+    orderIndex: 1059,
+  },
+  {
+    slug: "basic-throttle-warmup",
+    category: "javascript-runtime",
+    title: "Implement basic throttle()",
+    description: `Where debounce waits for a pause, throttle guarantees a steady maximum rate — perfect for scroll/resize handlers that shouldn't run on every single event.
+
+## Your task
+
+Write \`throttle(fn, interval)\` using a simple leading-edge strategy: the first call runs immediately, and any call within \`interval\` ms of the last one that actually ran is dropped.`,
+    difficulty: "medium",
+    starterCode: `function throttle(fn, interval) {
+}`,
+    solutionCode: `function throttle(fn, interval) {
+  let lastCall = 0;
+  return function (...args) {
+    const now = Date.now();
+    if (now - lastCall >= interval) {
+      lastCall = now;
+      fn.apply(this, args);
+    }
+  };
+}`,
+    testCases: [
+      { input: "the very first call", expected: "runs immediately", label: "The first call is never delayed" },
+      { input: "a second call right after the first", expected: "dropped", label: "Calls within the interval are dropped" },
+      { input: "a call after the interval has fully elapsed", expected: "runs", label: "Throttling resets once the interval passes" },
+    ],
+    hints: [
+      "Track the timestamp of the last call that actually ran fn, and compare against it on every new call.",
+    ],
+    orderIndex: 1060,
+  },
+  {
+    slug: "debounce-leading-trailing",
+    companies: ["Uber", "TikTok", "Airbnb"],
+    category: "javascript-runtime",
+    title: "debounce() with leading & trailing option",
+    description: `A production-grade debounce supports firing on the **leading** edge of a burst (immediately), the **trailing** edge (after the burst goes quiet), or both.
+
+## Your task
+
+Write \`debounce(fn, delay, options)\`, where \`options\` is \`{ leading = false, trailing = true }\`:
+
+- \`leading: true\` — fire immediately on the first call of a burst
+- \`trailing: true\` — fire again after the burst goes quiet, **unless** it was the burst's only call and \`leading\` already handled it`,
+    difficulty: "medium",
+    starterCode: `function debounce(fn, delay, options = {}) {
+  const { leading = false, trailing = true } = options;
+}`,
+    solutionCode: `function debounce(fn, delay, options = {}) {
+  const { leading = false, trailing = true } = options;
+  let timer = null;
+  let callCount = 0;
+  return function (...args) {
+    callCount++;
+    if (callCount === 1 && leading) fn.apply(this, args);
+    clearTimeout(timer);
+    const self = this;
+    timer = setTimeout(() => {
+      if (trailing && !(leading && callCount === 1)) fn.apply(self, args);
+      timer = null;
+      callCount = 0;
+    }, delay);
+  };
+}`,
+    testCases: [
+      { input: "{ leading: true, trailing: false }, 3 rapid calls", expected: "fires exactly once, immediately", label: "leading-only fires once at the start of the burst" },
+      { input: "{ trailing: true } (default), 3 rapid calls", expected: "fires exactly once, after the burst goes quiet", label: "trailing-only behaves like classic debounce" },
+      { input: "{ leading: true, trailing: true }, 3 rapid calls", expected: "fires twice — once immediately, once after the burst", label: "Both edges fire for a multi-call burst" },
+    ],
+    hints: [
+      "Track how many calls happened in the current (not-yet-settled) burst — that count is what decides whether the trailing fire is redundant.",
+      "A single isolated call with both leading and trailing enabled should still only fire once — there's no 'second' invocation to speak of.",
+    ],
+    orderIndex: 1061,
+  },
+  {
+    slug: "throttle-leading-trailing",
+    companies: ["Uber", "TikTok", "Airbnb"],
+    category: "javascript-runtime",
+    title: "throttle() with leading & trailing option",
+    description: `The throttle equivalent of the same leading/trailing idea: control whether the very first call in a window fires immediately, and whether one more call fires at the end of the window using the most recent arguments.
+
+## Your task
+
+Write \`throttle(fn, interval, options)\`, where \`options\` is \`{ leading = true, trailing = true }\`.`,
+    difficulty: "medium",
+    starterCode: `function throttle(fn, interval, options = {}) {
+  const { leading = true, trailing = true } = options;
+}`,
+    solutionCode: `function throttle(fn, interval, options = {}) {
+  const { leading = true, trailing = true } = options;
+  let lastCallTime = 0;
+  let timer = null;
+  let lastArgs = null;
+  return function (...args) {
+    const now = Date.now();
+    lastArgs = args;
+    const self = this;
+    if (!lastCallTime && !leading) lastCallTime = now;
+    const remaining = interval - (now - lastCallTime);
+    if (remaining <= 0) {
+      clearTimeout(timer);
+      timer = null;
+      lastCallTime = now;
+      fn.apply(self, args);
+    } else if (!timer && trailing) {
+      timer = setTimeout(() => {
+        lastCallTime = leading ? Date.now() : 0;
+        timer = null;
+        fn.apply(self, lastArgs);
+      }, remaining);
+    }
+  };
+}`,
+    testCases: [
+      { input: "{ leading: true, trailing: false }, 3 rapid calls", expected: "fires exactly once, immediately", label: "leading-only fires once at the start of the window" },
+      { input: "{ leading: false, trailing: true }, 3 rapid calls", expected: "fires once, after the window, with the last call's arguments", label: "trailing-only defers to the end of the window" },
+      { input: "{ leading: true, trailing: true }, a call, then another shortly after", expected: "fires twice — leading immediately, trailing at window's end", label: "Both edges fire when there's a call within the window after the leading one" },
+    ],
+    hints: [
+      "This is the classic Underscore.js throttle shape: track the last time fn actually ran, and schedule a trailing call only when time remains in the window.",
+      "leading: false needs a small trick — treat the first call's timestamp as the window start instead of firing immediately, so remaining is never ≤ 0 on that first call.",
+    ],
+    orderIndex: 1062,
+  },
+  {
+    slug: "fake-settimeout-clock",
+    companies: ["Google", "Meta"],
+    category: "javascript-runtime",
+    title: "Create a fake timer (setTimeout)",
+    description: `The kind of tool that powers Jest's fake timers: a virtual clock you control manually, useful for testing time-dependent code without actually waiting in real time.
+
+## Your task
+
+Write \`createFakeTimers()\`, returning \`{ setTimeout, clearTimeout, tick }\`:
+
+- \`setTimeout(fn, delay)\` schedules \`fn\` against the virtual clock and returns an id
+- \`clearTimeout(id)\` cancels a pending callback
+- \`tick(ms)\` advances the virtual clock by \`ms\` and synchronously runs every callback now due, in chronological order`,
+    difficulty: "medium",
+    starterCode: `function createFakeTimers() {
+}`,
+    solutionCode: `function createFakeTimers() {
+  let now = 0;
+  let idCounter = 0;
+  const scheduled = [];
+  function fakeSetTimeout(fn, delay) {
+    const id = ++idCounter;
+    scheduled.push({ id, time: now + delay, fn });
+    return id;
+  }
+  function fakeClearTimeout(id) {
+    const idx = scheduled.findIndex((t) => t.id === id);
+    if (idx !== -1) scheduled.splice(idx, 1);
+  }
+  function tick(ms) {
+    now += ms;
+    const due = scheduled.filter((t) => t.time <= now).sort((a, b) => a.time - b.time);
+    due.forEach((t) => {
+      const idx = scheduled.indexOf(t);
+      if (idx !== -1) scheduled.splice(idx, 1);
+      t.fn();
+    });
+  }
+  return { setTimeout: fakeSetTimeout, clearTimeout: fakeClearTimeout, tick };
+}`,
+    testCases: [
+      { input: "scheduled for 100ms, tick(50) then tick(50)", expected: "fires only after the second tick", label: "A callback only fires once its full delay has elapsed" },
+      { input: "clearTimeout(id) before the matching tick", expected: "the callback never fires", label: "Cancelling a scheduled callback works" },
+      { input: "callbacks scheduled for 30ms and 10ms, in that order, then tick(30)", expected: "the 10ms one fires first", label: "Due callbacks fire in chronological (not scheduling) order" },
+    ],
+    hints: [
+      "There's no real setTimeout involved at all — 'time' is just a number you increment yourself.",
+      "On tick, find everything due, sort by scheduled time, then run each in order — a callback that schedules another callback during tick() is out of scope here.",
+    ],
+    orderIndex: 1063,
+  },
+  {
+    slug: "build-set-interval-polyfill",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Create an interval",
+    description: `A hand-rolled \`setInterval\` built from repeated \`setTimeout\` calls, with a clean way to stop it — the same self-scheduling pattern real interval implementations often use internally.
+
+## Your task
+
+Write \`createInterval(fn, delay)\`, which starts calling \`fn\` every \`delay\` ms and returns a function that stops it. \`fn\` should not run before the first \`delay\` has elapsed.`,
+    difficulty: "medium",
+    starterCode: `function createInterval(fn, delay) {
+}`,
+    solutionCode: `function createInterval(fn, delay) {
+  let stopped = false;
+  function loop() {
+    if (stopped) return;
+    setTimeout(() => {
+      if (stopped) return;
+      fn();
+      loop();
+    }, delay);
+  }
+  loop();
+  return () => { stopped = true; };
+}`,
+    testCases: [
+      { input: "right after createInterval(fn, 30)", expected: "fn has not run yet", label: "Doesn't fire before the first interval elapses" },
+      { input: "after waiting for a few intervals", expected: "fn has run multiple times", label: "Fires repeatedly at roughly the given interval" },
+      { input: "calling the returned stop function", expected: "no further calls happen", label: "The returned function stops future firings" },
+    ],
+    hints: [
+      "Each fire schedules the next one via setTimeout — there's no need for the native setInterval at all.",
+      "Check the stopped flag both before scheduling and right before actually calling fn, so a stop() mid-flight is respected.",
+    ],
+    orderIndex: 1064,
+  },
+  {
+    slug: "fake-setinterval-clock",
+    companies: ["Google", "Meta"],
+    category: "javascript-runtime",
+    title: "Create a fake timer (setInterval)",
+    description: `The \`setInterval\` counterpart to the fake \`setTimeout\` clock — a manually-advanced virtual clock that fires a callback repeatedly at a fixed cadence.
+
+## Your task
+
+Write \`createFakeIntervalTimers()\`, returning \`{ setInterval, clearInterval, tick }\`. \`tick(ms)\` should fire a given interval as many times as fit within the advanced time, catching it up correctly even across a single large tick.`,
+    difficulty: "medium",
+    starterCode: `function createFakeIntervalTimers() {
+}`,
+    solutionCode: `function createFakeIntervalTimers() {
+  let now = 0;
+  let idCounter = 0;
+  const intervals = new Map();
+  function fakeSetInterval(fn, delay) {
+    const id = ++idCounter;
+    intervals.set(id, { nextTime: now + delay, delay, fn });
+    return id;
+  }
+  function fakeClearInterval(id) {
+    intervals.delete(id);
+  }
+  function tick(ms) {
+    now += ms;
+    for (const [id, interval] of intervals) {
+      while (intervals.has(id) && interval.nextTime <= now) {
+        interval.fn();
+        interval.nextTime += interval.delay;
+      }
+    }
+  }
+  return { setInterval: fakeSetInterval, clearInterval: fakeClearInterval, tick };
+}`,
+    testCases: [
+      { input: "a 10ms interval, tick(35) once", expected: "fires 3 times", label: "A single large tick catches up on every due firing" },
+      { input: "clearInterval(id) then tick(50)", expected: "no further firings", label: "clearInterval stops future firings" },
+      { input: "two intervals with different delays running together", expected: "each fires at its own cadence, independently", label: "Multiple intervals don't interfere with each other" },
+    ],
+    hints: [
+      "Advance each interval's next-due time by its own delay every time it fires, rather than recomputing from scratch — that's what lets it self-correct across ticks.",
+      "A single tick(ms) call might need to fire the same interval more than once if ms is larger than its delay.",
+    ],
+    orderIndex: 1065,
+  },
+
+  // Stage 6 — Asynchronous JavaScript & Promises
+  {
+    slug: "async-task-queue",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Implement AsyncTaskQueue",
+    description: `A queue that guarantees async tasks run strictly one at a time, in the order they were added — even if a new task is added while an earlier one is still in flight.
+
+## Your task
+
+Write an \`AsyncTaskQueue\` class with an \`add(taskFn)\` method. \`taskFn\` returns a promise; \`add\` returns a promise that resolves with that specific task's result once it's actually run. A rejected task must not block the tasks after it.`,
+    difficulty: "easy",
+    starterCode: `class AsyncTaskQueue {
+  add(taskFn) {
+  }
+}`,
+    solutionCode: `class AsyncTaskQueue {
+  constructor() {
+    this.queue = Promise.resolve();
+  }
+  add(taskFn) {
+    const resultPromise = this.queue.then(() => taskFn());
+    this.queue = resultPromise.catch(() => {});
+    return resultPromise;
+  }
+}`,
+    testCases: [
+      { input: "tasks with different delays added in order", expected: "run strictly one at a time, in the order added", label: "Tasks never overlap, regardless of their individual delays" },
+      { input: "queue.add(taskFn)", expected: "resolves with that specific task's own result", label: "Each add() call resolves with the right value" },
+      { input: "a rejected task followed by another task", expected: "the later task still runs", label: "A rejection doesn't block the rest of the queue" },
+    ],
+    hints: [
+      "Chain onto a single running 'tail' promise — each add() replaces the tail with a new promise that runs after the previous one settles.",
+      "Swallow the tail's rejection internally (with .catch) so a failed task doesn't poison every task after it, while still letting add()'s own returned promise reflect that task's real outcome.",
+    ],
+    orderIndex: 1066,
+  },
+  {
+    slug: "node-style-promisify",
+    companies: ["Amazon", "Netflix"],
+    category: "javascript-runtime",
+    title: "Implement promisify()",
+    description: `Node's callback convention — \`fn(...args, (err, result) => {})\` — converted into a function that returns a promise instead.
+
+## Your task
+
+Write \`promisify(fn)\`, wrapping an error-first callback-style function into one that returns a promise resolving with the callback's result, or rejecting with its error.`,
+    difficulty: "easy",
+    starterCode: `function promisify(fn) {
+}`,
+    solutionCode: `function promisify(fn) {
+  return function (...args) {
+    return new Promise((resolve, reject) => {
+      fn.call(this, ...args, (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+  };
+}`,
+    testCases: [
+      { input: "a callback-style function that succeeds", expected: "the returned promise resolves with the result", label: "Resolves with the callback's success value" },
+      { input: "a callback-style function that errors", expected: "the returned promise rejects with the error", label: "Rejects with the callback's error" },
+      { input: "a function taking multiple arguments before the callback", expected: "all forwarded correctly", label: "Forwards every argument ahead of the injected callback" },
+    ],
+    hints: [
+      "The wrapped function's own callback just needs to call resolve or reject based on the (err, result) convention.",
+      "Spread the caller's arguments, then append your own callback as the final argument.",
+    ],
+    orderIndex: 1067,
+  },
+  {
+    slug: "promise-race-polyfill",
+    companies: ["Google", "Meta"],
+    category: "javascript-runtime",
+    title: "Implement Promise.race()",
+    description: `Settles as soon as the first input settles — whether that's a fulfillment or a rejection.
+
+## Your task
+
+Write \`myPromiseRace(promises)\`.`,
+    difficulty: "easy",
+    starterCode: `function myPromiseRace(promises) {
+}`,
+    solutionCode: `function myPromiseRace(promises) {
+  return new Promise((resolve, reject) => {
+    promises.forEach((p) => Promise.resolve(p).then(resolve, reject));
+  });
+}`,
+    testCases: [
+      { input: "a fast-resolving promise among slower ones", expected: "resolves with the fastest one's value", label: "Resolves with whichever settles first" },
+      { input: "a fast-rejecting promise among slower resolving ones", expected: "rejects with that reason", label: "A fast rejection wins the race too" },
+      { input: "a plain (non-promise) value mixed in", expected: "settles immediately with that value", label: "Non-promise values settle instantly, beating any pending promise" },
+    ],
+    hints: [
+      "Promise.resolve(p) normalizes a plain value into a promise that's already settled, so it can be treated uniformly.",
+      "Whichever input calls resolve/reject on the outer promise first wins — later calls are simply ignored, since a promise can only settle once.",
+    ],
+    orderIndex: 1068,
+  },
+  {
+    slug: "race-with-timeout",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Async helper: race a promise against a timeout",
+    description: `A practical, everyday use of racing: give a promise a deadline, and fail fast instead of hanging forever if it doesn't settle in time.
+
+## Your task
+
+Write \`raceWithTimeout(promise, ms)\`, which resolves/rejects exactly like \`promise\` if it settles in time, or rejects with a timeout error if \`ms\` elapses first.`,
+    difficulty: "easy",
+    starterCode: `function raceWithTimeout(promise, ms) {
+}`,
+    solutionCode: `function raceWithTimeout(promise, ms) {
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("timeout")), ms);
+  });
+  return Promise.race([promise, timeout]);
+}`,
+    testCases: [
+      { input: "a promise that resolves before the timeout", expected: "resolves normally with its value", label: "A fast promise wins normally" },
+      { input: "a promise that takes longer than ms", expected: "rejects with a timeout error", label: "A slow promise is preempted by the timeout" },
+      { input: "a promise that rejects before the timeout", expected: "rejects with the original reason, not a timeout error", label: "An early rejection is not masked by the timeout" },
+    ],
+    hints: [
+      "Promise.race between the real promise and a promise that rejects after ms milliseconds is the entire trick.",
+    ],
+    orderIndex: 1069,
+  },
+  {
+    slug: "build-custom-promise",
+    companies: ["Google", "Meta", "Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Create your own Promise",
+    description: `One of the most common 'hard round' front-end interview questions: implement enough of \`Promise\` — states, chaining, error propagation — to convince someone you understand how it actually works.
+
+## Your task
+
+Write a \`MyPromise\` class with \`then\`, \`catch\`, and \`finally\`:
+
+- three states: pending, fulfilled, rejected, each settled exactly once
+- \`.then(onFulfilled, onRejected)\` returns a **new** promise for chaining
+- an error thrown inside the executor rejects the promise
+- resolving with a thenable adopts that thenable's eventual state`,
+    difficulty: "medium",
+    starterCode: `class MyPromise {
+  constructor(executor) {
+  }
+  then(onFulfilled, onRejected) {
+  }
+  catch(onRejected) {
+  }
+  finally(onFinally) {
+  }
+}`,
+    solutionCode: `class MyPromise {
+  constructor(executor) {
+    this.state = "pending";
+    this.value = undefined;
+    this.callbacks = [];
+    const resolve = (value) => {
+      if (this.state !== "pending") return;
+      if (value && typeof value.then === "function") {
+        value.then(resolve, reject);
+        return;
+      }
+      this.state = "fulfilled";
+      this.value = value;
+      this.callbacks.forEach((cb) => cb.onFulfilled(value));
+    };
+    const reject = (reason) => {
+      if (this.state !== "pending") return;
+      this.state = "rejected";
+      this.value = reason;
+      this.callbacks.forEach((cb) => cb.onRejected(reason));
+    };
+    try {
+      executor(resolve, reject);
+    } catch (err) {
+      reject(err);
+    }
+  }
+  then(onFulfilled, onRejected) {
+    return new MyPromise((resolve, reject) => {
+      const handleFulfilled = (value) => {
+        queueMicrotask(() => {
+          if (typeof onFulfilled !== "function") { resolve(value); return; }
+          try { resolve(onFulfilled(value)); } catch (err) { reject(err); }
+        });
+      };
+      const handleRejected = (reason) => {
+        queueMicrotask(() => {
+          if (typeof onRejected !== "function") { reject(reason); return; }
+          try { resolve(onRejected(reason)); } catch (err) { reject(err); }
+        });
+      };
+      if (this.state === "fulfilled") handleFulfilled(this.value);
+      else if (this.state === "rejected") handleRejected(this.value);
+      else this.callbacks.push({ onFulfilled: handleFulfilled, onRejected: handleRejected });
+    });
+  }
+  catch(onRejected) {
+    return this.then(null, onRejected);
+  }
+  finally(onFinally) {
+    return this.then(
+      (value) => { onFinally(); return value; },
+      (reason) => { onFinally(); throw reason; }
+    );
+  }
+}`,
+    testCases: [
+      { input: "new MyPromise(resolve => resolve(1)).then(v => v + 1)", expected: "resolves with 2", label: "Basic resolution and chaining" },
+      { input: "an executor that throws synchronously", expected: "the promise rejects with that error", label: "A thrown error in the executor rejects the promise" },
+      { input: "then(a).then(b)", expected: "b receives a's return value", label: "Chained handlers pass values forward" },
+      { input: ".catch() on a rejected promise", expected: "receives the rejection reason", label: "catch() handles a rejection" },
+      { input: "resolve(anotherPromise)", expected: "adopts that promise's eventual state", label: "Resolving with a thenable adopts its state instead of wrapping it" },
+    ],
+    hints: [
+      "then() must always return a brand-new MyPromise, so chains keep working — even a call with no handlers just forwards the value/reason.",
+      "queueMicrotask (or setTimeout as a simpler stand-in) keeps .then callbacks asynchronous, matching real Promise semantics.",
+      "Guard against a value that has its own .then — that's what makes 'resolving with a promise' behave correctly instead of nesting promises.",
+    ],
+    orderIndex: 1070,
+  },
+  {
+    slug: "promise-all-polyfill",
+    companies: ["Google", "Meta", "Amazon"],
+    category: "javascript-runtime",
+    title: "Implement Promise.all()",
+    description: `Waits for every input to fulfill, preserving input order in the results — or rejects immediately the moment any single input rejects.
+
+## Your task
+
+Write \`myPromiseAll(promises)\`, supporting a mix of promises and plain values.`,
+    difficulty: "medium",
+    starterCode: `function myPromiseAll(promises) {
+}`,
+    solutionCode: `function myPromiseAll(promises) {
+  return new Promise((resolve, reject) => {
+    const results = [];
+    let remaining = promises.length;
+    if (remaining === 0) { resolve([]); return; }
+    promises.forEach((p, i) => {
+      Promise.resolve(p).then((value) => {
+        results[i] = value;
+        remaining--;
+        if (remaining === 0) resolve(results);
+      }, reject);
+    });
+  });
+}`,
+    testCases: [
+      { input: "a mix of promises resolving at different speeds, plus a plain value", expected: "resolves with all values in original input order", label: "Result order matches input order regardless of resolution timing" },
+      { input: "one input rejects while others are still pending", expected: "rejects immediately with that reason", label: "Rejects as soon as any single input rejects" },
+      { input: "[]", expected: "resolves immediately with []", label: "An empty input resolves right away" },
+    ],
+    hints: [
+      "Track a remaining counter and write each result into its own index — never push, or timing differences will scramble the order.",
+    ],
+    orderIndex: 1071,
+  },
+  {
+    slug: "promise-all-settled-polyfill",
+    companies: ["Meta", "Amazon"],
+    category: "javascript-runtime",
+    title: "Implement Promise.allSettled()",
+    description: `Unlike \`Promise.all\`, this never short-circuits — it waits for every input to settle, one way or another, and reports each outcome individually.
+
+## Your task
+
+Write \`myPromiseAllSettled(promises)\`, resolving with an array of \`{ status: "fulfilled", value }\` or \`{ status: "rejected", reason }\` objects, one per input, in order.`,
+    difficulty: "medium",
+    starterCode: `function myPromiseAllSettled(promises) {
+}`,
+    solutionCode: `function myPromiseAllSettled(promises) {
+  return Promise.all(
+    promises.map((p) =>
+      Promise.resolve(p).then(
+        (value) => ({ status: "fulfilled", value }),
+        (reason) => ({ status: "rejected", reason })
+      )
+    )
+  );
+}`,
+    testCases: [
+      { input: "a mix of resolving and rejecting promises", expected: "waits for all of them, reporting each outcome individually", label: "Never short-circuits on a rejection" },
+      { input: "a fulfilled input", expected: "{ status: 'fulfilled', value }", label: "A resolved input produces the fulfilled shape" },
+      { input: "a rejected input", expected: "{ status: 'rejected', reason }", label: "A rejected input produces the rejected shape" },
+    ],
+    hints: [
+      "Map every input through its own .then that always resolves — turning a rejection into a normal fulfilled value with status: 'rejected' — then Promise.all the mapped array.",
+    ],
+    orderIndex: 1072,
+  },
+  {
+    slug: "promise-any-polyfill",
+    companies: ["Meta", "Amazon"],
+    category: "javascript-runtime",
+    title: "Implement Promise.any()",
+    description: `The mirror image of \`Promise.all\`: resolves as soon as **any** input fulfills, and only rejects once **every** input has rejected.
+
+## Your task
+
+Write \`myPromiseAny(promises)\`.`,
+    difficulty: "medium",
+    starterCode: `function myPromiseAny(promises) {
+}`,
+    solutionCode: `function myPromiseAny(promises) {
+  return new Promise((resolve, reject) => {
+    const errors = [];
+    let remaining = promises.length;
+    if (remaining === 0) { reject(new Error("All promises were rejected")); return; }
+    promises.forEach((p, i) => {
+      Promise.resolve(p).then(resolve, (err) => {
+        errors[i] = err;
+        remaining--;
+        if (remaining === 0) reject(new Error("All promises were rejected"));
+      });
+    });
+  });
+}`,
+    testCases: [
+      { input: "one fulfillment among several rejections", expected: "resolves with that fulfilled value", label: "Resolves as soon as any input fulfills" },
+      { input: "every input rejects", expected: "rejects only once all of them have", label: "Only rejects when every single input has rejected" },
+      { input: "a rejection arrives before a slower fulfillment", expected: "still eventually resolves with the fulfillment", label: "A fulfillment wins even if a rejection came in earlier" },
+    ],
+    hints: [
+      "Resolve the outer promise the moment any input fulfills — no need to wait for the rest.",
+      "Only reject once every single input has rejected — track a remaining count of rejections, mirroring how Promise.all tracks fulfillments.",
+    ],
+    orderIndex: 1073,
+  },
+  {
+    slug: "promise-finally-polyfill",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Implement Promise.prototype.finally()",
+    description: `Runs a callback once a promise settles — regardless of whether it fulfilled or rejected — without changing the eventual outcome.
+
+## Your task
+
+Add \`myFinally(onFinally)\` to \`Promise.prototype\`.`,
+    difficulty: "medium",
+    starterCode: `Promise.prototype.myFinally = function (onFinally) {
+};`,
+    solutionCode: `Promise.prototype.myFinally = function (onFinally) {
+  return this.then(
+    (value) => { onFinally(); return value; },
+    (reason) => { onFinally(); throw reason; }
+  );
+};`,
+    testCases: [
+      { input: "a resolved promise", expected: "the callback runs, and the resolved value passes through unchanged", label: "Runs on fulfillment without altering the value" },
+      { input: "a rejected promise", expected: "the callback runs, and the rejection still propagates", label: "Runs on rejection without swallowing the error" },
+      { input: "the value chained after myFinally on a resolved promise", expected: "the original value, not onFinally's return value", label: "onFinally's own return value is ignored" },
+    ],
+    hints: [
+      "The callback runs with no arguments — it doesn't get the value or the reason, and its return value is discarded.",
+      "On the rejection branch, re-throw the original reason after running the callback, so the rejection keeps propagating.",
+    ],
+    orderIndex: 1074,
+  },
+  {
+    slug: "async-sequence-helper",
+    companies: ["Amazon", "Uber"],
+    category: "javascript-runtime",
+    title: "Async helper: sequence()",
+    description: `Run a list of async tasks one after another — each one only starts once the previous one has finished.
+
+## Your task
+
+Write \`sequence(tasks)\`, where \`tasks\` is an array of zero-argument functions each returning a promise (or plain value). Return a promise resolving with all results, in order.`,
+    difficulty: "medium",
+    starterCode: `async function sequence(tasks) {
+}`,
+    solutionCode: `async function sequence(tasks) {
+  const results = [];
+  for (const task of tasks) {
+    results.push(await task());
+  }
+  return results;
+}`,
+    testCases: [
+      { input: "tasks with different delays", expected: "each one starts only after the previous finishes", label: "Tasks run strictly one at a time, never overlapping" },
+      { input: "results from all tasks", expected: "in the same order as the input tasks", label: "Results preserve input order" },
+      { input: "a task that rejects partway through", expected: "sequence() rejects with that reason, later tasks never run", label: "A rejection stops the sequence" },
+    ],
+    hints: [
+      "A plain for...of loop with await inside it is the entire implementation — no need for reduce or recursion.",
+      "Because each task() call is only made after awaiting the previous one, a later task is never even started until then.",
+    ],
+    orderIndex: 1075,
+  },
+  {
+    slug: "async-parallel-helper",
+    companies: ["Amazon", "Uber"],
+    category: "javascript-runtime",
+    title: "Async helper: parallel()",
+    description: `The concurrent counterpart to \`sequence()\`: start every task immediately, and collect all the results once they're all done.
+
+## Your task
+
+Write \`parallel(tasks)\`, where \`tasks\` is an array of zero-argument functions each returning a promise (or plain value). Results should come back in the same order as \`tasks\`, regardless of which one finishes first.`,
+    difficulty: "medium",
+    starterCode: `function parallel(tasks) {
+}`,
+    solutionCode: `function parallel(tasks) {
+  return Promise.all(tasks.map((task) => task()));
+}`,
+    testCases: [
+      { input: "tasks with different delays", expected: "total time is roughly the slowest task's delay, not the sum of all of them", label: "Tasks run concurrently, not one after another" },
+      { input: "results from tasks finishing in a different order than they were started", expected: "still returned in the original input order", label: "Result order matches input order, not completion order" },
+      { input: "any task rejecting", expected: "parallel() rejects with that reason", label: "A single rejection fails the whole batch" },
+    ],
+    hints: [
+      "Calling every task() up front (via map) is what makes them run concurrently — sequence() awaits inside the loop, this doesn't.",
+      "Promise.all already gives you both the ordering guarantee and the fail-fast rejection behavior for free.",
+    ],
+    orderIndex: 1076,
+  },
+  {
+    slug: "flatten-thunk",
+    companies: ["Airbnb"],
+    category: "javascript-runtime",
+    title: "Flatten a Thunk",
+    description: `A thunk is a function that takes a single \`(err, result) => {}\` callback. Sometimes a thunk's result is itself another thunk — flattening resolves that chain down to the final real value.
+
+## Your task
+
+Write \`flattenThunk(thunk)\`, returning a new thunk that, when called with a callback, recursively unwraps nested thunks until it reaches a non-thunk value.`,
+    difficulty: "easy",
+    starterCode: `function flattenThunk(thunk) {
+}`,
+    solutionCode: `function flattenThunk(thunk) {
+  return function (callback) {
+    thunk((err, result) => {
+      if (err) { callback(err); return; }
+      if (typeof result === "function") {
+        flattenThunk(result)(callback);
+      } else {
+        callback(null, result);
+      }
+    });
+  };
+}`,
+    testCases: [
+      { input: "a thunk resolving directly to a value", expected: "the callback receives that value", label: "A single-level thunk resolves normally" },
+      { input: "a thunk resolving to another thunk, several levels deep", expected: "the callback receives the final unwrapped value", label: "Nested thunks are recursively flattened" },
+      { input: "an error at any level of nesting", expected: "propagates immediately to the callback", label: "An error short-circuits the unwrapping" },
+    ],
+    hints: [
+      "Check whether the result of calling a thunk is itself a function — if so, recurse by flattening that one too.",
+    ],
+    orderIndex: 1077,
+  },
+  {
+    slug: "retry-promise-on-rejection",
+    companies: ["Amazon", "Uber", "Netflix"],
+    category: "javascript-runtime",
+    title: "Auto-retry a Promise on rejection",
+    description: `Flaky network calls are a fact of life — retrying a failed request a bounded number of times before finally giving up is a common resilience pattern.
+
+## Your task
+
+Write \`retry(fn, retries)\`, where \`fn\` returns a promise. On rejection, call \`fn\` again, up to \`retries\` additional times, before finally rejecting with the last error.`,
+    difficulty: "medium",
+    starterCode: `function retry(fn, retries) {
+}`,
+    solutionCode: `function retry(fn, retries) {
+  return fn().catch((err) => {
+    if (retries <= 0) throw err;
+    return retry(fn, retries - 1);
+  });
+}`,
+    testCases: [
+      { input: "fn resolves on the first attempt", expected: "resolves immediately, fn called only once", label: "A successful first attempt needs no retries" },
+      { input: "fn always rejects, retries: 2", expected: "fn is called 3 times total, then rejects", label: "Exhausts all retries before giving up" },
+      { input: "fn fails twice then succeeds, retries: 3", expected: "resolves with the successful attempt's value", label: "Resolves as soon as any attempt succeeds" },
+    ],
+    hints: [
+      "Recursion is a natural fit: .catch() on the current attempt, and if retries remain, return retry(fn, retries - 1) from inside it.",
+      "retries counts down to 0 as the stopping condition — the base case is 'no retries left, rethrow the last error'.",
+    ],
+    orderIndex: 1078,
+  },
+  {
+    slug: "concurrency-limited-promises",
+    companies: ["Uber", "Airbnb", "Bloomberg"],
+    category: "javascript-runtime",
+    title: "Throttle Promises (concurrency limiter)",
+    description: `Running hundreds of requests all at once can overwhelm a server (or hit a rate limit) — a concurrency limiter caps how many run at the same time, while still running everything eventually.
+
+## Your task
+
+Write \`runWithConcurrency(tasks, limit)\`, where \`tasks\` is an array of zero-argument functions returning promises. At most \`limit\` tasks should be in flight at any moment. Resolve with all results in original input order.`,
+    difficulty: "medium",
+    starterCode: `function runWithConcurrency(tasks, limit) {
+}`,
+    solutionCode: `function runWithConcurrency(tasks, limit) {
+  return new Promise((resolve, reject) => {
+    const results = new Array(tasks.length);
+    let nextIndex = 0;
+    let completed = 0;
+    if (tasks.length === 0) { resolve([]); return; }
+    function startNext() {
+      if (nextIndex >= tasks.length) return;
+      const i = nextIndex++;
+      tasks[i]().then((value) => {
+        results[i] = value;
+        completed++;
+        if (completed === tasks.length) resolve(results);
+        else startNext();
+      }, reject);
+    }
+    for (let i = 0; i < Math.min(limit, tasks.length); i++) startNext();
+  });
+}`,
+    testCases: [
+      { input: "10 tasks, limit: 3", expected: "never more than 3 running at the same instant", label: "Never exceeds the concurrency limit" },
+      { input: "tasks finishing in a different order than started", expected: "results still returned in original input order", label: "Result order matches input order, not completion order" },
+      { input: "more tasks than the limit", expected: "every task eventually runs and completes", label: "All tasks eventually run, not just the first batch" },
+    ],
+    hints: [
+      "Start exactly `limit` tasks up front, and every time one finishes, immediately start the next queued one — that's the whole scheduling loop.",
+      "Write each result into results[i] by its original index, not by push order, to keep the output correctly ordered.",
+    ],
+    orderIndex: 1079,
+  },
+  {
+    slug: "dedupe-concurrent-api-calls",
+    companies: ["Airbnb", "LinkedIn"],
+    category: "javascript-runtime",
+    title: "Merge identical/duplicate API calls",
+    description: `If the same request fires twice before the first one comes back, there's no reason to hit the network twice — share the one in-flight promise between both callers instead.
+
+## Your task
+
+Write \`dedupeAsync(fn)\`, wrapping an async function keyed by its single argument. Concurrent calls with the same key share one underlying call; once that call settles, a later call with the same key triggers a fresh one.`,
+    difficulty: "medium",
+    starterCode: `function dedupeAsync(fn) {
+}`,
+    solutionCode: `function dedupeAsync(fn) {
+  const inFlight = new Map();
+  return function (key) {
+    if (inFlight.has(key)) return inFlight.get(key);
+    const promise = fn(key).finally(() => inFlight.delete(key));
+    inFlight.set(key, promise);
+    return promise;
+  };
+}`,
+    testCases: [
+      { input: "two concurrent calls with the same key", expected: "the underlying fn is called only once", label: "Concurrent calls with the same key are merged" },
+      { input: "two concurrent calls with different keys", expected: "each triggers its own call to fn", label: "Different keys are never merged together" },
+      { input: "a call after the first one has already settled", expected: "triggers a brand-new call to fn", label: "Deduplication doesn't turn into permanent caching" },
+    ],
+    hints: [
+      "A Map from key to in-flight promise is the whole cache — populate it on the first call for a key, and return the existing entry for any concurrent call with the same key.",
+      "Clean up the map entry once the promise settles (.finally works well here), so the next call with that key starts fresh instead of reusing a stale result.",
+    ],
+    orderIndex: 1080,
+  },
+  {
+    slug: "fetch-all-paginated-pages",
+    companies: ["Amazon", "Airbnb"],
+    category: "javascript-runtime",
+    title: "Call APIs with pagination",
+    description: `A cursor-paginated API returns one page of items plus a cursor pointing to the next page (or \`null\` when there isn't one) — this helper walks every page and flattens the results into one array.
+
+## Your task
+
+Write \`fetchAllPages(fetchPage)\`, where \`fetchPage(cursor)\` returns a promise resolving to \`{ items, nextCursor }\`. Start with \`cursor = null\` and keep going until \`nextCursor\` is falsy.`,
+    difficulty: "medium",
+    starterCode: `async function fetchAllPages(fetchPage) {
+}`,
+    solutionCode: `async function fetchAllPages(fetchPage) {
+  let cursor = null;
+  let allItems = [];
+  while (true) {
+    const { items, nextCursor } = await fetchPage(cursor);
+    allItems = allItems.concat(items);
+    if (!nextCursor) break;
+    cursor = nextCursor;
+  }
+  return allItems;
+}`,
+    testCases: [
+      { input: "three pages of items", expected: "one flat array with every page's items, in order", label: "Collects and concatenates every page" },
+      { input: "a page whose nextCursor is null", expected: "fetchAllPages stops there", label: "Stops once there's no next cursor" },
+      { input: "the cursor argument passed to each fetchPage call", expected: "matches the previous page's nextCursor", label: "Each call is chained correctly using the prior page's cursor" },
+    ],
+    hints: [
+      "This is naturally a loop, not recursion (though recursion works too) — keep calling fetchPage with the latest cursor until nextCursor is falsy.",
+      "The very first call should use cursor = null, matching how a fresh pagination request typically starts.",
+    ],
+    orderIndex: 1081,
+  },
+  {
+    slug: "message-channel-task-scheduler",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Create a callback on message channel",
+    description: `\`MessageChannel\` is a lesser-known trick for scheduling a callback that runs asynchronously, after the current microtask queue drains — historically used by libraries like React's Scheduler for finer-grained task timing than \`setTimeout\`.
+
+## Your task
+
+Write \`scheduleTask(callback)\` using \`MessageChannel\`, running \`callback\` asynchronously (never synchronously, and after any already-queued microtasks).`,
+    difficulty: "medium",
+    starterCode: `function scheduleTask(callback) {
+}`,
+    solutionCode: `function scheduleTask(callback) {
+  const channel = new MessageChannel();
+  channel.port2.onmessage = () => callback();
+  channel.port1.postMessage(null);
+}`,
+    testCases: [
+      { input: "scheduleTask(fn) followed immediately by more synchronous code", expected: "fn has not run yet", label: "Never runs synchronously" },
+      { input: "a microtask (Promise.then) queued alongside scheduleTask", expected: "the microtask runs first", label: "Runs after already-queued microtasks" },
+      { input: "two separate scheduleTask calls", expected: "each callback runs exactly once, independently", label: "Multiple scheduled tasks don't interfere with each other" },
+    ],
+    hints: [
+      "Posting a message on one port and listening on the other port of the same channel is the entire scheduling mechanism — the message handler fires as a real async task.",
+      "A Promise.resolve().then(...) queued at the same time will always run before the message handler, since microtasks fully drain before the next task runs.",
+    ],
+    orderIndex: 1082,
+  },
+
+  // Stage 7 — Data Structures
+  {
+    slug: "reverse-linked-list",
+    companies: ["Amazon", "Microsoft", "Google"],
+    category: "javascript-runtime",
+    title: "Reverse a linked list",
+    description: `A classic pointer-manipulation warm-up: reverse a singly linked list in place, without building a new list.
+
+## Your task
+
+Write \`reverseLinkedList(head)\`, where each node is \`{ value, next }\`. Return the new head.`,
+    difficulty: "easy",
+    starterCode: `function reverseLinkedList(head) {
+}`,
+    solutionCode: `function reverseLinkedList(head) {
+  let prev = null;
+  let curr = head;
+  while (curr) {
+    const next = curr.next;
+    curr.next = prev;
+    prev = curr;
+    curr = next;
+  }
+  return prev;
+}`,
+    testCases: [
+      { input: "1 -> 2 -> 3 -> null", expected: "3 -> 2 -> 1 -> null", label: "Reverses a multi-node list" },
+      { input: "1 -> null", expected: "1 -> null", label: "A single-node list reverses to itself" },
+      { input: "null", expected: "null", label: "An empty list stays empty" },
+    ],
+    hints: [
+      "Three pointers — previous, current, and a saved next — are all you need, walked one step at a time.",
+      "Save curr.next before overwriting it, or you'll lose the rest of the list.",
+    ],
+    orderIndex: 1083,
+  },
+  {
+    slug: "detect-linked-list-cycle",
+    companies: ["Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Detect a cycle in a linked list",
+    description: `Floyd's classic "tortoise and hare" — two pointers moving at different speeds are guaranteed to meet if (and only if) the list loops back on itself.
+
+## Your task
+
+Write \`hasCycle(head)\`, using two pointers rather than a visited-nodes Set.`,
+    difficulty: "easy",
+    starterCode: `function hasCycle(head) {
+}`,
+    solutionCode: `function hasCycle(head) {
+  let slow = head;
+  let fast = head;
+  while (fast && fast.next) {
+    slow = slow.next;
+    fast = fast.next.next;
+    if (slow === fast) return true;
+  }
+  return false;
+}`,
+    testCases: [
+      { input: "a list whose tail points back into itself", expected: "true", label: "Detects a real cycle" },
+      { input: "a normal, non-circular list", expected: "false", label: "No false positive on an acyclic list" },
+      { input: "null", expected: "false", label: "An empty list has no cycle" },
+    ],
+    hints: [
+      "If a fast pointer (2 steps) and a slow pointer (1 step) ever point to the exact same node, there must be a cycle.",
+      "If the fast pointer reaches the end (null) first, there's no cycle — that's your other exit condition.",
+    ],
+    orderIndex: 1084,
+  },
+  {
+    slug: "invert-binary-tree",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Invert a binary tree",
+    description: `The (famously trivial, once you see it) tree problem: mirror a binary tree by swapping every node's left and right children, all the way down.
+
+## Your task
+
+Write \`invertBinaryTree(root)\`, where each node is \`{ value, left, right }\`.`,
+    difficulty: "easy",
+    starterCode: `function invertBinaryTree(root) {
+}`,
+    solutionCode: `function invertBinaryTree(root) {
+  if (!root) return null;
+  const left = invertBinaryTree(root.left);
+  const right = invertBinaryTree(root.right);
+  root.left = right;
+  root.right = left;
+  return root;
+}`,
+    testCases: [
+      { input: "a 3-node tree with a left and right child", expected: "left and right children swapped", label: "Swaps children at the top level" },
+      { input: "a multi-level tree", expected: "every level swapped, not just the root", label: "Recursively swaps children at every depth" },
+      { input: "null", expected: "null", label: "An empty tree stays empty" },
+    ],
+    hints: [
+      "Recurse first, then swap — invert both subtrees, then swap the two already-inverted results onto the current node.",
+    ],
+    orderIndex: 1085,
+  },
+  {
+    slug: "queue-using-two-stacks",
+    companies: ["Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Implement a Queue using Stacks",
+    description: `A queue (FIFO) built entirely out of two stacks (LIFO) — a demonstration that the right data structure can be built from the "wrong" one with a clever amortized trick.
+
+## Your task
+
+Write a \`QueueViaStacks\` class with \`enqueue(value)\` and \`dequeue()\`, using two array-backed stacks internally (no array \`.shift()\`/\`.unshift()\`).`,
+    difficulty: "medium",
+    starterCode: `class QueueViaStacks {
+  enqueue(value) {
+  }
+  dequeue() {
+  }
+}`,
+    solutionCode: `class QueueViaStacks {
+  constructor() {
+    this.inStack = [];
+    this.outStack = [];
+  }
+  enqueue(value) {
+    this.inStack.push(value);
+  }
+  dequeue() {
+    if (this.outStack.length === 0) {
+      while (this.inStack.length) this.outStack.push(this.inStack.pop());
+    }
+    return this.outStack.pop();
+  }
+}`,
+    testCases: [
+      { input: "enqueue(1,2,3) then dequeue() three times", expected: "1, then 2, then 3", label: "FIFO order is preserved" },
+      { input: "dequeue() on an empty queue", expected: "undefined", label: "Dequeuing an empty queue doesn't throw" },
+      { input: "enqueue, dequeue, enqueue, dequeue interleaved", expected: "still correct FIFO order", label: "Interleaved operations stay correct" },
+    ],
+    hints: [
+      "One stack absorbs new items; when the output stack is empty, dump the whole input stack into it (reversing order), then pop from there.",
+      "You only need to do that dump when the output stack is actually empty — not on every dequeue.",
+    ],
+    orderIndex: 1086,
+  },
+  {
+    slug: "stack-using-two-queues",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Implement a Stack using Queues",
+    description: `The mirror-image exercise: build a stack (LIFO) purely out of queue-style operations.
+
+## Your task
+
+Write a \`StackViaQueues\` class with \`push(value)\` and \`pop()\`, using a single array as a queue (only \`.push()\` and \`.shift()\`, never index-based LIFO access).`,
+    difficulty: "medium",
+    starterCode: `class StackViaQueues {
+  push(value) {
+  }
+  pop() {
+  }
+}`,
+    solutionCode: `class StackViaQueues {
+  constructor() {
+    this.queue = [];
+  }
+  push(value) {
+    this.queue.push(value);
+    for (let i = 0; i < this.queue.length - 1; i++) {
+      this.queue.push(this.queue.shift());
+    }
+  }
+  pop() {
+    return this.queue.shift();
+  }
+}`,
+    testCases: [
+      { input: "push(1,2,3) then pop() three times", expected: "3, then 2, then 1", label: "LIFO order is preserved" },
+      { input: "pop() on an empty stack", expected: "undefined", label: "Popping an empty stack doesn't throw" },
+      { input: "push, pop, push, pop interleaved", expected: "still correct LIFO order", label: "Interleaved operations stay correct" },
+    ],
+    hints: [
+      "The trick is on push, not pop: after pushing the new value to the back, rotate the queue so that new value ends up at the front.",
+      "Rotating means shifting every older element off the front and pushing it back onto the end, one at a time.",
+    ],
+    orderIndex: 1087,
+  },
+  {
+    slug: "build-priority-queue",
+    companies: ["Amazon", "Google"],
+    category: "javascript-runtime",
+    title: "Create a Priority Queue",
+    description: `A queue where items come out in priority order rather than insertion order — lower priority number dequeues first, ties broken by insertion order.
+
+## Your task
+
+Write a \`PriorityQueue\` class with \`enqueue(value, priority)\` and \`dequeue()\`.`,
+    difficulty: "medium",
+    starterCode: `class PriorityQueue {
+  enqueue(value, priority) {
+  }
+  dequeue() {
+  }
+}`,
+    solutionCode: `class PriorityQueue {
+  constructor() {
+    this.items = [];
+  }
+  enqueue(value, priority) {
+    const node = { value, priority };
+    let i = 0;
+    while (i < this.items.length && this.items[i].priority <= priority) i++;
+    this.items.splice(i, 0, node);
+  }
+  dequeue() {
+    const node = this.items.shift();
+    return node ? node.value : undefined;
+  }
+}`,
+    testCases: [
+      { input: "items enqueued with mixed priorities, out of order", expected: "dequeued lowest-priority-number first", label: "Dequeues in ascending priority order" },
+      { input: "two items enqueued with the same priority", expected: "dequeued in the order they were enqueued", label: "Equal priorities break ties by insertion order" },
+      { input: "dequeue() on an empty queue", expected: "undefined", label: "Dequeuing an empty queue doesn't throw" },
+    ],
+    hints: [
+      "A simple sorted-insert into an array (via splice) is more than fast enough for interview scope — no need for a binary heap.",
+      "Insert after every existing item with a priority ≤ the new one, so equal priorities naturally stay in insertion order.",
+    ],
+    orderIndex: 1088,
+  },
+  {
+    slug: "find-top-k-elements",
+    companies: ["Amazon", "Google", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Find Top-K Elements",
+    description: `Find the \`k\` largest values in an array, returned largest-first.
+
+## Your task
+
+Write \`findTopK(nums, k)\`.`,
+    difficulty: "medium",
+    starterCode: `function findTopK(nums, k) {
+}`,
+    solutionCode: `function findTopK(nums, k) {
+  return [...nums].sort((a, b) => b - a).slice(0, k);
+}`,
+    testCases: [
+      { input: "[3,1,4,1,5,9,2,6], 3", expected: "[9, 6, 5]", label: "Returns the k largest values, descending" },
+      { input: "[1,2], 5", expected: "[2, 1]", label: "k larger than the array just returns everything, sorted" },
+      { input: "[1,2,3], 0", expected: "[]", label: "k = 0 returns an empty array" },
+    ],
+    hints: [
+      "Sorting descending and slicing the first k is the simplest correct approach — a heap-based O(n log k) solution is a nice follow-up but not required here.",
+    ],
+    orderIndex: 1089,
+  },
+  {
+    slug: "build-trie-prefix-tree",
+    companies: ["Google", "Amazon"],
+    category: "javascript-runtime",
+    title: "Implement a Trie (prefix tree)",
+    description: `The data structure behind autocomplete: a tree where each path from the root spells out a prefix, letting you check both "is this an exact word?" and "does anything start with this?" efficiently.
+
+## Your task
+
+Write a \`Trie\` class with \`insert(word)\`, \`search(word)\` (exact match), and \`startsWith(prefix)\` (any inserted word begins with this).`,
+    difficulty: "medium",
+    starterCode: `class Trie {
+  insert(word) {
+  }
+  search(word) {
+  }
+  startsWith(prefix) {
+  }
+}`,
+    solutionCode: `class Trie {
+  constructor() {
+    this.root = {};
+  }
+  insert(word) {
+    let node = this.root;
+    for (const ch of word) {
+      node[ch] = node[ch] || {};
+      node = node[ch];
+    }
+    node.isEnd = true;
+  }
+  search(word) {
+    let node = this.root;
+    for (const ch of word) {
+      if (!node[ch]) return false;
+      node = node[ch];
+    }
+    return !!node.isEnd;
+  }
+  startsWith(prefix) {
+    let node = this.root;
+    for (const ch of prefix) {
+      if (!node[ch]) return false;
+      node = node[ch];
+    }
+    return true;
+  }
+}`,
+    testCases: [
+      { input: "insert('cat'); search('cat')", expected: "true", label: "search() finds an exact inserted word" },
+      { input: "insert('cat'); startsWith('ca')", expected: "true", label: "startsWith() matches a prefix even if it wasn't inserted as its own word" },
+      { input: "insert('cat'); search('ca')", expected: "false", label: "search() rejects a prefix that isn't itself a complete inserted word" },
+    ],
+    hints: [
+      "Each node is just a plain object keyed by character, plus an isEnd flag marking 'a complete word ends here'.",
+      "search() and startsWith() share almost identical walking logic — the only difference is checking isEnd at the end.",
+    ],
+    orderIndex: 1090,
+  },
+  {
+    slug: "serialize-deserialize-binary-tree",
+    companies: ["Google", "Amazon"],
+    category: "javascript-runtime",
+    title: "Serialize and deserialize a binary tree",
+    description: `Turn a binary tree into a string you could save or send over the network, then rebuild an equivalent tree from that string.
+
+## Your task
+
+Write \`serialize(root)\` and \`deserialize(data)\`, where each node is \`{ value, left, right }\`. Any encoding is fine as long as \`deserialize(serialize(tree))\` reconstructs an equivalent tree.`,
+    difficulty: "medium",
+    starterCode: `function serialize(root) {
+}
+function deserialize(data) {
+}`,
+    solutionCode: `function serialize(root) {
+  if (!root) return "null";
+  return root.value + "," + serialize(root.left) + "," + serialize(root.right);
+}
+function deserialize(data) {
+  const values = data.split(",");
+  let i = 0;
+  function build() {
+    const val = values[i++];
+    if (val === "null") return null;
+    return { value: Number(val), left: build(), right: build() };
+  }
+  return build();
+}`,
+    testCases: [
+      { input: "a small multi-level tree, round-tripped", expected: "an equivalent tree structure", label: "Round-trips a small tree correctly" },
+      { input: "a single-node tree, round-tripped", expected: "an equivalent single-node tree", label: "Round-trips a single node" },
+      { input: "null, round-tripped", expected: "null", label: "Round-trips an empty tree" },
+    ],
+    hints: [
+      "A preorder traversal (value, then left, then right) with an explicit marker for 'no node here' is enough to make the encoding unambiguous.",
+      "deserialize can consume the flat list of tokens with a shared index/cursor, rebuilding the same shape it was serialized in.",
+    ],
+    orderIndex: 1091,
+  },
+  {
+    slug: "binary-tree-vertical-traversal",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Binary tree vertical traversal",
+    description: `Group every node into a column based on its horizontal distance from the root (root = column 0, left child = column − 1, right child = column + 1), and read the columns left to right.
+
+## Your task
+
+Write \`verticalTraversal(root)\`, returning an array of columns (left to right), each an array of values top-to-bottom. Nodes landing at the exact same row and column break ties by ascending value.`,
+    difficulty: "hard",
+    starterCode: `function verticalTraversal(root) {
+}`,
+    solutionCode: `function verticalTraversal(root) {
+  if (!root) return [];
+  const nodes = [];
+  function walk(node, row, col) {
+    if (!node) return;
+    nodes.push({ value: node.value, row, col });
+    walk(node.left, row + 1, col - 1);
+    walk(node.right, row + 1, col + 1);
+  }
+  walk(root, 0, 0);
+  nodes.sort((a, b) => a.col - b.col || a.row - b.row || a.value - b.value);
+  const result = [];
+  let currentCol = null;
+  for (const n of nodes) {
+    if (n.col !== currentCol) {
+      result.push([]);
+      currentCol = n.col;
+    }
+    result[result.length - 1].push(n.value);
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "a 3-node tree: root with a left and right child", expected: "[[left], [root], [right]]", label: "Groups nodes into columns by horizontal distance from the root" },
+      { input: "two nodes landing in the same column at different rows, plus a same-position tie", expected: "top-to-bottom order, ties broken by ascending value", label: "Correctly orders same-column entries and breaks position ties" },
+      { input: "null", expected: "[]", label: "An empty tree produces an empty result" },
+    ],
+    hints: [
+      "Track each node's (row, column) via a simple DFS: left decrements the column, right increments it, either direction increments the row.",
+      "Sort all visited nodes by column, then row, then value — that single sort key ordering handles column grouping, top-to-bottom order, and tie-breaking all at once.",
+    ],
+    orderIndex: 1092,
+  },
+
+  // Stage 8 — Algorithms: Sorting
+  {
+    slug: "sort-bubble",
+    category: "javascript-runtime",
+    title: "Bubble Sort",
+    description: `Repeatedly walk the array, swapping adjacent out-of-order pairs, until nothing is left to swap. The simplest sort to reason about, if not the fastest.
+
+## Your task
+
+Write \`bubbleSort(arr)\`, returning a new sorted array (ascending) without mutating the input.`,
+    difficulty: "easy",
+    starterCode: `function bubbleSort(arr) {
+}`,
+    solutionCode: `function bubbleSort(arr) {
+  const a = [...arr];
+  for (let i = 0; i < a.length; i++) {
+    for (let j = 0; j < a.length - i - 1; j++) {
+      if (a[j] > a[j + 1]) {
+        [a[j], a[j + 1]] = [a[j + 1], a[j]];
+      }
+    }
+  }
+  return a;
+}`,
+    testCases: [
+      { input: "[5,3,8,1,2]", expected: "[1,2,3,5,8]", label: "Sorts an unordered array" },
+      { input: "[]", expected: "[]", label: "An empty array stays empty" },
+      { input: "[1,1,2,2]", expected: "[1,1,2,2]", label: "Handles duplicates correctly" },
+    ],
+    hints: [
+      "Each full pass bubbles the largest remaining unsorted value to its correct position at the end.",
+      "Work on a copy of the array so the caller's original array isn't mutated.",
+    ],
+    orderIndex: 1093,
+  },
+  {
+    slug: "sort-insertion",
+    category: "javascript-runtime",
+    title: "Insertion Sort",
+    description: `Build up a sorted prefix one element at a time, sliding each new element backward into its correct position — the way most people sort a hand of playing cards.
+
+## Your task
+
+Write \`insertionSort(arr)\`, returning a new sorted array (ascending).`,
+    difficulty: "easy",
+    starterCode: `function insertionSort(arr) {
+}`,
+    solutionCode: `function insertionSort(arr) {
+  const a = [...arr];
+  for (let i = 1; i < a.length; i++) {
+    const key = a[i];
+    let j = i - 1;
+    while (j >= 0 && a[j] > key) {
+      a[j + 1] = a[j];
+      j--;
+    }
+    a[j + 1] = key;
+  }
+  return a;
+}`,
+    testCases: [
+      { input: "[5,3,8,1,2]", expected: "[1,2,3,5,8]", label: "Sorts an unordered array" },
+      { input: "[]", expected: "[]", label: "An empty array stays empty" },
+      { input: "[3,1,2]", expected: "[1,2,3]", label: "Sorts a small array correctly" },
+    ],
+    hints: [
+      "Everything to the left of index i is already sorted at the start of each outer iteration — you're just finding where the current element fits into it.",
+    ],
+    orderIndex: 1094,
+  },
+  {
+    slug: "sort-selection",
+    category: "javascript-runtime",
+    title: "Selection Sort",
+    description: `Repeatedly find the minimum of the remaining unsorted portion and swap it into place at the front.
+
+## Your task
+
+Write \`selectionSort(arr)\`, returning a new sorted array (ascending).`,
+    difficulty: "easy",
+    starterCode: `function selectionSort(arr) {
+}`,
+    solutionCode: `function selectionSort(arr) {
+  const a = [...arr];
+  for (let i = 0; i < a.length; i++) {
+    let minIdx = i;
+    for (let j = i + 1; j < a.length; j++) {
+      if (a[j] < a[minIdx]) minIdx = j;
+    }
+    [a[i], a[minIdx]] = [a[minIdx], a[i]];
+  }
+  return a;
+}`,
+    testCases: [
+      { input: "[5,3,8,1,2]", expected: "[1,2,3,5,8]", label: "Sorts an unordered array" },
+      { input: "[]", expected: "[]", label: "An empty array stays empty" },
+      { input: "[2,2,1]", expected: "[1,2,2]", label: "Handles duplicates correctly" },
+    ],
+    hints: [
+      "Only one swap happens per outer iteration — that's what makes selection sort distinct from bubble sort's many small swaps.",
+    ],
+    orderIndex: 1095,
+  },
+  {
+    slug: "sort-merge",
+    category: "javascript-runtime",
+    title: "Merge Sort",
+    description: `Split the array in half recursively down to single elements, then merge sorted halves back together — the canonical divide-and-conquer sort.
+
+## Your task
+
+Write \`mergeSort(arr)\`.`,
+    difficulty: "medium",
+    starterCode: `function mergeSort(arr) {
+}`,
+    solutionCode: `function mergeSort(arr) {
+  if (arr.length <= 1) return arr;
+  const mid = Math.floor(arr.length / 2);
+  const left = mergeSort(arr.slice(0, mid));
+  const right = mergeSort(arr.slice(mid));
+  const result = [];
+  let i = 0;
+  let j = 0;
+  while (i < left.length && j < right.length) {
+    result.push(left[i] <= right[j] ? left[i++] : right[j++]);
+  }
+  return result.concat(left.slice(i)).concat(right.slice(j));
+}`,
+    testCases: [
+      { input: "[5,3,8,1,2]", expected: "[1,2,3,5,8]", label: "Sorts an unordered array" },
+      { input: "[]", expected: "[]", label: "An empty array stays empty" },
+      { input: "a large shuffled array", expected: "fully sorted", label: "Handles a bigger input correctly" },
+    ],
+    hints: [
+      "The base case is an array of length 0 or 1 — it's already 'sorted'.",
+      "The merge step (combining two already-sorted halves) is the only part that does real work.",
+    ],
+    orderIndex: 1096,
+  },
+  {
+    slug: "sort-quick",
+    category: "javascript-runtime",
+    title: "Quick Sort",
+    description: `Pick a pivot, partition everything into less-than and greater-or-equal buckets, and recursively sort each bucket.
+
+## Your task
+
+Write \`quickSort(arr)\`.`,
+    difficulty: "medium",
+    starterCode: `function quickSort(arr) {
+}`,
+    solutionCode: `function quickSort(arr) {
+  if (arr.length <= 1) return arr;
+  const [pivot, ...rest] = arr;
+  const left = rest.filter((x) => x < pivot);
+  const right = rest.filter((x) => x >= pivot);
+  return [...quickSort(left), pivot, ...quickSort(right)];
+}`,
+    testCases: [
+      { input: "[5,3,8,1,2]", expected: "[1,2,3,5,8]", label: "Sorts an unordered array" },
+      { input: "[]", expected: "[]", label: "An empty array stays empty" },
+      { input: "[1,1,1]", expected: "[1,1,1]", label: "Handles an array of identical values" },
+    ],
+    hints: [
+      "This partition-based version (picking the first element as pivot and using filter) isn't in-place, but it's a clean, correct way to demonstrate the algorithm's core idea.",
+    ],
+    orderIndex: 1097,
+  },
+
+  // Stage 8 — Algorithms: Binary Search
+  {
+    slug: "binary-search-basic",
+    category: "javascript-runtime",
+    title: "Binary Search (unique values)",
+    description: `The foundational template every other binary search variant builds on: halve the search space each step by comparing against the middle element.
+
+## Your task
+
+Write \`binarySearch(arr, target)\` for a sorted array of unique values, returning the index of \`target\`, or \`-1\` if it's not present.`,
+    difficulty: "easy",
+    starterCode: `function binarySearch(arr, target) {
+}`,
+    solutionCode: `function binarySearch(arr, target) {
+  let lo = 0;
+  let hi = arr.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (arr[mid] === target) return mid;
+    if (arr[mid] < target) lo = mid + 1;
+    else hi = mid - 1;
+  }
+  return -1;
+}`,
+    testCases: [
+      { input: "[1,3,5,7,9], 7", expected: "3", label: "Finds a present value" },
+      { input: "[1,3,5,7,9], 4", expected: "-1", label: "Returns -1 for a missing value" },
+      { input: "[], 1", expected: "-1", label: "An empty array has nothing to find" },
+    ],
+    hints: [
+      "lo <= hi (not <) as the loop condition is what correctly handles a search space of exactly one element.",
+    ],
+    orderIndex: 1098,
+  },
+  {
+    slug: "binary-search-first-index",
+    category: "javascript-runtime",
+    title: "Search first index (possible duplicates)",
+    description: `With duplicates allowed, "found it" isn't enough — you need the leftmost occurrence specifically.
+
+## Your task
+
+Write \`searchFirstIndex(arr, target)\`, returning the index of the first (leftmost) occurrence of \`target\`, or \`-1\`.`,
+    difficulty: "easy",
+    starterCode: `function searchFirstIndex(arr, target) {
+}`,
+    solutionCode: `function searchFirstIndex(arr, target) {
+  let lo = 0;
+  let hi = arr.length - 1;
+  let result = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (arr[mid] === target) {
+      result = mid;
+      hi = mid - 1;
+    } else if (arr[mid] < target) {
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "[1,2,2,2,3], 2", expected: "1", label: "Finds the leftmost occurrence among duplicates" },
+      { input: "[1,2,3], 5", expected: "-1", label: "Returns -1 for a missing value" },
+      { input: "[2,2,2], 2", expected: "0", label: "An array of all duplicates finds index 0" },
+    ],
+    hints: [
+      "On a match, record it but keep searching the left half — there might be an even earlier occurrence.",
+    ],
+    orderIndex: 1099,
+  },
+  {
+    slug: "binary-search-last-index",
+    category: "javascript-runtime",
+    title: "Search last index (possible duplicates)",
+    description: `The mirror of the previous problem: find the rightmost occurrence of a value among duplicates.
+
+## Your task
+
+Write \`searchLastIndex(arr, target)\`.`,
+    difficulty: "easy",
+    starterCode: `function searchLastIndex(arr, target) {
+}`,
+    solutionCode: `function searchLastIndex(arr, target) {
+  let lo = 0;
+  let hi = arr.length - 1;
+  let result = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (arr[mid] === target) {
+      result = mid;
+      lo = mid + 1;
+    } else if (arr[mid] < target) {
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "[1,2,2,2,3], 2", expected: "3", label: "Finds the rightmost occurrence among duplicates" },
+      { input: "[1,2,3], 5", expected: "-1", label: "Returns -1 for a missing value" },
+      { input: "[2,2,2], 2", expected: "2", label: "An array of all duplicates finds the last index" },
+    ],
+    hints: [
+      "On a match, record it but keep searching the right half — there might be an even later occurrence.",
+    ],
+    orderIndex: 1100,
+  },
+  {
+    slug: "binary-search-element-before",
+    category: "javascript-runtime",
+    title: "Element right before target",
+    description: `Find the predecessor: the largest value in a sorted array that is strictly less than a given target, even if the target itself isn't present.
+
+## Your task
+
+Write \`findElementBefore(arr, target)\`, returning that value, or \`undefined\` if none exists.`,
+    difficulty: "easy",
+    starterCode: `function findElementBefore(arr, target) {
+}`,
+    solutionCode: `function findElementBefore(arr, target) {
+  let lo = 0;
+  let hi = arr.length - 1;
+  let result;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (arr[mid] < target) {
+      result = arr[mid];
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "[1,3,5,7,9], 6", expected: "5", label: "Finds the predecessor of a missing target" },
+      { input: "[1,3,5,7,9], 1", expected: "undefined", label: "No predecessor exists for the smallest value" },
+      { input: "[1,3,5,7,9], 5", expected: "3", label: "Works correctly even when the target itself is present" },
+    ],
+    hints: [
+      "Whenever an element is strictly less than the target, it's a candidate answer — keep it and search further right for an even closer one.",
+    ],
+    orderIndex: 1101,
+  },
+  {
+    slug: "binary-search-element-after",
+    category: "javascript-runtime",
+    title: "Element right after target",
+    description: `The successor: the smallest value in a sorted array that is strictly greater than a given target.
+
+## Your task
+
+Write \`findElementAfter(arr, target)\`, returning that value, or \`undefined\` if none exists.`,
+    difficulty: "easy",
+    starterCode: `function findElementAfter(arr, target) {
+}`,
+    solutionCode: `function findElementAfter(arr, target) {
+  let lo = 0;
+  let hi = arr.length - 1;
+  let result;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (arr[mid] > target) {
+      result = arr[mid];
+      hi = mid - 1;
+    } else {
+      lo = mid + 1;
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "[1,3,5,7,9], 6", expected: "7", label: "Finds the successor of a missing target" },
+      { input: "[1,3,5,7,9], 9", expected: "undefined", label: "No successor exists for the largest value" },
+      { input: "[1,3,5,7,9], 5", expected: "7", label: "Works correctly even when the target itself is present" },
+    ],
+    hints: [
+      "Whenever an element is strictly greater than the target, it's a candidate answer — keep it and search further left for an even closer one.",
+    ],
+    orderIndex: 1102,
+  },
+  {
+    slug: "first-bad-version",
+    category: "javascript-runtime",
+    title: "First bad version",
+    description: `Given a monotonic \`isBad(version)\` check (every version after the first bad one is also bad), find that very first bad version without checking every version one by one.
+
+## Your task
+
+Write \`firstBadVersion(n, isBad)\` for versions numbered \`1\` through \`n\`.`,
+    difficulty: "medium",
+    starterCode: `function firstBadVersion(n, isBad) {
+}`,
+    solutionCode: `function firstBadVersion(n, isBad) {
+  let lo = 1;
+  let hi = n;
+  while (lo < hi) {
+    const mid = lo + Math.floor((hi - lo) / 2);
+    if (isBad(mid)) hi = mid;
+    else lo = mid + 1;
+  }
+  return lo;
+}`,
+    testCases: [
+      { input: "n = 10, bad starting at version 5", expected: "5", label: "Finds the first bad version among many good ones" },
+      { input: "n = 1, version 1 is bad", expected: "1", label: "Works when the only version is bad" },
+      { input: "n = 5, bad starting at version 5 (the last one)", expected: "5", label: "Finds it even when it's the very last version" },
+    ],
+    hints: [
+      "This is binary search over the answer itself, not over an array — narrow lo/hi based on isBad(mid) until they converge.",
+      "lo + Math.floor((hi - lo) / 2) avoids the same integer-overflow concern the classic (lo + hi) / 2 has in other languages — good habit even though JS numbers don't actually overflow here.",
+    ],
+    orderIndex: 1103,
+  },
+  {
+    slug: "median-of-two-sorted-arrays",
+    category: "javascript-runtime",
+    title: "Median of two sorted arrays",
+    description: `Find the median of the combined values of two already-sorted arrays.
+
+## Your task
+
+Write \`findMedianSortedArrays(nums1, nums2)\`. A straightforward merge-based approach is completely valid here — the classic optimization down to O(log(min(m, n))) via a binary-search partition is a great follow-up once this works.`,
+    difficulty: "medium",
+    starterCode: `function findMedianSortedArrays(nums1, nums2) {
+}`,
+    solutionCode: `function findMedianSortedArrays(nums1, nums2) {
+  const merged = [];
+  let i = 0;
+  let j = 0;
+  while (i < nums1.length && j < nums2.length) {
+    merged.push(nums1[i] <= nums2[j] ? nums1[i++] : nums2[j++]);
+  }
+  while (i < nums1.length) merged.push(nums1[i++]);
+  while (j < nums2.length) merged.push(nums2[j++]);
+  const mid = Math.floor(merged.length / 2);
+  return merged.length % 2 === 0 ? (merged[mid - 1] + merged[mid]) / 2 : merged[mid];
+}`,
+    testCases: [
+      { input: "[1,3], [2]", expected: "2", label: "An odd total length has a single middle value" },
+      { input: "[1,2], [3,4]", expected: "2.5", label: "An even total length averages the two middle values" },
+      { input: "[], [1]", expected: "1", label: "One empty array is handled correctly" },
+    ],
+    hints: [
+      "Merging the two sorted arrays (like the merge step of merge sort) and then indexing into the result is the simplest correct route to the answer.",
+    ],
+    orderIndex: 1104,
+  },
+
+  // Stage 8 — Mixed classic algorithm problems
+  {
+    slug: "is-prime-number",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "isPrime()",
+    description: `Determine whether a number is prime, checking only up to its square root for efficiency.
+
+## Your task
+
+Write \`isPrime(n)\`.`,
+    difficulty: "easy",
+    starterCode: `function isPrime(n) {
+}`,
+    solutionCode: `function isPrime(n) {
+  if (n < 2) return false;
+  for (let i = 2; i * i <= n; i++) {
+    if (n % i === 0) return false;
+  }
+  return true;
+}`,
+    testCases: [
+      { input: "7", expected: "true", label: "A prime number" },
+      { input: "8", expected: "false", label: "A non-prime, even number" },
+      { input: "1", expected: "false", label: "1 is not prime, by definition" },
+      { input: "2", expected: "true", label: "2 is the smallest prime" },
+    ],
+    hints: [
+      "You only need to check divisors up to √n — if n has a factor larger than its square root, it must also have a corresponding factor smaller than it.",
+    ],
+    orderIndex: 1105,
+  },
+  {
+    slug: "look-and-say-sequence",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "A number sequence",
+    description: `The "look-and-say" sequence: each term describes the previous one by counting consecutive digit runs. Starting from \`"1"\`: read it as "one 1", giving \`"11"\`; read that as "two 1s", giving \`"21"\`; and so on.
+
+## Your task
+
+Write \`lookAndSay(n)\`, returning the \`n\`th term (1-indexed) as a string.`,
+    difficulty: "easy",
+    starterCode: `function lookAndSay(n) {
+}`,
+    solutionCode: `function lookAndSay(n) {
+  let result = "1";
+  for (let i = 1; i < n; i++) {
+    let next = "";
+    let count = 1;
+    for (let j = 1; j <= result.length; j++) {
+      if (result[j] === result[j - 1]) {
+        count++;
+      } else {
+        next += count + result[j - 1];
+        count = 1;
+      }
+    }
+    result = next;
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "1", expected: '"1"', label: "The first term is just \"1\"" },
+      { input: "2", expected: '"11"', label: "\"one 1\" describes the first term" },
+      { input: "4", expected: '"1211"', label: "The fourth term in the sequence" },
+      { input: "5", expected: '"111221"', label: "The fifth term in the sequence" },
+    ],
+    hints: [
+      "Walk each term's digits, counting consecutive runs, and describe each run as count + digit to build the next term.",
+      "A sentinel one past the end of the string (comparing result[j] to result[j-1] up through j === result.length) lets the last run flush without special-casing it.",
+    ],
+    orderIndex: 1106,
+  },
+  {
+    slug: "fibonacci-recursive",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Fibonacci (recursion)",
+    description: `The canonical recursion exercise: each Fibonacci number is the sum of the two before it.
+
+## Your task
+
+Write \`fibRecursive(n)\` using plain recursion (no memoization) — this version is intentionally about recursion mechanics, not performance.`,
+    difficulty: "easy",
+    starterCode: `function fibRecursive(n) {
+}`,
+    solutionCode: `function fibRecursive(n) {
+  if (n <= 1) return n;
+  return fibRecursive(n - 1) + fibRecursive(n - 2);
+}`,
+    testCases: [
+      { input: "0", expected: "0", label: "The base case for n = 0" },
+      { input: "1", expected: "1", label: "The base case for n = 1" },
+      { input: "10", expected: "55", label: "The 10th Fibonacci number" },
+    ],
+    hints: [
+      "Two base cases (n = 0 and n = 1) and one recursive case is the entire function.",
+    ],
+    orderIndex: 1107,
+  },
+  {
+    slug: "generate-fibonacci-sequence",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Generate Fibonacci Number",
+    description: `The practical counterpart to the recursive version: generate the first several Fibonacci numbers iteratively, in O(n) time instead of exponential.
+
+## Your task
+
+Write \`generateFibonacci(count)\`, returning an array of the first \`count\` Fibonacci numbers, starting from 0.`,
+    difficulty: "medium",
+    starterCode: `function generateFibonacci(count) {
+}`,
+    solutionCode: `function generateFibonacci(count) {
+  const result = [];
+  let a = 0;
+  let b = 1;
+  for (let i = 0; i < count; i++) {
+    result.push(a);
+    [a, b] = [b, a + b];
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "5", expected: "[0,1,1,2,3]", label: "The first five Fibonacci numbers" },
+      { input: "0", expected: "[]", label: "count = 0 returns an empty array" },
+      { input: "1", expected: "[0]", label: "count = 1 returns just the first term" },
+    ],
+    hints: [
+      "Track only the last two values in variables and shift them forward each iteration — no need to keep the whole array while computing.",
+    ],
+    orderIndex: 1108,
+  },
+  {
+    slug: "two-numbers-sum-to-zero",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Two numbers that sum to 0",
+    description: `Find any pair of numbers in an array that are exact opposites of each other.
+
+## Your task
+
+Write \`findZeroSumPair(nums)\`, returning the first such pair found while scanning left to right (as \`[earlierValue, laterValue]\`), or \`null\` if none exists.`,
+    difficulty: "easy",
+    starterCode: `function findZeroSumPair(nums) {
+}`,
+    solutionCode: `function findZeroSumPair(nums) {
+  const seen = new Set();
+  for (const n of nums) {
+    if (seen.has(-n)) return [-n, n];
+    seen.add(n);
+  }
+  return null;
+}`,
+    testCases: [
+      { input: "[4,-4,2]", expected: "[4,-4]", label: "Finds an opposite pair" },
+      { input: "[1,2,3]", expected: "null", label: "No pair sums to zero" },
+      { input: "[-5,5,10]", expected: "[-5,5]", label: "The earlier-seen value comes first in the result" },
+    ],
+    hints: [
+      "A Set of numbers seen so far lets you check for a value's negation in O(1) as you scan.",
+    ],
+    orderIndex: 1109,
+  },
+  {
+    slug: "largest-difference",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "The largest difference",
+    description: `Like the classic "best time to buy and sell a stock" — find the largest value of \`nums[j] - nums[i]\` for any \`j > i\`.
+
+## Your task
+
+Write \`largestDifference(nums)\` in a single O(n) pass, tracking the minimum seen so far.`,
+    difficulty: "easy",
+    starterCode: `function largestDifference(nums) {
+}`,
+    solutionCode: `function largestDifference(nums) {
+  if (nums.length < 2) return undefined;
+  let minSoFar = nums[0];
+  let maxDiff = nums[1] - nums[0];
+  for (let i = 1; i < nums.length; i++) {
+    maxDiff = Math.max(maxDiff, nums[i] - minSoFar);
+    minSoFar = Math.min(minSoFar, nums[i]);
+  }
+  return maxDiff;
+}`,
+    testCases: [
+      { input: "[7,1,5,3,6,4]", expected: "5", label: "The best 'buy low, sell high' difference" },
+      { input: "[7,6,4,3,1]", expected: "-1", label: "A strictly decreasing array still has a best (least negative) answer" },
+      { input: "[1]", expected: "undefined", label: "A single-element array has no valid pair" },
+    ],
+    hints: [
+      "Track the minimum value seen so far as you scan; at each position, the best difference ending here is current - minSoFar.",
+    ],
+    orderIndex: 1110,
+  },
+  {
+    slug: "merge-sorted-arrays",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Merge sorted arrays",
+    description: `The merge step from merge sort, as its own standalone problem: combine two already-sorted arrays into one sorted array.
+
+## Your task
+
+Write \`mergeSortedArrays(a, b)\` in O(a.length + b.length) time.`,
+    difficulty: "easy",
+    starterCode: `function mergeSortedArrays(a, b) {
+}`,
+    solutionCode: `function mergeSortedArrays(a, b) {
+  const result = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    result.push(a[i] <= b[j] ? a[i++] : b[j++]);
+  }
+  return result.concat(a.slice(i)).concat(b.slice(j));
+}`,
+    testCases: [
+      { input: "[1,3,5], [2,4,6]", expected: "[1,2,3,4,5,6]", label: "Interleaves two sorted arrays" },
+      { input: "[], [1,2]", expected: "[1,2]", label: "One empty array just returns the other" },
+      { input: "[1,2], [1,2]", expected: "[1,1,2,2]", label: "Handles duplicate values across both arrays" },
+    ],
+    hints: [
+      "Two pointers, one per array, always advancing whichever points at the smaller current value.",
+    ],
+    orderIndex: 1111,
+  },
+  {
+    slug: "intersection-sorted-arrays",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Intersection of two sorted arrays",
+    description: `Find the values common to two sorted arrays, using the sortedness to do it in one linear pass instead of hashing.
+
+## Your task
+
+Write \`intersectSorted(a, b)\`, returning the unique common values in ascending order.`,
+    difficulty: "easy",
+    starterCode: `function intersectSorted(a, b) {
+}`,
+    solutionCode: `function intersectSorted(a, b) {
+  const result = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) {
+      if (result[result.length - 1] !== a[i]) result.push(a[i]);
+      i++;
+      j++;
+    } else if (a[i] < b[j]) {
+      i++;
+    } else {
+      j++;
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "[1,2,2,3], [2,2,4]", expected: "[2]", label: "Common values are deduplicated" },
+      { input: "[1,2,3], [4,5,6]", expected: "[]", label: "No overlap returns an empty array" },
+      { input: "[1,2,3], [1,2,3]", expected: "[1,2,3]", label: "Identical arrays intersect completely" },
+    ],
+    hints: [
+      "Advance whichever pointer is behind; on a match, advance both — that's the whole two-pointer walk.",
+      "Only push a match if it's different from the last pushed value, to avoid duplicate entries in the result.",
+    ],
+    orderIndex: 1112,
+  },
+  {
+    slug: "intersection-unsorted-arrays",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Intersection of unsorted arrays",
+    description: `The same problem without the sortedness assumption — solved with a hash set instead of two pointers.
+
+## Your task
+
+Write \`intersectUnsorted(a, b)\`, returning the unique common values (order doesn't matter).`,
+    difficulty: "easy",
+    starterCode: `function intersectUnsorted(a, b) {
+}`,
+    solutionCode: `function intersectUnsorted(a, b) {
+  const setB = new Set(b);
+  return [...new Set(a)].filter((x) => setB.has(x));
+}`,
+    testCases: [
+      { input: "[3,1,2,1], [2,2,4]", expected: "[2]", label: "Common values are deduplicated" },
+      { input: "[1,2], [3,4]", expected: "[]", label: "No overlap returns an empty array" },
+      { input: "[5,6], [6,5]", expected: "[5,6]", label: "Works regardless of either array's order" },
+    ],
+    hints: [
+      "Turning both arrays into Sets makes membership checks O(1), so the whole thing runs in O(a.length + b.length).",
+    ],
+    orderIndex: 1113,
+  },
+  {
+    slug: "find-available-meeting-slots",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Find available meeting slots",
+    description: `Given a list of busy \`[start, end]\` intervals within a workday, find the free gaps where a meeting could be scheduled.
+
+## Your task
+
+Write \`findAvailableSlots(busy, workStart, workEnd)\`, returning an array of \`[start, end]\` free intervals, in order. \`busy\` may be given in any order and may contain overlapping intervals.`,
+    difficulty: "medium",
+    starterCode: `function findAvailableSlots(busy, workStart, workEnd) {
+}`,
+    solutionCode: `function findAvailableSlots(busy, workStart, workEnd) {
+  const sorted = [...busy].sort((a, b) => a[0] - b[0]);
+  const slots = [];
+  let cursor = workStart;
+  for (const [start, end] of sorted) {
+    if (start > cursor) slots.push([cursor, start]);
+    cursor = Math.max(cursor, end);
+  }
+  if (cursor < workEnd) slots.push([cursor, workEnd]);
+  return slots;
+}`,
+    testCases: [
+      { input: "[[10,11],[13,14]], workStart 9, workEnd 17", expected: "[[9,10],[11,13],[14,17]]", label: "Finds every gap between meetings and around the edges" },
+      { input: "[], workStart 9, workEnd 17", expected: "[[9,17]]", label: "No meetings means the whole day is free" },
+      { input: "[[9,17]], workStart 9, workEnd 17", expected: "[]", label: "A fully booked day has no free slots" },
+    ],
+    hints: [
+      "Sort the busy intervals by start time first — the input order isn't guaranteed to be chronological.",
+      "A 'cursor' tracking the end of the last busy interval processed so far is what lets you detect each gap in a single pass.",
+    ],
+    orderIndex: 1114,
+  },
+  {
+    slug: "longest-unique-substring",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Longest substring with unique characters",
+    description: `A sliding-window classic: find the length of the longest substring that has no repeated characters.
+
+## Your task
+
+Write \`lengthOfLongestUniqueSubstring(s)\` in O(n) time.`,
+    difficulty: "easy",
+    starterCode: `function lengthOfLongestUniqueSubstring(s) {
+}`,
+    solutionCode: `function lengthOfLongestUniqueSubstring(s) {
+  let start = 0;
+  let maxLen = 0;
+  const lastSeen = new Map();
+  for (let end = 0; end < s.length; end++) {
+    const ch = s[end];
+    if (lastSeen.has(ch) && lastSeen.get(ch) >= start) {
+      start = lastSeen.get(ch) + 1;
+    }
+    lastSeen.set(ch, end);
+    maxLen = Math.max(maxLen, end - start + 1);
+  }
+  return maxLen;
+}`,
+    testCases: [
+      { input: '"abcabcbb"', expected: "3", label: "The longest run is \"abc\"" },
+      { input: '"bbbbb"', expected: "1", label: "All-repeated characters cap the answer at 1" },
+      { input: '""', expected: "0", label: "An empty string has length 0" },
+    ],
+    hints: [
+      "A map from character to its last-seen index lets you jump the window's start forward the moment a repeat is found, instead of shrinking one step at a time.",
+      "Only jump start forward if the repeat's last position is inside the current window — an old repeat outside the window doesn't matter.",
+    ],
+    orderIndex: 1115,
+  },
+  {
+    slug: "validate-parentheses-string",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Validate string of parentheses",
+    description: `Check whether every bracket in a string is properly opened, closed, and nested — for \`()\`, \`[]\`, and \`{}\`.
+
+## Your task
+
+Write \`isValidParens(s)\`.`,
+    difficulty: "easy",
+    starterCode: `function isValidParens(s) {
+}`,
+    solutionCode: `function isValidParens(s) {
+  const stack = [];
+  const pairs = { ")": "(", "]": "[", "}": "{" };
+  for (const ch of s) {
+    if (ch === "(" || ch === "[" || ch === "{") {
+      stack.push(ch);
+    } else if (pairs[ch]) {
+      if (stack.pop() !== pairs[ch]) return false;
+    }
+  }
+  return stack.length === 0;
+}`,
+    testCases: [
+      { input: '"({[]})"', expected: "true", label: "Properly nested mixed brackets" },
+      { input: '"(]"', expected: "false", label: "Mismatched bracket types" },
+      { input: '"((("', expected: "false", label: "Unclosed brackets are invalid" },
+    ],
+    hints: [
+      "A stack of open brackets is the whole trick — each closing bracket must match the top of the stack.",
+      "Don't forget the final check: leftover unclosed brackets on the stack also make the string invalid.",
+    ],
+    orderIndex: 1116,
+  },
+  {
+    slug: "pick-up-stones-game",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Pick up stones",
+    description: `A Nim-style game: two players alternate taking 1, 2, or 3 stones from a pile; whoever takes the last stone wins. Determine whether the player who goes first can force a win.
+
+## Your task
+
+Write \`canFirstPlayerWin(n)\` for a starting pile of \`n\` stones, assuming both players play optimally.`,
+    difficulty: "easy",
+    starterCode: `function canFirstPlayerWin(n) {
+}`,
+    solutionCode: `function canFirstPlayerWin(n) {
+  return n % 4 !== 0;
+}`,
+    testCases: [
+      { input: "4", expected: "false", label: "A multiple of 4 is a loss for the first player" },
+      { input: "5", expected: "true", label: "The first player can force a win" },
+      { input: "1", expected: "true", label: "The first player takes the single stone and wins immediately" },
+    ],
+    hints: [
+      "Whatever the first player takes (1, 2, or 3), the opponent can always take enough to make the two moves sum to 4 — so piles that are multiples of 4 are a forced loss for whoever moves first into them.",
+    ],
+    orderIndex: 1117,
+  },
+  {
+    slug: "find-single-integer-xor",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Find the single integer",
+    description: `Every number in an array appears exactly twice, except one — find it in O(n) time and O(1) space.
+
+## Your task
+
+Write \`singleNumber(nums)\` using bitwise XOR.`,
+    difficulty: "easy",
+    starterCode: `function singleNumber(nums) {
+}`,
+    solutionCode: `function singleNumber(nums) {
+  return nums.reduce((acc, n) => acc ^ n, 0);
+}`,
+    testCases: [
+      { input: "[4,1,2,1,2]", expected: "4", label: "Finds the one number without a pair" },
+      { input: "[7]", expected: "7", label: "A single-element array is itself the answer" },
+      { input: "[1,1,3,3,9]", expected: "9", label: "Works regardless of where the unpaired number sits" },
+    ],
+    hints: [
+      "XOR-ing a number with itself always produces 0, and XOR is associative/commutative — so every paired number cancels out, leaving only the unpaired one.",
+    ],
+    orderIndex: 1118,
+  },
+  {
+    slug: "move-zeroes-in-place",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Move zeros",
+    description: `Push every \`0\` to the end of the array while preserving the relative order of the non-zero elements, in place.
+
+## Your task
+
+Write \`moveZeroes(nums)\`, mutating and returning \`nums\`.`,
+    difficulty: "medium",
+    starterCode: `function moveZeroes(nums) {
+}`,
+    solutionCode: `function moveZeroes(nums) {
+  let insertPos = 0;
+  for (let i = 0; i < nums.length; i++) {
+    if (nums[i] !== 0) {
+      nums[insertPos] = nums[i];
+      insertPos++;
+    }
+  }
+  for (let i = insertPos; i < nums.length; i++) {
+    nums[i] = 0;
+  }
+  return nums;
+}`,
+    testCases: [
+      { input: "[0,1,0,3,12]", expected: "[1,3,12,0,0]", label: "Non-zero order is preserved, zeros pushed to the end" },
+      { input: "[0,0,0]", expected: "[0,0,0]", label: "An all-zero array is unchanged" },
+      { input: "[1,2,3]", expected: "[1,2,3]", label: "An array with no zeros needs no changes" },
+    ],
+    hints: [
+      "Overwrite non-zero elements forward from an insert-position pointer first, then fill the remaining tail with zeros in a second pass.",
+    ],
+    orderIndex: 1119,
+  },
+  {
+    slug: "count-palindromic-substrings",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Count palindromic substrings",
+    description: `Count every substring (including single characters) that reads the same forwards and backwards, using the expand-around-center technique.
+
+## Your task
+
+Write \`countPalindromicSubstrings(s)\`.`,
+    difficulty: "medium",
+    starterCode: `function countPalindromicSubstrings(s) {
+}`,
+    solutionCode: `function countPalindromicSubstrings(s) {
+  let count = 0;
+  function expand(l, r) {
+    while (l >= 0 && r < s.length && s[l] === s[r]) {
+      count++;
+      l--;
+      r++;
+    }
+  }
+  for (let i = 0; i < s.length; i++) {
+    expand(i, i);
+    expand(i, i + 1);
+  }
+  return count;
+}`,
+    testCases: [
+      { input: '"abc"', expected: "3", label: "Only the single characters are palindromes" },
+      { input: '"aaa"', expected: "6", label: "Overlapping palindromic substrings all count: a,a,a,aa,aa,aaa" },
+      { input: '""', expected: "0", label: "An empty string has none" },
+    ],
+    hints: [
+      "Every palindrome has a center — either a single character (odd length) or a gap between two characters (even length). Expanding outward from each of the 2n-1 possible centers finds them all.",
+    ],
+    orderIndex: 1120,
+  },
+  {
+    slug: "angle-between-clock-hands",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "Angle between clock hands",
+    description: `Compute the smaller angle between the hour and minute hands of an analog clock at a given time.
+
+## Your task
+
+Write \`angleBetweenHands(hours, minutes)\`, returning the angle in degrees (0-180).`,
+    difficulty: "medium",
+    starterCode: `function angleBetweenHands(hours, minutes) {
+}`,
+    solutionCode: `function angleBetweenHands(hours, minutes) {
+  const minuteAngle = minutes * 6;
+  const hourAngle = (hours % 12) * 30 + minutes * 0.5;
+  const diff = Math.abs(hourAngle - minuteAngle);
+  return Math.min(diff, 360 - diff);
+}`,
+    testCases: [
+      { input: "12, 0", expected: "0", label: "Both hands point at 12" },
+      { input: "3, 0", expected: "90", label: "A quarter past twelve, hour-wise" },
+      { input: "6, 0", expected: "180", label: "Hands pointing in exactly opposite directions" },
+    ],
+    hints: [
+      "The minute hand moves 6° per minute; the hour hand moves 30° per hour plus a further 0.5° per minute (it creeps forward between the hour marks).",
+      "The two hands' angle difference can exceed 180° — always report the smaller of the angle and 360 minus it.",
+    ],
+    orderIndex: 1121,
+  },
+  {
+    slug: "kth-largest-element",
+    companies: ["Google", "Amazon", "Meta", "ByteDance"],
+    category: "javascript-runtime",
+    title: "K-th largest element in an unsorted array",
+    description: `Find the k-th largest value in an array — not the k-th *distinct* value, duplicates count individually.
+
+## Your task
+
+Write \`kthLargest(nums, k)\`.`,
+    difficulty: "medium",
+    starterCode: `function kthLargest(nums, k) {
+}`,
+    solutionCode: `function kthLargest(nums, k) {
+  return [...nums].sort((a, b) => b - a)[k - 1];
+}`,
+    testCases: [
+      { input: "[3,2,1,5,6,4], 2", expected: "5", label: "The 2nd largest value" },
+      { input: "[3,2,3,1,2,4,5,5,6], 4", expected: "4", label: "Duplicates count individually, not just distinct values" },
+      { input: "[1], 1", expected: "1", label: "A single-element array's 1st largest is itself" },
+    ],
+    hints: [
+      "Sorting descending and indexing at k - 1 is the simplest correct approach — a heap-based O(n log k) solution is a nice follow-up but not required here.",
+    ],
+    orderIndex: 1122,
+  },
+
+  // Stage 9 — Big-Number Arithmetic
+  {
+    slug: "implement-math-pow",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Implement Math.pow()",
+    description: `Exponentiation by hand, including negative exponents.
+
+## Your task
+
+Write \`myPow(base, exponent)\` using fast (divide-and-conquer) exponentiation rather than a naive multiplication loop.`,
+    difficulty: "easy",
+    starterCode: `function myPow(base, exponent) {
+}`,
+    solutionCode: `function myPow(base, exponent) {
+  if (exponent < 0) return 1 / myPow(base, -exponent);
+  if (exponent === 0) return 1;
+  const half = myPow(base, Math.floor(exponent / 2));
+  return exponent % 2 === 0 ? half * half : half * half * base;
+}`,
+    testCases: [
+      { input: "2, 10", expected: "1024", label: "A positive exponent" },
+      { input: "2, -2", expected: "0.25", label: "A negative exponent inverts the result" },
+      { input: "5, 0", expected: "1", label: "Any base to the power of 0 is 1" },
+    ],
+    hints: [
+      "base^n = (base^(n/2))^2 when n is even, with one extra factor of base when n is odd — that halving is what makes this O(log n) instead of O(n).",
+      "A negative exponent is just 1 divided by the positive-exponent result.",
+    ],
+    orderIndex: 1123,
+  },
+  {
+    slug: "implement-math-sqrt",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Implement Math.sqrt()",
+    description: `Approximate a square root using Newton's method: repeatedly refine a guess until it converges.
+
+## Your task
+
+Write \`mySqrt(x)\`, converging to a precise floating-point result.`,
+    difficulty: "medium",
+    starterCode: `function mySqrt(x) {
+}`,
+    solutionCode: `function mySqrt(x) {
+  if (x < 0) return NaN;
+  if (x === 0) return 0;
+  let guess = x;
+  for (let i = 0; i < 100; i++) {
+    guess = (guess + x / guess) / 2;
+  }
+  return guess;
+}`,
+    testCases: [
+      { input: "16", expected: "4", label: "A perfect square" },
+      { input: "2", expected: "≈ 1.41421356 (within 1e-6 of Math.SQRT2)", label: "An irrational result converges closely" },
+      { input: "0", expected: "0", label: "The square root of 0 is 0" },
+    ],
+    hints: [
+      "Newton's method for √x: guess = (guess + x / guess) / 2, repeated until it stabilizes.",
+      "A fixed number of iterations (like 100) is plenty for convergence within floating-point precision, without needing a formal convergence-tolerance check.",
+    ],
+    orderIndex: 1124,
+  },
+  {
+    slug: "implement-math-clz32",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Implement Math.clz32()",
+    description: `Count the leading zero bits in a number's 32-bit unsigned binary representation — a low-level primitive V8 exposes for bit-twiddling code.
+
+## Your task
+
+Write \`myClz32(x)\`.`,
+    difficulty: "medium",
+    starterCode: `function myClz32(x) {
+}`,
+    solutionCode: `function myClz32(x) {
+  if (x === 0) return 32;
+  const n = x >>> 0;
+  let count = 0;
+  for (let i = 31; i >= 0; i--) {
+    if ((n & (1 << i)) !== 0) break;
+    count++;
+  }
+  return count;
+}`,
+    testCases: [
+      { input: "1", expected: "31", label: "1 has 31 leading zero bits in 32-bit form" },
+      { input: "0", expected: "32", label: "0 has no set bits at all, so all 32 count as leading zeros" },
+      { input: "1000", expected: "22", label: "1000 needs 10 bits, leaving 22 leading zeros" },
+    ],
+    hints: [
+      "Scan from bit 31 (the most significant) down to bit 0, counting until you hit the first set bit.",
+      "The unsigned right-shift (x >>> 0) ensures the number is treated as a 32-bit unsigned value for the bit check.",
+    ],
+    orderIndex: 1125,
+  },
+  {
+    slug: "bigint-string-addition",
+    companies: ["Google", "ByteDance"],
+    category: "javascript-runtime",
+    title: "BigInt addition",
+    description: `Add two arbitrarily large non-negative integers represented as strings — beyond what \`Number\` can represent exactly.
+
+## Your task
+
+Write \`bigIntAdd(a, b)\`, doing grade-school column addition digit by digit, without converting to \`Number\` or using the native \`BigInt\`.`,
+    difficulty: "easy",
+    starterCode: `function bigIntAdd(a, b) {
+}`,
+    solutionCode: `function bigIntAdd(a, b) {
+  let result = "";
+  let carry = 0;
+  let i = a.length - 1;
+  let j = b.length - 1;
+  while (i >= 0 || j >= 0 || carry) {
+    const digitA = i >= 0 ? Number(a[i]) : 0;
+    const digitB = j >= 0 ? Number(b[j]) : 0;
+    const sum = digitA + digitB + carry;
+    result = (sum % 10) + result;
+    carry = Math.floor(sum / 10);
+    i--;
+    j--;
+  }
+  return result;
+}`,
+    testCases: [
+      { input: '"123", "456"', expected: '"579"', label: "Adds two same-length numbers" },
+      { input: '"999", "1"', expected: '"1000"', label: "A carry cascades all the way through" },
+      { input: '"0", "0"', expected: '"0"', label: "Zero plus zero is zero" },
+    ],
+    hints: [
+      "Walk both strings from the right end, tracking a carry — exactly how you'd add on paper.",
+      "Keep going as long as either string has digits left, or there's still a carry to flush out.",
+    ],
+    orderIndex: 1126,
+  },
+  {
+    slug: "bigint-string-subtraction",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "BigInt subtraction",
+    description: `Subtract one arbitrarily large non-negative integer string from another, assuming the result is non-negative (\`a >= b\`).
+
+## Your task
+
+Write \`bigIntSubtract(a, b)\`, using column subtraction with borrowing.`,
+    difficulty: "easy",
+    starterCode: `function bigIntSubtract(a, b) {
+}`,
+    solutionCode: `function bigIntSubtract(a, b) {
+  let result = "";
+  let borrow = 0;
+  let i = a.length - 1;
+  let j = b.length - 1;
+  while (i >= 0) {
+    let digitA = Number(a[i]) - borrow;
+    const digitB = j >= 0 ? Number(b[j]) : 0;
+    if (digitA < digitB) {
+      digitA += 10;
+      borrow = 1;
+    } else {
+      borrow = 0;
+    }
+    result = (digitA - digitB) + result;
+    i--;
+    j--;
+  }
+  return result.replace(/^0+(?=\\d)/, "");
+}`,
+    testCases: [
+      { input: '"456", "123"', expected: '"333"', label: "A simple digit-by-digit subtraction" },
+      { input: '"1000", "999"', expected: '"1"', label: "A borrow cascades through multiple digits" },
+      { input: '"100", "100"', expected: '"0"', label: "Subtracting a number from itself gives 0" },
+    ],
+    hints: [
+      "When a digit in a is smaller than the corresponding digit in b, borrow 10 from the next column and carry the borrow forward.",
+      "Strip any resulting leading zeros from the final result — a subtraction like 1000 - 999 naturally produces \"0001\" before that cleanup.",
+    ],
+    orderIndex: 1127,
+  },
+  {
+    slug: "bigint-signed-addition",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "BigInt addition with sign",
+    description: `Extend big-integer addition to handle negative numbers (a leading \`-\`), correctly falling back to subtraction of magnitudes when the signs differ.
+
+## Your task
+
+Write \`bigIntAddSigned(a, b)\`, where either argument may start with \`-\`.`,
+    difficulty: "medium",
+    starterCode: `function bigIntAddSigned(a, b) {
+}`,
+    solutionCode: `function bigIntAddSigned(a, b) {
+  const negA = a.startsWith("-");
+  const negB = b.startsWith("-");
+  const magA = negA ? a.slice(1) : a;
+  const magB = negB ? b.slice(1) : b;
+  function compareMag(x, y) {
+    if (x.length !== y.length) return x.length - y.length;
+    return x < y ? -1 : x > y ? 1 : 0;
+  }
+  function addMag(x, y) {
+    let result = "";
+    let carry = 0;
+    let i = x.length - 1;
+    let j = y.length - 1;
+    while (i >= 0 || j >= 0 || carry) {
+      const dx = i >= 0 ? Number(x[i]) : 0;
+      const dy = j >= 0 ? Number(y[j]) : 0;
+      const sum = dx + dy + carry;
+      result = (sum % 10) + result;
+      carry = Math.floor(sum / 10);
+      i--;
+      j--;
+    }
+    return result;
+  }
+  function subMag(x, y) {
+    let result = "";
+    let borrow = 0;
+    let i = x.length - 1;
+    let j = y.length - 1;
+    while (i >= 0) {
+      let dx = Number(x[i]) - borrow;
+      const dy = j >= 0 ? Number(y[j]) : 0;
+      if (dx < dy) {
+        dx += 10;
+        borrow = 1;
+      } else {
+        borrow = 0;
+      }
+      result = (dx - dy) + result;
+      i--;
+      j--;
+    }
+    return result.replace(/^0+(?=\\d)/, "");
+  }
+  if (negA === negB) {
+    const sum = addMag(magA, magB);
+    return negA && sum !== "0" ? "-" + sum : sum;
+  }
+  const cmp = compareMag(magA, magB);
+  if (cmp === 0) return "0";
+  if (cmp > 0) {
+    const diff = subMag(magA, magB);
+    return negA && diff !== "0" ? "-" + diff : diff;
+  }
+  const diff = subMag(magB, magA);
+  return negB && diff !== "0" ? "-" + diff : diff;
+}`,
+    testCases: [
+      { input: '"5", "3"', expected: '"8"', label: "Two positive numbers add normally" },
+      { input: '"-5", "3"', expected: '"-2"', label: "A negative plus a smaller positive stays negative" },
+      { input: '"5", "-8"', expected: '"-3"', label: "A positive plus a larger-magnitude negative goes negative" },
+      { input: '"-5", "-3"', expected: '"-8"', label: "Two negatives add their magnitudes and stay negative" },
+    ],
+    hints: [
+      "Same sign: add the magnitudes and keep that sign. Different signs: subtract the smaller magnitude from the larger, and take the sign of whichever had the larger magnitude.",
+    ],
+    orderIndex: 1128,
+  },
+  {
+    slug: "bigint-signed-subtraction",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "BigInt subtraction with sign",
+    description: `\`a - b\` is the same as \`a + (-b)\` — extend that idea to arbitrarily large signed integer strings.
+
+## Your task
+
+Write \`bigIntSubtractSigned(a, b)\`.`,
+    difficulty: "medium",
+    starterCode: `function bigIntSubtractSigned(a, b) {
+}`,
+    solutionCode: `function bigIntSubtractSigned(a, b) {
+  const negA = a.startsWith("-");
+  const negB = !b.startsWith("-");
+  const magA = negA ? a.slice(1) : a;
+  const magB = b.startsWith("-") ? b.slice(1) : b;
+  function compareMag(x, y) {
+    if (x.length !== y.length) return x.length - y.length;
+    return x < y ? -1 : x > y ? 1 : 0;
+  }
+  function addMag(x, y) {
+    let result = "";
+    let carry = 0;
+    let i = x.length - 1;
+    let j = y.length - 1;
+    while (i >= 0 || j >= 0 || carry) {
+      const dx = i >= 0 ? Number(x[i]) : 0;
+      const dy = j >= 0 ? Number(y[j]) : 0;
+      const sum = dx + dy + carry;
+      result = (sum % 10) + result;
+      carry = Math.floor(sum / 10);
+      i--;
+      j--;
+    }
+    return result;
+  }
+  function subMag(x, y) {
+    let result = "";
+    let borrow = 0;
+    let i = x.length - 1;
+    let j = y.length - 1;
+    while (i >= 0) {
+      let dx = Number(x[i]) - borrow;
+      const dy = j >= 0 ? Number(y[j]) : 0;
+      if (dx < dy) {
+        dx += 10;
+        borrow = 1;
+      } else {
+        borrow = 0;
+      }
+      result = (dx - dy) + result;
+      i--;
+      j--;
+    }
+    return result.replace(/^0+(?=\\d)/, "");
+  }
+  if (negA === negB) {
+    const sum = addMag(magA, magB);
+    return negA && sum !== "0" ? "-" + sum : sum;
+  }
+  const cmp = compareMag(magA, magB);
+  if (cmp === 0) return "0";
+  if (cmp > 0) {
+    const diff = subMag(magA, magB);
+    return negA && diff !== "0" ? "-" + diff : diff;
+  }
+  const diff = subMag(magB, magA);
+  return negB && diff !== "0" ? "-" + diff : diff;
+}`,
+    testCases: [
+      { input: '"5", "3"', expected: '"2"', label: "A simple positive subtraction" },
+      { input: '"3", "5"', expected: '"-2"', label: "Subtracting a larger number goes negative" },
+      { input: '"-5", "3"', expected: '"-8"', label: "Subtracting a positive from a negative makes it more negative" },
+      { input: '"5", "-3"', expected: '"8"', label: "Subtracting a negative is the same as adding its magnitude" },
+    ],
+    hints: [
+      "Treat this as bigIntAddSigned(a, -b) — flip b's effective sign, then apply the exact same same-sign/different-sign logic.",
+    ],
+    orderIndex: 1129,
+  },
+  {
+    slug: "bigint-string-multiplication",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "BigInt multiplication",
+    description: `Multiply two arbitrarily large non-negative integer strings using the grade-school digit-by-digit method, accumulating partial products at the right positions.
+
+## Your task
+
+Write \`bigIntMultiply(a, b)\`.`,
+    difficulty: "medium",
+    starterCode: `function bigIntMultiply(a, b) {
+}`,
+    solutionCode: `function bigIntMultiply(a, b) {
+  if (a === "0" || b === "0") return "0";
+  const result = new Array(a.length + b.length).fill(0);
+  for (let i = a.length - 1; i >= 0; i--) {
+    for (let j = b.length - 1; j >= 0; j--) {
+      const mul = Number(a[i]) * Number(b[j]);
+      const p1 = i + j;
+      const p2 = i + j + 1;
+      const sum = mul + result[p2];
+      result[p2] = sum % 10;
+      result[p1] += Math.floor(sum / 10);
+    }
+  }
+  return result.join("").replace(/^0+(?=\\d)/, "");
+}`,
+    testCases: [
+      { input: '"123", "456"', expected: '"56088"', label: "A standard multi-digit multiplication" },
+      { input: '"0", "999"', expected: '"0"', label: "Anything times zero is zero" },
+      { input: '"999999999999", "2"', expected: '"1999999999998"', label: "Handles a number far beyond safe integer precision" },
+    ],
+    hints: [
+      "Every pair of digits a[i] * b[j] contributes to positions i+j and i+j+1 in the result array — accumulate there before converting to a final string.",
+      "Because the array holds arbitrary integer values (not just 0-9) mid-computation, carries between positions can be resolved once at the end by the join/string conversion — or handled per-digit as shown, either works.",
+    ],
+    orderIndex: 1130,
+  },
+  {
+    slug: "bigint-string-division",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "BigInt division",
+    description: `Long division on arbitrarily large non-negative integer strings, producing the integer (floored) quotient.
+
+## Your task
+
+Write \`bigIntDivide(a, b)\`.`,
+    difficulty: "medium",
+    starterCode: `function bigIntDivide(a, b) {
+}`,
+    solutionCode: `function bigIntDivide(a, b) {
+  if (b === "0") throw new Error("Division by zero");
+  function compare(x, y) {
+    x = x.replace(/^0+(?=\\d)/, "");
+    y = y.replace(/^0+(?=\\d)/, "");
+    if (x.length !== y.length) return x.length - y.length;
+    return x < y ? -1 : x > y ? 1 : 0;
+  }
+  function subtract(x, y) {
+    let result = "";
+    let borrow = 0;
+    let i = x.length - 1;
+    let j = y.length - 1;
+    while (i >= 0) {
+      let dx = Number(x[i]) - borrow;
+      const dy = j >= 0 ? Number(y[j]) : 0;
+      if (dx < dy) {
+        dx += 10;
+        borrow = 1;
+      } else {
+        borrow = 0;
+      }
+      result = (dx - dy) + result;
+      i--;
+      j--;
+    }
+    return result.replace(/^0+(?=\\d)/, "") || "0";
+  }
+  let quotient = "";
+  let remainder = "0";
+  for (const digit of a) {
+    remainder = (remainder === "0" ? "" : remainder) + digit;
+    let count = 0;
+    while (compare(remainder, b) >= 0) {
+      remainder = subtract(remainder, b);
+      count++;
+    }
+    quotient += count;
+  }
+  return quotient.replace(/^0+(?=\\d)/, "") || "0";
+}`,
+    testCases: [
+      { input: '"100", "5"', expected: '"20"', label: "An evenly divisible case" },
+      { input: '"7", "2"', expected: '"3"', label: "The result is floored, not fractional" },
+      { input: '"999999999999", "3"', expected: '"333333333333"', label: "Handles a number far beyond safe integer precision" },
+    ],
+    hints: [
+      "Process the dividend one digit at a time, building up a running remainder, and repeatedly subtract the divisor from it to count how many times it fits — that's long division.",
+    ],
+    orderIndex: 1131,
+  },
+  {
+    slug: "bigdecimal-addition",
+    companies: ["Stripe"],
+    category: "javascript-runtime",
+    title: "BigDecimal addition",
+    description: `Floating-point math famously gets \`0.1 + 0.2\` wrong (\`0.30000000000000004\`). Fixed-point decimal-string arithmetic avoids that entirely by never converting to a binary float.
+
+## Your task
+
+Write \`bigDecimalAdd(a, b)\`, adding two non-negative decimal strings (like \`"12.34"\`) exactly.`,
+    difficulty: "medium",
+    starterCode: `function bigDecimalAdd(a, b) {
+}`,
+    solutionCode: `function bigDecimalAdd(a, b) {
+  function addIntStrings(x, y) {
+    let result = "";
+    let carry = 0;
+    let i = x.length - 1;
+    let j = y.length - 1;
+    while (i >= 0 || j >= 0 || carry) {
+      const dx = i >= 0 ? Number(x[i]) : 0;
+      const dy = j >= 0 ? Number(y[j]) : 0;
+      const sum = dx + dy + carry;
+      result = (sum % 10) + result;
+      carry = Math.floor(sum / 10);
+      i--;
+      j--;
+    }
+    return result;
+  }
+  const [aInt, aDec = ""] = a.split(".");
+  const [bInt, bDec = ""] = b.split(".");
+  const decLen = Math.max(aDec.length, bDec.length);
+  const aDecPadded = aDec.padEnd(decLen, "0");
+  const bDecPadded = bDec.padEnd(decLen, "0");
+  const decSum = addIntStrings(aDecPadded, bDecPadded);
+  let carry = 0;
+  let decResult = decSum;
+  if (decSum.length > decLen) {
+    carry = 1;
+    decResult = decSum.slice(1);
+  }
+  const intSum = addIntStrings(aInt, carry ? "1" : "0");
+  return decLen > 0 ? intSum + "." + decResult : intSum;
+}`,
+    testCases: [
+      { input: '"12.34", "5.6"', expected: '"17.94"', label: "Different decimal-place counts align correctly" },
+      { input: '"0.1", "0.2"', expected: '"0.3"', label: "Exact, unlike native floating-point 0.1 + 0.2" },
+      { input: '"100", "0.5"', expected: '"100.5"', label: "A whole number plus a decimal" },
+    ],
+    hints: [
+      "Split each input on the decimal point, pad the fractional parts to the same length with trailing zeros, then add fractional and integer parts separately — carrying from the fractional sum into the integer sum when it overflows.",
+    ],
+    orderIndex: 1132,
+  },
+  {
+    slug: "bigdecimal-subtraction",
+    companies: ["Stripe"],
+    category: "javascript-runtime",
+    title: "BigDecimal subtraction",
+    description: `The subtraction counterpart, assuming \`a >= b\`, with a borrow that can cross from the fractional part into the integer part.
+
+## Your task
+
+Write \`bigDecimalSubtract(a, b)\`.`,
+    difficulty: "medium",
+    starterCode: `function bigDecimalSubtract(a, b) {
+}`,
+    solutionCode: `function bigDecimalSubtract(a, b) {
+  function subIntStrings(x, y) {
+    let result = "";
+    let borrow = 0;
+    let i = x.length - 1;
+    let j = y.length - 1;
+    while (i >= 0) {
+      let dx = Number(x[i]) - borrow;
+      const dy = j >= 0 ? Number(y[j]) : 0;
+      if (dx < dy) {
+        dx += 10;
+        borrow = 1;
+      } else {
+        borrow = 0;
+      }
+      result = (dx - dy) + result;
+      i--;
+      j--;
+    }
+    return result.replace(/^0+(?=\\d)/, "") || "0";
+  }
+  const [aInt, aDec = ""] = a.split(".");
+  const [bInt, bDec = ""] = b.split(".");
+  const decLen = Math.max(aDec.length, bDec.length);
+  const aDecPadded = aDec.padEnd(decLen, "0");
+  const bDecPadded = bDec.padEnd(decLen, "0");
+  let intMinuend = aInt;
+  let decMinuend = aDecPadded;
+  if (decLen > 0 && aDecPadded < bDecPadded) {
+    decMinuend = "1" + aDecPadded;
+    intMinuend = subIntStrings(aInt, "1");
+  }
+  const decResult = decLen > 0 ? subIntStrings(decMinuend, bDecPadded).padStart(decLen, "0").slice(-decLen) : "";
+  const intResult = subIntStrings(intMinuend, bInt);
+  return decLen > 0 ? intResult + "." + decResult : intResult;
+}`,
+    testCases: [
+      { input: '"5.00", "1.25"', expected: '"3.75"', label: "A borrow crosses from the fractional part into the integer part" },
+      { input: '"10.5", "3.2"', expected: '"7.3"', label: "No borrow needed" },
+      { input: '"1", "0.25"', expected: '"0.75"', label: "A whole number minus a decimal, borrowing all the way down to 0" },
+    ],
+    hints: [
+      "Pad both fractional parts to the same length first, then compare them as strings (same length means lexicographic comparison works like numeric comparison) to decide whether the subtraction needs a borrow from the integer part.",
+    ],
+    orderIndex: 1133,
+  },
+  {
+    slug: "bigdecimal-multiplication",
+    companies: ["Stripe"],
+    category: "javascript-runtime",
+    title: "BigDecimal multiplication",
+    description: `Multiply two decimal strings exactly, by multiplying their digits as plain integers and reinserting the decimal point based on the total number of fractional digits involved.
+
+## Your task
+
+Write \`bigDecimalMultiply(a, b)\`.`,
+    difficulty: "medium",
+    starterCode: `function bigDecimalMultiply(a, b) {
+}`,
+    solutionCode: `function bigDecimalMultiply(a, b) {
+  function multiplyIntStrings(x, y) {
+    if (x === "0" || y === "0") return "0";
+    const result = new Array(x.length + y.length).fill(0);
+    for (let i = x.length - 1; i >= 0; i--) {
+      for (let j = y.length - 1; j >= 0; j--) {
+        const mul = Number(x[i]) * Number(y[j]);
+        const p1 = i + j;
+        const p2 = i + j + 1;
+        const sum = mul + result[p2];
+        result[p2] = sum % 10;
+        result[p1] += Math.floor(sum / 10);
+      }
+    }
+    return result.join("").replace(/^0+(?=\\d)/, "");
+  }
+  const [aInt, aDec = ""] = a.split(".");
+  const [bInt, bDec = ""] = b.split(".");
+  const decimalPlaces = aDec.length + bDec.length;
+  const rawProduct = multiplyIntStrings(aInt + aDec, bInt + bDec);
+  if (decimalPlaces === 0) return rawProduct;
+  const padded = rawProduct.padStart(decimalPlaces + 1, "0");
+  const intPart = padded.slice(0, padded.length - decimalPlaces) || "0";
+  const decPart = padded.slice(padded.length - decimalPlaces);
+  return intPart + "." + decPart;
+}`,
+    testCases: [
+      { input: '"2.5", "4"', expected: '"10.0"', label: "A decimal times a whole number" },
+      { input: '"1.5", "1.5"', expected: '"2.25"', label: "Two decimals multiply exactly" },
+      { input: '"0.1", "0.2"', expected: '"0.02"', label: "Small decimals stay exact, unlike native floating-point" },
+    ],
+    hints: [
+      "Strip the decimal points, multiply as plain integers, then reinsert the decimal point exactly (total input decimal digits) places from the right of the raw product.",
+    ],
+    orderIndex: 1134,
+  },
+  {
+    slug: "bigdecimal-division",
+    companies: ["Stripe"],
+    category: "javascript-runtime",
+    title: "BigDecimal division",
+    description: `Division can produce an infinitely repeating decimal (like \`1/3\`), so this version takes an explicit precision and truncates to that many fractional digits.
+
+## Your task
+
+Write \`bigDecimalDivide(a, b, precision)\`, returning the quotient as a string with exactly \`precision\` digits after the decimal point (truncated, not rounded).`,
+    difficulty: "medium",
+    starterCode: `function bigDecimalDivide(a, b, precision) {
+}`,
+    solutionCode: `function bigDecimalDivide(a, b, precision) {
+  function compare(x, y) {
+    x = x.replace(/^0+(?=\\d)/, "");
+    y = y.replace(/^0+(?=\\d)/, "");
+    if (x.length !== y.length) return x.length - y.length;
+    return x < y ? -1 : x > y ? 1 : 0;
+  }
+  function subtract(x, y) {
+    let result = "";
+    let borrow = 0;
+    let i = x.length - 1;
+    let j = y.length - 1;
+    while (i >= 0) {
+      let dx = Number(x[i]) - borrow;
+      const dy = j >= 0 ? Number(y[j]) : 0;
+      if (dx < dy) {
+        dx += 10;
+        borrow = 1;
+      } else {
+        borrow = 0;
+      }
+      result = (dx - dy) + result;
+      i--;
+      j--;
+    }
+    return result.replace(/^0+(?=\\d)/, "") || "0";
+  }
+  function divideIntStrings(numerator, denominator) {
+    let quotient = "";
+    let remainder = "0";
+    for (const digit of numerator) {
+      remainder = (remainder === "0" ? "" : remainder) + digit;
+      let count = 0;
+      while (compare(remainder, denominator) >= 0) {
+        remainder = subtract(remainder, denominator);
+        count++;
+      }
+      quotient += count;
+    }
+    return quotient.replace(/^0+(?=\\d)/, "") || "0";
+  }
+  const [aInt, aDec = ""] = a.split(".");
+  const [bInt, bDec = ""] = b.split(".");
+  const numeratorInt = aInt + aDec;
+  const denominatorInt = bInt + bDec;
+  const shift = bDec.length - aDec.length + precision;
+  const scaledNumerator = numeratorInt + "0".repeat(Math.max(shift, 0));
+  const rawQuotient = divideIntStrings(scaledNumerator, denominatorInt);
+  const padded = rawQuotient.padStart(precision + 1, "0");
+  const intPart = padded.slice(0, padded.length - precision) || "0";
+  const decPart = precision > 0 ? padded.slice(padded.length - precision) : "";
+  return precision > 0 ? intPart + "." + decPart : intPart;
+}`,
+    testCases: [
+      { input: '"10", "4", 2', expected: '"2.50"', label: "An exact division formatted to the requested precision" },
+      { input: '"1", "3", 4', expected: '"0.3333"', label: "A repeating decimal, truncated at the requested precision" },
+      { input: '"7.5", "2.5", 1', expected: '"3.0"', label: "Decimal inputs on both sides of the division" },
+    ],
+    hints: [
+      "Scale the numerator up by enough factors of 10 to account for both the requested precision and the difference in the inputs' own decimal places, then run ordinary long division on the resulting integers.",
+    ],
+    orderIndex: 1135,
+  },
+
+  // Stage 10 — DOM & Browser APIs
+  {
+    slug: "next-right-sibling",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Next Right Sibling",
+    description: `Given a tree and a node inside it, find whichever node sits immediately to its right at the exact same level — regardless of which parent each one belongs to.
+
+## Your task
+
+Write \`findNextRightSibling(root, targetId)\`, where each node is \`{ id, children }\`. Return the sibling's \`id\`, or \`null\` if the target is the rightmost node at its level.`,
+    difficulty: "easy",
+    starterCode: `function findNextRightSibling(root, targetId) {
+}`,
+    solutionCode: `function findNextRightSibling(root, targetId) {
+  let queue = [root];
+  while (queue.length) {
+    const nextQueue = [];
+    for (let i = 0; i < queue.length; i++) {
+      if (queue[i].id === targetId) {
+        return i + 1 < queue.length ? queue[i + 1].id : null;
+      }
+      nextQueue.push(...queue[i].children);
+    }
+    queue = nextQueue;
+  }
+  return null;
+}`,
+    testCases: [
+      { input: "a node with a sibling under the same parent", expected: "that sibling's id", label: "Finds a sibling under the same parent" },
+      { input: "the rightmost node at its level", expected: "null", label: "The rightmost node at a level has no next sibling" },
+      { input: "a node whose right neighbor belongs to a different parent", expected: "that neighbor's id", label: "Finds a level-neighbor across different parents" },
+    ],
+    hints: [
+      "A level-order (BFS) traversal naturally visits every node at a given depth in left-to-right order, one queue at a time.",
+      "Within a single BFS level (one queue snapshot), the node right after the target in that array is its next right sibling — parent boundaries don't matter.",
+    ],
+    orderIndex: 1136,
+  },
+  {
+    slug: "traverse-dom-level-by-level",
+    companies: ["Meta", "Google"],
+    category: "javascript-runtime",
+    title: "Traverse DOM level by level",
+    description: `A breadth-first traversal grouping nodes by their depth in the tree.
+
+## Your task
+
+Write \`levelOrderTraversal(root)\`, where each node is \`{ id, children }\`. Return an array of arrays of ids, one inner array per level.`,
+    difficulty: "easy",
+    starterCode: `function levelOrderTraversal(root) {
+}`,
+    solutionCode: `function levelOrderTraversal(root) {
+  if (!root) return [];
+  const result = [];
+  let queue = [root];
+  while (queue.length) {
+    result.push(queue.map((n) => n.id));
+    queue = queue.flatMap((n) => n.children);
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "a 3-level tree", expected: "one array of ids per level, top to bottom", label: "Groups nodes correctly by depth" },
+      { input: "a single node with no children", expected: "[[thatId]]", label: "A single-node tree has exactly one level" },
+      { input: "null", expected: "[]", label: "An empty tree produces an empty result" },
+    ],
+    hints: [
+      "Track a 'current level' queue; after recording its ids, replace it with the flattened list of all their children for the next iteration.",
+    ],
+    orderIndex: 1137,
+  },
+  {
+    slug: "jquery-style-dom-wrapper",
+    companies: ["Meta", "Amazon"],
+    category: "javascript-runtime",
+    title: "A simple DOM wrapper for method chaining",
+    description: `A tiny jQuery-style wrapper: select elements once, then chain multiple mutations onto all of them in a single expression.
+
+## Your task
+
+Write \`$(selector)\`, returning an object wrapping every element matching \`selector\` (via \`document.querySelectorAll\`), with chainable \`css(prop, value)\`, \`addClass(cls)\`, and \`text(str)\` methods (each applying to every matched element and returning the wrapper for chaining), plus a \`length\` property.`,
+    difficulty: "easy",
+    starterCode: `function $(selector) {
+}`,
+    solutionCode: `function $(selector) {
+  const elements = Array.from(document.querySelectorAll(selector));
+  return {
+    css(prop, value) {
+      elements.forEach((el) => { el.style[prop] = value; });
+      return this;
+    },
+    addClass(cls) {
+      elements.forEach((el) => el.classList.add(cls));
+      return this;
+    },
+    text(str) {
+      elements.forEach((el) => { el.textContent = str; });
+      return this;
+    },
+    get length() {
+      return elements.length;
+    },
+  };
+}`,
+    testCases: [
+      { input: "$('.box') matching two elements", expected: "length is 2", label: "Wraps every matching element" },
+      { input: "$('.box').addClass('active')", expected: "every matched element gets the class", label: "addClass() applies to all matches and is chainable" },
+      { input: "$('.box').text('hi')", expected: "every matched element's text is set", label: "text() applies to every matched element" },
+    ],
+    hints: [
+      "Array.from(document.querySelectorAll(selector)) captures the matched elements once, up front.",
+      "Every method needs to `return this` to keep the chain going.",
+    ],
+    orderIndex: 1138,
+  },
+  {
+    slug: "create-dom-element-store",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Create a simple store for DOM elements",
+    description: `Associate arbitrary data with DOM elements without touching the elements themselves (no custom attributes, no expando properties) — and without leaking memory when an element is later removed.
+
+## Your task
+
+Write \`createElementStore()\`, returning \`{ set(el, data), get(el), has(el), delete(el) }\`.`,
+    difficulty: "easy",
+    starterCode: `function createElementStore() {
+}`,
+    solutionCode: `function createElementStore() {
+  const store = new WeakMap();
+  return {
+    set(el, data) {
+      store.set(el, data);
+    },
+    get(el) {
+      return store.get(el);
+    },
+    has(el) {
+      return store.has(el);
+    },
+    delete(el) {
+      return store.delete(el);
+    },
+  };
+}`,
+    testCases: [
+      { input: "store.set(el, data); store.get(el)", expected: "the exact data stored", label: "Stores and retrieves data keyed by element" },
+      { input: "two different elements", expected: "each has its own independent data", label: "Different elements never share data" },
+      { input: "store.delete(el); store.has(el)", expected: "false", label: "delete() removes the association" },
+    ],
+    hints: [
+      "A WeakMap keyed by the element itself is exactly the right tool — it also means an element removed from the DOM and garbage collected won't leak its stored data.",
+    ],
+    orderIndex: 1139,
+  },
+  {
+    slug: "find-corresponding-dom-node",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Find corresponding node in two identical DOM trees",
+    description: `Given two structurally identical DOM trees and a node inside the first one, find the node at the exact same structural position in the second tree.
+
+## Your task
+
+Write \`findCorrespondingNode(rootA, rootB, target)\`, where \`target\` is a real descendant element of \`rootA\`.`,
+    difficulty: "easy",
+    starterCode: `function findCorrespondingNode(rootA, rootB, target) {
+}`,
+    solutionCode: `function findCorrespondingNode(rootA, rootB, target) {
+  function getPath(root, node) {
+    const path = [];
+    let curr = node;
+    while (curr !== root) {
+      const parent = curr.parentNode;
+      const index = Array.from(parent.children).indexOf(curr);
+      path.unshift(index);
+      curr = parent;
+    }
+    return path;
+  }
+  const path = getPath(rootA, target);
+  let curr = rootB;
+  for (const index of path) {
+    curr = curr.children[index];
+  }
+  return curr;
+}`,
+    testCases: [
+      { input: "a nested target several levels deep", expected: "the structurally-matching element in the other tree", label: "Finds a deeply nested corresponding node" },
+      { input: "target === rootA", expected: "rootB itself", label: "The root corresponds to the other root" },
+      { input: "the corresponding node's tag name", expected: "matches the target's tag name", label: "The found node has the same tag as the target" },
+    ],
+    hints: [
+      "First record the path of child-indices from rootA down to target, then replay that same path of indices starting from rootB.",
+    ],
+    orderIndex: 1140,
+  },
+  {
+    slug: "two-way-input-binding",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Two-way binding",
+    description: `The core mechanic behind frameworks' \`v-model\`/controlled-input two-way binding: keep an input element and an in-memory value in sync, in both directions.
+
+## Your task
+
+Write \`createTwoWayBinding(inputEl, initialValue)\`, returning \`{ getValue(), setValue(v) }\`. Calling \`setValue\` must update the input's displayed value; the user typing into the input (an \`"input"\` event) must update what \`getValue()\` returns.`,
+    difficulty: "easy",
+    starterCode: `function createTwoWayBinding(inputEl, initialValue) {
+}`,
+    solutionCode: `function createTwoWayBinding(inputEl, initialValue) {
+  let value = initialValue;
+  inputEl.value = value;
+  inputEl.addEventListener("input", () => {
+    value = inputEl.value;
+  });
+  return {
+    getValue() {
+      return value;
+    },
+    setValue(v) {
+      value = v;
+      inputEl.value = v;
+    },
+  };
+}`,
+    testCases: [
+      { input: "createTwoWayBinding(input, 'hello')", expected: "input.value is 'hello' immediately", label: "The initial value is applied to the input" },
+      { input: "binding.setValue('new')", expected: "both getValue() and input.value reflect 'new'", label: "setValue() updates both directions" },
+      { input: "changing input.value and dispatching an 'input' event", expected: "getValue() reflects the new input value", label: "Typing into the input updates the bound value" },
+    ],
+    hints: [
+      "Listening for the native 'input' event is what lets a real (or simulated, via dispatchEvent) keystroke flow back into your JS state.",
+    ],
+    orderIndex: 1141,
+  },
+  {
+    slug: "get-dom-tree-height",
+    companies: ["Meta", "Google"],
+    category: "javascript-runtime",
+    title: "Get DOM tree height",
+    description: `Compute how many levels deep a tree goes.
+
+## Your task
+
+Write \`treeHeight(root)\`, where each node is \`{ id, children }\`. A single node with no children has height 1; an empty tree (\`null\`) has height 0.`,
+    difficulty: "medium",
+    starterCode: `function treeHeight(root) {
+}`,
+    solutionCode: `function treeHeight(root) {
+  if (!root) return 0;
+  if (!root.children || root.children.length === 0) return 1;
+  return 1 + Math.max(...root.children.map(treeHeight));
+}`,
+    testCases: [
+      { input: "null", expected: "0", label: "An empty tree has height 0" },
+      { input: "a single node with no children", expected: "1", label: "A leaf-only tree has height 1" },
+      { input: "a tree three levels deep", expected: "3", label: "Height follows the deepest branch, not the shallowest" },
+    ],
+    hints: [
+      "The height of a node is 1 plus the maximum height among its children — a leaf's height is 1 by definition.",
+    ],
+    orderIndex: 1142,
+  },
+  {
+    slug: "get-all-dom-tags",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Get DOM tags",
+    description: `Flatten a tree into the full list of every tag name it contains, in preorder (parent, then each child in order), duplicates included.
+
+## Your task
+
+Write \`getAllTags(root)\`, where each node is \`{ tag, children }\`.`,
+    difficulty: "medium",
+    starterCode: `function getAllTags(root) {
+}`,
+    solutionCode: `function getAllTags(root) {
+  if (!root) return [];
+  return [root.tag, ...root.children.flatMap(getAllTags)];
+}`,
+    testCases: [
+      { input: "a tree with a div containing two spans", expected: "['div', 'span', 'span']", label: "Lists tags in preorder, including duplicates" },
+      { input: "a single node with no children", expected: "an array with just that one tag", label: "A leaf node returns a single-item array" },
+      { input: "null", expected: "[]", label: "An empty tree returns an empty array" },
+    ],
+    hints: [
+      "This is a straightforward preorder DFS: visit the node, then recursively collect from each child in order.",
+    ],
+    orderIndex: 1143,
+  },
+  {
+    slug: "highlight-keywords-in-html",
+    companies: ["Meta", "Grammarly"],
+    category: "javascript-runtime",
+    title: "Highlight keywords in an HTML string",
+    description: `Wrap every occurrence of a set of keywords in \`<mark>\` tags, case-insensitively, while preserving each match's original casing.
+
+## Your task
+
+Write \`highlightKeywords(html, keywords)\`. (This simplified version works directly on the string — matching inside existing tag names/attributes is out of scope.)`,
+    difficulty: "medium",
+    starterCode: `function highlightKeywords(html, keywords) {
+}`,
+    solutionCode: `function highlightKeywords(html, keywords) {
+  if (keywords.length === 0) return html;
+  const escaped = keywords.map((k) => k.replace(/[.*+?^\${}()|[\\]\\\\]/g, "\\\\$&"));
+  const pattern = new RegExp("(" + escaped.join("|") + ")", "gi");
+  return html.replace(pattern, "<mark>$1</mark>");
+}`,
+    testCases: [
+      { input: '"Hello world", ["world"]', expected: '"Hello <mark>world</mark>"', label: "Wraps a single matching keyword" },
+      { input: '"The cat sat", ["cat","sat"]', expected: '"The <mark>cat</mark> <mark>sat</mark>"', label: "Wraps every distinct keyword given" },
+      { input: '"Hello WORLD", ["world"]', expected: '"Hello <mark>WORLD</mark>"', label: "Matches case-insensitively but preserves the original casing" },
+    ],
+    hints: [
+      "Build one combined regex alternation from all the keywords, with the case-insensitive flag, and a capture group so the replacement can reuse the exact matched text.",
+    ],
+    orderIndex: 1144,
+  },
+  {
+    slug: "extract-anchor-elements",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Extract all anchor elements from an HTML string",
+    description: `Parse a raw HTML string and pull out every \`<a>\` tag's link and visible text.
+
+## Your task
+
+Write \`extractAnchors(html)\`, using \`DOMParser\` to return an array of \`{ href, text }\` objects, one per anchor, in document order.`,
+    difficulty: "medium",
+    starterCode: `function extractAnchors(html) {
+}`,
+    solutionCode: `function extractAnchors(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return Array.from(doc.querySelectorAll("a")).map((a) => ({
+    href: a.getAttribute("href"),
+    text: a.textContent,
+  }));
+}`,
+    testCases: [
+      { input: '"<a href=\'/x\'>X</a><p>text</p><a href=\'/y\'>Y</a>"', expected: "[{href:'/x',text:'X'},{href:'/y',text:'Y'}]", label: "Extracts every anchor's href and text, ignoring other tags" },
+      { input: '"<p>no links here</p>"', expected: "[]", label: "No anchors returns an empty array" },
+      { input: '"<div><a href=\'/nested\'>Nested</a></div>"', expected: "[{href:'/nested',text:'Nested'}]", label: "Finds anchors nested inside other elements" },
+    ],
+    hints: [
+      "DOMParser().parseFromString(html, 'text/html') gives you a real, queryable document from an arbitrary HTML string.",
+    ],
+    orderIndex: 1145,
+  },
+  {
+    slug: "implement-event-delegation",
+    companies: ["Meta", "Amazon", "Microsoft"],
+    category: "javascript-runtime",
+    title: "Event delegation",
+    description: `Attach a single listener on a container that only reacts when the actual click target matches a given selector — including elements added to the container *after* the listener was set up.
+
+## Your task
+
+Write \`createDelegatedListener(container, selector, eventType, handler)\`, returning an unsubscribe function. \`handler\` should be called with \`this\` set to the matched element.`,
+    difficulty: "medium",
+    starterCode: `function createDelegatedListener(container, selector, eventType, handler) {
+}`,
+    solutionCode: `function createDelegatedListener(container, selector, eventType, handler) {
+  function listener(event) {
+    const match = event.target.closest(selector);
+    if (match && container.contains(match)) {
+      handler.call(match, event);
+    }
+  }
+  container.addEventListener(eventType, listener);
+  return () => container.removeEventListener(eventType, listener);
+}`,
+    testCases: [
+      { input: "clicking a child added to the container after setup", expected: "the handler still fires", label: "Works for dynamically-added matching children" },
+      { input: "clicking an element that doesn't match the selector", expected: "the handler does not fire", label: "Non-matching targets are correctly ignored" },
+      { input: "calling the returned unsubscribe function, then clicking again", expected: "the handler no longer fires", label: "The returned function actually removes the listener" },
+    ],
+    hints: [
+      "event.target.closest(selector) walks up from the actual click target looking for the nearest ancestor (or itself) matching the selector — exactly what delegation needs.",
+      "Because the listener lives on the container (not the individual matching elements), it automatically covers children added later, with zero extra wiring.",
+    ],
+    orderIndex: 1146,
+  },
+  {
+    slug: "previous-left-sibling",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Previous Left Sibling",
+    description: `The mirror image of Next Right Sibling: find whichever node sits immediately to the left of a target at the same level, regardless of parent.
+
+## Your task
+
+Write \`findPreviousLeftSibling(root, targetId)\`, where each node is \`{ id, children }\`.`,
+    difficulty: "medium",
+    starterCode: `function findPreviousLeftSibling(root, targetId) {
+}`,
+    solutionCode: `function findPreviousLeftSibling(root, targetId) {
+  let queue = [root];
+  while (queue.length) {
+    const nextQueue = [];
+    for (let i = 0; i < queue.length; i++) {
+      if (queue[i].id === targetId) {
+        return i - 1 >= 0 ? queue[i - 1].id : null;
+      }
+      nextQueue.push(...queue[i].children);
+    }
+    queue = nextQueue;
+  }
+  return null;
+}`,
+    testCases: [
+      { input: "a node with a left neighbor under the same parent", expected: "that neighbor's id", label: "Finds a left sibling under the same parent" },
+      { input: "the leftmost node at its level", expected: "null", label: "The leftmost node at a level has no previous sibling" },
+      { input: "a node whose left neighbor belongs to a different parent", expected: "that neighbor's id", label: "Finds a level-neighbor across different parents" },
+    ],
+    hints: [
+      "Same BFS-by-level approach as Next Right Sibling, just looking one position back in the level's array instead of one forward.",
+    ],
+    orderIndex: 1147,
+  },
+  {
+    slug: "generate-css-selector",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Generate a CSS Selector for a target element",
+    description: `Build a CSS selector string that uniquely resolves back to a specific element — the same kind of thing browser DevTools does for "Copy selector".
+
+## Your task
+
+Write \`generateSelector(el)\`. Prefer an \`#id\` selector when the element has one; otherwise, build a path of \`tag:nth-child(n)\` segments up to \`document.body\`.`,
+    difficulty: "medium",
+    starterCode: `function generateSelector(el) {
+}`,
+    solutionCode: `function generateSelector(el) {
+  if (el.id) return "#" + el.id;
+  if (el === document.body) return "body";
+  const parent = el.parentNode;
+  const siblings = Array.from(parent.children);
+  const index = siblings.indexOf(el) + 1;
+  return generateSelector(parent) + " > " + el.tagName.toLowerCase() + ":nth-child(" + index + ")";
+}`,
+    testCases: [
+      { input: "an element with an id", expected: "'#that-id', directly", label: "An id short-circuits straight to an #id selector" },
+      { input: "an element with no id, nested a few levels deep", expected: "a tag + nth-child path all the way up", label: "Builds a full ancestor path when there's no id to anchor on" },
+      { input: "document.querySelector(generateSelector(el))", expected: "resolves back to the exact original element", label: "The generated selector is actually valid and correct" },
+    ],
+    hints: [
+      "Recursion mirrors the DOM's own nesting: an element's selector is its parent's selector, plus its own tag and position among its siblings.",
+      "nth-child is 1-indexed, not 0-indexed — don't forget the +1 when converting from an array index.",
+    ],
+    orderIndex: 1148,
+  },
+  {
+    slug: "cookie-string-helper",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Create your own Cookie helper",
+    description: `Cookies are just a semicolon-delimited string of \`key=value\` pairs — parsing and building that format correctly (including URL-encoding values) is the whole exercise.
+
+## Your task
+
+Write \`parseCookies(cookieString)\`, returning a plain object of key/value pairs, and \`stringifyCookie(name, value, options)\`, building a single cookie's \`Set-Cookie\`-style string (supporting \`options.days\` for \`max-age\` and \`options.path\`).`,
+    difficulty: "medium",
+    starterCode: `function parseCookies(cookieString) {
+}
+function stringifyCookie(name, value, options = {}) {
+}`,
+    solutionCode: `function parseCookies(cookieString) {
+  const result = {};
+  cookieString.split(";").forEach((pair) => {
+    const trimmed = pair.trim();
+    if (!trimmed) return;
+    const [key, ...rest] = trimmed.split("=");
+    result[key] = decodeURIComponent(rest.join("="));
+  });
+  return result;
+}
+function stringifyCookie(name, value, options = {}) {
+  let str = name + "=" + encodeURIComponent(value);
+  if (options.days) str += "; max-age=" + options.days * 86400;
+  if (options.path) str += "; path=" + options.path;
+  return str;
+}`,
+    testCases: [
+      { input: '"a=1; b=2; c=3"', expected: "{ a: '1', b: '2', c: '3' }", label: "Parses multiple key=value pairs" },
+      { input: "stringifyCookie('name', 'a b', {})", expected: '"name=a%20b"', label: "URL-encodes the value" },
+      { input: "stringifyCookie('name', 'v', { days: 1, path: '/' })", expected: '"name=v; max-age=86400; path=/"', label: "Includes max-age and path when given" },
+    ],
+    hints: [
+      "Cookie values need URL-encoding/decoding because raw values can contain characters (like spaces or semicolons) that would otherwise break the cookie-string format.",
+      "This version works on cookie strings directly rather than the real document.cookie, so it's portable and easy to test — the parsing/building logic is identical either way.",
+    ],
+    orderIndex: 1149,
+  },
+  {
+    slug: "expiring-storage-cache",
+    companies: ["Amazon", "Airbnb"],
+    category: "javascript-runtime",
+    title: "localStorage with expiration",
+    description: `Extend simple key-value storage with a time-to-live: an entry should silently disappear once it's expired, without needing a separate cleanup pass.
+
+## Your task
+
+Write \`createExpiringStorage()\`, returning \`{ set(key, value, ttlMs), get(key) }\`. Omitting \`ttlMs\` means the entry never expires.`,
+    difficulty: "medium",
+    starterCode: `function createExpiringStorage() {
+}`,
+    solutionCode: `function createExpiringStorage() {
+  const store = new Map();
+  return {
+    set(key, value, ttlMs) {
+      const expiresAt = ttlMs != null ? Date.now() + ttlMs : null;
+      store.set(key, { value, expiresAt });
+    },
+    get(key) {
+      const entry = store.get(key);
+      if (!entry) return null;
+      if (entry.expiresAt !== null && Date.now() > entry.expiresAt) {
+        store.delete(key);
+        return null;
+      }
+      return entry.value;
+    },
+  };
+}`,
+    testCases: [
+      { input: "get() right after set()", expected: "the stored value", label: "A freshly set value is immediately retrievable" },
+      { input: "get() after the ttl has elapsed", expected: "null", label: "An expired entry returns null" },
+      { input: "set() with no ttl, checked much later", expected: "still the stored value", label: "An entry with no ttl never expires" },
+    ],
+    hints: [
+      "Store an expiry timestamp (Date.now() + ttlMs) alongside the value, and check it lazily on get() — no timer or background sweep needed.",
+    ],
+    orderIndex: 1150,
+  },
+  {
+    slug: "lru-cache-storage-eviction",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "LRU-style automatic eviction cache",
+    description: `A fixed-capacity cache that automatically evicts its least-recently-used entry once full — the same eviction policy browsers use for things like the HTTP cache.
+
+## Your task
+
+Write \`createLRUCache(capacity)\`, returning \`{ get(key), set(key, value) }\`. Both reading and writing an entry should count as "using" it, refreshing its recency.`,
+    difficulty: "medium",
+    starterCode: `function createLRUCache(capacity) {
+}`,
+    solutionCode: `function createLRUCache(capacity) {
+  const map = new Map();
+  return {
+    get(key) {
+      if (!map.has(key)) return undefined;
+      const value = map.get(key);
+      map.delete(key);
+      map.set(key, value);
+      return value;
+    },
+    set(key, value) {
+      if (map.has(key)) map.delete(key);
+      else if (map.size >= capacity) {
+        map.delete(map.keys().next().value);
+      }
+      map.set(key, value);
+    },
+  };
+}`,
+    testCases: [
+      { input: "a capacity-2 cache with a third key added", expected: "the least-recently-used key is evicted", label: "Evicts the least-recently-used entry once full" },
+      { input: "get()-ing an entry, then adding enough new entries to trigger eviction", expected: "the recently get() entry survives instead", label: "Reading an entry protects it from eviction" },
+      { input: "set() on an existing key", expected: "updates the value without evicting anything", label: "Overwriting an existing key doesn't count against capacity" },
+    ],
+    hints: [
+      "A JS Map preserves insertion order, and re-inserting a key (delete + set) moves it to the end — that ordering is the entire LRU mechanism, no manual linked list needed.",
+      "The oldest entry is always the first one a Map iterates — map.keys().next().value gives you that key directly.",
+    ],
+    orderIndex: 1151,
+  },
+  {
+    slug: "infinite-scroll-loader",
+    companies: ["Airbnb", "Pinterest", "TikTok"],
+    category: "javascript-runtime",
+    title: "Implement an infinite scroll / pagination loader",
+    description: `The data layer behind infinite scroll: accumulate pages of results, track whether more exist, and guard against firing a duplicate fetch while one is already in flight.
+
+## Your task
+
+Write \`createInfiniteScrollLoader(fetchPage)\`, where \`fetchPage(cursor)\` returns a promise resolving to \`{ items, nextCursor }\`. Return \`{ getItems(), hasMore(), loadNext() }\`.`,
+    difficulty: "medium",
+    starterCode: `function createInfiniteScrollLoader(fetchPage) {
+}`,
+    solutionCode: `function createInfiniteScrollLoader(fetchPage) {
+  let items = [];
+  let cursor = null;
+  let hasMoreFlag = true;
+  let isLoading = false;
+  return {
+    getItems() {
+      return items;
+    },
+    hasMore() {
+      return hasMoreFlag;
+    },
+    async loadNext() {
+      if (isLoading || !hasMoreFlag) return;
+      isLoading = true;
+      const { items: newItems, nextCursor } = await fetchPage(cursor);
+      items = items.concat(newItems);
+      cursor = nextCursor;
+      hasMoreFlag = !!nextCursor;
+      isLoading = false;
+    },
+  };
+}`,
+    testCases: [
+      { input: "loadNext() called twice in sequence", expected: "items from both pages, accumulated", label: "Accumulates items across multiple pages" },
+      { input: "a page whose nextCursor is null", expected: "hasMore() becomes false", label: "Correctly detects the end of the data" },
+      { input: "two concurrent loadNext() calls before the first resolves", expected: "fetchPage is only actually called once", label: "Guards against a duplicate fetch while one is in flight" },
+    ],
+    hints: [
+      "An isLoading flag, checked and set at the very start of loadNext(), is what prevents a second call from starting a redundant fetch.",
+    ],
+    orderIndex: 1152,
+  },
+  {
+    slug: "windowed-list-viewport",
+    companies: ["Meta", "Airbnb", "TikTok"],
+    category: "javascript-runtime",
+    title: "Implement a virtualized (windowed) list",
+    description: `Rendering thousands of rows the naive way creates thousands of DOM nodes. A virtualized list only ever renders the handful of rows actually visible in the viewport, sliced directly from the full data array.
+
+## Your task
+
+Write \`createVirtualList(items, itemHeight, containerHeight, overscan = 3)\`, returning \`{ getVisibleItems(scrollTop) }\` where the result is \`{ items, offsetY, startIndex }\` — the sliced visible items, the pixel offset to position them at, and their starting index.`,
+    difficulty: "hard",
+    starterCode: `function createVirtualList(items, itemHeight, containerHeight, overscan = 3) {
+}`,
+    solutionCode: `function createVirtualList(items, itemHeight, containerHeight, overscan = 3) {
+  return {
+    getVisibleItems(scrollTop) {
+      const start = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+      const visibleCount = Math.ceil(containerHeight / itemHeight) + overscan * 2;
+      const end = Math.min(items.length, start + visibleCount);
+      return {
+        items: items.slice(start, end),
+        offsetY: start * itemHeight,
+        startIndex: start,
+      };
+    },
+  };
+}`,
+    testCases: [
+      { input: "scrollTop = 0", expected: "a small window from the very start, offsetY 0", label: "Starts correctly at the top of the list" },
+      { input: "a large scrollTop partway down", expected: "a window offset to the right position, with a non-zero offsetY", label: "Correctly windows a scrolled-down position" },
+      { input: "10,000 items total", expected: "the returned window is always a small, bounded slice", label: "Never returns anywhere close to the full list, regardless of its size" },
+    ],
+    hints: [
+      "The visible window's start index comes directly from scrollTop / itemHeight — everything else (overscan padding, item count) is just arithmetic around that.",
+      "offsetY = startIndex * itemHeight is what lets the sliced-out rows still render at their correct visual position, instead of snapping back to the top.",
+    ],
+    orderIndex: 1153,
+  },
+
+  // Stage 11 — Event Systems & Design Patterns
+  {
+    slug: "build-event-emitter",
+    companies: ["Meta", "Uber", "LinkedIn", "Amazon"],
+    category: "javascript-runtime",
+    title: "Create an Event Emitter",
+    description: `One of the most common front-end interview questions across the industry: a pub-sub primitive for decoupled communication between parts of an app.
+
+## Your task
+
+Write an \`EventEmitter\` class with \`on(event, handler)\`, \`off(event, handler)\`, \`emit(event, ...args)\`, and \`once(event, handler)\` (fires at most one time, then auto-removes itself).`,
+    difficulty: "medium",
+    starterCode: `class EventEmitter {
+  on(event, handler) {
+  }
+  off(event, handler) {
+  }
+  emit(event, ...args) {
+  }
+  once(event, handler) {
+  }
+}`,
+    solutionCode: `class EventEmitter {
+  constructor() {
+    this.listeners = {};
+  }
+  on(event, handler) {
+    (this.listeners[event] = this.listeners[event] || []).push(handler);
+    return this;
+  }
+  off(event, handler) {
+    if (!this.listeners[event]) return this;
+    this.listeners[event] = this.listeners[event].filter((h) => h !== handler);
+    return this;
+  }
+  emit(event, ...args) {
+    (this.listeners[event] || []).slice().forEach((h) => h(...args));
+    return this;
+  }
+  once(event, handler) {
+    const wrapper = (...args) => {
+      this.off(event, wrapper);
+      handler(...args);
+    };
+    this.on(event, wrapper);
+    return this;
+  }
+}`,
+    testCases: [
+      { input: "two handlers on the same event, then emit(args)", expected: "both called with those args", label: "Multiple listeners for the same event all fire" },
+      { input: "off(event, handler) for one of two handlers", expected: "only the other handler still fires", label: "off() removes exactly the specified handler" },
+      { input: "once(event, handler), emitted twice", expected: "handler runs exactly once", label: "once() auto-removes itself after firing" },
+    ],
+    hints: [
+      "A plain object mapping event names to arrays of handler functions is the whole data structure.",
+      "once() is just on() with a wrapper that calls off() on itself before invoking the real handler.",
+    ],
+    orderIndex: 1154,
+  },
+  {
+    slug: "build-pubsub-module",
+    companies: ["Uber"],
+    category: "javascript-runtime",
+    title: "Implement a Publish/Subscribe module",
+    description: `A topic-based cousin of the Event Emitter: subscribers register per-topic, and unsubscribing is done via the function \`subscribe\` itself returns — no separate \`off()\` call needed.
+
+## Your task
+
+Write \`createPubSub()\`, returning \`{ publish(topic, data), subscribe(topic, fn) }\`, where \`subscribe\` returns an unsubscribe function.`,
+    difficulty: "medium",
+    starterCode: `function createPubSub() {
+}`,
+    solutionCode: `function createPubSub() {
+  const topics = {};
+  return {
+    publish(topic, data) {
+      (topics[topic] || []).forEach((fn) => fn(data));
+    },
+    subscribe(topic, fn) {
+      (topics[topic] = topics[topic] || []).push(fn);
+      return () => {
+        topics[topic] = topics[topic].filter((f) => f !== fn);
+      };
+    },
+  };
+}`,
+    testCases: [
+      { input: "subscribe then publish", expected: "the subscriber receives the published data", label: "Subscribers receive published data" },
+      { input: "calling the function subscribe() returned", expected: "that subscriber stops receiving further publishes", label: "The returned unsubscribe function actually works" },
+      { input: "two different topics", expected: "publishing one never notifies the other's subscribers", label: "Topics are completely independent" },
+    ],
+    hints: [
+      "Unlike a raw EventEmitter's on/off pair, the unsubscribe logic here is captured in a closure returned directly from subscribe() — no need to keep a separate reference to the handler around to remove it later.",
+    ],
+    orderIndex: 1155,
+  },
+  {
+    slug: "template-string-interpolation",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Interpolation (template-string engine)",
+    description: `A minimal templating engine: replace \`{{path}}\` placeholders in a string with values pulled from a data object, supporting dotted paths for nested lookups.
+
+## Your task
+
+Write \`interpolate(template, data)\`. A placeholder whose path can't be resolved should be replaced with an empty string.`,
+    difficulty: "medium",
+    starterCode: `function interpolate(template, data) {
+}`,
+    solutionCode: `function interpolate(template, data) {
+  return template.replace(/\\{\\{\\s*([\\w.]+)\\s*\\}\\}/g, (match, path) => {
+    const value = path.split(".").reduce((obj, key) => (obj == null ? undefined : obj[key]), data);
+    return value === undefined ? "" : value;
+  });
+}`,
+    testCases: [
+      { input: '"Hi {{name}}", { name: "Ada" }', expected: '"Hi Ada"', label: "Replaces a simple placeholder" },
+      { input: '"{{user.name}}", { user: { name: "Grace" } }', expected: '"Grace"', label: "Supports nested dotted paths" },
+      { input: '"{{missing}}", {}', expected: '""', label: "An unresolvable path becomes an empty string" },
+    ],
+    hints: [
+      "A regex like /\\{\\{\\s*([\\w.]+)\\s*\\}\\}/g captures the path inside each {{ }} placeholder, letting String.replace's callback resolve it.",
+      "reduce() over the split path segments is a clean way to walk into nested objects one key at a time.",
+    ],
+    orderIndex: 1156,
+  },
+  {
+    slug: "extract-twitter-mentions",
+    companies: ["X", "Meta"],
+    category: "javascript-runtime",
+    title: "Twitter mentions (text parsing — entities)",
+    description: `Extract every \`@username\` mention from a block of text — while correctly ignoring the \`@\` in something like an email address.
+
+## Your task
+
+Write \`extractMentions(text)\`, returning an array of usernames (without the \`@\`), in the order they appear.`,
+    difficulty: "medium",
+    starterCode: `function extractMentions(text) {
+}`,
+    solutionCode: `function extractMentions(text) {
+  const matches = text.match(/(?<![\\w@])@(\\w+)/g) || [];
+  return matches.map((m) => m.slice(1));
+}`,
+    testCases: [
+      { input: '"Hello @alice!"', expected: "['alice']", label: "Extracts a single mention" },
+      { input: '"cc @bob and @carol"', expected: "['bob', 'carol']", label: "Extracts multiple mentions in order" },
+      { input: '"email me at user@example.com"', expected: "[]", label: "An email address's @ is not treated as a mention" },
+    ],
+    hints: [
+      "A negative lookbehind — (?<![\\w@]) — is what excludes an @ immediately preceded by a word character (like in an email address) from matching.",
+    ],
+    orderIndex: 1157,
+  },
+  {
+    slug: "build-middleware-pipeline",
+    companies: ["Meta", "Airbnb"],
+    category: "javascript-runtime",
+    title: "Create a middleware system (Express/Redux-style)",
+    description: `The core mechanic behind Express and Redux middleware: a chain of functions, each explicitly deciding whether to hand off to the next one.
+
+## Your task
+
+Write \`createMiddlewarePipeline()\`, returning \`{ use(fn), run(context) }\`. Each middleware receives \`(context, next)\`; the chain only continues if a middleware calls \`next()\`.`,
+    difficulty: "medium",
+    starterCode: `function createMiddlewarePipeline() {
+}`,
+    solutionCode: `function createMiddlewarePipeline() {
+  const middlewares = [];
+  return {
+    use(fn) {
+      middlewares.push(fn);
+      return this;
+    },
+    run(context) {
+      let index = -1;
+      function dispatch(i) {
+        if (i <= index) throw new Error("next() called multiple times");
+        index = i;
+        const fn = middlewares[i];
+        if (!fn) return;
+        fn(context, () => dispatch(i + 1));
+      }
+      dispatch(0);
+    },
+  };
+}`,
+    testCases: [
+      { input: "three middlewares, each calling next()", expected: "run in registration order", label: "Middlewares run in the order they were registered" },
+      { input: "a middleware that never calls next()", expected: "later middlewares never run", label: "The chain stops if next() isn't called" },
+      { input: "a context object mutated by an early middleware", expected: "later middlewares see the mutation", label: "Context is shared and mutable across the whole chain" },
+    ],
+    hints: [
+      "Each middleware gets its own next() closure that, when called, dispatches to the following one — this is the same 'onion' pattern Express and Koa both use internally.",
+    ],
+    orderIndex: 1158,
+  },
+  {
+    slug: "implement-lazy-man",
+    companies: ["ByteDance"],
+    category: "javascript-runtime",
+    title: "Create LazyMan()",
+    description: `A classic chainable-API puzzle: build a fluent interface where \`.sleep()\` genuinely delays every call chained after it, without blocking the ones before it.
+
+## Your task
+
+Write \`LazyMan(name)\`. It immediately logs \`"Hi I am " + name\`. Chained \`.eat(food)\` logs \`"Eat " + food\`; chained \`.sleep(seconds)\` delays every subsequent chained call by that many seconds before it runs.`,
+    difficulty: "medium",
+    starterCode: `function LazyMan(name) {
+}`,
+    solutionCode: `function LazyMan(name) {
+  const tasks = [];
+  function next() {
+    const task = tasks.shift();
+    if (task) task();
+  }
+  tasks.push(() => {
+    console.log("Hi I am " + name);
+    next();
+  });
+  const api = {
+    eat(food) {
+      tasks.push(() => {
+        console.log("Eat " + food);
+        next();
+      });
+      return api;
+    },
+    sleep(seconds) {
+      tasks.push(() => {
+        setTimeout(() => next(), seconds * 1000);
+      });
+      return api;
+    },
+  };
+  setTimeout(next, 0);
+  return api;
+}`,
+    testCases: [
+      { input: "LazyMan('Hank').eat('dinner')", expected: "logs 'Hi I am Hank' then 'Eat dinner'", label: "Greets immediately, then eats" },
+      { input: "LazyMan('Hank').eat('dinner').sleep(0.05).eat('supper')", expected: "the second eat is logged only after the sleep delay", label: "sleep() delays everything chained after it" },
+      { input: "LazyMan('A').eat('x').eat('y')", expected: "logs in the order chained, with no sleep involved", label: "Multiple chained calls run in FIFO order" },
+    ],
+    hints: [
+      "Every chained call just pushes a task onto a queue instead of running immediately — a single self-driving next() function is what actually executes them one at a time.",
+      "sleep() pushes a task that itself calls next() only after a setTimeout, which is exactly what delays everything queued after it without touching what came before.",
+    ],
+    orderIndex: 1159,
+  },
+  {
+    slug: "browser-history-undo-redo",
+    companies: ["Meta", "Google"],
+    category: "javascript-runtime",
+    title: "Create a browser history (undo/redo stack)",
+    description: `The data structure behind undo/redo: a stack of states with a movable cursor, where pushing a new state after undoing discards the abandoned "future".
+
+## Your task
+
+Write \`createHistory(initialState)\`, returning \`{ current(), push(state), undo(), redo() }\`.`,
+    difficulty: "medium",
+    starterCode: `function createHistory(initialState) {
+}`,
+    solutionCode: `function createHistory(initialState) {
+  let stack = [initialState];
+  let index = 0;
+  return {
+    current() {
+      return stack[index];
+    },
+    push(state) {
+      stack = stack.slice(0, index + 1);
+      stack.push(state);
+      index++;
+    },
+    undo() {
+      if (index > 0) index--;
+      return stack[index];
+    },
+    redo() {
+      if (index < stack.length - 1) index++;
+      return stack[index];
+    },
+  };
+}`,
+    testCases: [
+      { input: "push('b'), then undo()", expected: "back to the initial state", label: "undo() returns to the previous state" },
+      { input: "undo() then redo()", expected: "the undone state is restored", label: "redo() restores an undone state" },
+      { input: "undo(), then push('c')", expected: "redo() no longer reaches the discarded state", label: "Pushing after an undo discards the abandoned future" },
+    ],
+    hints: [
+      "push() must truncate the stack at the current index first — that's what discards any 'future' states left over from a previous undo.",
+    ],
+    orderIndex: 1160,
+  },
+  {
+    slug: "simple-client-side-router",
+    companies: ["Meta", "Airbnb"],
+    category: "javascript-runtime",
+    title: "Implement a simple client-side router",
+    description: `The core route-matching logic behind client-side routers like React Router: match a path against registered patterns, including dynamic \`:param\` segments.
+
+## Your task
+
+Write \`createRouter(routes)\`, returning \`{ navigate(path) }\`. \`routes\` maps path patterns (which may include \`:param\` segments) to handler functions, called with an object of extracted params. A \`"*"\` entry is the fallback for no match.`,
+    difficulty: "medium",
+    starterCode: `function createRouter(routes) {
+}`,
+    solutionCode: `function createRouter(routes) {
+  function navigate(path) {
+    for (const pattern in routes) {
+      if (pattern === "*") continue;
+      const paramNames = [];
+      const regexPattern = "^" + pattern.replace(/:[^/]+/g, (match) => {
+        paramNames.push(match.slice(1));
+        return "([^/]+)";
+      }) + "$";
+      const match = path.match(new RegExp(regexPattern));
+      if (match) {
+        const params = {};
+        paramNames.forEach((name, i) => {
+          params[name] = match[i + 1];
+        });
+        routes[pattern](params);
+        return;
+      }
+    }
+    if (routes["*"]) routes["*"]();
+  }
+  return { navigate };
+}`,
+    testCases: [
+      { input: "navigate('/about') with a '/about' route registered", expected: "that route's handler runs", label: "Matches a static route" },
+      { input: "navigate('/user/42') with a '/user/:id' route registered", expected: "handler called with { id: '42' }", label: "Matches a dynamic route and extracts the param" },
+      { input: "navigate('/nowhere') with only a '*' fallback registered", expected: "the fallback handler runs", label: "Falls back to the wildcard handler when nothing matches" },
+    ],
+    hints: [
+      "Turn each route pattern into a real regex by replacing every :param segment with a capturing group, then test each pattern against the incoming path in turn.",
+    ],
+    orderIndex: 1161,
+  },
+  {
+    slug: "build-observable-class",
+    companies: ["Google", "Netflix"],
+    category: "javascript-runtime",
+    title: "Create an Observable",
+    description: `The foundational primitive behind RxJS: a lazy, re-runnable producer of values over time, distinct from a Promise (which is eager and settles once).
+
+## Your task
+
+Write an \`Observable\` class: \`new Observable(subscribeFn)\`, where \`subscribeFn(observer)\` is called fresh on every \`.subscribe(observer)\` and may return a cleanup function. \`.subscribe()\` returns \`{ unsubscribe() }\`.`,
+    difficulty: "medium",
+    starterCode: `class Observable {
+  constructor(subscribeFn) {
+  }
+  subscribe(observer) {
+  }
+}`,
+    solutionCode: `class Observable {
+  constructor(subscribeFn) {
+    this._subscribe = subscribeFn;
+  }
+  subscribe(observer) {
+    const cleanup = this._subscribe(observer) || (() => {});
+    return { unsubscribe: cleanup };
+  }
+}`,
+    testCases: [
+      { input: "subscribing and having the producer call observer.next(1)", expected: "the observer receives 1", label: "Emitted values reach the subscribing observer" },
+      { input: "unsubscribe()", expected: "runs the cleanup function returned by the producer", label: "unsubscribe() runs the producer's cleanup" },
+      { input: "subscribing to the same Observable twice", expected: "the producer function runs independently each time", label: "Each subscription re-runs the producer (cold behavior)" },
+    ],
+    hints: [
+      "The constructor just stores the producer function — none of the real work happens until subscribe() is actually called.",
+      "If the producer doesn't return a cleanup function, default to a no-op so unsubscribe() is always safe to call.",
+    ],
+    orderIndex: 1162,
+  },
+  {
+    slug: "observable-interval",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Observable interval()",
+    description: `An Observable that emits an increasing integer every \`ms\` milliseconds, forever, until unsubscribed.
+
+## Your task
+
+Write \`interval(ms)\`, returning an Observable (include a minimal \`Observable\` class in your solution).`,
+    difficulty: "easy",
+    starterCode: `function interval(ms) {
+}`,
+    solutionCode: `class Observable {
+  constructor(subscribeFn) {
+    this._subscribe = subscribeFn;
+  }
+  subscribe(observer) {
+    const cleanup = this._subscribe(observer) || (() => {});
+    return { unsubscribe: cleanup };
+  }
+}
+function interval(ms) {
+  return new Observable((observer) => {
+    let count = 0;
+    const id = setInterval(() => observer.next(count++), ms);
+    return () => clearInterval(id);
+  });
+}`,
+    testCases: [
+      { input: "subscribing and waiting a few intervals", expected: "receives 0, 1, 2, ... in order", label: "Emits increasing values over time" },
+      { input: "unsubscribing after a couple of emissions", expected: "no further values are received", label: "unsubscribe() stops future emissions" },
+    ],
+    hints: [
+      "setInterval is the whole engine here; the Observable's cleanup function just needs to clearInterval.",
+    ],
+    orderIndex: 1163,
+  },
+  {
+    slug: "observable-from-event",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Observable fromEvent()",
+    description: `Turn any DOM event into an Observable stream of events.
+
+## Your task
+
+Write \`fromEvent(target, eventType)\`, returning an Observable that emits each event object as it fires (include a minimal \`Observable\` class in your solution).`,
+    difficulty: "easy",
+    starterCode: `function fromEvent(target, eventType) {
+}`,
+    solutionCode: `class Observable {
+  constructor(subscribeFn) {
+    this._subscribe = subscribeFn;
+  }
+  subscribe(observer) {
+    const cleanup = this._subscribe(observer) || (() => {});
+    return { unsubscribe: cleanup };
+  }
+}
+function fromEvent(target, eventType) {
+  return new Observable((observer) => {
+    function handler(e) {
+      observer.next(e);
+    }
+    target.addEventListener(eventType, handler);
+    return () => target.removeEventListener(eventType, handler);
+  });
+}`,
+    testCases: [
+      { input: "subscribing, then dispatching a matching event", expected: "the observer receives the event", label: "Delivers real DOM events to the observer" },
+      { input: "unsubscribing, then dispatching another event", expected: "the observer receives nothing further", label: "unsubscribe() removes the underlying event listener" },
+    ],
+    hints: [
+      "addEventListener/removeEventListener are the producer and its cleanup, almost verbatim.",
+    ],
+    orderIndex: 1164,
+  },
+  {
+    slug: "observable-transform-operators",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Observable Transformation Operators",
+    description: `\`map\` and \`filter\`, reimagined for Observables: each wraps a source Observable and returns a new one that transforms what flows through it.
+
+## Your task
+
+Write \`mapOperator(source, project)\` and \`filterOperator(source, predicate)\` (include a minimal \`Observable\` class in your solution).`,
+    difficulty: "easy",
+    starterCode: `function mapOperator(source, project) {
+}
+function filterOperator(source, predicate) {
+}`,
+    solutionCode: `class Observable {
+  constructor(subscribeFn) {
+    this._subscribe = subscribeFn;
+  }
+  subscribe(observer) {
+    const cleanup = this._subscribe(observer) || (() => {});
+    return { unsubscribe: cleanup };
+  }
+}
+function mapOperator(source, project) {
+  return new Observable((observer) => {
+    const sub = source.subscribe({ next: (v) => observer.next(project(v)) });
+    return () => sub.unsubscribe();
+  });
+}
+function filterOperator(source, predicate) {
+  return new Observable((observer) => {
+    const sub = source.subscribe({
+      next: (v) => {
+        if (predicate(v)) observer.next(v);
+      },
+    });
+    return () => sub.unsubscribe();
+  });
+}`,
+    testCases: [
+      { input: "mapOperator(source, x => x * 2)", expected: "every emitted value doubled", label: "map transforms every emitted value" },
+      { input: "filterOperator(source, x => x % 2 === 0)", expected: "only even values pass through", label: "filter only forwards values matching the predicate" },
+      { input: "filterOperator(mapOperator(source, x => x + 1), x => x > 2)", expected: "operators compose correctly when chained", label: "Chaining map and filter together works" },
+    ],
+    hints: [
+      "Each operator is itself just a new Observable whose producer subscribes to the source and forwards a transformed/filtered version of what it receives.",
+    ],
+    orderIndex: 1165,
+  },
+  {
+    slug: "observable-from-iterable",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Observable from()",
+    description: `Turn a plain array (or any iterable) into an Observable that synchronously emits every value, then completes.
+
+## Your task
+
+Write \`from(iterable)\` (include a minimal \`Observable\` class in your solution). The observer's \`complete()\` should be called after every value has been emitted.`,
+    difficulty: "medium",
+    starterCode: `function from(iterable) {
+}`,
+    solutionCode: `class Observable {
+  constructor(subscribeFn) {
+    this._subscribe = subscribeFn;
+  }
+  subscribe(observer) {
+    const cleanup = this._subscribe(observer) || (() => {});
+    return { unsubscribe: cleanup };
+  }
+}
+function from(iterable) {
+  return new Observable((observer) => {
+    for (const value of iterable) observer.next(value);
+    if (observer.complete) observer.complete();
+  });
+}`,
+    testCases: [
+      { input: "from([1,2,3])", expected: "emits 1, 2, 3 in order", label: "Emits every value from the iterable, in order" },
+      { input: "from([1,2,3]) fully consumed", expected: "observer.complete() is called afterward", label: "Calls complete() after all values are emitted" },
+      { input: "from([])", expected: "no next() calls, but complete() still runs", label: "An empty iterable still completes cleanly" },
+    ],
+    hints: [
+      "This one is synchronous end-to-end: the whole for...of loop runs inside the producer function, during the subscribe() call itself.",
+    ],
+    orderIndex: 1166,
+  },
+  {
+    slug: "observable-subject",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Observable Subject",
+    description: `Unlike a plain (cold) Observable, a \`Subject\` is multicast: every current subscriber receives the exact same emitted value at the same time, and it's also an observer itself — you call \`.next()\` on it directly.
+
+## Your task
+
+Write a \`Subject\` class with \`subscribe(observer)\` (returning \`{ unsubscribe() }\`) and \`next(value)\`. Subscribers only receive values emitted *after* they subscribe — no replay of earlier ones.`,
+    difficulty: "medium",
+    starterCode: `class Subject {
+  subscribe(observer) {
+  }
+  next(value) {
+  }
+}`,
+    solutionCode: `class Subject {
+  constructor() {
+    this.observers = [];
+  }
+  subscribe(observer) {
+    this.observers.push(observer);
+    return {
+      unsubscribe: () => {
+        this.observers = this.observers.filter((o) => o !== observer);
+      },
+    };
+  }
+  next(value) {
+    this.observers.forEach((o) => o.next(value));
+  }
+}`,
+    testCases: [
+      { input: "two subscribers, then next(value)", expected: "both receive the exact same value", label: "Multicasts a value to every current subscriber" },
+      { input: "next(value) called before subscribing", expected: "a later subscriber never receives that earlier value", label: "No replay of values emitted before subscribing" },
+      { input: "one of two subscribers unsubscribes, then next(value)", expected: "only the remaining subscriber receives it", label: "unsubscribe() only affects that specific subscriber" },
+    ],
+    hints: [
+      "A Subject just keeps a live list of currently-subscribed observers and forwards every next() call to all of them — no producer function, no re-running anything per subscription.",
+    ],
+    orderIndex: 1167,
+  },
+
+  // Stage 12 — Serialization & Data Encoding
+  {
+    slug: "implement-btoa",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Implement btoa()",
+    description: `Base64-encode a string by hand, without calling the real \`btoa\`.
+
+## Your task
+
+Write \`myBtoa(str)\` for ASCII input, matching the real \`btoa\`'s output exactly (including \`=\` padding).`,
+    difficulty: "easy",
+    starterCode: `function myBtoa(str) {
+}`,
+    solutionCode: `function myBtoa(str) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let result = "";
+  let i = 0;
+  while (i < str.length) {
+    const b1 = str.charCodeAt(i++);
+    const b2 = i < str.length ? str.charCodeAt(i++) : NaN;
+    const b3 = i < str.length ? str.charCodeAt(i++) : NaN;
+    const enc1 = b1 >> 2;
+    const enc2 = ((b1 & 3) << 4) | (isNaN(b2) ? 0 : b2 >> 4);
+    const enc3 = isNaN(b2) ? 64 : ((b2 & 15) << 2) | (isNaN(b3) ? 0 : b3 >> 6);
+    const enc4 = isNaN(b3) ? 64 : b3 & 63;
+    result += chars[enc1] + chars[enc2] + (enc3 === 64 ? "=" : chars[enc3]) + (enc4 === 64 ? "=" : chars[enc4]);
+  }
+  return result;
+}`,
+    testCases: [
+      { input: '"hello"', expected: "matches the real btoa(\"hello\")", label: "Encodes a 5-character string" },
+      { input: '""', expected: "matches the real btoa(\"\")", label: "An empty string encodes to an empty string" },
+      { input: '"a"', expected: "matches the real btoa(\"a\")", label: "A single character needs two = padding characters" },
+    ],
+    hints: [
+      "Process the input three bytes (24 bits) at a time, splitting those bits into four 6-bit groups, each mapped to a base64 character.",
+      "When the final group has fewer than 3 bytes, pad the output with '=' characters — one for a 2-byte remainder, two for a 1-byte remainder.",
+    ],
+    orderIndex: 1168,
+  },
+  {
+    slug: "implement-atob",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Implement atob()",
+    description: `The inverse of the previous problem: decode a base64 string back into its original text, by hand.
+
+## Your task
+
+Write \`myAtob(str)\`.`,
+    difficulty: "medium",
+    starterCode: `function myAtob(str) {
+}`,
+    solutionCode: `function myAtob(str) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const clean = str.replace(/=+$/, "");
+  let result = "";
+  let bits = 0;
+  let value = 0;
+  for (const ch of clean) {
+    value = (value << 6) | chars.indexOf(ch);
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      result += String.fromCharCode((value >> bits) & 0xff);
+    }
+  }
+  return result;
+}`,
+    testCases: [
+      { input: "myAtob(btoa('hello'))", expected: '"hello"', label: "Round-trips through the real btoa correctly" },
+      { input: "myAtob(btoa(''))", expected: '""', label: "An empty encoded string decodes to empty" },
+      { input: "myAtob(btoa('test123'))", expected: '"test123"', label: "Round-trips a longer alphanumeric string" },
+    ],
+    hints: [
+      "Each base64 character contributes 6 bits; accumulate them and pull out a full byte (8 bits) whenever you have enough.",
+      "Trailing '=' padding characters carry no data — strip them before decoding.",
+    ],
+    orderIndex: 1169,
+  },
+  {
+    slug: "implement-json-parse",
+    companies: ["Google", "Meta", "Amazon"],
+    category: "javascript-runtime",
+    title: "Implement JSON.parse()",
+    description: `A recursive-descent parser for a subset of JSON: objects, arrays, strings, numbers, booleans, and null.
+
+## Your task
+
+Write \`myJSONParse(str)\`. (Escaped characters within strings, like \`\\"\`, are out of scope for this version — assume string values don't contain them.)`,
+    difficulty: "medium",
+    starterCode: `function myJSONParse(str) {
+}`,
+    solutionCode: `function myJSONParse(str) {
+  let i = 0;
+  function skipWhitespace() {
+    while (str[i] === " " || str[i] === "\\n" || str[i] === "\\t") i++;
+  }
+  function parseValue() {
+    skipWhitespace();
+    const ch = str[i];
+    if (ch === "{") return parseObject();
+    if (ch === "[") return parseArray();
+    if (ch === '"') return parseString();
+    if (ch === "t") {
+      i += 4;
+      return true;
+    }
+    if (ch === "f") {
+      i += 5;
+      return false;
+    }
+    if (ch === "n") {
+      i += 4;
+      return null;
+    }
+    return parseNumber();
+  }
+  function parseObject() {
+    i++;
+    const obj = {};
+    skipWhitespace();
+    if (str[i] === "}") {
+      i++;
+      return obj;
+    }
+    while (true) {
+      skipWhitespace();
+      const key = parseString();
+      skipWhitespace();
+      i++;
+      obj[key] = parseValue();
+      skipWhitespace();
+      if (str[i] === ",") {
+        i++;
+        continue;
+      }
+      break;
+    }
+    skipWhitespace();
+    i++;
+    return obj;
+  }
+  function parseArray() {
+    i++;
+    const arr = [];
+    skipWhitespace();
+    if (str[i] === "]") {
+      i++;
+      return arr;
+    }
+    while (true) {
+      arr.push(parseValue());
+      skipWhitespace();
+      if (str[i] === ",") {
+        i++;
+        continue;
+      }
+      break;
+    }
+    skipWhitespace();
+    i++;
+    return arr;
+  }
+  function parseString() {
+    i++;
+    const start = i;
+    while (str[i] !== '"') i++;
+    const result = str.slice(start, i);
+    i++;
+    return result;
+  }
+  function parseNumber() {
+    const start = i;
+    while (str[i] !== undefined && "-+.0123456789eE".includes(str[i])) i++;
+    return Number(str.slice(start, i));
+  }
+  return parseValue();
+}`,
+    testCases: [
+      { input: '\'{"a":1,"b":[1,2,3]}\'', expected: "{ a: 1, b: [1, 2, 3] }", label: "Parses a nested object with an array value" },
+      { input: "'true'", expected: "true", label: "Parses a bare boolean" },
+      { input: "'null'", expected: "null", label: "Parses a bare null" },
+      { input: '\'  { "x" : 42 }  \'', expected: "{ x: 42 }", label: "Handles surrounding and internal whitespace" },
+    ],
+    hints: [
+      "Recursive descent: parseValue looks at the current character to decide which specific parser (object/array/string/number/literal) to delegate to.",
+      "A shared cursor index (i) threaded through every helper function is what lets them consume the string cooperatively.",
+    ],
+    orderIndex: 1170,
+  },
+  {
+    slug: "serialize-non-json-types",
+    companies: ["Meta", "Amazon"],
+    category: "javascript-runtime",
+    title: "Serialize/deserialize data types not supported in JSON",
+    description: `Plain \`JSON.stringify\`/\`parse\` can't represent a \`Date\` or a \`Map\` — they either lose information or throw. A replacer/reviver pair can tag these types on the way out and reconstruct them on the way back in.
+
+## Your task
+
+Write \`encode(value)\` and \`decode(str)\` using \`JSON.stringify\`'s replacer and \`JSON.parse\`'s reviver, correctly round-tripping \`Date\` and \`Map\` values anywhere in the structure.`,
+    difficulty: "medium",
+    starterCode: `function encode(value) {
+}
+function decode(str) {
+}`,
+    solutionCode: `function encode(value) {
+  return JSON.stringify(value, (key, val) => {
+    if (val instanceof Date) return { __type: "Date", value: val.toISOString() };
+    if (val instanceof Map) return { __type: "Map", value: Array.from(val.entries()) };
+    return val;
+  });
+}
+function decode(str) {
+  return JSON.parse(str, (key, val) => {
+    if (val && val.__type === "Date") return new Date(val.value);
+    if (val && val.__type === "Map") return new Map(val.value);
+    return val;
+  });
+}`,
+    testCases: [
+      { input: "a Date, round-tripped through encode/decode", expected: "an equivalent Date (same getTime())", label: "Round-trips a Date instance" },
+      { input: "a Map, round-tripped through encode/decode", expected: "an equivalent Map (same entries)", label: "Round-trips a Map instance" },
+      { input: "an object containing a nested Date", expected: "the nested Date round-trips too", label: "Works for types nested inside a larger structure" },
+    ],
+    hints: [
+      "The replacer function runs on every key/value pair during stringify — tag special types with a small marker object ({ __type, value }) instead of letting JSON silently mangle them.",
+      "The reviver function runs during parse, in the same shape — check for that marker and reconstruct the real instance from it.",
+    ],
+    orderIndex: 1171,
+  },
+  {
+    slug: "implement-json-stringify",
+    companies: ["Google", "Meta"],
+    category: "javascript-runtime",
+    title: "Implement JSON.stringify()",
+    description: `The serialization counterpart to your JSON parser — including one detail people often miss: \`undefined\` values are omitted from objects entirely, not written as \`null\`.
+
+## Your task
+
+Write \`myJSONStringify(value)\`, supporting objects, arrays, strings, numbers, booleans, and null. (Escaping special characters within strings, like quotes, is out of scope for this version.)`,
+    difficulty: "hard",
+    starterCode: `function myJSONStringify(value) {
+}`,
+    solutionCode: `function myJSONStringify(value) {
+  if (value === null) return "null";
+  if (value === undefined) return undefined;
+  const type = typeof value;
+  if (type === "number" || type === "boolean") return String(value);
+  if (type === "string") return '"' + value + '"';
+  if (Array.isArray(value)) {
+    const items = value.map((item) => {
+      const encoded = myJSONStringify(item);
+      return encoded === undefined ? "null" : encoded;
+    });
+    return "[" + items.join(",") + "]";
+  }
+  if (type === "object") {
+    const pairs = [];
+    for (const key in value) {
+      if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
+      const encoded = myJSONStringify(value[key]);
+      if (encoded === undefined) continue;
+      pairs.push('"' + key + '":' + encoded);
+    }
+    return "{" + pairs.join(",") + "}";
+  }
+  return undefined;
+}`,
+    testCases: [
+      { input: '{ a: 1, b: "hi" }', expected: '\'{"a":1,"b":"hi"}\'', label: "Stringifies a simple object" },
+      { input: "[1, 2, 3]", expected: "'[1,2,3]'", label: "Stringifies an array" },
+      { input: "{ a: undefined, b: 1 }", expected: '\'{"b":1}\'', label: "Omits undefined object properties entirely, rather than writing null" },
+      { input: "undefined", expected: "undefined (not a string)", label: "Top-level undefined returns actual undefined, matching the real JSON.stringify" },
+    ],
+    hints: [
+      "undefined is the one value that has no JSON representation — inside an object it's simply dropped; inside an array it becomes null; at the top level, the whole result is undefined.",
+      "for...in plus hasOwnProperty is what keeps this from also stringifying inherited/prototype properties.",
+    ],
+    orderIndex: 1172,
+  },
+  {
+    slug: "implement-url-search-params",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Implement your own URLSearchParams",
+    description: `A working subset of the real \`URLSearchParams\`: parse a query string, and support reading, writing, and re-serializing it, correctly URL-encoding/decoding along the way.
+
+## Your task
+
+Write a \`MyURLSearchParams\` class: constructed from a query string (with or without a leading \`?\`), supporting \`get\`, \`getAll\`, \`has\`, \`set\`, \`append\`, \`delete\`, and \`toString\`.`,
+    difficulty: "hard",
+    starterCode: `class MyURLSearchParams {
+  constructor(init = "") {
+  }
+  get(key) {
+  }
+  getAll(key) {
+  }
+  has(key) {
+  }
+  set(key, value) {
+  }
+  append(key, value) {
+  }
+  delete(key) {
+  }
+  toString() {
+  }
+}`,
+    solutionCode: `class MyURLSearchParams {
+  constructor(init = "") {
+    this.params = [];
+    const query = init.startsWith("?") ? init.slice(1) : init;
+    if (query) {
+      query.split("&").forEach((pair) => {
+        const [key, value = ""] = pair.split("=");
+        this.params.push([decodeURIComponent(key), decodeURIComponent(value)]);
+      });
+    }
+  }
+  get(key) {
+    const found = this.params.find(([k]) => k === key);
+    return found ? found[1] : null;
+  }
+  getAll(key) {
+    return this.params.filter(([k]) => k === key).map(([, v]) => v);
+  }
+  has(key) {
+    return this.params.some(([k]) => k === key);
+  }
+  set(key, value) {
+    this.delete(key);
+    this.params.push([key, value]);
+  }
+  append(key, value) {
+    this.params.push([key, value]);
+  }
+  delete(key) {
+    this.params = this.params.filter(([k]) => k !== key);
+  }
+  toString() {
+    return this.params.map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v)).join("&");
+  }
+}`,
+    testCases: [
+      { input: "new MyURLSearchParams('a=1&b=2').get('a')", expected: '"1"', label: "Parses an initial query string" },
+      { input: "append('tag','a'); append('tag','b'); getAll('tag')", expected: "['a','b']", label: "append() supports multiple values for the same key" },
+      { input: "set('a','new')", expected: "replaces every prior value for 'a' with a single new one", label: "set() replaces rather than adds" },
+      { input: "toString() with a space in a value", expected: "the space is percent-encoded", label: "toString() correctly URL-encodes the output" },
+    ],
+    hints: [
+      "Storing entries as an array of [key, value] pairs (rather than a plain object) is what naturally supports duplicate keys for getAll()/append().",
+      "set() is really just delete() followed by a single append() — reuse them.",
+    ],
+    orderIndex: 1173,
+  },
+
+  // Stage 13 — Virtual DOM, JSX & Rendering Internals
+  {
+    slug: "vdom-create-element-basics",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Virtual DOM II — createElement",
+    description: `The foundational function every virtual-DOM library builds on: turn a type, some props, and a list of children into a plain object description of an element — a "vnode."
+
+## Your task
+
+Write \`createElement(type, props, ...children)\`. No children should produce an empty array; exactly one child should be stored directly (not wrapped in an array); more than one should be an array.`,
+    difficulty: "easy",
+    starterCode: `function createElement(type, props, ...children) {
+}`,
+    solutionCode: `function createElement(type, props, ...children) {
+  return {
+    type,
+    props: {
+      ...props,
+      children: children.length === 0 ? [] : children.length === 1 ? children[0] : children,
+    },
+  };
+}`,
+    testCases: [
+      { input: "createElement('div', null)", expected: "{ type: 'div', props: { children: [] } }", label: "No children folds to an empty array" },
+      { input: "createElement('button', { className: 'a' }, 'Save')", expected: "children stored directly, not wrapped in an array", label: "A single child is stored directly" },
+      { input: "createElement('ul', null, 'a', 'b')", expected: "{ children: ['a', 'b'] }", label: "Multiple children are stored as an array" },
+    ],
+    hints: [
+      "This is exactly the shape JSX compiles down to under the hood — every JSX element you write becomes a call like this one.",
+    ],
+    orderIndex: 1174,
+  },
+  {
+    slug: "lit-html-tagged-template",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "lit-html — tagged templates",
+    description: `lit-html's core trick: a tagged template literal keeps the static HTML strings separate from the dynamic values, instead of naively concatenating everything into one unsafe string.
+
+## Your task
+
+Write \`html\`\` \`\` (a tag function returning \`{ strings, values }\`) and \`render(template)\`, which joins them back into a final string — HTML-escaping every interpolated value along the way, so a value can never inject unintended markup.`,
+    difficulty: "easy",
+    starterCode: `function html(strings, ...values) {
+}
+function render(template) {
+}`,
+    solutionCode: `function html(strings, ...values) {
+  return { strings, values };
+}
+function escapeHtml(str) {
+  const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+  return String(str).replace(/[&<>"']/g, (ch) => map[ch]);
+}
+function render(template) {
+  return template.strings.reduce(
+    (acc, str, i) => acc + str + (i < template.values.length ? escapeHtml(template.values[i]) : ""),
+    "",
+  );
+}`,
+    testCases: [
+      { input: "render(html`<p>${'Ada'}</p>`)", expected: "'<p>Ada</p>'", label: "Interpolates a plain value correctly" },
+      { input: "render(html`<p>${'<script>bad</script>'}</p>`)", expected: "the value is HTML-escaped, not injected as markup", label: "Interpolated values are escaped for safety" },
+      { input: "render(html`${'a'}-${'b'}`)", expected: "'a-b'", label: "Multiple interpolations all get inserted" },
+    ],
+    hints: [
+      "html`` doesn't do any string work itself — it just captures the strings/values split that JS gives every tagged template call for free.",
+      "escapeHtml is what stands between this and being a straightforward XSS vector — never skip it when interpolating untrusted values into HTML.",
+    ],
+    orderIndex: 1175,
+  },
+  {
+    slug: "vdom-functional-component",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Virtual DOM III — Functional Component",
+    description: `A functional component is just a function that returns a vnode. Rendering one means calling it and recursively resolving whatever it returns — which might itself be another functional component.
+
+## Your task
+
+Write \`renderComponent(vnode)\`, resolving \`vnode.type\` when it's a function (a component) down to a plain-element vnode, recursing into children along the way.`,
+    difficulty: "easy",
+    starterCode: `function renderComponent(vnode) {
+}`,
+    solutionCode: `function renderComponent(vnode) {
+  if (typeof vnode !== "object" || vnode === null) return vnode;
+  if (typeof vnode.type === "function") {
+    return renderComponent(vnode.type(vnode.props));
+  }
+  return {
+    type: vnode.type,
+    props: {
+      ...vnode.props,
+      children: Array.isArray(vnode.props.children)
+        ? vnode.props.children.map(renderComponent)
+        : renderComponent(vnode.props.children),
+    },
+  };
+}`,
+    testCases: [
+      { input: "a vnode whose type is a component function", expected: "resolves to that component's rendered output", label: "Resolves a single functional component" },
+      { input: "a component that itself returns another component's vnode", expected: "fully resolves all the way down to a plain element", label: "Recursively resolves nested functional components" },
+      { input: "a plain element vnode with element children", expected: "passes through with children still recursively processed", label: "Plain elements are left as elements, children processed too" },
+    ],
+    hints: [
+      "typeof vnode.type === 'function' is the entire test for 'is this a component' — everything else is a plain host element like 'div'.",
+      "Calling vnode.type(vnode.props) is literally what invoking a functional component means.",
+    ],
+    orderIndex: 1176,
+  },
+  {
+    slug: "implement-classnames-util",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Implement classNames()",
+    description: `The ubiquitous \`classnames\`/\`clsx\` utility: combine strings, conditional objects, and arrays of either into a single space-separated class string, dropping anything falsy.
+
+## Your task
+
+Write \`classNames(...args)\`.`,
+    difficulty: "medium",
+    starterCode: `function classNames(...args) {
+}`,
+    solutionCode: `function classNames(...args) {
+  const classes = [];
+  args.forEach((arg) => {
+    if (!arg) return;
+    if (typeof arg === "string") {
+      classes.push(arg);
+      return;
+    }
+    if (Array.isArray(arg)) {
+      classes.push(classNames(...arg));
+      return;
+    }
+    if (typeof arg === "object") {
+      Object.keys(arg).forEach((key) => {
+        if (arg[key]) classes.push(key);
+      });
+    }
+  });
+  return classes.filter(Boolean).join(" ");
+}`,
+    testCases: [
+      { input: "classNames('a', 'b')", expected: '"a b"', label: "Joins plain string arguments" },
+      { input: "classNames('a', { b: true, c: false })", expected: '"a b"', label: "Only truthy keys from an object argument are included" },
+      { input: "classNames('a', null, undefined, false, 'b')", expected: '"a b"', label: "Falsy arguments of any type are skipped" },
+    ],
+    hints: [
+      "Handle each argument type (string, object, array, falsy) with its own branch — arrays can just recurse back into classNames itself.",
+    ],
+    orderIndex: 1177,
+  },
+  {
+    slug: "uglify-css-class-names",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Uglify CSS class names",
+    description: `The kind of minification CSS Modules does in production: replace long, readable class names with short generated ones, consistently — the same original name always maps to the same short one.
+
+## Your task
+
+Write \`createClassNameUglifier()\`, returning a function that maps a class name to a short one: \`"a"\`, \`"b"\`, ..., \`"z"\`, \`"aa"\`, \`"ab"\`, ... in the order new names are first seen.`,
+    difficulty: "medium",
+    starterCode: `function createClassNameUglifier() {
+}`,
+    solutionCode: `function createClassNameUglifier() {
+  const map = new Map();
+  let counter = 0;
+  function toShortName(n) {
+    let name = "";
+    n++;
+    while (n > 0) {
+      n--;
+      name = String.fromCharCode(97 + (n % 26)) + name;
+      n = Math.floor(n / 26);
+    }
+    return name;
+  }
+  return function uglify(className) {
+    if (!map.has(className)) {
+      map.set(className, toShortName(counter++));
+    }
+    return map.get(className);
+  };
+}`,
+    testCases: [
+      { input: "the first two distinct class names uglified", expected: '"a", then "b"', label: "Assigns short names in first-seen order, starting from 'a'" },
+      { input: "the same class name uglified twice", expected: "the exact same short name both times", label: "Repeated calls with the same name are consistent" },
+      { input: "the 27th distinct class name", expected: '"aa"', label: "Rolls over to two letters after exhausting a-z" },
+    ],
+    hints: [
+      "This is bijective base-26 numbering (like spreadsheet column names A, B, ..., Z, AA, AB, ...) — not the same as plain base-26, which is why the n-- inside the loop matters.",
+      "A Map from original name to assigned short name is what makes repeated lookups consistent.",
+    ],
+    orderIndex: 1178,
+  },
+  {
+    slug: "vdom-diff-patch-basics",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Virtual DOM I (diff/patch basics)",
+    description: `The heart of every virtual-DOM library: compare an old vnode tree to a new one and describe the minimal change needed, rather than always tearing down and rebuilding everything.
+
+## Your task
+
+Write \`diff(oldVNode, newVNode)\`, returning one of: \`{ type: "REPLACE", vnode }\` (different element type or a changed primitive), \`{ type: "UPDATE", props }\` (same type, changed prop values), or \`{ type: "NONE" }\` (nothing changed).`,
+    difficulty: "medium",
+    starterCode: `function diff(oldVNode, newVNode) {
+}`,
+    solutionCode: `function diff(oldVNode, newVNode) {
+  if (typeof oldVNode !== typeof newVNode || (typeof oldVNode !== "object" && oldVNode !== newVNode)) {
+    return { type: "REPLACE", vnode: newVNode };
+  }
+  if (typeof oldVNode === "object" && typeof newVNode === "object") {
+    if (oldVNode.type !== newVNode.type) return { type: "REPLACE", vnode: newVNode };
+    const propPatches = {};
+    const allKeys = new Set([...Object.keys(oldVNode.props || {}), ...Object.keys(newVNode.props || {})]);
+    allKeys.forEach((key) => {
+      if (key === "children") return;
+      if (oldVNode.props[key] !== newVNode.props[key]) propPatches[key] = newVNode.props[key];
+    });
+    return { type: "UPDATE", props: propPatches };
+  }
+  return { type: "NONE" };
+}`,
+    testCases: [
+      { input: "diff('hello', 'hello')", expected: "{ type: 'NONE' }", label: "Identical text nodes produce no patch" },
+      { input: "two elements of the same type, one prop value changed", expected: "{ type: 'UPDATE', props: { that key: new value } }", label: "A changed prop produces a targeted UPDATE patch" },
+      { input: "an old <div> vnode and a new <span> vnode", expected: "{ type: 'REPLACE', vnode: newVNode }", label: "A different element type forces a full REPLACE" },
+    ],
+    hints: [
+      "Comparing element types first is what decides between a cheap prop-level UPDATE and a full REPLACE — real diffing algorithms never try to patch one element type into another.",
+      "children are intentionally excluded from the prop-diff here — a real implementation would recursively diff them separately, which is out of scope for this basic version.",
+    ],
+    orderIndex: 1179,
+  },
+  {
+    slug: "jsx-create-element-pragma",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Virtual DOM IV — JSX 1",
+    description: `JSX transpilers call a \`createElement\`-style pragma function under the hood, and give \`key\`/\`ref\` special treatment — they're pulled out of props entirely rather than left as regular attributes.
+
+## Your task
+
+Write \`jsxCreateElement(type, config, ...children)\`, returning \`{ type, key, props }\`. \`config.key\` becomes the returned \`key\` (not a prop); \`config.ref\` is dropped entirely (not a prop, not the key).`,
+    difficulty: "medium",
+    starterCode: `function jsxCreateElement(type, config, ...children) {
+}`,
+    solutionCode: `function jsxCreateElement(type, config, ...children) {
+  const props = {};
+  let key = null;
+  if (config) {
+    Object.keys(config).forEach((k) => {
+      if (k === "key") key = config.key;
+      else if (k !== "ref") props[k] = config[k];
+    });
+  }
+  props.children = children.length === 1 ? children[0] : children;
+  return { type, key, props };
+}`,
+    testCases: [
+      { input: "jsxCreateElement('li', { key: 'a', className: 'x' })", expected: "key: 'a', props: { className: 'x', children: [] }", label: "key is pulled out of props onto the vnode itself" },
+      { input: "jsxCreateElement('input', { ref: someRef, value: 'x' })", expected: "props has no ref key at all", label: "ref is dropped entirely, not even stored" },
+      { input: "jsxCreateElement('p', { id: 'x' })", expected: "props.id === 'x'", label: "Regular props pass through unaffected" },
+    ],
+    hints: [
+      "key and ref are the two prop names JSX transpilers always special-case — every other prop name passes straight through untouched.",
+    ],
+    orderIndex: 1180,
+  },
+  {
+    slug: "jsx-fragment-and-flatten",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Virtual DOM V — JSX 2",
+    description: `Two more real JSX behaviors: a special \`Fragment\` type for grouping children without an extra wrapper element, and automatic flattening of nested children arrays (which happens constantly with \`.map()\`-generated lists).
+
+## Your task
+
+Write \`Fragment\` (any unique marker value) and \`jsxCreateElementV2(type, config, ...children)\`, where \`children\` is recursively flattened one structure deep into a single flat array.`,
+    difficulty: "medium",
+    starterCode: `const Fragment = Symbol("Fragment");
+function jsxCreateElementV2(type, config, ...children) {
+}`,
+    solutionCode: `const Fragment = Symbol("Fragment");
+function flattenChildren(children) {
+  return children.reduce(
+    (acc, child) => acc.concat(Array.isArray(child) ? flattenChildren(child) : child),
+    [],
+  );
+}
+function jsxCreateElementV2(type, config, ...children) {
+  const props = { ...config };
+  delete props.key;
+  props.children = flattenChildren(children);
+  return { type, props };
+}`,
+    testCases: [
+      { input: "jsxCreateElementV2(Fragment, null, 'a', 'b')", expected: "type === Fragment", label: "The Fragment marker is preserved on the vnode" },
+      { input: "children built from two separate arrays (like two .map() calls)", expected: "one single flat children array", label: "Nested children arrays are flattened into one" },
+      { input: "a single non-array child", expected: "still ends up inside a one-item array", label: "Children always end up in a consistent flat array shape" },
+    ],
+    hints: [
+      "Fragment doesn't need any special logic in jsxCreateElementV2 itself — it's just an ordinary (if unusual) value for type, meaningful only to whatever renders the vnode tree afterward.",
+      "flattenChildren recurses one level at a time into any array it finds among the children, concatenating everything into one flat list.",
+    ],
+    orderIndex: 1181,
+  },
+  {
+    slug: "mini-react-hooks-runtime",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Implement a minimal useState/useEffect (React hooks internals)",
+    description: `The famous "hooks are just an array" trick: React associates each \`useState\`/\`useEffect\` call with a slot based purely on **call order** within a render, which is exactly why hooks can never be called conditionally.
+
+## Your task
+
+Write \`createHooksRuntime()\`, returning \`{ useState, useEffect, render(componentFn) }\`. State must persist across re-renders (not reset each render); calling \`setState\` must trigger an automatic re-render; \`useEffect\`'s callback should only run when its dependency array has actually changed since the last render.`,
+    difficulty: "hard",
+    starterCode: `function createHooksRuntime() {
+}`,
+    solutionCode: `function createHooksRuntime() {
+  let hookStates = [];
+  let hookIndex = 0;
+  let currentRender = null;
+  function useState(initial) {
+    const i = hookIndex++;
+    if (hookStates[i] === undefined) hookStates[i] = initial;
+    function setState(value) {
+      hookStates[i] = typeof value === "function" ? value(hookStates[i]) : value;
+      runtime.render(currentRender);
+    }
+    return [hookStates[i], setState];
+  }
+  function useEffect(callback, deps) {
+    const i = hookIndex++;
+    const prevDeps = hookStates[i];
+    const changed = !prevDeps || !deps || deps.some((d, idx) => d !== prevDeps[idx]);
+    if (changed) callback();
+    hookStates[i] = deps;
+  }
+  const runtime = {
+    useState,
+    useEffect,
+    render(componentFn) {
+      currentRender = componentFn;
+      hookIndex = 0;
+      return componentFn();
+    },
+  };
+  return runtime;
+}`,
+    testCases: [
+      { input: "state read across two separate render() calls", expected: "the same value, not reset", label: "State persists across re-renders" },
+      { input: "calling setState inside a component", expected: "automatically triggers a re-render that sees the new value", label: "setState triggers a re-render with updated state" },
+      { input: "useEffect with an unchanged dependency array across renders", expected: "the effect callback does not run again", label: "useEffect only re-runs when its dependencies actually change" },
+    ],
+    hints: [
+      "hookIndex resets to 0 at the start of every render() call — that's what makes 'the Nth hook call' consistently map to 'the Nth slot in hookStates', as long as hooks are always called in the same order.",
+      "Comparing the new deps array against the previous one element-by-element (not by reference) is what real React does too — that's why an inline array literal like [x, y] still works as a dependency array.",
+    ],
+    orderIndex: 1182,
+  },
+  {
+    slug: "proxy-reactive-store",
+    companies: ["Meta"],
+    category: "javascript-runtime",
+    title: "Implement a Proxy-based reactive store (Vue 3-style)",
+    description: `Vue 3's reactivity system, in miniature: reading a reactive property inside a tracked "effect" remembers that dependency; writing to that property later automatically re-runs every effect that read it.
+
+## Your task
+
+Write \`createReactiveSystem()\`, returning \`{ reactive(target), effect(fn) }\`. \`reactive\` wraps an object in a \`Proxy\`; \`effect\` runs \`fn\` immediately and re-runs it automatically whenever a property it read (during its own most recent run) is later written to.`,
+    difficulty: "hard",
+    starterCode: `function createReactiveSystem() {
+}`,
+    solutionCode: `function createReactiveSystem() {
+  let activeEffect = null;
+  const targetMap = new WeakMap();
+  function track(target, key) {
+    if (!activeEffect) return;
+    let depsMap = targetMap.get(target);
+    if (!depsMap) targetMap.set(target, (depsMap = new Map()));
+    let dep = depsMap.get(key);
+    if (!dep) depsMap.set(key, (dep = new Set()));
+    dep.add(activeEffect);
+  }
+  function trigger(target, key) {
+    const depsMap = targetMap.get(target);
+    if (!depsMap) return;
+    const dep = depsMap.get(key);
+    if (dep) dep.forEach((fn) => fn());
+  }
+  function reactive(target) {
+    return new Proxy(target, {
+      get(obj, key) {
+        track(obj, key);
+        return obj[key];
+      },
+      set(obj, key, value) {
+        obj[key] = value;
+        trigger(obj, key);
+        return true;
+      },
+    });
+  }
+  function effect(fn) {
+    activeEffect = fn;
+    fn();
+    activeEffect = null;
+  }
+  return { reactive, effect };
+}`,
+    testCases: [
+      { input: "an effect reading state.count, then state.count is mutated", expected: "the effect automatically re-runs", label: "Mutating a tracked property re-runs the effect that read it" },
+      { input: "an effect that never reads state.other, then state.other is mutated", expected: "the effect does not re-run", label: "Mutating an untracked property doesn't trigger unrelated effects" },
+      { input: "two separate effects both reading the same property", expected: "both re-run when that property changes", label: "Multiple effects can depend on and react to the same property" },
+    ],
+    hints: [
+      "A single 'currently running effect' variable, set right before calling fn() and cleared right after, is what lets the Proxy's get trap know which effect to associate a property read with.",
+      "Track dependencies as target → property → set of effect functions — that's the map trigger() walks to know exactly who to re-run on a write.",
+    ],
+    orderIndex: 1183,
+  },
+
+  // Stage 14 — Advanced / Capstone Problems
+  {
+    slug: "decode-message-ways",
+    companies: ["Amazon"],
+    category: "javascript-runtime",
+    title: "Decode message",
+    description: `A digit string was encoded by mapping \`'A'\` → \`"1"\`, \`'B'\` → \`"2"\`, ..., \`'Z'\` → \`"26"\`. Count how many distinct ways it could be decoded back into letters.
+
+## Your task
+
+Write \`countDecodeWays(s)\`. A leading \`"0"\` (or any digit group that doesn't form a valid 1-26 letter code) makes that path invalid.`,
+    difficulty: "medium",
+    starterCode: `function countDecodeWays(s) {
+}`,
+    solutionCode: `function countDecodeWays(s) {
+  if (s[0] === "0") return 0;
+  const n = s.length;
+  const dp = new Array(n + 1).fill(0);
+  dp[0] = 1;
+  dp[1] = 1;
+  for (let i = 2; i <= n; i++) {
+    const oneDigit = Number(s.slice(i - 1, i));
+    const twoDigit = Number(s.slice(i - 2, i));
+    if (oneDigit >= 1) dp[i] += dp[i - 1];
+    if (twoDigit >= 10 && twoDigit <= 26) dp[i] += dp[i - 2];
+  }
+  return dp[n];
+}`,
+    testCases: [
+      { input: '"12"', expected: "2", label: "'AB' (1,2) or 'L' (12) — two valid decodings" },
+      { input: '"226"', expected: "3", label: "'BZ', 'VF', or 'BBF' — three valid decodings" },
+      { input: '"06"', expected: "0", label: "A leading zero can never start a valid letter code" },
+    ],
+    hints: [
+      "This is a Fibonacci-shaped dynamic program: the number of ways to decode the first i characters depends on whether the last 1 or last 2 characters form a valid code.",
+      "dp[i] += dp[i-1] when the single last digit is valid (1-9); dp[i] += dp[i-2] when the last two digits form a valid code (10-26) — both can apply at once.",
+    ],
+    orderIndex: 1184,
+  },
+  {
+    slug: "build-expression-tokenizer",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "Create a tokenizer",
+    description: `Before an expression can be parsed or evaluated, it first has to be broken into meaningful pieces — numbers, operators, and parentheses — ignoring whitespace.
+
+## Your task
+
+Write \`tokenize(expr)\`, returning an array of string tokens.`,
+    difficulty: "medium",
+    starterCode: `function tokenize(expr) {
+}`,
+    solutionCode: `function tokenize(expr) {
+  const tokens = [];
+  let i = 0;
+  while (i < expr.length) {
+    const ch = expr[i];
+    if (ch === " ") {
+      i++;
+      continue;
+    }
+    if ("+-*/()".includes(ch)) {
+      tokens.push(ch);
+      i++;
+      continue;
+    }
+    if (/[0-9.]/.test(ch)) {
+      const start = i;
+      while (i < expr.length && /[0-9.]/.test(expr[i])) i++;
+      tokens.push(expr.slice(start, i));
+      continue;
+    }
+    throw new Error("Unexpected character: " + ch);
+  }
+  return tokens;
+}`,
+    testCases: [
+      { input: '"12+3"', expected: "['12', '+', '3']", label: "Splits numbers and an operator" },
+      { input: '"(1 + 2) * 3"', expected: "['(', '1', '+', '2', ')', '*', '3']", label: "Handles parentheses and ignores whitespace" },
+      { input: '"3.5-1"', expected: "['3.5', '-', '1']", label: "Keeps a decimal number as a single token" },
+    ],
+    hints: [
+      "Multi-character numbers need their own inner loop that keeps consuming digits (and a decimal point) until it hits something that isn't part of the number.",
+    ],
+    orderIndex: 1185,
+  },
+  {
+    slug: "evaluate-arithmetic-expression",
+    companies: ["Google", "Amazon", "Bloomberg"],
+    category: "javascript-runtime",
+    title: "Calculate an arithmetic expression",
+    description: `A small recursive-descent calculator supporting \`+\`, \`-\`, \`*\`, \`/\`, and parentheses, with correct operator precedence.
+
+## Your task
+
+Write \`evaluateExpression(str)\`.`,
+    difficulty: "medium",
+    starterCode: `function evaluateExpression(str) {
+}`,
+    solutionCode: `function evaluateExpression(str) {
+  const tokens = str.match(/\\d+\\.?\\d*|[+\\-*/()]/g);
+  let i = 0;
+  function parseExpr() {
+    let value = parseTerm();
+    while (tokens[i] === "+" || tokens[i] === "-") {
+      const op = tokens[i++];
+      const rhs = parseTerm();
+      value = op === "+" ? value + rhs : value - rhs;
+    }
+    return value;
+  }
+  function parseTerm() {
+    let value = parseFactor();
+    while (tokens[i] === "*" || tokens[i] === "/") {
+      const op = tokens[i++];
+      const rhs = parseFactor();
+      value = op === "*" ? value * rhs : value / rhs;
+    }
+    return value;
+  }
+  function parseFactor() {
+    if (tokens[i] === "(") {
+      i++;
+      const value = parseExpr();
+      i++;
+      return value;
+    }
+    return Number(tokens[i++]);
+  }
+  return parseExpr();
+}`,
+    testCases: [
+      { input: '"2+3*4"', expected: "14", label: "Multiplication happens before addition" },
+      { input: '"(2+3)*4"', expected: "20", label: "Parentheses override normal precedence" },
+      { input: '"10/2-1"', expected: "4", label: "Left-to-right evaluation within the same precedence level" },
+    ],
+    hints: [
+      "Three mutually-recursive functions, one per precedence level (expression → term → factor), is the classic recursive-descent structure — parentheses just recurse back to the top level.",
+      "parseTerm (handling * and /) is called from inside parseExpr, which is what naturally makes multiplication bind tighter than addition — no explicit precedence table needed.",
+    ],
+    orderIndex: 1186,
+  },
+  {
+    slug: "css-grid-autoplace-dense",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "CSS Grid Layout auto-placement algorithm — dense",
+    description: `Simulate CSS Grid's \`grid-auto-flow: row dense\` packing: place items left-to-right, top-to-bottom, but let a later, smaller item fill any gap left behind by an earlier item that couldn't fit — even if that gap is in an earlier row.
+
+## Your task
+
+Write \`placeItemsDense(items, columns)\`, where each item may have a \`span\` (default 1). Return each item with its assigned \`col\`/\`row\` (1-indexed).`,
+    difficulty: "medium",
+    starterCode: `function placeItemsDense(items, columns) {
+}`,
+    solutionCode: `function placeItemsDense(items, columns) {
+  const occupied = new Set();
+  function isFree(col, row, span) {
+    for (let c = col; c < col + span; c++) {
+      if (c > columns) return false;
+      if (occupied.has(row + "," + c)) return false;
+    }
+    return true;
+  }
+  function occupy(col, row, span) {
+    for (let c = col; c < col + span; c++) occupied.add(row + "," + c);
+  }
+  const placements = [];
+  items.forEach((item) => {
+    const span = item.span || 1;
+    let row = 1;
+    let placed = false;
+    while (!placed) {
+      for (let col = 1; col <= columns - span + 1; col++) {
+        if (isFree(col, row, span)) {
+          occupy(col, row, span);
+          placements.push({ ...item, col, row });
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) row++;
+    }
+  });
+  return placements;
+}`,
+    testCases: [
+      { input: "4 single-column items, columns: 3", expected: "the 4th item wraps to row 2, col 1", label: "Wraps to a new row once the current one is full" },
+      { input: "a span-3 item, a span-2 item, then a span-1 item, columns: 4", expected: "the span-1 item fills the 1-column gap left in row 1, at col 4", label: "Dense packing fills an earlier gap instead of only placing forward" },
+      { input: "a span-3 item followed by a span-2 item, columns: 4", expected: "the span-2 item wraps entirely to row 2", label: "A spanning item that doesn't fit the remaining row wraps" },
+    ],
+    hints: [
+      "For every item, scan from row 1, column 1 forward, looking for the first position with enough free consecutive columns for its span — that unconditional 'search from the start' behavior is exactly what makes it dense.",
+    ],
+    orderIndex: 1187,
+  },
+  {
+    slug: "css-grid-autoplace-sparse",
+    companies: ["Google"],
+    category: "javascript-runtime",
+    title: "CSS Grid Layout auto-placement algorithm — sparse",
+    description: `The default (non-dense) CSS Grid behavior: an auto-placement cursor only ever moves forward — it never backtracks to fill a gap left behind in an earlier row, even if a later item would fit there perfectly.
+
+## Your task
+
+Write \`placeItemsSparse(items, columns)\`, with the same signature and return shape as the dense version, but using a forward-only cursor instead of a full re-scan for every item.`,
+    difficulty: "hard",
+    starterCode: `function placeItemsSparse(items, columns) {
+}`,
+    solutionCode: `function placeItemsSparse(items, columns) {
+  const occupied = new Set();
+  let cursorCol = 1;
+  let cursorRow = 1;
+  function isFree(col, row, span) {
+    for (let c = col; c < col + span; c++) {
+      if (c > columns) return false;
+      if (occupied.has(row + "," + c)) return false;
+    }
+    return true;
+  }
+  function occupy(col, row, span) {
+    for (let c = col; c < col + span; c++) occupied.add(row + "," + c);
+  }
+  const placements = [];
+  items.forEach((item) => {
+    const span = item.span || 1;
+    while (true) {
+      if (cursorCol + span - 1 > columns) {
+        cursorCol = 1;
+        cursorRow++;
+        continue;
+      }
+      if (isFree(cursorCol, cursorRow, span)) {
+        occupy(cursorCol, cursorRow, span);
+        placements.push({ ...item, col: cursorCol, row: cursorRow });
+        cursorCol += span;
+        break;
+      }
+      cursorCol++;
+    }
+  });
+  return placements;
+}`,
+    testCases: [
+      { input: "4 single-column items, columns: 3", expected: "the 4th item wraps to row 2, col 1", label: "Behaves the same as dense packing for the simple wrapping case" },
+      { input: "a span-3 item, a span-2 item, then a span-1 item, columns: 4 (same input as the dense version)", expected: "the span-1 item continues forward to row 2, col 3 — never checking row 1's leftover gap", label: "Never backtracks to fill an earlier row's gap, unlike dense packing" },
+      { input: "a span-3 item followed by a span-2 item, columns: 4", expected: "the span-2 item wraps entirely to row 2", label: "A spanning item that doesn't fit the remaining row still wraps" },
+    ],
+    hints: [
+      "A single (col, row) cursor that only ever advances — never resets except when wrapping to the very next row — is the entire behavioral difference from the dense version's full re-scan.",
+      "Run this against the exact same input as the dense algorithm's gap-filling test to see the two placement strategies genuinely diverge on the third item's position.",
+    ],
+    orderIndex: 1188,
+  },
+  {
+    slug: "token-bucket-rate-limiter",
+    companies: ["Uber", "Stripe", "Bloomberg"],
+    category: "javascript-runtime",
+    title: "Implement a rate limiter (token bucket algorithm)",
+    description: `The token bucket algorithm: a bucket holds up to \`capacity\` tokens, refilling continuously over time; each request consumes a token if one's available, and is rejected otherwise — allowing bursts up to capacity while capping the sustained rate.
+
+## Your task
+
+Write \`createRateLimiter(capacity, refillRatePerSecond)\`, returning \`{ tryConsume(cost = 1) }\`, which returns \`true\`/\`false\` for whether the request was allowed.`,
+    difficulty: "hard",
+    starterCode: `function createRateLimiter(capacity, refillRatePerSecond) {
+}`,
+    solutionCode: `function createRateLimiter(capacity, refillRatePerSecond) {
+  let tokens = capacity;
+  let lastRefill = Date.now();
+  function refill() {
+    const now = Date.now();
+    const elapsedSeconds = (now - lastRefill) / 1000;
+    tokens = Math.min(capacity, tokens + elapsedSeconds * refillRatePerSecond);
+    lastRefill = now;
+  }
+  return {
+    tryConsume(cost = 1) {
+      refill();
+      if (tokens >= cost) {
+        tokens -= cost;
+        return true;
+      }
+      return false;
+    },
+  };
+}`,
+    testCases: [
+      { input: "capacity 2, consumed twice then a third time", expected: "true, true, then false", label: "Rejects once the bucket is empty" },
+      { input: "capacity 1, exhausted, then waited long enough to refill", expected: "a later request succeeds again", label: "Tokens refill continuously over real time" },
+      { input: "a rejected request, checked again immediately with refillRate 0", expected: "still rejected — no partial or accidental token grant", label: "A rejected request never consumes (or otherwise disturbs) the token count" },
+    ],
+    hints: [
+      "Lazily refill on every tryConsume call, based on elapsed real time since the last refill, rather than running a background timer — that's what keeps this simple and precise.",
+      "A rejected request should return early without touching the token count at all — only a successful consumption decrements it.",
+    ],
+    orderIndex: 1189,
+  },
+
+  // ── react — standalone React Custom Hooks & Patterns Roadmap, Stage R1 ─────
+  {
+    slug: "react-counter-app",
+    companies: [],
+    category: "react",
+    title: "The React Counter app",
+    description: `The classic first custom-hook interview question: a counter that increments, decrements, and resets. Framed here as the plain state-and-actions logic a \`Counter\` component's \`useState\` would drive — no JSX needed, just the state transitions themselves.
+
+## Your task
+
+Write \`createCounterStore(initial = 0)\`, returning \`{ getValue(), increment(), decrement(), reset() }\`. \`increment\`/\`decrement\` change the value by 1; \`reset\` returns it to whatever \`initial\` was, not to 0.`,
+    difficulty: "easy",
+    starterCode: `function createCounterStore(initial = 0) {
+}`,
+    solutionCode: `function createCounterStore(initial = 0) {
+  let value = initial;
+  return {
+    getValue() {
+      return value;
+    },
+    increment() {
+      value += 1;
+    },
+    decrement() {
+      value -= 1;
+    },
+    reset() {
+      value = initial;
+    },
+  };
+}`,
+    testCases: [
+      { input: "initial 0, increment() twice", expected: "2", label: "Increment increases the value by 1 each call" },
+      { input: "initial 5, decrement() once", expected: "4", label: "Decrement decreases the value by 1" },
+      { input: "initial 10, incremented then reset()", expected: "10 — the original initial, not 0", label: "Reset returns to the constructor's initial value, not zero" },
+    ],
+    hints: [
+      "reset() must restore initial, not hardcode 0 — a counter created with createCounterStore(10) should reset back to 10.",
+    ],
+    orderIndex: 1190,
+  },
+  {
+    slug: "controlled-vs-uncontrolled-input",
+    companies: ["Meta", "Amazon"],
+    category: "react",
+    title: "Forms: Controlled vs. Uncontrolled Input",
+    description: `The core distinction interviewers probe for: a **controlled** input's value is owned by external state — the DOM element only ever shows what that state says, and never updates itself. An **uncontrolled** input owns its own value internally — you just read the live DOM value on demand, via a ref.
+
+## Your task
+
+Write two functions. \`createControlledInput(initialValue)\` returns \`{ getValue(), setValue(next) }\` — an external "state" that only ever changes through an explicit \`setValue\` call. \`readUncontrolledValue(inputEl)\` takes a real \`<input>\` element and simply returns its current \`.value\`, read live — with no state of its own.`,
+    difficulty: "easy",
+    starterCode: `function createControlledInput(initialValue) {
+}
+
+function readUncontrolledValue(inputEl) {
+}`,
+    solutionCode: `function createControlledInput(initialValue) {
+  let value = initialValue;
+  return {
+    getValue() {
+      return value;
+    },
+    setValue(next) {
+      value = next;
+    },
+  };
+}
+
+function readUncontrolledValue(inputEl) {
+  return inputEl.value;
+}`,
+    testCases: [
+      { input: "createControlledInput('a'), then the DOM never touched", expected: "getValue() still 'a' until setValue is called", label: "Controlled value only changes through setValue — nothing else can move it" },
+      { input: "createControlledInput('a').setValue('b')", expected: "getValue() === 'b'", label: "setValue is the only way to update a controlled value" },
+      { input: "a real <input> whose .value is set directly (simulating native typing), then readUncontrolledValue(el)", expected: "reflects the DOM's current value immediately, with no separate state copy", label: "Uncontrolled reads live from the DOM — there's no state to keep in sync" },
+    ],
+    hints: [
+      "createControlledInput shouldn't touch the DOM at all — it's pure state, exactly like what a useState pair backing a controlled <input value={state} onChange={...}> would hold.",
+      "readUncontrolledValue should never cache anything between calls — read inputEl.value fresh every time, which is exactly what a ref-based uncontrolled input does on submit.",
+    ],
+    orderIndex: 1191,
+  },
+  {
+    slug: "todo-list-reducer-basics",
+    companies: [],
+    category: "react",
+    title: "Build a Todo List (add / toggle / delete)",
+    description: `Every "build a Todo list" round eventually reduces to the same three state transitions, whether you write them as three separate \`useState\` updaters or as one \`useReducer\`. Writing them as a single pure reducer function makes the logic trivial to test in isolation.
+
+## Your task
+
+Write \`todoReducer(state, action)\`, where \`state\` is an array of \`{ id, text, done }\` and \`action\` is one of \`{ type: "add", text }\`, \`{ type: "toggle", id }\`, or \`{ type: "delete", id }\`. Return a **new** array each time — never mutate \`state\` in place. New todos start with \`done: false\`, and get an \`id\` equal to the array's current length + 1 (simple, sequential, fine for this exercise).`,
+    difficulty: "easy",
+    starterCode: `function todoReducer(state, action) {
+}`,
+    solutionCode: `function todoReducer(state, action) {
+  switch (action.type) {
+    case "add":
+      return [...state, { id: state.length + 1, text: action.text, done: false }];
+    case "toggle":
+      return state.map((todo) =>
+        todo.id === action.id ? { ...todo, done: !todo.done } : todo,
+      );
+    case "delete":
+      return state.filter((todo) => todo.id !== action.id);
+    default:
+      return state;
+  }
+}`,
+    testCases: [
+      { input: "todoReducer([], { type: 'add', text: 'Buy milk' })", expected: "[{ id: 1, text: 'Buy milk', done: false }]", label: "add appends a new todo with done: false" },
+      { input: "toggle the id-1 todo", expected: "only that todo's done flips — the rest are untouched", label: "toggle flips a single todo's done flag by id" },
+      { input: "delete the id-1 todo from a two-item list", expected: "an array with only the remaining todo", label: "delete removes exactly the matching todo" },
+      { input: "any action, checking the original state array afterward", expected: "the original array/objects are unchanged", label: "Never mutates the input state — always returns a new array" },
+    ],
+    hints: [
+      "toggle should map over every todo and only replace the one matching action.id — every other todo should be the exact same object reference, not just equal by value.",
+      "Returning [...state, newTodo] instead of state.push(newTodo) is what keeps this reducer pure — pushing would mutate the array a caller might still be holding a reference to.",
+    ],
+    orderIndex: 1192,
+  },
+
+  // ── react — standalone React Custom Hooks & Patterns Roadmap, Stage R2 ─────
+  {
+    slug: "use-toggle-hook",
+    companies: ["Meta", "Amazon", "Airbnb", "Uber"],
+    category: "react",
+    title: "useToggle()",
+    description: `One of the most-repeated "write a custom hook" openers. A boolean piece of state with three ways to move it: flip it, or force it to a specific side.
+
+## Your task
+
+Write \`createToggle(initial = false)\`, returning \`{ getValue(), toggle(), setOn(), setOff() }\`.`,
+    difficulty: "easy",
+    starterCode: `function createToggle(initial = false) {
+}`,
+    solutionCode: `function createToggle(initial = false) {
+  let value = Boolean(initial);
+  return {
+    getValue() {
+      return value;
+    },
+    toggle() {
+      value = !value;
+    },
+    setOn() {
+      value = true;
+    },
+    setOff() {
+      value = false;
+    },
+  };
+}`,
+    testCases: [
+      { input: "createToggle(false), toggle() once", expected: "true", label: "toggle() flips the current value" },
+      { input: "createToggle(false), toggle() twice", expected: "false — back to the start", label: "toggle() flips back on a second call" },
+      { input: "createToggle(false), setOn() then setOff()", expected: "false, forced directly rather than by flipping", label: "setOn/setOff force a specific value regardless of the current one" },
+    ],
+    hints: [
+      "toggle() should always invert the current value — never hardcode which direction it moves.",
+    ],
+    orderIndex: 1193,
+  },
+  {
+    slug: "use-is-first-render-hook",
+    companies: ["Meta", "Airbnb"],
+    category: "react",
+    title: "useIsFirstRender()",
+    description: `A tiny but genuinely useful hook: lets a component (or an effect) know whether the current pass is the very first one, without a separate \`useEffect\` + ref dance every time you need that check.
+
+## Your task
+
+Write \`createIsFirstRenderTracker()\`, returning \`{ checkAndAdvance() }\`. Each call to \`checkAndAdvance()\` simulates checking on one render: it returns \`true\` the very first time it's called, and \`false\` on every call after that.`,
+    difficulty: "easy",
+    starterCode: `function createIsFirstRenderTracker() {
+}`,
+    solutionCode: `function createIsFirstRenderTracker() {
+  let isFirst = true;
+  return {
+    checkAndAdvance() {
+      const wasFirst = isFirst;
+      isFirst = false;
+      return wasFirst;
+    },
+  };
+}`,
+    testCases: [
+      { input: "the first checkAndAdvance() call", expected: "true", label: "Returns true on the first call" },
+      { input: "a second and third checkAndAdvance() call", expected: "false, false", label: "Returns false on every call after the first" },
+    ],
+    hints: [
+      "The flag only needs to flip once, on the very first call — after that it should stay false forever, no matter how many more times checkAndAdvance() runs.",
+    ],
+    orderIndex: 1194,
+  },
+  {
+    slug: "use-previous-hook",
+    companies: ["Meta", "Amazon", "Shopify"],
+    category: "react",
+    title: "usePrevious()",
+    description: `A hook for comparing a value against what it was on the last render — useful for things like "only animate when a prop actually changed direction."
+
+## Your task
+
+Write \`createPreviousTracker()\`, returning \`{ track(current) }\`. Call \`track\` once per simulated render with the current value; it returns whatever value was passed to the *previous* call (\`undefined\` on the very first call).`,
+    difficulty: "easy",
+    starterCode: `function createPreviousTracker() {
+}`,
+    solutionCode: `function createPreviousTracker() {
+  let previous;
+  return {
+    track(current) {
+      const value = previous;
+      previous = current;
+      return value;
+    },
+  };
+}`,
+    testCases: [
+      { input: "track(1) on the first call", expected: "undefined", label: "The first call has no previous value yet" },
+      { input: "track(1) then track(2)", expected: "the second call returns 1", label: "Each call returns what was passed in the call before it" },
+      { input: "track(1), track(2), track(3)", expected: "returns undefined, then 1, then 2", label: "Tracks the immediately-prior value across a whole sequence of renders" },
+    ],
+    hints: [
+      "Update the stored value to the new current *after* reading out the old one to return — order matters here.",
+    ],
+    orderIndex: 1195,
+  },
+  {
+    slug: "use-effect-once-hook",
+    companies: ["Meta"],
+    category: "react",
+    title: "useEffectOnce()",
+    description: `A guarded version of "run this only on mount" — the kind of hook teams reach for when React 18 Strict Mode's intentional double-invoke of effects in development breaks code that assumed \`useEffect(fn, [])\` truly only ever runs once.
+
+## Your task
+
+Write \`createEffectOnce(effectFn)\`, returning a function \`run()\`. \`effectFn\` should execute the first time \`run()\` is called, and never again on any later call.`,
+    difficulty: "easy",
+    starterCode: `function createEffectOnce(effectFn) {
+}`,
+    solutionCode: `function createEffectOnce(effectFn) {
+  let hasRun = false;
+  return function run() {
+    if (hasRun) return;
+    hasRun = true;
+    effectFn();
+  };
+}`,
+    testCases: [
+      { input: "run() called three times in a row", expected: "effectFn was invoked exactly once", label: "The wrapped effect only ever runs on the first call" },
+      { input: "run() called once", expected: "effectFn was invoked", label: "The effect does run — just only once" },
+    ],
+    hints: [
+      "Set the guard flag before calling effectFn, not after — if effectFn calls run() again re-entrantly, the guard still has to hold.",
+    ],
+    orderIndex: 1196,
+  },
+  {
+    slug: "use-is-mounted-hook",
+    companies: ["Meta", "Amazon"],
+    category: "react",
+    title: "useIsMounted()",
+    description: `The classic guard against "Can't perform a React state update on an unmounted component" — an async callback checks this before calling \`setState\`, instead of letting the update fire into the void.
+
+## Your task
+
+Write \`createIsMountedRef()\`, returning \`{ isMounted(), unmount() }\`. \`isMounted()\` returns \`true\` until \`unmount()\` has been called, after which it returns \`false\` forever.`,
+    difficulty: "easy",
+    starterCode: `function createIsMountedRef() {
+}`,
+    solutionCode: `function createIsMountedRef() {
+  let mounted = true;
+  return {
+    isMounted() {
+      return mounted;
+    },
+    unmount() {
+      mounted = false;
+    },
+  };
+}`,
+    testCases: [
+      { input: "isMounted() right after creation", expected: "true", label: "Starts mounted" },
+      { input: "unmount(), then isMounted()", expected: "false", label: "isMounted() flips to false after unmount()" },
+      { input: "unmount() called twice, then isMounted()", expected: "still false", label: "Stays unmounted permanently — there's no way back to true" },
+    ],
+    hints: [
+      "There's no remount path here — once unmount() has been called, isMounted() must never return true again, no matter what else happens.",
+    ],
+    orderIndex: 1197,
+  },
+  {
+    slug: "use-counter-hook",
+    companies: [],
+    category: "react",
+    title: "useCounter() (increment/decrement/reset with bounds)",
+    description: `A step up from the plain counter: this version enforces a \`min\`/\`max\` range, clamping every change instead of letting the value drift outside it.
+
+## Your task
+
+Write \`createCounter({ initial = 0, min = -Infinity, max = Infinity } = {})\`, returning \`{ getValue(), increment(), decrement(), reset() }\`. Every change must stay clamped within \`[min, max]\` — including the very first \`initial\` value itself.`,
+    difficulty: "easy",
+    starterCode: `function createCounter({ initial = 0, min = -Infinity, max = Infinity } = {}) {
+}`,
+    solutionCode: `function createCounter({ initial = 0, min = -Infinity, max = Infinity } = {}) {
+  function clamp(v) {
+    return Math.min(Math.max(v, min), max);
+  }
+  let value = clamp(initial);
+  return {
+    getValue() {
+      return value;
+    },
+    increment() {
+      value = clamp(value + 1);
+    },
+    decrement() {
+      value = clamp(value - 1);
+    },
+    reset() {
+      value = clamp(initial);
+    },
+  };
+}`,
+    testCases: [
+      { input: "createCounter({ initial: 4, max: 5 }), increment() twice", expected: "5 — clamped, not 6", label: "increment() never goes above max" },
+      { input: "createCounter({ initial: 0, min: 0 }), decrement() twice", expected: "0 — clamped, not negative", label: "decrement() never goes below min" },
+      { input: "createCounter({ initial: 10, max: 5 })", expected: "getValue() starts at 5, not 10", label: "The initial value itself is clamped into range" },
+    ],
+    hints: [
+      "Run every write — increment, decrement, and reset — through the same clamp() helper, including the very first assignment from initial.",
+    ],
+    orderIndex: 1198,
+  },
+
+  // ── react — standalone React Custom Hooks & Patterns Roadmap, Stage R3 ─────
+  {
+    slug: "use-click-outside-hook",
+    companies: ["Meta", "Airbnb", "Shopify"],
+    category: "react",
+    title: "useClickOutside()",
+    description: `The hook behind every dropdown, modal, and popover that closes itself when you click elsewhere on the page — a single document-level click listener that checks whether the click landed inside the target element.
+
+## Your task
+
+Write \`createClickOutsideWatcher(targetEl, callback)\`. It should call \`callback\` whenever a click happens anywhere in the document *outside* \`targetEl\` (and outside any of its children), and never when the click is inside it. Return \`{ destroy() }\` to remove the listener.`,
+    difficulty: "easy",
+    starterCode: `function createClickOutsideWatcher(targetEl, callback) {
+}`,
+    solutionCode: `function createClickOutsideWatcher(targetEl, callback) {
+  function handleClick(event) {
+    if (!targetEl.contains(event.target)) {
+      callback(event);
+    }
+  }
+  document.addEventListener("click", handleClick);
+  return {
+    destroy() {
+      document.removeEventListener("click", handleClick);
+    },
+  };
+}`,
+    testCases: [
+      { input: "a click dispatched on an element outside targetEl", expected: "callback fires", label: "Fires when the click lands outside the target element" },
+      { input: "a click dispatched on targetEl itself (or a child of it)", expected: "callback does not fire", label: "Does not fire when the click lands inside the target element" },
+      { input: "destroy(), then another outside click", expected: "callback no longer fires", label: "destroy() removes the listener for good" },
+    ],
+    hints: [
+      "Element.prototype.contains(node) returns true for the element itself too, not just its descendants — so checking !targetEl.contains(event.target) correctly excludes clicks on targetEl itself.",
+    ],
+    orderIndex: 1199,
+  },
+  {
+    slug: "use-event-listener-hook",
+    companies: ["Meta", "Amazon"],
+    category: "react",
+    title: "useEventListener() (generic addEventListener wrapper)",
+    description: `A generic wrapper most codebases eventually write once and reuse everywhere. The subtle part isn't attaching the listener — it's making sure the *latest* handler always runs, even though the actual DOM listener was only attached once. A naive version captures whatever handler existed at attach time and runs that stale closure forever.
+
+## Your task
+
+Write \`createEventListenerHook(target, eventName, handler)\`, returning \`{ updateHandler(nextHandler), destroy() }\`. The listener should always invoke whichever handler was most recently passed to \`updateHandler\` (or the original one, if it's never been called) — not the one captured when the listener was first attached.`,
+    difficulty: "easy",
+    starterCode: `function createEventListenerHook(target, eventName, handler) {
+}`,
+    solutionCode: `function createEventListenerHook(target, eventName, handler) {
+  let currentHandler = handler;
+  function listener(event) {
+    currentHandler(event);
+  }
+  target.addEventListener(eventName, listener);
+  return {
+    updateHandler(nextHandler) {
+      currentHandler = nextHandler;
+    },
+    destroy() {
+      target.removeEventListener(eventName, listener);
+    },
+  };
+}`,
+    testCases: [
+      { input: "attach with handler A, dispatch the event once", expected: "A is invoked", label: "The original handler runs on the event" },
+      { input: "attach with handler A, updateHandler(B), then dispatch the event", expected: "B runs, A does not", label: "Always calls the most recently registered handler, not a stale closure over the first one" },
+      { input: "destroy(), then dispatch the event again", expected: "no handler runs", label: "destroy() actually removes the underlying DOM listener" },
+    ],
+    hints: [
+      "Attach one stable listener function to the DOM that always reads a mutable 'current handler' variable — don't call target.addEventListener again inside updateHandler.",
+    ],
+    orderIndex: 1200,
+  },
+  {
+    slug: "use-hover-hook",
+    companies: ["Meta", "Airbnb"],
+    category: "react",
+    title: "useHover()",
+    description: `A hover-state hook — tracks whether the pointer is currently over an element, using the two events that bracket a hover: \`mouseenter\` and \`mouseleave\`.
+
+## Your task
+
+Write \`createHoverWatcher(el)\`, returning \`{ isHovered(), destroy() }\`.`,
+    difficulty: "medium",
+    starterCode: `function createHoverWatcher(el) {
+}`,
+    solutionCode: `function createHoverWatcher(el) {
+  let hovered = false;
+  function onEnter() {
+    hovered = true;
+  }
+  function onLeave() {
+    hovered = false;
+  }
+  el.addEventListener("mouseenter", onEnter);
+  el.addEventListener("mouseleave", onLeave);
+  return {
+    isHovered() {
+      return hovered;
+    },
+    destroy() {
+      el.removeEventListener("mouseenter", onEnter);
+      el.removeEventListener("mouseleave", onLeave);
+    },
+  };
+}`,
+    testCases: [
+      { input: "a mouseenter event dispatched on el", expected: "isHovered() becomes true", label: "mouseenter sets hovered to true" },
+      { input: "mouseenter then mouseleave dispatched on el", expected: "isHovered() becomes false again", label: "mouseleave sets hovered back to false" },
+      { input: "destroy(), then a mouseenter dispatched on el", expected: "isHovered() stays false", label: "destroy() removes both listeners" },
+    ],
+    hints: [
+      "mouseenter/mouseleave don't bubble the way mouseover/mouseout do, but since you're attaching directly to el (not delegating from a parent), that difference doesn't matter here.",
+    ],
+    orderIndex: 1201,
+  },
+  {
+    slug: "use-focus-hook",
+    companies: ["Meta"],
+    category: "react",
+    title: "useFocus()",
+    description: `Tracks whether an element currently has focus, via the \`focus\`/\`blur\` event pair — useful for showing a "focused" style on a wrapping element that isn't itself focusable.
+
+## Your task
+
+Write \`createFocusWatcher(el)\`, returning \`{ isFocused(), destroy() }\`.`,
+    difficulty: "medium",
+    starterCode: `function createFocusWatcher(el) {
+}`,
+    solutionCode: `function createFocusWatcher(el) {
+  let focused = false;
+  function onFocus() {
+    focused = true;
+  }
+  function onBlur() {
+    focused = false;
+  }
+  el.addEventListener("focus", onFocus);
+  el.addEventListener("blur", onBlur);
+  return {
+    isFocused() {
+      return focused;
+    },
+    destroy() {
+      el.removeEventListener("focus", onFocus);
+      el.removeEventListener("blur", onBlur);
+    },
+  };
+}`,
+    testCases: [
+      { input: "a focus event dispatched on el", expected: "isFocused() becomes true", label: "focus sets focused to true" },
+      { input: "focus then blur dispatched on el", expected: "isFocused() becomes false again", label: "blur sets focused back to false" },
+      { input: "destroy(), then a focus event dispatched on el", expected: "isFocused() stays false", label: "destroy() removes both listeners" },
+    ],
+    hints: [
+      "focus and blur don't bubble, so this only works because the listeners are attached directly to el — attaching them on a parent instead would silently never fire.",
+    ],
+    orderIndex: 1202,
+  },
+  {
+    slug: "use-on-screen-hook",
+    companies: ["Meta", "Pinterest", "TikTok"],
+    category: "react",
+    title: "useOnScreen() (IntersectionObserver)",
+    description: `The hook behind lazy-loaded images and infinite scroll: track whether an element is currently within the viewport, using \`IntersectionObserver\` instead of scroll-event math. To keep this testable without a real browser layout engine, the observer itself is injected — exactly how you'd mock it in a real test suite.
+
+## Your task
+
+Write \`createOnScreenWatcher(el, createObserver)\`, returning \`{ isOnScreen(), destroy() }\`. \`createObserver(el, onChange)\` is called once; it's expected to return \`{ disconnect() }\`, and to call \`onChange({ isIntersecting })\` whenever the intersection state changes.`,
+    difficulty: "medium",
+    starterCode: `function createOnScreenWatcher(el, createObserver) {
+}`,
+    solutionCode: `function createOnScreenWatcher(el, createObserver) {
+  let onScreen = false;
+  const observer = createObserver(el, (entry) => {
+    onScreen = entry.isIntersecting;
+  });
+  return {
+    isOnScreen() {
+      return onScreen;
+    },
+    destroy() {
+      observer.disconnect();
+    },
+  };
+}`,
+    testCases: [
+      { input: "before any intersection change fires", expected: "isOnScreen() is false", label: "Starts off-screen by default" },
+      { input: "the injected observer reports isIntersecting: true", expected: "isOnScreen() becomes true", label: "Reflects the observer's reported intersection state" },
+      { input: "destroy()", expected: "the observer's disconnect() was called", label: "destroy() disconnects the underlying observer" },
+    ],
+    hints: [
+      "createObserver is called exactly once, at setup — don't call it again elsewhere, and don't reach into IntersectionObserver directly since it's provided for you as a parameter.",
+    ],
+    orderIndex: 1203,
+  },
+  {
+    slug: "use-window-size-hook",
+    companies: ["Amazon", "Airbnb"],
+    category: "react",
+    title: "useWindowSize()",
+    description: `Tracks the browser viewport's width/height, updating whenever the window resizes. Since a real iframe's viewport can't be resized on demand for testing, the \`window\`-like object is passed in — the same shape a real \`window\` has (\`innerWidth\`, \`innerHeight\`, \`addEventListener\`).
+
+## Your task
+
+Write \`createWindowSizeWatcher(win)\`, returning \`{ getSize(), destroy() }\`, where \`getSize()\` returns \`{ width, height }\` and stays in sync with \`win\`'s \`resize\` events.`,
+    difficulty: "easy",
+    starterCode: `function createWindowSizeWatcher(win) {
+}`,
+    solutionCode: `function createWindowSizeWatcher(win) {
+  let size = { width: win.innerWidth, height: win.innerHeight };
+  function onResize() {
+    size = { width: win.innerWidth, height: win.innerHeight };
+  }
+  win.addEventListener("resize", onResize);
+  return {
+    getSize() {
+      return size;
+    },
+    destroy() {
+      win.removeEventListener("resize", onResize);
+    },
+  };
+}`,
+    testCases: [
+      { input: "created against a 1024×768 window", expected: "getSize() is { width: 1024, height: 768 }", label: "Reads the initial size immediately" },
+      { input: "the window resizes to 500×400", expected: "getSize() updates to { width: 500, height: 400 }", label: "Updates on a resize event" },
+      { input: "destroy(), then the window resizes again", expected: "getSize() stays at the last value before destroy()", label: "destroy() stops tracking further resizes" },
+    ],
+    hints: [
+      "Read win.innerWidth/win.innerHeight fresh inside the resize handler — don't try to pull the new size out of the event object itself.",
+    ],
+    orderIndex: 1204,
+  },
+
+  // ── react — standalone React Custom Hooks & Patterns Roadmap, Stage R4 ─────
+  {
+    slug: "use-debounced-value-hook",
+    companies: ["Meta", "Amazon", "Uber", "TikTok", "Airbnb"],
+    category: "react",
+    title: "useDebounce()",
+    description: `Not to be confused with debouncing a *function* — this debounces a *value*: as a value changes rapidly (like a search box's text on every keystroke), the debounced version only catches up once the value has stopped changing for a while.
+
+## Your task
+
+Write \`createDebouncedValue(initial, delayMs)\`, returning \`{ getValue(), setValue(next) }\`. Each \`setValue\` call restarts a \`delayMs\` timer; \`getValue()\` only reflects the latest \`setValue\` call once that timer finishes without being restarted again.`,
+    difficulty: "easy",
+    starterCode: `function createDebouncedValue(initial, delayMs) {
+}`,
+    solutionCode: `function createDebouncedValue(initial, delayMs) {
+  let value = initial;
+  let timer = null;
+  return {
+    getValue() {
+      return value;
+    },
+    setValue(next) {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        value = next;
+        timer = null;
+      }, delayMs);
+    },
+  };
+}`,
+    testCases: [
+      { input: "three rapid setValue calls within the delay window", expected: "getValue() only reflects the last of the three, and only after the delay", label: "Coalesces rapid updates into the final one" },
+      { input: "setValue called, checked immediately (before the delay elapses)", expected: "getValue() still returns the old value", label: "Doesn't update until the full delay has passed" },
+      { input: "setValue called once, waited past the full delay", expected: "getValue() reflects the new value", label: "Updates once the delay elapses undisturbed" },
+    ],
+    hints: [
+      "Every setValue call should clear whatever timer is already pending before starting a new one — that's what makes rapid calls collapse into a single update.",
+    ],
+    orderIndex: 1205,
+  },
+  {
+    slug: "use-throttled-value-hook",
+    companies: ["Uber", "TikTok"],
+    category: "react",
+    title: "useThrottle()",
+    description: `Like debounce, but for capping the *rate* of updates instead of waiting for silence — the first update in a window applies immediately, and further updates within the same window are dropped until the window passes (leading-edge throttling, the version most prep guides ask for first).
+
+## Your task
+
+Write \`createThrottledValue(initial, intervalMs)\`, returning \`{ getValue(), setValue(next) }\`. A \`setValue\` call applies immediately if at least \`intervalMs\` has passed since the last applied update; otherwise it's dropped.`,
+    difficulty: "easy",
+    starterCode: `function createThrottledValue(initial, intervalMs) {
+}`,
+    solutionCode: `function createThrottledValue(initial, intervalMs) {
+  let value = initial;
+  let lastUpdate = 0;
+  return {
+    getValue() {
+      return value;
+    },
+    setValue(next) {
+      const now = Date.now();
+      if (now - lastUpdate >= intervalMs) {
+        value = next;
+        lastUpdate = now;
+      }
+    },
+  };
+}`,
+    testCases: [
+      { input: "the very first setValue call", expected: "applies immediately", label: "The leading update always goes through" },
+      { input: "a second setValue call right after the first, well within intervalMs", expected: "dropped — getValue() still shows the first update", label: "Updates within the same window are dropped" },
+      { input: "a setValue call after waiting past intervalMs", expected: "applies", label: "A new window allows the next update through" },
+    ],
+    hints: [
+      "Only lastUpdate matters for the decision — there's no queued 'trailing' call to worry about in this leading-edge version.",
+    ],
+    orderIndex: 1206,
+  },
+  {
+    slug: "use-timeout-hook",
+    companies: ["Meta", "Amazon"],
+    category: "react",
+    title: "useTimeout()",
+    description: `A declarative wrapper around \`setTimeout\`/\`clearTimeout\` that's easy to restart or cancel — cleaner than sprinkling raw timer-ref bookkeeping through a component.
+
+## Your task
+
+Write \`createTimeoutRunner(callback, delayMs)\`, returning \`{ reset(), clear() }\`. \`reset()\` cancels any pending timer and starts a fresh \`delayMs\` one; \`clear()\` cancels it without starting a new one.`,
+    difficulty: "medium",
+    starterCode: `function createTimeoutRunner(callback, delayMs) {
+}`,
+    solutionCode: `function createTimeoutRunner(callback, delayMs) {
+  let timer = setTimeout(callback, delayMs);
+  return {
+    reset() {
+      clearTimeout(timer);
+      timer = setTimeout(callback, delayMs);
+    },
+    clear() {
+      clearTimeout(timer);
+    },
+  };
+}`,
+    testCases: [
+      { input: "created, then waited past delayMs untouched", expected: "callback fires", label: "The callback fires on its own if left alone" },
+      { input: "clear() called before delayMs elapses", expected: "callback never fires", label: "clear() cancels the pending callback" },
+      { input: "reset() called partway through, extending the wait", expected: "callback fires delayMs after the reset() call, not the original start", label: "reset() restarts the full delay from that point" },
+    ],
+    hints: [
+      "reset() is just clear() followed by starting a brand new setTimeout — no need for any more elaborate bookkeeping than that.",
+    ],
+    orderIndex: 1207,
+  },
+  {
+    slug: "use-interval-hook",
+    companies: ["Meta"],
+    category: "react",
+    title: "useInterval() (the classic Dan Abramov pattern)",
+    description: `The subtlety Dan Abramov's famous post is about: a naive \`setInterval(callback, delay)\` inside \`useEffect\` captures whatever \`callback\` closure existed when the effect ran — so if \`callback\` changes on a later render, the interval keeps calling the *stale* one forever, unless you restart the whole interval (which resets its timing). The fix is to keep the interval itself stable, but always call through to the *latest* callback.
+
+## Your task
+
+Write \`createInterval(callback, delayMs)\`, returning \`{ updateCallback(nextCallback), stop() }\`. The underlying interval should tick every \`delayMs\` without ever restarting, but each tick must call whichever callback was most recently passed to \`updateCallback\` (or the original, if never updated).`,
+    difficulty: "medium",
+    starterCode: `function createInterval(callback, delayMs) {
+}`,
+    solutionCode: `function createInterval(callback, delayMs) {
+  let currentCallback = callback;
+  const timer = setInterval(() => {
+    currentCallback();
+  }, delayMs);
+  return {
+    updateCallback(nextCallback) {
+      currentCallback = nextCallback;
+    },
+    stop() {
+      clearInterval(timer);
+    },
+  };
+}`,
+    testCases: [
+      { input: "created with callback A, waited past a few ticks", expected: "A was called", label: "The original callback fires on each tick" },
+      { input: "updateCallback(B) called, then waited past another tick", expected: "B is called on the next tick, not the stale A", label: "Ticks always call the most recently registered callback" },
+      { input: "stop(), then waited past several more delayMs periods", expected: "no further calls happen", label: "stop() actually clears the underlying interval" },
+    ],
+    hints: [
+      "There should only ever be one setInterval call, made once at creation — updateCallback must never create a new interval, only swap which function the existing one calls.",
+    ],
+    orderIndex: 1208,
+  },
+  {
+    slug: "use-update-effect-hook",
+    companies: ["Meta"],
+    category: "react",
+    title: "useUpdateEffect() (skip effect on mount)",
+    description: `A variant of \`useEffect\` that skips its very first run — useful when an effect should only react to genuine *changes*, not the initial mount (e.g. showing a "saved!" toast only after an actual edit, not when the form first loads).
+
+## Your task
+
+Write \`createUpdateEffectRunner(effectFn)\`, returning a function \`run()\` meant to be called once per simulated render/update. \`effectFn\` must **not** run on the first call, but must run on every call after that.`,
+    difficulty: "medium",
+    starterCode: `function createUpdateEffectRunner(effectFn) {
+}`,
+    solutionCode: `function createUpdateEffectRunner(effectFn) {
+  let hasMounted = false;
+  return function run() {
+    if (hasMounted) {
+      effectFn();
+    } else {
+      hasMounted = true;
+    }
+  };
+}`,
+    testCases: [
+      { input: "run() called once (the mount)", expected: "effectFn was not called", label: "Skips the effect on the very first call" },
+      { input: "run() called three times total", expected: "effectFn was called exactly twice", label: "Runs on every call after the first" },
+    ],
+    hints: [
+      "The very first run() call should only flip an internal 'has mounted' flag — it shouldn't call effectFn at all.",
+    ],
+    orderIndex: 1209,
+  },
+
+  // ── react — standalone React Custom Hooks & Patterns Roadmap, Stage R5 ─────
+  {
+    slug: "use-local-storage-hook",
+    companies: ["Amazon", "Airbnb", "Meta"],
+    category: "react",
+    title: "useLocalStorage()",
+    description: `A \`useState\` that persists to \`localStorage\`, so the value survives a refresh. To keep this testable without touching the browser's real storage, the storage backend itself is injected — any object with \`get(key)\`/\`set(key, value)\` will do.
+
+## Your task
+
+Write \`createLocalStorageState(key, initialValue, storage)\`, returning \`{ getValue(), setValue(next) }\`. On creation, it should read any existing value already in \`storage\` for \`key\` (JSON-decoded) instead of \`initialValue\`, if one exists — and every \`setValue\` call must write the new value back to \`storage\` (JSON-encoded) as well as updating the in-memory value.`,
+    difficulty: "easy",
+    starterCode: `function createLocalStorageState(key, initialValue, storage) {
+}`,
+    solutionCode: `function createLocalStorageState(key, initialValue, storage) {
+  const existing = storage.get(key);
+  let value = existing !== undefined ? JSON.parse(existing) : initialValue;
+  if (existing === undefined) {
+    storage.set(key, JSON.stringify(value));
+  }
+  return {
+    getValue() {
+      return value;
+    },
+    setValue(next) {
+      value = next;
+      storage.set(key, JSON.stringify(value));
+    },
+  };
+}`,
+    testCases: [
+      { input: "an empty storage, createLocalStorageState('theme', 'light', storage)", expected: "getValue() is 'light'", label: "Falls back to initialValue when storage has nothing for that key" },
+      { input: "setValue('dark') on that instance", expected: "storage now holds the JSON-encoded 'dark' for that key", label: "setValue writes through to storage" },
+      { input: "a fresh createLocalStorageState('theme', 'light', storage) against the same pre-populated storage", expected: "getValue() is 'dark', not the initialValue 'light'", label: "A new instance picks up whatever was already persisted, ignoring initialValue" },
+    ],
+    hints: [
+      "Only fall back to initialValue when storage.get(key) is genuinely undefined — an empty string or 0 is still a real stored value.",
+    ],
+    orderIndex: 1210,
+  },
+  {
+    slug: "use-array-hook",
+    companies: ["Amazon"],
+    category: "react",
+    title: "useArray() (push/remove/clear/update helpers over useState)",
+    description: `Managing an array with plain \`useState\` means remembering to always spread into a new array on every change — this hook bundles the common operations so callers never mutate in place by accident.
+
+## Your task
+
+Write \`createArrayState(initial = [])\`, returning \`{ getValue(), push(item), removeAt(index), updateAt(index, item), clear() }\`. Every operation must return a new array — never mutate the array \`getValue()\` last returned.`,
+    difficulty: "medium",
+    starterCode: `function createArrayState(initial = []) {
+}`,
+    solutionCode: `function createArrayState(initial = []) {
+  let items = [...initial];
+  return {
+    getValue() {
+      return items;
+    },
+    push(item) {
+      items = [...items, item];
+    },
+    removeAt(index) {
+      items = items.filter((_, i) => i !== index);
+    },
+    updateAt(index, item) {
+      items = items.map((existing, i) => (i === index ? item : existing));
+    },
+    clear() {
+      items = [];
+    },
+  };
+}`,
+    testCases: [
+      { input: "createArrayState([1, 2]), push(3)", expected: "[1, 2, 3]", label: "push appends to the end" },
+      { input: "createArrayState([1, 2, 3]), removeAt(1)", expected: "[1, 3]", label: "removeAt drops exactly the item at that index" },
+      { input: "createArrayState([1, 2, 3]), updateAt(1, 99)", expected: "[1, 99, 3]", label: "updateAt replaces exactly the item at that index" },
+      { input: "createArrayState([1, 2]), clear()", expected: "[]", label: "clear empties the array" },
+    ],
+    hints: [
+      "None of these methods should call .push/.splice on the existing items array directly — always build a new array with spread, filter, or map.",
+    ],
+    orderIndex: 1211,
+  },
+  {
+    slug: "phone-number-input-formatter",
+    companies: ["Stripe", "Amazon", "Meta"],
+    category: "react",
+    title: "Phone Number Input (controlled, formatted as you type)",
+    description: `The formatting logic behind a controlled phone-number field: as digits are typed, the display string grows through \`5\`, \`(555\`, \`(555) 12\`, \`(555) 123-4567\` — all driven off the raw digits typed so far, exactly what a controlled input's \`onChange\` would recompute on every keystroke.
+
+## Your task
+
+Write \`formatPhoneNumberInput(raw)\`, which takes the raw characters typed so far (only digits count — ignore anything else, so pasted text like \`"(555) 123-4567"\` still works) and returns the progressively-formatted \`(XXX) XXX-XXXX\` string, capped at 10 digits.`,
+    difficulty: "medium",
+    starterCode: `function formatPhoneNumberInput(raw) {
+}`,
+    solutionCode: `function formatPhoneNumberInput(raw) {
+  const digits = Array.from(raw)
+    .filter((ch) => ch >= "0" && ch <= "9")
+    .slice(0, 10)
+    .join("");
+  if (digits.length === 0) return "";
+  if (digits.length < 4) return "(" + digits;
+  if (digits.length < 7) {
+    return "(" + digits.slice(0, 3) + ") " + digits.slice(3);
+  }
+  return "(" + digits.slice(0, 3) + ") " + digits.slice(3, 6) + "-" + digits.slice(6);
+}`,
+    testCases: [
+      { input: "'5'", expected: "'(5'", label: "A single digit starts the area code group" },
+      { input: "'555'", expected: "'(555'", label: "Three digits still show only the open area-code group" },
+      { input: "'5551234'", expected: "'(555) 123-4'", label: "Past three digits, the prefix group and separator appear" },
+      { input: "'(555) 123-4567' pasted in directly", expected: "'(555) 123-4567'", label: "Ignores non-digit characters already present in pasted input" },
+      { input: "'55512345678' (11 raw digits)", expected: "'(555) 123-4567' — capped at 10 digits", label: "Extra digits past 10 are ignored" },
+    ],
+    hints: [
+      "Strip everything down to just the digit characters first, then decide the formatting purely from how many digits you have left — never try to format the raw string with punctuation still in it.",
+    ],
+    orderIndex: 1212,
+  },
+  {
+    slug: "use-form-hook",
+    companies: ["Stripe", "Amazon", "Airbnb"],
+    category: "react",
+    title: "useForm() — basic controlled form state + field-level validation",
+    description: `A minimal form hook: tracks every field's value in one place, and re-validates a field the moment it changes — the foundation every larger form library (Formik, React Hook Form) builds on top of.
+
+## Your task
+
+Write \`createFormState(initialValues, validators = {})\`, returning \`{ getValues(), getErrors(), setField(name, value), validateAll() }\`. \`validators\` maps a field name to a function \`(value) => errorMessage | null\`. Changing a field via \`setField\` should immediately re-validate just that field; \`validateAll()\` re-validates every field and returns whether the whole form is currently valid.`,
+    difficulty: "medium",
+    starterCode: `function createFormState(initialValues, validators = {}) {
+}`,
+    solutionCode: `function createFormState(initialValues, validators = {}) {
+  let values = { ...initialValues };
+  let errors = {};
+  function validateField(name) {
+    const validate = validators[name];
+    errors = { ...errors, [name]: validate ? validate(values[name]) : null };
+  }
+  Object.keys(initialValues).forEach(validateField);
+  return {
+    getValues() {
+      return values;
+    },
+    getErrors() {
+      return errors;
+    },
+    setField(name, value) {
+      values = { ...values, [name]: value };
+      validateField(name);
+    },
+    validateAll() {
+      Object.keys(values).forEach(validateField);
+      return Object.values(errors).every((error) => !error);
+    },
+  };
+}`,
+    testCases: [
+      { input: "createFormState({ email: '' }, { email: (v) => (v ? null : 'Required') })", expected: "getErrors().email is 'Required' immediately, without waiting for setField", label: "Validates every field up front, on creation" },
+      { input: "setField('email', 'a@b.com')", expected: "getErrors().email becomes null", label: "setField re-validates just the field that changed" },
+      { input: "setField('email', '') then validateAll()", expected: "returns false, and getErrors().email is 'Required' again", label: "validateAll re-checks every field and reports overall validity" },
+      { input: "setField('email', 'a@b.com') on a form with an untouched second invalid field", expected: "setField only touches email's error — the other field's error is unaffected", label: "setField only re-validates the field that actually changed, not the whole form" },
+    ],
+    hints: [
+      "Run every field through its validator once at creation time too — an empty required field should already show its error before any setField call, not just after the first edit.",
+    ],
+    orderIndex: 1213,
+  },
+
+  // ── react — standalone React Custom Hooks & Patterns Roadmap, Stage R6 ─────
+  {
+    slug: "use-async-resource-hook",
+    companies: ["Meta", "Amazon", "Airbnb", "Stripe"],
+    category: "react",
+    title: "useFetch() / useAsync()",
+    description: `The single most common "build a hook" live-coding task: wrap an async operation and expose its lifecycle as data — idle, loading, then success (with the resolved value) or error (with the rejection reason) — instead of making every caller repeat the same try/catch/state juggling.
+
+## Your task
+
+Write \`createAsyncResource(promiseFactory)\`, returning \`{ getState(), run() }\`. \`getState()\` returns \`{ status, data, error }\`, starting at \`{ status: "idle", data: null, error: null }\`. Calling \`run()\` sets status to \`"loading"\`, then resolves to either \`{ status: "success", data, error: null }\` or \`{ status: "error", data: null, error }\` once \`promiseFactory()\` settles.`,
+    difficulty: "medium",
+    starterCode: `function createAsyncResource(promiseFactory) {
+}`,
+    solutionCode: `function createAsyncResource(promiseFactory) {
+  let state = { status: "idle", data: null, error: null };
+  return {
+    getState() {
+      return state;
+    },
+    async run() {
+      state = { status: "loading", data: null, error: null };
+      try {
+        const data = await promiseFactory();
+        state = { status: "success", data, error: null };
+      } catch (error) {
+        state = { status: "error", data: null, error };
+      }
+      return state;
+    },
+  };
+}`,
+    testCases: [
+      { input: "a fresh resource, before run() is called", expected: "{ status: 'idle', data: null, error: null }", label: "Starts idle" },
+      { input: "run() with a promiseFactory that resolves to 42", expected: "ends at { status: 'success', data: 42, error: null }", label: "Resolves into a success state carrying the data" },
+      { input: "run() with a promiseFactory that rejects with an Error", expected: "ends at { status: 'error', data: null, error: <the error> }", label: "A rejection lands in the error state, not an unhandled rejection" },
+      { input: "getState() called synchronously right after calling run() (before the promise settles)", expected: "status is 'loading'", label: "Status flips to loading immediately, before the async work resolves" },
+    ],
+    hints: [
+      "Update state to the loading status synchronously, before the first await — the caller should be able to observe 'loading' immediately after calling run(), without waiting for anything.",
+    ],
+    orderIndex: 1214,
+  },
+  {
+    slug: "use-swr-stale-while-revalidate",
+    companies: ["Meta", "Vercel"],
+    category: "react",
+    title: "useSWR() I (stale-while-revalidate fetching + caching)",
+    description: `SWR's core idea: on load, return whatever's already cached *immediately* (even if it might be outdated) while a fresh fetch runs in the background — once that resolves, the cache updates and every subscriber is notified. No spinner for data you already have.
+
+## Your task
+
+Write \`createSWRResource(key, fetcher, cache)\`, returning \`{ getData(), subscribe(listener), load() }\`. \`cache\` is a shared \`Map\`-like store (\`get\`/\`set\`) so multiple resources can share state. \`load()\` should return whatever was cached *before* the fetch started, while updating the cache (and notifying subscribers) once \`fetcher()\` resolves.`,
+    difficulty: "medium",
+    starterCode: `function createSWRResource(key, fetcher, cache) {
+}`,
+    solutionCode: `function createSWRResource(key, fetcher, cache) {
+  const listeners = [];
+  function notify() {
+    listeners.forEach((fn) => fn(cache.get(key)));
+  }
+  return {
+    getData() {
+      return cache.get(key);
+    },
+    subscribe(listener) {
+      listeners.push(listener);
+      return () => {
+        const i = listeners.indexOf(listener);
+        if (i !== -1) listeners.splice(i, 1);
+      };
+    },
+    async load() {
+      const stale = cache.get(key);
+      const fresh = await fetcher();
+      cache.set(key, fresh);
+      notify();
+      return stale;
+    },
+  };
+}`,
+    testCases: [
+      { input: "a cache pre-seeded with a stale value for the key, then getData() called immediately after starting load() (before it resolves)", expected: "still the stale value", label: "Serves the cached value immediately, without waiting on the fetch" },
+      { input: "load() awaited to completion", expected: "getData() now returns the freshly-fetched value", label: "The cache updates once the background fetch resolves" },
+      { input: "a subscriber registered before load() runs", expected: "it's called once the fresh value lands in the cache", label: "Subscribers are notified when revalidation completes" },
+      { input: "unsubscribe() called, then another load()", expected: "that listener is not called again", label: "The unsubscribe function returned by subscribe() actually detaches the listener" },
+    ],
+    hints: [
+      "Read the stale value out of the cache before calling fetcher() — that snapshot, not whatever ends up in the cache later, is what load() should resolve to.",
+    ],
+    orderIndex: 1215,
+  },
+  {
+    slug: "fetch-request-deduper",
+    companies: ["Airbnb", "Vercel"],
+    category: "react",
+    title: "Minimal Caching Layer on Top of useFetch (Dedupe Identical Requests)",
+    description: `A common follow-up once a basic \`useFetch\` exists: if two components request the *same* resource while a request for it is already in flight, they should share that one request instead of firing a duplicate — a small win that avoids redundant network traffic under React's frequent re-renders.
+
+## Your task
+
+Write \`createDedupedFetcher(fetcher)\`, returning a function \`fetchDeduped(key)\`. While a request for a given \`key\` is in flight, any further calls with that same \`key\` must return the *same* promise instead of calling \`fetcher\` again. Once that request settles, the next call with the same \`key\` should start a brand-new request.`,
+    difficulty: "medium",
+    starterCode: `function createDedupedFetcher(fetcher) {
+}`,
+    solutionCode: `function createDedupedFetcher(fetcher) {
+  const inFlight = new Map();
+  return function fetchDeduped(key) {
+    if (inFlight.has(key)) {
+      return inFlight.get(key);
+    }
+    const promise = fetcher(key).finally(() => {
+      inFlight.delete(key);
+    });
+    inFlight.set(key, promise);
+    return promise;
+  };
+}`,
+    testCases: [
+      { input: "two calls with the same key made before either resolves", expected: "fetcher was only called once", label: "Concurrent calls with the same key share one underlying request" },
+      { input: "calls with two different keys, both made before either resolves", expected: "fetcher was called once per distinct key", label: "Different keys are never deduped against each other" },
+      { input: "a call, awaited to completion, then another call with the same key", expected: "fetcher is called again — a fresh request, not the old cached promise", label: "Once a request settles, the next call starts over rather than reusing a stale result forever" },
+    ],
+    hints: [
+      "The in-flight map should only ever hold a key while its promise is still pending — clean it up (e.g. with .finally()) the moment that request settles, whether it succeeds or fails.",
+    ],
+    orderIndex: 1216,
+  },
+  {
+    slug: "global-store-pubsub",
+    companies: ["Meta", "Amazon"],
+    category: "react",
+    title: "Global Store with Context + useContext (Avoid Prop Drilling)",
+    description: `Strip away the JSX and \`<Provider>\` boilerplate, and what \`Context\` actually gives every descendant is just this: a shared value, plus a way to be notified when it changes — which is exactly what a plain subscribable store provides too.
+
+## Your task
+
+Write \`createGlobalStore(initialValue)\`, returning \`{ getValue(), setValue(next), subscribe(listener) }\`. \`setValue\` should notify every current subscriber with the new value; \`subscribe\` returns an unsubscribe function.`,
+    difficulty: "medium",
+    starterCode: `function createGlobalStore(initialValue) {
+}`,
+    solutionCode: `function createGlobalStore(initialValue) {
+  let value = initialValue;
+  const listeners = new Set();
+  return {
+    getValue() {
+      return value;
+    },
+    setValue(next) {
+      value = next;
+      listeners.forEach((listener) => listener(value));
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}`,
+    testCases: [
+      { input: "createGlobalStore({ theme: 'light' })", expected: "getValue() returns { theme: 'light' }", label: "Starts at the given initial value" },
+      { input: "two subscribers registered, then setValue() called once", expected: "both subscribers are called with the new value", label: "Every subscriber is notified on a change, not just the first one" },
+      { input: "a subscriber's returned unsubscribe function is called, then setValue() again", expected: "that subscriber is not called again", label: "unsubscribe actually detaches the listener" },
+    ],
+    hints: [
+      "Iterate the listeners with the value already updated — subscribers should see the new value both from the callback argument and from calling getValue() themselves.",
+    ],
+    orderIndex: 1217,
+  },
+  {
+    slug: "valtio-style-proxy-store",
+    companies: ["Meta"],
+    category: "react",
+    title: "Proxy-State (Valtio-Style Reactive Store)",
+    description: `Valtio's pitch: mutate a plain object directly (\`store.count++\`) and subscribers still get notified — no reducer, no setter functions, just a \`Proxy\` intercepting every write. Simpler (and coarser-grained) than a full dependency-tracking system: every mutation notifies every subscriber, with no per-property filtering.
+
+## Your task
+
+Write \`createValtioStore(initialState)\`, returning \`{ store, subscribe(callback) }\`. \`store\` must be directly mutable (\`store.someKey = value\`), and every mutation should synchronously call every subscribed \`callback\` (with no arguments — subscribers just re-read \`store\` themselves).`,
+    difficulty: "medium",
+    starterCode: `function createValtioStore(initialState) {
+}`,
+    solutionCode: `function createValtioStore(initialState) {
+  const listeners = new Set();
+  const store = new Proxy(
+    { ...initialState },
+    {
+      set(target, key, value) {
+        target[key] = value;
+        listeners.forEach((listener) => listener());
+        return true;
+      },
+    },
+  );
+  return {
+    store,
+    subscribe(callback) {
+      listeners.add(callback);
+      return () => listeners.delete(callback);
+    },
+  };
+}`,
+    testCases: [
+      { input: "createValtioStore({ count: 0 }), then store.count = 5 directly", expected: "store.count reads back as 5", label: "The store object is directly mutable, not read-only" },
+      { input: "a subscriber registered, then store.count = 1 directly", expected: "the subscriber is called", label: "Directly mutating a property triggers subscribers" },
+      { input: "two separate mutations in a row", expected: "the subscriber is called twice, once per mutation", label: "Every mutation notifies subscribers — there's no batching in this minimal version" },
+    ],
+    hints: [
+      "The Proxy's set trap is where both the actual write and the notification belong — that's the one place every mutation, however it's written, necessarily passes through.",
+    ],
+    orderIndex: 1218,
+  },
+  {
+    slug: "create-redux-store",
+    companies: ["Amazon", "Airbnb"],
+    category: "react",
+    title: "Minimal Redux-Like Store: createStore, useSelector, useDispatch",
+    description: `The three pieces underneath every Redux app, stripped to their essentials: a store holding one piece of state, a \`dispatch\` that runs actions through a reducer to produce the next state, and subscribers notified after every change — \`useSelector\`/\`useDispatch\` are thin hooks layered on top of exactly this.
+
+## Your task
+
+Write \`createReduxStore(reducer, initialState)\`, returning \`{ getState(), dispatch(action), subscribe(listener) }\`. \`dispatch(action)\` must compute the next state as \`reducer(currentState, action)\`, store it, and notify every subscriber — then return the action, matching real Redux's \`dispatch\`.`,
+    difficulty: "hard",
+    starterCode: `function createReduxStore(reducer, initialState) {
+}`,
+    solutionCode: `function createReduxStore(reducer, initialState) {
+  let state = initialState;
+  const listeners = new Set();
+  return {
+    getState() {
+      return state;
+    },
+    dispatch(action) {
+      state = reducer(state, action);
+      listeners.forEach((listener) => listener(state));
+      return action;
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}`,
+    testCases: [
+      { input: "a counter reducer, dispatch({ type: 'increment' }) twice", expected: "getState() is 2", label: "dispatch runs the reducer and stores the resulting state" },
+      { input: "a subscriber registered, then a dispatch()", expected: "the subscriber is called with the new state", label: "Subscribers are notified after every dispatch" },
+      { input: "dispatch({ type: 'increment' })", expected: "the returned value is the action object itself", label: "dispatch returns the action, matching real Redux's dispatch signature" },
+      { input: "an unsubscribed listener, then another dispatch()", expected: "that listener is not called", label: "subscribe's returned function actually detaches the listener" },
+    ],
+    hints: [
+      "dispatch has three jobs in a fixed order: compute the next state via the reducer, store it, then notify — get that order right or subscribers will read the stale state.",
+    ],
+    orderIndex: 1219,
+  },
+
+  // ── react — standalone React Custom Hooks & Patterns Roadmap, Stage R7 ─────
+  {
+    slug: "usestate-from-scratch",
+    companies: ["Meta"],
+    category: "react",
+    title: "Implement useState From Scratch (Simplified, No Fiber)",
+    description: `The trick behind every React hook: state doesn't live on the component function at all — it lives in a slots array outside it, indexed purely by **call order** within a render. That's exactly why hooks can never be called conditionally: skip a call on one render and every slot index after it shifts, pointing state at the wrong hook.
+
+## Your task
+
+Write \`createStateRuntime()\`, returning \`{ useState, render(componentFn) }\`. \`useState(initial)\` returns \`[value, setState]\`; \`setState\` accepts either a plain value or an updater function \`(prev) => next\`, and must trigger \`render\` to be called again automatically with the same \`componentFn\`. State must persist correctly across multiple \`useState\` calls within one render (each gets its own slot, by order).`,
+    difficulty: "hard",
+    starterCode: `function createStateRuntime() {
+}`,
+    solutionCode: `function createStateRuntime() {
+  let slots = [];
+  let cursor = 0;
+  let currentComponent = null;
+  function useState(initial) {
+    const i = cursor++;
+    if (!(i in slots)) slots[i] = initial;
+    function setState(next) {
+      slots[i] = typeof next === "function" ? next(slots[i]) : next;
+      runtime.render(currentComponent);
+    }
+    return [slots[i], setState];
+  }
+  const runtime = {
+    useState,
+    render(componentFn) {
+      currentComponent = componentFn;
+      cursor = 0;
+      return componentFn();
+    },
+  };
+  return runtime;
+}`,
+    testCases: [
+      { input: "a component with one useState(0) call, rendered, then its setState(5) called", expected: "the next render sees 5, not 0", label: "setState updates the value and triggers a fresh render" },
+      { input: "setState called with an updater function (prev) => prev + 1", expected: "correctly reads the current slot value as prev, not the original initial", label: "Supports the functional-updater form of setState" },
+      { input: "a component calling useState twice in the same render (e.g. for 'name' then 'age')", expected: "each call keeps its own independent value across renders", label: "Multiple useState calls in one render map to distinct, stable slots by call order" },
+    ],
+    hints: [
+      "cursor must reset to 0 at the start of every render() call — that's what makes 'the Nth useState call' consistently land on 'the Nth slot', as long as the component always calls its hooks in the same order.",
+      "Only initialize a slot the very first time it's reached (i in slots check) — re-render must never reset an existing slot back to initial.",
+    ],
+    orderIndex: 1220,
+  },
+  {
+    slug: "usereducer-from-scratch",
+    companies: ["Meta"],
+    category: "react",
+    title: "Implement useReducer From Scratch",
+    description: `\`useReducer\` uses the exact same slot mechanism as \`useState\` — the only difference is that updates go through a reducer function instead of being set directly, which is why \`useState\` itself can actually be implemented as \`useReducer\` with a trivial "replace" reducer.
+
+## Your task
+
+Write \`createReducerRuntime()\`, returning \`{ useReducer, render(componentFn) }\`. \`useReducer(reducer, initialState)\` returns \`[state, dispatch]\`; calling \`dispatch(action)\` must compute \`reducer(state, action)\`, store the result in that call's slot, and trigger a fresh render.`,
+    difficulty: "hard",
+    starterCode: `function createReducerRuntime() {
+}`,
+    solutionCode: `function createReducerRuntime() {
+  let slots = [];
+  let cursor = 0;
+  let currentComponent = null;
+  function useReducer(reducer, initialState) {
+    const i = cursor++;
+    if (!(i in slots)) slots[i] = initialState;
+    function dispatch(action) {
+      slots[i] = reducer(slots[i], action);
+      runtime.render(currentComponent);
+    }
+    return [slots[i], dispatch];
+  }
+  const runtime = {
+    useReducer,
+    render(componentFn) {
+      currentComponent = componentFn;
+      cursor = 0;
+      return componentFn();
+    },
+  };
+  return runtime;
+}`,
+    testCases: [
+      { input: "a counter reducer, useReducer(reducer, 0), then dispatch({ type: 'increment' }) twice", expected: "the next render reads 2", label: "dispatch runs the reducer against the current slot value and stores the result" },
+      { input: "dispatch called with an action the reducer doesn't recognize", expected: "the state is whatever the reducer itself returns for that case (e.g. unchanged, if that's how the reducer handles it)", label: "The runtime never second-guesses the reducer — it always stores exactly what reducer(state, action) returns" },
+      { input: "dispatch()", expected: "automatically triggers render() again with the same componentFn", label: "Dispatch re-renders automatically, the same way setState does" },
+    ],
+    hints: [
+      "This should reuse the identical slot-array-plus-cursor mechanism as useState — the only real difference is that dispatch computes the next value via reducer(state, action) instead of taking it directly.",
+    ],
+    orderIndex: 1221,
+  },
+  {
+    slug: "usememo-usecallback-from-scratch",
+    companies: ["Meta"],
+    category: "react",
+    title: "Implement useMemo / useCallback From Scratch",
+    description: `Both hooks are the same idea: skip recomputation when nothing relevant changed. \`useCallback(fn, deps)\` is really nothing more than \`useMemo(() => fn, deps)\` — memoizing the function reference itself instead of a computed value.
+
+## Your task
+
+Write \`createMemoRuntime()\`, returning \`{ useMemo, useCallback, render(componentFn) }\`. \`useMemo(factory, deps)\` should only call \`factory()\` again when \`deps\` has changed (element-by-element) since the last render for that slot — otherwise it returns the previously memoized value without calling \`factory\` again.`,
+    difficulty: "hard",
+    starterCode: `function createMemoRuntime() {
+}`,
+    solutionCode: `function createMemoRuntime() {
+  let slots = [];
+  let cursor = 0;
+  function depsChanged(prevDeps, nextDeps) {
+    if (!prevDeps || !nextDeps) return true;
+    return nextDeps.some((dep, i) => dep !== prevDeps[i]);
+  }
+  function useMemo(factory, deps) {
+    const i = cursor++;
+    const slot = slots[i];
+    if (!slot || depsChanged(slot.deps, deps)) {
+      slots[i] = { value: factory(), deps };
+    }
+    return slots[i].value;
+  }
+  function useCallback(fn, deps) {
+    return useMemo(() => fn, deps);
+  }
+  return {
+    useMemo,
+    useCallback,
+    render(componentFn) {
+      cursor = 0;
+      return componentFn();
+    },
+  };
+}`,
+    testCases: [
+      { input: "useMemo(factory, [a, b]) called across two renders with the same [a, b] values", expected: "factory is only called once — the second render reuses the memoized value", label: "Doesn't recompute when deps are unchanged" },
+      { input: "useMemo(factory, [a, b]) where one dependency changes between renders", expected: "factory is called again on that render", label: "Recomputes when any dependency actually changes" },
+      { input: "useCallback(fn, deps) across two renders with unchanged deps", expected: "the exact same function reference is returned both times", label: "useCallback returns a stable reference when its deps haven't changed" },
+    ],
+    hints: [
+      "useCallback doesn't need its own slot logic at all — it can be implemented purely as useMemo(() => fn, deps), memoizing the function itself as the 'value'.",
+    ],
+    orderIndex: 1222,
+  },
+  {
+    slug: "higher-order-component-logger",
+    companies: ["Meta", "Amazon"],
+    category: "react",
+    title: "Build a Higher-Order Component (HOC) Example",
+    description: `A HOC is just a function that takes a component and returns a new one wrapping it with extra behavior — here, a component is modeled simply as a plain function of \`props\`, since the wrapping logic itself doesn't depend on JSX or actual rendering.
+
+## Your task
+
+Write \`withLogger(Component, log)\`, returning a new function that: calls \`log(props)\` every time it's invoked, then calls \`Component(props)\` and returns its result unchanged.`,
+    difficulty: "medium",
+    starterCode: `function withLogger(Component, log) {
+}`,
+    solutionCode: `function withLogger(Component, log) {
+  return function LoggedComponent(props) {
+    log(props);
+    return Component(props);
+  };
+}`,
+    testCases: [
+      { input: "a component that returns 'Hello, ' + props.name, wrapped and called with { name: 'Ada' }", expected: "'Hello, Ada' — the same as calling the unwrapped component directly", label: "The wrapped component's output is passed through unchanged" },
+      { input: "the wrapped component called with { name: 'Ada' }", expected: "log was called once with { name: 'Ada' }", label: "Every call logs the props it was invoked with" },
+      { input: "the wrapped component called three times with different props", expected: "log was called three times, once per call, each with that call's props", label: "Logging happens on every invocation, not just the first" },
+    ],
+    hints: [
+      "The returned function is the entire HOC — it needs to do exactly two things in order: log, then delegate to the original Component and return whatever it returns.",
+    ],
+    orderIndex: 1223,
+  },
+  {
+    slug: "compound-component-tabs",
+    companies: ["Meta", "Airbnb"],
+    category: "react",
+    title: "Build a Compound Component Pattern (e.g. <Tabs><Tabs.Item/></Tabs>)",
+    description: `Compound components (\`<Tabs><Tabs.Item/></Tabs>\`) look like plain composition in JSX, but underneath, the parent and its children share coordinated state — each child implicitly registers itself and reads back whether it's the active one. That coordination logic is what's being tested here, independent of the JSX syntax around it.
+
+## Your task
+
+Write \`createTabsController()\`, returning \`{ registerTab(), selectTab(index), getActiveIndex(), isActive(id) }\`. Each call to \`registerTab()\` simulates a \`Tabs.Item\` mounting, and returns a unique, sequentially-assigned id (0, 1, 2, ...). \`isActive(id)\` tells a given tab whether it's the currently selected one.`,
+    difficulty: "medium",
+    starterCode: `function createTabsController() {
+}`,
+    solutionCode: `function createTabsController() {
+  let activeIndex = 0;
+  let nextId = 0;
+  return {
+    registerTab() {
+      return nextId++;
+    },
+    selectTab(index) {
+      activeIndex = index;
+    },
+    getActiveIndex() {
+      return activeIndex;
+    },
+    isActive(id) {
+      return id === activeIndex;
+    },
+  };
+}`,
+    testCases: [
+      { input: "three registerTab() calls in a row", expected: "0, 1, 2 — sequential, unique ids", label: "Each registered tab gets its own sequential id" },
+      { input: "a fresh controller, before selectTab is ever called", expected: "getActiveIndex() is 0", label: "The first tab (index 0) is active by default" },
+      { input: "selectTab(2), then isActive(2) and isActive(0)", expected: "true for isActive(2), false for isActive(0)", label: "isActive correctly reflects the currently selected tab, and only that one" },
+    ],
+    hints: [
+      "registerTab and selectTab are deliberately independent — a tab's registration id and its position/index are the same numbering scheme here, so isActive can compare them directly.",
+    ],
+    orderIndex: 1224,
+  },
+  {
+    slug: "error-boundary-wrapper",
+    companies: ["Meta", "Amazon"],
+    category: "react",
+    title: "Build an Error Boundary Component",
+    description: `A real Error Boundary catches render-time errors in its subtree and shows a fallback UI in their place — and crucially, it *stays* in that errored state (not retrying the crashed render on every subsequent update) until something explicitly resets it.
+
+## Your task
+
+Write \`createErrorBoundary(renderFn, fallbackFn)\`, returning \`{ run(props), reset() }\`. \`run(props)\` calls \`renderFn(props)\`; if it throws, \`run\` catches the error and returns \`fallbackFn(error)\` instead — and once that's happened, every subsequent \`run()\` call must keep returning the fallback (without calling \`renderFn\` again) until \`reset()\` is called.`,
+    difficulty: "medium",
+    starterCode: `function createErrorBoundary(renderFn, fallbackFn) {
+}`,
+    solutionCode: `function createErrorBoundary(renderFn, fallbackFn) {
+  let hasErrored = false;
+  let lastError = null;
+  return {
+    run(props) {
+      if (hasErrored) {
+        return fallbackFn(lastError);
+      }
+      try {
+        return renderFn(props);
+      } catch (error) {
+        hasErrored = true;
+        lastError = error;
+        return fallbackFn(error);
+      }
+    },
+    reset() {
+      hasErrored = false;
+      lastError = null;
+    },
+  };
+}`,
+    testCases: [
+      { input: "a renderFn that throws, wrapped and run() once", expected: "the fallback's output is returned instead of the error propagating", label: "Catches a thrown error and returns the fallback output" },
+      { input: "run() called again after an error was already caught", expected: "still returns the fallback — renderFn is not called again", label: "Stays in the errored state on later calls, without retrying renderFn" },
+      { input: "reset() called after an error, then run() again with a now-working renderFn", expected: "renderFn's normal output is returned", label: "reset() clears the errored state, allowing renderFn to run again" },
+    ],
+    hints: [
+      "Once hasErrored is true, run() should return early with the fallback before ever touching renderFn again — the try/catch only matters on the way into the errored state, not once you're already in it.",
+    ],
+    orderIndex: 1225,
+  },
+  {
+    slug: "imperative-handle-example",
+    companies: ["Meta"],
+    category: "react",
+    title: "forwardRef + useImperativeHandle Example",
+    description: `\`useImperativeHandle\` exists to *curate* what a parent can do through a ref — instead of exposing the child's entire internal DOM node or instance, it exposes exactly the methods you choose, and nothing else.
+
+## Your task
+
+Write \`attachImperativeHandle(ref, createHandle)\`, where \`ref\` is a plain object with a \`.current\` property (standing in for a real ref object) and \`createHandle()\` returns the curated methods object. Set \`ref.current\` to exactly what \`createHandle()\` returns.`,
+    difficulty: "medium",
+    starterCode: `function attachImperativeHandle(ref, createHandle) {
+}`,
+    solutionCode: `function attachImperativeHandle(ref, createHandle) {
+  ref.current = createHandle();
+  return ref;
+}`,
+    testCases: [
+      { input: "a ref object and a createHandle returning { focus: fn }", expected: "ref.current.focus === fn", label: "ref.current is set to exactly the object createHandle() returned" },
+      { input: "createHandle returning only { focus, scrollIntoView }", expected: "ref.current has exactly those two keys — nothing extra leaked", label: "The exposed handle is exactly what createHandle curated, not some larger internal object" },
+      { input: "attachImperativeHandle's return value", expected: "the same ref object passed in", label: "Returns the ref itself, so it can be used inline" },
+    ],
+    hints: [
+      "This one is intentionally almost too simple — the point being tested is that the handle is exactly what createHandle() returns, not a partial or augmented version of it.",
+    ],
+    orderIndex: 1226,
+  },
+  {
+    slug: "list-virtualization-window-calc",
+    companies: ["Meta", "Airbnb", "TikTok"],
+    category: "react",
+    title: "Build a Virtualization Hook for a Long List (Windowing)",
+    description: `The math underneath every virtualized list (react-window, react-virtual): given the current scroll position and item height, only a small contiguous slice of items is actually visible — render just that slice (plus a little overscan buffer), and use a spacer offset to keep the scrollbar's total size correct.
+
+## Your task
+
+Write \`getVisibleRange({ scrollTop, containerHeight, itemHeight, totalItems, overscan = 0 })\`, returning \`{ startIndex, endIndex, offsetY }\`. \`offsetY\` is how far down (in pixels) the first rendered item should be positioned, so the visible slice lines up correctly within the full scrollable area.`,
+    difficulty: "hard",
+    starterCode: `function getVisibleRange({ scrollTop, containerHeight, itemHeight, totalItems, overscan = 0 }) {
+}`,
+    solutionCode: `function getVisibleRange({ scrollTop, containerHeight, itemHeight, totalItems, overscan = 0 }) {
+  const rawStart = Math.floor(scrollTop / itemHeight);
+  const rawEnd = Math.ceil((scrollTop + containerHeight) / itemHeight);
+  const startIndex = Math.max(0, rawStart - overscan);
+  const endIndex = Math.min(totalItems - 1, rawEnd + overscan);
+  const offsetY = startIndex * itemHeight;
+  return { startIndex, endIndex, offsetY };
+}`,
+    testCases: [
+      { input: "scrollTop: 0, containerHeight: 300, itemHeight: 50, totalItems: 100, overscan: 0", expected: "startIndex: 0, endIndex: 6", label: "At the top, the visible range starts at index 0" },
+      { input: "scrollTop: 500, containerHeight: 300, itemHeight: 50, totalItems: 100, overscan: 0", expected: "startIndex: 10, offsetY: 500", label: "offsetY matches startIndex * itemHeight, positioning the rendered slice correctly" },
+      { input: "scrollTop: 500, containerHeight: 300, itemHeight: 50, totalItems: 100, overscan: 2", expected: "startIndex: 8, endIndex: 18 — 2 extra items on each side of the strictly-visible range", label: "overscan pads the range by the given number of items on each side" },
+      { input: "scrollTop near the very end of a totalItems: 100 list", expected: "endIndex never exceeds 99", label: "endIndex is clamped to the last valid item index, even with a large overscan" },
+    ],
+    hints: [
+      "Compute the strictly-visible range first (rawStart/rawEnd from scrollTop and containerHeight alone), then apply overscan and clamp to [0, totalItems - 1] as a separate step afterward.",
+    ],
+    orderIndex: 1227,
+  },
+
+  // ── css — standalone CSS Interview Question Roadmap, Stage 1 ───────────────
+  {
+    slug: "box-sizing-content-vs-border",
+    companies: [],
+    category: "css",
+    title: "box-sizing: border-box vs content-box",
+    description: `The single most common cause of "why is my element wider than I set it" bugs: by default (\`content-box\`), \`width\`/\`height\` only size the content area — padding and border are added on top. \`border-box\` makes \`width\`/\`height\` include padding and border instead, so the element's total rendered size is exactly what you set.
+
+## Your task
+
+Write \`applyBoxSizing(el, mode)\`, which sets \`el\`'s \`box-sizing\` to \`mode\` (\`"content-box"\` or \`"border-box"\`).`,
+    difficulty: "easy",
+    starterCode: `function applyBoxSizing(el, mode) {
+}`,
+    solutionCode: `function applyBoxSizing(el, mode) {
+  el.style.boxSizing = mode;
+}`,
+    testCases: [
+      { input: "a 200px-wide element with 20px padding and a 5px border, box-sizing: content-box", expected: "renders 250px wide (200 + 40 padding + 10 border)", label: "content-box adds padding and border on top of width" },
+      { input: "the same element switched to box-sizing: border-box", expected: "renders exactly 200px wide", label: "border-box makes width include padding and border" },
+    ],
+    hints: [
+      "This is a one-line function — the whole point is knowing which single CSS property controls this, not writing complex logic.",
+    ],
+    orderIndex: 1228,
+  },
+  {
+    slug: "center-element-vertically",
+    companies: ["Meta", "Amazon", "Google", "Airbnb", "Microsoft"],
+    category: "css",
+    title: "Center an Element Vertically",
+    description: `The most universally asked CSS question there is. The modern answer is a one-line flexbox trick: make the parent a flex container and let \`align-items\` handle the vertical centering for you.
+
+## Your task
+
+Write \`centerVertically(container)\`, which makes \`container\`'s children center vertically within it, regardless of the container's or child's height.`,
+    difficulty: "easy",
+    starterCode: `function centerVertically(container) {
+}`,
+    solutionCode: `function centerVertically(container) {
+  container.style.display = "flex";
+  container.style.alignItems = "center";
+}`,
+    testCases: [
+      { input: "a 300px-tall container with a 50px-tall child", expected: "the child sits 125px from the container's top — exactly centered", label: "Centers a child vertically regardless of its height" },
+      { input: "the same container with an 80px-tall child instead", expected: "the child sits 110px from the container's top", label: "Recomputes correctly for a different child height, not a fixed offset" },
+    ],
+    hints: [
+      "display: flex plus align-items: center on the parent handles vertical centering for any child height — no need to know the child's height in advance.",
+    ],
+    orderIndex: 1229,
+  },
+  {
+    slug: "center-element-both-axes",
+    companies: ["Meta", "Amazon", "Google", "Airbnb", "Microsoft"],
+    category: "css",
+    title: "Center an Element Both Horizontally and Vertically",
+    description: `The two-axis version of the classic centering question — the same flexbox trick as vertical-only centering, with one more property added for the horizontal axis.
+
+## Your task
+
+Write \`centerBoth(container)\`, which centers \`container\`'s children both horizontally and vertically within it.`,
+    difficulty: "easy",
+    starterCode: `function centerBoth(container) {
+}`,
+    solutionCode: `function centerBoth(container) {
+  container.style.display = "flex";
+  container.style.alignItems = "center";
+  container.style.justifyContent = "center";
+}`,
+    testCases: [
+      { input: "a 300×300px container with a 50×80px child", expected: "the child sits 125px from the left and 110px from the top — centered on both axes", label: "Centers on both axes simultaneously" },
+    ],
+    hints: [
+      "align-items controls the cross axis (vertical, in a default row-direction flex container) and justify-content controls the main axis (horizontal) — you need both properties, not just one.",
+    ],
+    orderIndex: 1230,
+  },
+
+  // ── css — standalone CSS Interview Question Roadmap, Stage 2 ───────────────
+  {
+    slug: "truncate-single-line-ellipsis",
+    companies: ["Meta", "Amazon", "Airbnb", "Shopify"],
+    category: "css",
+    title: "Truncate Text in One Line (with Ellipsis)",
+    description: `The classic three-property combo for cutting off overflowing text with "…" instead of letting it wrap or spill out of its container.
+
+## Your task
+
+Write \`truncateSingleLine(el)\`, which sets up \`el\` so any text overflowing its width is clipped to a single line and ends in an ellipsis.`,
+    difficulty: "easy",
+    starterCode: `function truncateSingleLine(el) {
+}`,
+    solutionCode: `function truncateSingleLine(el) {
+  el.style.whiteSpace = "nowrap";
+  el.style.overflow = "hidden";
+  el.style.textOverflow = "ellipsis";
+}`,
+    testCases: [
+      { input: "truncateSingleLine(el)", expected: "white-space: nowrap", label: "Prevents the text from wrapping onto a second line" },
+      { input: "truncateSingleLine(el)", expected: "overflow: hidden", label: "Clips content that overflows the element's box" },
+      { input: "truncateSingleLine(el)", expected: "text-overflow: ellipsis", label: "Shows an ellipsis at the clipped edge" },
+    ],
+    hints: [
+      "All three properties are required together — text-overflow: ellipsis does nothing on its own unless overflow is also hidden and white-space prevents wrapping.",
+    ],
+    orderIndex: 1231,
+  },
+  {
+    slug: "truncate-multiline-ellipsis",
+    companies: ["Meta", "Amazon", "Airbnb"],
+    category: "css",
+    title: "Truncate Text in Multiple Lines (with Ellipsis)",
+    description: `The multi-line version needs the \`-webkit-line-clamp\` combo instead of \`white-space: nowrap\` — it lets text wrap normally for a fixed number of lines, then clips and ellipsizes whatever's left.
+
+## Your task
+
+Write \`truncateMultiLine(el, lines)\`, which clips \`el\`'s text to exactly \`lines\` lines, ending in an ellipsis.`,
+    difficulty: "medium",
+    starterCode: `function truncateMultiLine(el, lines) {
+}`,
+    solutionCode: `function truncateMultiLine(el, lines) {
+  el.style.display = "-webkit-box";
+  el.style.webkitBoxOrient = "vertical";
+  el.style.webkitLineClamp = String(lines);
+  el.style.overflow = "hidden";
+}`,
+    testCases: [
+      { input: "truncateMultiLine(el, 3)", expected: "display: -webkit-box", label: "Requires the -webkit-box display mode for line-clamp to apply" },
+      { input: "truncateMultiLine(el, 3)", expected: "-webkit-box-orient: vertical", label: "Sets the box orientation the line-clamp mechanism depends on" },
+      { input: "truncateMultiLine(el, 3)", expected: "-webkit-line-clamp: 3", label: "Clamps to exactly the requested number of lines" },
+      { input: "truncateMultiLine(el, 5)", expected: "-webkit-line-clamp: 5", label: "Works correctly for a different line count, not hardcoded to one value" },
+    ],
+    hints: [
+      "-webkit-line-clamp only has an effect combined with display: -webkit-box, -webkit-box-orient: vertical, and overflow: hidden — all four together, unlike the single-line version's three.",
+    ],
+    orderIndex: 1232,
+  },
+  {
+    slug: "fluid-typography-clamp",
+    companies: ["Google", "Airbnb"],
+    category: "css",
+    title: "Responsive Typography Using clamp() (No Media Queries)",
+    description: `\`clamp(min, preferred, max)\` picks whichever of the three values is in the middle — so a font-size can scale smoothly with the viewport (via a \`vw\`-based preferred value) while never shrinking below a readable minimum or growing past a sensible maximum, all without a single media-query breakpoint.
+
+## Your task
+
+Write \`setFluidFontSize(el, minPx, preferredVw, maxPx)\`, setting \`el\`'s \`font-size\` to \`clamp(minPx, preferredVw, maxPx)\` (with \`px\`/\`vw\` units attached).`,
+    difficulty: "medium",
+    starterCode: `function setFluidFontSize(el, minPx, preferredVw, maxPx) {
+}`,
+    solutionCode: `function setFluidFontSize(el, minPx, preferredVw, maxPx) {
+  el.style.fontSize = "clamp(" + minPx + "px, " + preferredVw + "vw, " + maxPx + "px)";
+}`,
+    testCases: [
+      { input: "setFluidFontSize(el, 16, 1000, 64) — a huge preferred value, far past any real viewport", expected: "the resolved font-size saturates at the max, 64px", label: "Never grows past the max, however large the preferred value resolves to" },
+      { input: "setFluidFontSize(el, 16, 0, 64) — a preferred value of 0vw", expected: "the resolved font-size saturates at the min, 16px", label: "Never shrinks below the min" },
+      { input: "setFluidFontSize(el, 10, 4, 40) — a preferred value that resolves between min and max at the current viewport width", expected: "the resolved font-size matches 4vw of the actual viewport width", label: "Scales with the real viewport width when the preferred value lands between min and max" },
+    ],
+    hints: [
+      "The browser resolves clamp() for you — this function just needs to write the correct CSS value string, with the right units on each of the three arguments.",
+    ],
+    orderIndex: 1233,
+  },
+  {
+    slug: "fluid-font-size-vw",
+    companies: ["Airbnb", "Shopify"],
+    category: "css",
+    title: "Fluid Font Size (Pure Viewport Units)",
+    description: `The older, unbounded technique that predates \`clamp()\`: sizing text purely in \`vw\` units so it scales continuously with the viewport — with no floor or ceiling, unlike the clamped version. Useful to recognize as the "what came before clamp() and why it's risky" follow-up.
+
+## Your task
+
+Write \`setFluidFontSizeLegacy(el, vw)\`, setting \`el\`'s \`font-size\` to \`vw\` viewport-width units — no clamping, no fallback.`,
+    difficulty: "medium",
+    starterCode: `function setFluidFontSizeLegacy(el, vw) {
+}`,
+    solutionCode: `function setFluidFontSizeLegacy(el, vw) {
+  el.style.fontSize = vw + "vw";
+}`,
+    testCases: [
+      { input: "setFluidFontSizeLegacy(el, 5)", expected: "the resolved font-size is exactly 5% of the current viewport width, in pixels", label: "Scales linearly and unboundedly with viewport width" },
+    ],
+    hints: [
+      "Unlike the clamp() version, there's genuinely no floor or ceiling here — on a very narrow or very wide viewport this can render illegibly small or absurdly large, which is exactly why clamp() replaced it.",
+    ],
+    orderIndex: 1234,
+  },
+  {
+    slug: "gradient-text-background-clip",
+    companies: ["Meta", "Pinterest", "Adobe"],
+    category: "css",
+    title: "Color Gradients on Text (background-clip: text)",
+    description: `The trick behind gradient headlines: paint a gradient as the element's background, then clip that background to the exact shape of the text glyphs (\`background-clip: text\`) and make the text itself transparent so the gradient shows through.
+
+## Your task
+
+Write \`applyGradientText(el, gradientCss)\`, applying \`gradientCss\` (e.g. \`"linear-gradient(90deg, red, blue)"\`) as a text-clipped gradient on \`el\`.`,
+    difficulty: "medium",
+    starterCode: `function applyGradientText(el, gradientCss) {
+}`,
+    solutionCode: `function applyGradientText(el, gradientCss) {
+  el.style.backgroundImage = gradientCss;
+  el.style.backgroundClip = "text";
+  el.style.webkitBackgroundClip = "text";
+  el.style.color = "transparent";
+}`,
+    testCases: [
+      { input: "applyGradientText(el, 'linear-gradient(90deg, red, blue)')", expected: "background-clip: text (and the -webkit- prefixed equivalent, for broader support)", label: "Clips the background to the text glyphs' shape" },
+      { input: "applyGradientText(el, 'linear-gradient(90deg, red, blue)')", expected: "color: transparent", label: "Makes the text itself transparent so the clipped gradient shows through" },
+      { input: "applyGradientText(el, 'linear-gradient(90deg, red, blue)')", expected: "background-image is the given gradient", label: "Applies the given gradient as the background" },
+    ],
+    hints: [
+      "All three properties are required — the gradient alone does nothing visible until the background is clipped to the text and the text's own color is made transparent.",
+    ],
+    orderIndex: 1235,
+  },
+
+  // ── css — standalone CSS Interview Question Roadmap, Stage 3 ───────────────
+  {
+    slug: "flex-layout-fixed-flexible-fixed",
+    companies: ["Meta", "Amazon", "Airbnb"],
+    category: "css",
+    title: "Flex Layout: Fixed | Flexible | Fixed",
+    description: `A layout that shows up constantly in real UIs: two fixed-width side columns (icons, actions, a fixed-width label) with a flexible middle column that absorbs whatever space is left over.
+
+## Your task
+
+Write \`applyFlexLayoutOne(container)\`, where \`container\` has exactly 3 children. Make the 1st and 3rd children exactly 100px wide and never grow or shrink; make the 2nd child flexible, absorbing all remaining space.`,
+    difficulty: "medium",
+    starterCode: `function applyFlexLayoutOne(container) {
+}`,
+    solutionCode: `function applyFlexLayoutOne(container) {
+  container.style.display = "flex";
+  const children = container.children;
+  children[0].style.flex = "0 0 100px";
+  children[1].style.flex = "1";
+  children[2].style.flex = "0 0 100px";
+}`,
+    testCases: [
+      { input: "a 500px-wide container with 3 children", expected: "widths 100px, 300px, 100px", label: "The middle child absorbs exactly the remaining space" },
+      { input: "the same layout in a 700px-wide container", expected: "widths 100px, 500px, 100px", label: "The two fixed columns stay 100px regardless of container width" },
+    ],
+    hints: [
+      "flex: 0 0 100px means 'never grow, never shrink, base size 100px' — that's what keeps the side columns fixed while flex: 1 lets the middle one absorb everything else.",
+    ],
+    orderIndex: 1236,
+  },
+  {
+    slug: "flex-equal-height-cards",
+    companies: ["Amazon", "Shopify"],
+    category: "css",
+    title: "Flex Layout: Equal-Height Wrapping Cards",
+    description: `A row of cards with wildly different amounts of content still looks tidy if every card in the row is exactly as tall as the tallest one — which flexbox gives you for free, without measuring anything in JS.
+
+## Your task
+
+Write \`applyEqualHeightCards(container)\`, making \`container\`'s children wrap onto new rows as needed, with every card in a row stretched to match the tallest card in that row.`,
+    difficulty: "medium",
+    starterCode: `function applyEqualHeightCards(container) {
+}`,
+    solutionCode: `function applyEqualHeightCards(container) {
+  container.style.display = "flex";
+  container.style.flexWrap = "wrap";
+}`,
+    testCases: [
+      { input: "two cards in one row, with different amounts of inner content (one taller than the other)", expected: "both cards render at the height of the taller one", label: "Cards stretch to match the tallest card in their row" },
+      { input: "container", expected: "flex-wrap: wrap", label: "Cards wrap onto a new row instead of overflowing or shrinking to fit one row" },
+    ],
+    hints: [
+      "Don't set an explicit height on the cards themselves — flexbox's default align-items: stretch is what equalizes their height automatically, and an explicit height would override that.",
+    ],
+    orderIndex: 1237,
+  },
+  {
+    slug: "flex-two-column-layout",
+    companies: ["Amazon", "Microsoft"],
+    category: "css",
+    title: "Two-Column Layout (Fixed Sidebar + Flexible Main)",
+    description: `The two-column cousin of the fixed-flexible-fixed pattern — a sidebar of a caller-specified width, with the main content area taking up everything else.
+
+## Your task
+
+Write \`applyTwoColumnLayout(container, sidebarWidth)\`, where \`container\` has exactly 2 children: a sidebar (1st) fixed at \`sidebarWidth\` pixels, and a main area (2nd) that fills the rest.`,
+    difficulty: "medium",
+    starterCode: `function applyTwoColumnLayout(container, sidebarWidth) {
+}`,
+    solutionCode: `function applyTwoColumnLayout(container, sidebarWidth) {
+  container.style.display = "flex";
+  const children = container.children;
+  children[0].style.flex = "0 0 " + sidebarWidth + "px";
+  children[1].style.flex = "1";
+}`,
+    testCases: [
+      { input: "applyTwoColumnLayout(container, 150) in a 500px-wide container", expected: "sidebar 150px, main 350px", label: "The sidebar takes exactly the given width, main takes the rest" },
+      { input: "applyTwoColumnLayout(container, 250) in the same 500px-wide container", expected: "sidebar 250px, main 250px", label: "Works correctly for a different sidebarWidth, not hardcoded" },
+    ],
+    hints: [
+      "This is nearly identical to the fixed-flexible-fixed pattern, just with one fixed column instead of two.",
+    ],
+    orderIndex: 1238,
+  },
+  {
+    slug: "flex-sticky-footer",
+    companies: ["Amazon", "Meta", "Airbnb"],
+    category: "css",
+    title: "Sticky Footer",
+    description: `The classic "footer should stay at the bottom of the viewport even when the page content is short" layout — solved with a column-direction flex wrapper where the main content area is the only flexible piece.
+
+## Your task
+
+Write \`applyStickyFooterLayout(wrapper)\`, where \`wrapper\` has exactly 3 children in order: header, main, footer. However short the header/main/footer content is, the footer must stay pinned to \`wrapper\`'s bottom edge.`,
+    difficulty: "medium",
+    starterCode: `function applyStickyFooterLayout(wrapper) {
+}`,
+    solutionCode: `function applyStickyFooterLayout(wrapper) {
+  wrapper.style.display = "flex";
+  wrapper.style.flexDirection = "column";
+  const children = wrapper.children;
+  children[1].style.flex = "1";
+}`,
+    testCases: [
+      { input: "a 400px-tall wrapper with a short header, main, and footer", expected: "the footer's bottom edge sits exactly at the wrapper's bottom edge", label: "Pins the footer to the bottom even when content doesn't fill the wrapper" },
+      { input: "the main content area", expected: "flex: 1 — the only child that grows", label: "Only the main area absorbs the leftover space; header and footer keep their natural size" },
+    ],
+    hints: [
+      "flex-direction: column turns the vertical axis into the main axis, so flex: 1 on just the main child (not the header or footer) makes it the only one that grows to fill leftover space — pushing the footer down to the very bottom.",
+    ],
+    orderIndex: 1239,
+  },
+  {
+    slug: "flex-child-min-width-zero-truncation",
+    companies: ["Meta", "Google"],
+    category: "css",
+    title: "Flexbox Truncated Text Inside a Flex Child (the min-width: 0 Gotcha)",
+    description: `A well-known gotcha: a flex item's \`min-width\` defaults to \`auto\`, which means "never shrink below your content's natural width" — so even with \`white-space: nowrap\`, \`overflow: hidden\`, and \`text-overflow: ellipsis\` already set, a flex child containing long text will still overflow its container instead of truncating, until you explicitly override that default.
+
+## Your task
+
+Write \`fixFlexChildTruncation(flexChild)\`, which is the one missing property needed to let \`flexChild\`'s already-configured ellipsis truncation actually take effect.`,
+    difficulty: "medium",
+    starterCode: `function fixFlexChildTruncation(flexChild) {
+}`,
+    solutionCode: `function fixFlexChildTruncation(flexChild) {
+  flexChild.style.minWidth = "0";
+}`,
+    testCases: [
+      { input: "a flex child with long nowrap text, inside a narrow flex container, before the fix", expected: "the child overflows the container's width despite already having text-overflow: ellipsis", label: "Demonstrates the bug: ellipsis alone doesn't truncate a flex child that refuses to shrink" },
+      { input: "the same flex child, after fixFlexChildTruncation is applied", expected: "the child's rendered width no longer exceeds the container's width", label: "min-width: 0 lets the flex child actually shrink, letting the existing ellipsis styles finally take effect" },
+    ],
+    hints: [
+      "The fix is exactly one property — min-width: 0 — overriding the flex item's default min-width: auto, which is what was blocking it from shrinking below its text's natural width in the first place.",
+    ],
+    orderIndex: 1240,
+  },
+
+  // ── css — standalone CSS Interview Question Roadmap, Stage 4 ───────────────
+  {
+    slug: "grid-layout-basic-columns",
+    companies: ["Meta", "Amazon", "Google"],
+    category: "css",
+    title: "CSS Grid Layout 1: Equal Columns",
+    description: `The Grid equivalent of a basic equal-width column layout — one line shorter than the flexbox version, since Grid lets you declare all the column tracks up front instead of setting \`flex\` on each child individually.
+
+## Your task
+
+Write \`applyGridLayoutOne(container)\`, laying \`container\`'s children out in 3 equal-width columns.`,
+    difficulty: "medium",
+    starterCode: `function applyGridLayoutOne(container) {
+}`,
+    solutionCode: `function applyGridLayoutOne(container) {
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = "repeat(3, 1fr)";
+}`,
+    testCases: [
+      { input: "a 300px-wide container with 3 children", expected: "each child is exactly 100px wide", label: "Splits the container into 3 exactly equal columns" },
+      { input: "the same layout in a 600px-wide container", expected: "each child is exactly 200px wide", label: "Recomputes correctly for a different container width" },
+    ],
+    hints: [
+      "repeat(3, 1fr) is shorthand for '1fr 1fr 1fr' — three equal flexible tracks that split the available width evenly.",
+    ],
+    orderIndex: 1241,
+  },
+  {
+    slug: "grid-layout-sidebar-main",
+    companies: ["Meta", "Amazon"],
+    category: "css",
+    title: "CSS Grid Layout 2: Fixed Sidebar + Flexible Main",
+    description: `The Grid version of the fixed-sidebar-plus-flexible-main pattern — a single \`grid-template-columns\` declaration instead of setting \`flex\` on two separate children.
+
+## Your task
+
+Write \`applyGridLayoutTwo(container, sidebarWidth)\`, giving \`container\` two columns: the 1st exactly \`sidebarWidth\` pixels wide, the 2nd filling the rest.`,
+    difficulty: "medium",
+    starterCode: `function applyGridLayoutTwo(container, sidebarWidth) {
+}`,
+    solutionCode: `function applyGridLayoutTwo(container, sidebarWidth) {
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = sidebarWidth + "px 1fr";
+}`,
+    testCases: [
+      { input: "applyGridLayoutTwo(container, 150) in a 500px-wide container", expected: "columns 150px and 350px", label: "The sidebar column takes exactly the given width, the main column takes the rest" },
+      { input: "applyGridLayoutTwo(container, 250) in the same 500px-wide container", expected: "columns 250px and 250px", label: "Works correctly for a different sidebarWidth" },
+    ],
+    hints: [
+      "gridTemplateColumns takes a space-separated track list directly as a string — \"150px 1fr\" is both tracks in one declaration.",
+    ],
+    orderIndex: 1242,
+  },
+  {
+    slug: "grid-responsive-auto-fit-minmax",
+    companies: ["Airbnb", "Pinterest", "Shopify"],
+    category: "css",
+    title: "Responsive Grid with auto-fill/auto-fit + minmax() (No Media Queries)",
+    description: `The single-line responsive grid trick: \`repeat(auto-fit, minmax(min, 1fr))\` fits as many columns of at least \`min\` width as the container allows, wrapping extra items onto new rows automatically — no breakpoints needed.
+
+## Your task
+
+Write \`applyResponsiveGrid(container, minItemWidth)\`, laying out \`container\`'s children in as many \`minItemWidth\`-or-wider columns as fit, wrapping the rest onto new rows.`,
+    difficulty: "medium",
+    starterCode: `function applyResponsiveGrid(container, minItemWidth) {
+}`,
+    solutionCode: `function applyResponsiveGrid(container, minItemWidth) {
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = "repeat(auto-fit, minmax(" + minItemWidth + "px, 1fr))";
+}`,
+    testCases: [
+      { input: "a 650px-wide container, minItemWidth 200, with 5 children", expected: "3 columns fit per row — the first 3 children share a row, the remaining 2 wrap to the next", label: "Fits as many columns as the container allows, wrapping the rest" },
+      { input: "the same container resized to 450px wide", expected: "only 2 columns fit per row now", label: "Recomputes the column count for a narrower container, with no media query involved" },
+    ],
+    hints: [
+      "auto-fit (not a fixed repeat count) is what makes the column count itself responsive — the browser recalculates how many minItemWidth-or-wider tracks fit as the container's width changes.",
+    ],
+    orderIndex: 1243,
+  },
+
+  // ── css — standalone CSS Interview Question Roadmap, Stage 5 ───────────────
+  {
+    slug: "css-multi-column-text",
+    companies: ["Amazon", "Adobe"],
+    category: "css",
+    title: "Multi-Column Text (CSS Multi-Column Layout)",
+    description: `A newspaper-style layout the multi-column module gives you for free: flow one block of text across several columns, letting the browser handle the column breaks — no manual splitting into separate elements required.
+
+## Your task
+
+Write \`applyMultiColumnText(el, columnCount)\`, flowing \`el\`'s text content across \`columnCount\` columns.`,
+    difficulty: "medium",
+    starterCode: `function applyMultiColumnText(el, columnCount) {
+}`,
+    solutionCode: `function applyMultiColumnText(el, columnCount) {
+  el.style.columnCount = String(columnCount);
+}`,
+    testCases: [
+      { input: "applyMultiColumnText(el, 3)", expected: "column-count: 3", label: "Sets the element to flow its content across 3 columns" },
+      { input: "applyMultiColumnText(el, 2)", expected: "column-count: 2", label: "Works correctly for a different column count" },
+    ],
+    hints: [
+      "column-count is the whole trick here — the browser handles wrapping the text across that many columns on its own.",
+    ],
+    orderIndex: 1244,
+  },
+  {
+    slug: "three-column-feed-layout",
+    companies: ["Meta", "Amazon"],
+    category: "css",
+    title: "Three-Column Feed Layout (Nav | Feed | Sidebar)",
+    description: `The layout behind most social feeds: a fixed-width nav column and a fixed-width sidebar bracket a main feed column that's capped at a maximum width (so it doesn't stretch to an unreadable line length on wide screens) — the whole group centered in the viewport.
+
+## Your task
+
+Write \`applyThreeColumnFeedLayout(container, navWidth, sidebarWidth, mainMaxWidth)\`, where \`container\` has exactly 3 children: nav (1st, fixed at \`navWidth\`), feed (2nd, capped at \`mainMaxWidth\` but never growing past it), sidebar (3rd, fixed at \`sidebarWidth\`).`,
+    difficulty: "medium",
+    starterCode: `function applyThreeColumnFeedLayout(container, navWidth, sidebarWidth, mainMaxWidth) {
+}`,
+    solutionCode: `function applyThreeColumnFeedLayout(container, navWidth, sidebarWidth, mainMaxWidth) {
+  container.style.display = "flex";
+  container.style.justifyContent = "center";
+  const children = container.children;
+  children[0].style.flex = "0 0 " + navWidth + "px";
+  children[1].style.flex = "0 1 " + mainMaxWidth + "px";
+  children[1].style.maxWidth = mainMaxWidth + "px";
+  children[2].style.flex = "0 0 " + sidebarWidth + "px";
+}`,
+    testCases: [
+      { input: "applyThreeColumnFeedLayout(container, 250, 300, 600) in a wide (1200px) container", expected: "widths 250px, 600px, 300px", label: "Nav and sidebar stay fixed; the feed caps at its max width instead of stretching to fill the extra space" },
+    ],
+    hints: [
+      "flex: 0 1 mainMaxWidth (grow: 0) is what stops the feed column from stretching to fill leftover space — combine it with justify-content: center on the container so the whole capped-width group centers in the viewport instead of hugging the left edge.",
+    ],
+    orderIndex: 1245,
+  },
+  {
+    slug: "holy-grail-layout",
+    companies: ["Amazon", "Meta", "Microsoft", "Airbnb"],
+    category: "css",
+    title: "Holy Grail Layout",
+    description: `The classic layout every CSS course eventually covers: a full-width header and footer, with a 3-column middle row — fixed-width nav, flexible main, fixed-width aside — where main visually sits between nav and aside.
+
+## Your task
+
+Write \`applyHolyGrailLayout(wrapper, navWidth, asideWidth)\`. \`wrapper\` has exactly 3 direct children: header, a middle row, and footer. The middle row itself has exactly 3 children: nav, main, aside. Header and footer should span the full width; nav and aside should be fixed at \`navWidth\`/\`asideWidth\`; main should fill whatever's left, sitting visually between them; the middle row should fill all vertical space left over between the header and footer.`,
+    difficulty: "medium",
+    starterCode: `function applyHolyGrailLayout(wrapper, navWidth, asideWidth) {
+}`,
+    solutionCode: `function applyHolyGrailLayout(wrapper, navWidth, asideWidth) {
+  wrapper.style.display = "flex";
+  wrapper.style.flexDirection = "column";
+  const middle = wrapper.children[1];
+  middle.style.flex = "1";
+  middle.style.display = "flex";
+  const nav = middle.children[0];
+  const main = middle.children[1];
+  const aside = middle.children[2];
+  nav.style.flex = "0 0 " + navWidth + "px";
+  main.style.flex = "1";
+  aside.style.flex = "0 0 " + asideWidth + "px";
+}`,
+    testCases: [
+      { input: "applyHolyGrailLayout(wrapper, 150, 200) in an 800px-wide, 500px-tall wrapper with a 40px header and 40px footer", expected: "nav 150px, aside 200px, main 450px (800 - 150 - 200)", label: "Nav and aside stay fixed width; main fills exactly what's left" },
+      { input: "the same layout", expected: "the middle row's height is 420px (500 - 40 header - 40 footer)", label: "The middle row absorbs all vertical space left over between header and footer" },
+      { input: "the rendered nav, main, and aside", expected: "left-to-right order is nav, then main, then aside", label: "Main renders visually between nav and aside" },
+    ],
+    hints: [
+      "This is two nested flex layouts: the outer wrapper is a column-direction flex (stacking header / middle / footer, with only the middle row flexible), and the middle row is itself a row-direction flex (nav / main / aside, with only main flexible) — the same fixed-flexible-fixed pattern as earlier stages, one level deeper.",
+    ],
+    orderIndex: 1246,
+  },
+  {
+    slug: "responsive-product-card-grid",
+    companies: ["Amazon", "Airbnb", "Shopify"],
+    category: "css",
+    title: "Responsive Product/Card Grid",
+    description: `An e-commerce-style grid: a fixed number of equal-width columns with real gutter spacing between cards — the grid version of the layout, with an explicit column count rather than auto-fit's intrinsic wrapping.
+
+## Your task
+
+Write \`applyProductGrid(container, columns, gapPx)\`, laying \`container\`'s children out in exactly \`columns\` equal-width columns with \`gapPx\` of spacing between both rows and columns.`,
+    difficulty: "medium",
+    starterCode: `function applyProductGrid(container, columns, gapPx) {
+}`,
+    solutionCode: `function applyProductGrid(container, columns, gapPx) {
+  container.style.display = "grid";
+  container.style.gridTemplateColumns = "repeat(" + columns + ", 1fr)";
+  container.style.gap = gapPx + "px";
+}`,
+    testCases: [
+      { input: "applyProductGrid(container, 3, 15) in a 630px-wide container", expected: "each card is 200px wide ((630 - 2×15) / 3)", label: "Column width correctly accounts for the gaps eaten out of the container's total width" },
+      { input: "the same grid", expected: "adjacent cards' left edges are exactly 215px apart (200px card + 15px gap)", label: "Applies real gutter spacing between cards, not just between the columns' content" },
+    ],
+    hints: [
+      "gap (not margin on each card) is what correctly excludes gutter space from the 1fr column-width calculation — margin-based gutters would make the columns overflow the container instead.",
+    ],
+    orderIndex: 1247,
+  },
+
+  // ── css — standalone CSS Interview Question Roadmap, Stage 6 ───────────────
+  {
+    slug: "golden-ratio-rectangle",
+    companies: ["Adobe"],
+    category: "css",
+    title: "Golden-Ratio Rectangle",
+    description: `Design-systems-heavy interviews sometimes ask for this directly: a rectangle whose width-to-height ratio matches the golden ratio (≈1.618), a proportion designers reach for constantly.
+
+## Your task
+
+Write \`applyGoldenRatioRectangle(el, width)\`, setting \`el\`'s \`width\` to \`width\` pixels and its \`height\` so the width-to-height ratio is exactly 1.618.`,
+    difficulty: "easy",
+    starterCode: `function applyGoldenRatioRectangle(el, width) {
+}`,
+    solutionCode: `function applyGoldenRatioRectangle(el, width) {
+  el.style.width = width + "px";
+  el.style.height = (width / 1.618) + "px";
+}`,
+    testCases: [
+      { input: "applyGoldenRatioRectangle(el, 300)", expected: "width 300px, height ≈185.4px (300 / 1.618)", label: "Height is derived from width divided by the golden ratio" },
+      { input: "applyGoldenRatioRectangle(el, 500)", expected: "width 500px, height ≈309px", label: "Recomputes correctly for a different width, not a fixed height" },
+    ],
+    hints: [
+      "height = width / 1.618 — the ratio is the entire calculation here.",
+    ],
+    orderIndex: 1248,
+  },
+  {
+    slug: "css-triangle-border-trick",
+    companies: [],
+    category: "css",
+    title: "CSS-Only Triangle/Arrow Shapes (the Border Trick)",
+    description: `The classic pure-CSS shape trick: give a zero-size element a solid border on one side and transparent borders on the other two, and the borders themselves meet at a point — forming a triangle out of nothing but border geometry.
+
+## Your task
+
+Write \`applyCssTriangle(el, size, color)\`, turning \`el\` into an upward-pointing triangle of \`color\`, \`size\` pixels wide at its base.`,
+    difficulty: "easy",
+    starterCode: `function applyCssTriangle(el, size, color) {
+}`,
+    solutionCode: `function applyCssTriangle(el, size, color) {
+  el.style.width = "0";
+  el.style.height = "0";
+  el.style.borderLeft = size + "px solid transparent";
+  el.style.borderRight = size + "px solid transparent";
+  el.style.borderBottom = size + "px solid " + color;
+}`,
+    testCases: [
+      { input: "applyCssTriangle(el, 20, 'red')", expected: "width and height are both 0px", label: "The element itself has zero content size — the shape comes entirely from its borders" },
+      { input: "applyCssTriangle(el, 20, 'red')", expected: "border-bottom-color is red, border-left-color and border-right-color are transparent", label: "Only the bottom border is colored — the other two are transparent, which is what forms the visible point" },
+    ],
+    hints: [
+      "The two transparent side borders aren't invisible decoration — they're doing real geometric work, forcing the colored bottom border to taper to a point instead of staying a flat-topped trapezoid.",
+    ],
+    orderIndex: 1249,
+  },
+  {
+    slug: "custom-checkbox-style",
+    companies: ["Meta", "Amazon", "Stripe"],
+    category: "css",
+    title: "Different Checkbox Style (Custom-Styled Checkbox)",
+    description: `Restyling a native checkbox from scratch: strip the browser's default rendering with \`appearance: none\`, draw your own box, and use the real \`:checked\` pseudo-class — not JavaScript — to swap its appearance when checked.
+
+## Your task
+
+Write \`applyCustomCheckbox(checkboxEl)\`, which strips \`checkboxEl\`'s native appearance and gives it a custom square look: a light border and white background unchecked, a dark background once checked.`,
+    difficulty: "medium",
+    starterCode: `function applyCustomCheckbox(checkboxEl) {
+}`,
+    solutionCode: `function applyCustomCheckbox(checkboxEl) {
+  const style = document.createElement("style");
+  style.textContent = \`
+    input.custom-checkbox { appearance: none; width: 20px; height: 20px; border: 2px solid #666; border-radius: 4px; background-color: rgb(255, 255, 255); }
+    input.custom-checkbox:checked { background-color: rgb(51, 51, 51); }
+  \`;
+  document.head.appendChild(style);
+  checkboxEl.classList.add("custom-checkbox");
+}`,
+    testCases: [
+      { input: "applyCustomCheckbox(checkboxEl), unchecked", expected: "background-color is white", label: "Renders with a white background before it's checked" },
+      { input: "checkboxEl.checked set to true (programmatically, then a change event dispatched)", expected: "background-color becomes the dark checked color", label: "The real :checked pseudo-class reacts to the checkbox's actual checked state, no JS style-swapping needed" },
+    ],
+    hints: [
+      "The checked-state styling has to come from a real :checked CSS rule in an injected stylesheet — inline styles set via el.style can't target a pseudo-class at all.",
+    ],
+    orderIndex: 1250,
+  },
+  {
+    slug: "css-toggle-switch",
+    companies: ["Stripe", "Airbnb"],
+    category: "css",
+    title: "Build a CSS-Only Toggle Switch",
+    description: `The iOS-style toggle switch, built from a hidden checkbox plus a styled sibling: the checkbox's real \`:checked\` state drives the visible slider's position via the adjacent-sibling combinator (\`:checked + .toggle-slider\`) — no JavaScript needed for the visual state at all.
+
+## Your task
+
+Write \`applyToggleSwitch(rootEl)\`, where \`rootEl\` contains a checkbox (\`.toggle-input\`) immediately followed by a slider element (\`.toggle-slider\`). Style the slider so it slides \`20px\` to the right exactly when the checkbox becomes checked.`,
+    difficulty: "medium",
+    starterCode: `function applyToggleSwitch(rootEl) {
+}`,
+    solutionCode: `function applyToggleSwitch(rootEl) {
+  const style = document.createElement("style");
+  style.textContent = \`
+    .toggle-slider { display: inline-block; width: 40px; height: 20px; background: #ccc; border-radius: 10px; position: relative; transition: transform 0.2s; }
+    .toggle-input { display: none; }
+    .toggle-input:checked + .toggle-slider { transform: translateX(20px); }
+  \`;
+  document.head.appendChild(style);
+}`,
+    testCases: [
+      { input: "applyToggleSwitch(rootEl), checkbox unchecked", expected: "the slider's transform is none", label: "The slider sits in its resting position while unchecked" },
+      { input: "the checkbox's checked state set to true and a change event dispatched, waited past the transition", expected: "the slider's transform translates it 20px to the right", label: "The adjacent-sibling :checked selector moves the slider automatically — no JS needed to touch the slider directly" },
+    ],
+    hints: [
+      "The checkbox and slider must be immediate siblings in that exact order for the + combinator (:checked + .toggle-slider) to match at all.",
+    ],
+    orderIndex: 1251,
+  },
+  {
+    slug: "css-close-button-x",
+    companies: ["Meta", "Amazon"],
+    category: "css",
+    title: 'Close Button in CSS (an "X" from Pure CSS)',
+    description: `Building an "X" icon with zero images or SVG: two identical bars, generated as \`::before\`/\`::after\` pseudo-elements, rotated in opposite directions so they cross.
+
+## Your task
+
+Write \`applyCloseButtonX(el)\`, giving \`el\` two pseudo-element bars — one rotated 45°, the other -45° — that together form an X.`,
+    difficulty: "medium",
+    starterCode: `function applyCloseButtonX(el) {
+}`,
+    solutionCode: `function applyCloseButtonX(el) {
+  const style = document.createElement("style");
+  style.textContent = \`
+    .close-btn { position: relative; width: 20px; height: 20px; }
+    .close-btn::before, .close-btn::after {
+      content: "";
+      position: absolute;
+      top: 9px;
+      left: 0;
+      width: 20px;
+      height: 2px;
+      background: #000;
+    }
+    .close-btn::before { transform: rotate(45deg); }
+    .close-btn::after { transform: rotate(-45deg); }
+  \`;
+  document.head.appendChild(style);
+  el.classList.add("close-btn");
+}`,
+    testCases: [
+      { input: "applyCloseButtonX(el)", expected: "both ::before and ::after have content: \"\" (generated, not real DOM elements)", label: "Both bars are generated content, not extra real elements" },
+      { input: "applyCloseButtonX(el)", expected: "::before and ::after are rotated in opposite directions", label: "The two bars rotate oppositely, which is what makes them cross into an X" },
+    ],
+    hints: [
+      "content: \"\" is required on both pseudo-elements — without it, ::before/::after don't generate a box at all, regardless of any other styles you give them.",
+    ],
+    orderIndex: 1252,
+  },
+  {
+    slug: "css-doughnut-chart",
+    companies: ["Stripe", "Bloomberg"],
+    category: "css",
+    title: "Doughnut Chart (Pure CSS, No SVG/Canvas)",
+    description: `A conic-gradient sliced into colored segments, with a smaller circle layered on top to punch a hole through the middle — the entire chart built from two \`border-radius: 50%\` circles and zero drawing APIs.
+
+## Your task
+
+Write \`applyDoughnutChart(el, segments)\`, where \`segments\` is an array of \`{ color, percent }\` (percentages summing to 100). Paint \`el\` as a circular conic-gradient sliced according to \`segments\`, then punch a hole through the middle with a smaller centered circle.`,
+    difficulty: "medium",
+    starterCode: `function applyDoughnutChart(el, segments) {
+}`,
+    solutionCode: `function applyDoughnutChart(el, segments) {
+  let cumulative = 0;
+  const stops = [];
+  segments.forEach((seg) => {
+    const start = cumulative;
+    cumulative += seg.percent;
+    stops.push(seg.color + " " + start + "% " + cumulative + "%");
+  });
+  el.style.background = "conic-gradient(" + stops.join(", ") + ")";
+  el.style.borderRadius = "50%";
+  el.style.position = "relative";
+  const hole = document.createElement("div");
+  hole.style.position = "absolute";
+  hole.style.top = "25%";
+  hole.style.left = "25%";
+  hole.style.width = "50%";
+  hole.style.height = "50%";
+  hole.style.borderRadius = "50%";
+  hole.style.background = "white";
+  el.appendChild(hole);
+}`,
+    testCases: [
+      { input: "applyDoughnutChart(el, [{color:'red',percent:40},{color:'blue',percent:60}])", expected: "background is a conic-gradient built from the segments", label: "Paints a conic-gradient with stops derived from the segments' cumulative percentages" },
+      { input: "el", expected: "border-radius: 50%", label: "The outer shape is a full circle" },
+      { input: "el's rendered result", expected: "a smaller circular hole element is layered on top, centered", label: "Punches a hole through the middle to give the doughnut shape, not a solid pie" },
+    ],
+    hints: [
+      "Each segment's gradient stop needs both its start and end percentage — track a running cumulative total as you iterate segments so each slice picks up exactly where the last one left off.",
+    ],
+    orderIndex: 1253,
+  },
+
+  // ── css — standalone CSS Interview Question Roadmap, Stage 7 ───────────────
+  {
+    slug: "object-fit-image-fitting",
+    companies: ["Amazon", "Airbnb", "Pinterest"],
+    category: "css",
+    title: "Fit the Image (object-fit Exercises)",
+    description: `Forcing an image into a fixed-size box without distorting it: \`object-fit\` controls how the image's intrinsic content fills that box — crop-to-fill (\`cover\`), shrink-to-fit (\`contain\`), or stretch (\`fill\`).
+
+## Your task
+
+Write \`applyObjectFit(imgEl, containerWidth, containerHeight, fitMode)\`, sizing \`imgEl\` to exactly \`containerWidth\`×\`containerHeight\` and applying \`fitMode\` as its \`object-fit\`.`,
+    difficulty: "medium",
+    starterCode: `function applyObjectFit(imgEl, containerWidth, containerHeight, fitMode) {
+}`,
+    solutionCode: `function applyObjectFit(imgEl, containerWidth, containerHeight, fitMode) {
+  imgEl.style.width = containerWidth + "px";
+  imgEl.style.height = containerHeight + "px";
+  imgEl.style.objectFit = fitMode;
+}`,
+    testCases: [
+      { input: "applyObjectFit(imgEl, 300, 200, 'cover')", expected: "the image box is exactly 300×200px, object-fit: cover", label: "Sizes the box to the given dimensions and applies the requested fit mode" },
+      { input: "applyObjectFit(imgEl, 300, 200, 'contain')", expected: "object-fit: contain", label: "Works correctly for a different fit mode, not hardcoded to one" },
+    ],
+    hints: [
+      "object-fit only has an effect once the element actually has an explicit width and height that differ from the image's own natural aspect ratio — set both before relying on it.",
+    ],
+    orderIndex: 1254,
+  },
+  {
+    slug: "responsive-image-aspect-ratio",
+    companies: ["Meta", "Airbnb"],
+    category: "css",
+    title: "Responsive Image Sizing with aspect-ratio (No Padding-Hack Needed)",
+    description: `The old way to reserve space for an image before it loads (and avoid layout shift) was the "padding-top percentage hack." The \`aspect-ratio\` property replaces that trick with one direct, readable declaration.
+
+## Your task
+
+Write \`applyAspectRatio(el, ratioWidth, ratioHeight)\`, making \`el\` always \`100%\` of its container's width, with its height locked to the \`ratioWidth\`:\`ratioHeight\` aspect ratio.`,
+    difficulty: "medium",
+    starterCode: `function applyAspectRatio(el, ratioWidth, ratioHeight) {
+}`,
+    solutionCode: `function applyAspectRatio(el, ratioWidth, ratioHeight) {
+  el.style.width = "100%";
+  el.style.aspectRatio = ratioWidth + " / " + ratioHeight;
+}`,
+    testCases: [
+      { input: "applyAspectRatio(el, 16, 9) inside a 400px-wide container", expected: "width 400px, height ≈225px (400 × 9/16)", label: "Height is derived from the container's real width and the given ratio" },
+      { input: "applyAspectRatio(el, 1, 1) inside the same 400px-wide container", expected: "width 400px, height 400px", label: "Works correctly for a square ratio, not hardcoded to 16:9" },
+    ],
+    hints: [
+      "aspect-ratio takes 'width / height' as a single CSS value — the browser derives the actual height from whatever width the element ends up with.",
+    ],
+    orderIndex: 1255,
+  },
+  {
+    slug: "background-size-cover-vs-contain",
+    companies: [],
+    category: "css",
+    title: "background-size: cover vs. contain",
+    description: `The two most-used \`background-size\` keywords, and the distinction interviewers actually want to hear: \`cover\` scales the image up to fill the box entirely (cropping whatever overflows), while \`contain\` scales it down to fit entirely inside the box (leaving empty space if the aspect ratios don't match).
+
+## Your task
+
+Write \`applyBackgroundSize(el, mode)\`, setting \`el\`'s \`background-size\` to \`mode\`.`,
+    difficulty: "easy",
+    starterCode: `function applyBackgroundSize(el, mode) {
+}`,
+    solutionCode: `function applyBackgroundSize(el, mode) {
+  el.style.backgroundSize = mode;
+}`,
+    testCases: [
+      { input: "applyBackgroundSize(el, 'cover')", expected: "background-size: cover", label: "Applies cover, which crops to fill the box" },
+      { input: "applyBackgroundSize(el, 'contain')", expected: "background-size: contain", label: "Applies contain, which fits entirely inside the box instead" },
+    ],
+    hints: [
+      "This one really is a one-line function — the depth of this question is entirely in explaining the difference out loud, not in the code.",
+    ],
+    orderIndex: 1256,
+  },
+
+  // ── css — standalone CSS Interview Question Roadmap, Stage 8 ───────────────
+  {
+    slug: "native-input-accent-color",
+    companies: ["Stripe", "Amazon"],
+    category: "css",
+    title: "Color of Input Elements (Styling Native Form Controls)",
+    description: `Before reaching for a full custom-checkbox rebuild, \`accent-color\` restyles a native checkbox/radio/range input's own checked/filled color directly — one property, full native behavior (focus rings, keyboard support) kept intact.
+
+## Your task
+
+Write \`applyAccentColor(inputEl, color)\`, setting \`inputEl\`'s \`accent-color\` to \`color\`.`,
+    difficulty: "medium",
+    starterCode: `function applyAccentColor(inputEl, color) {
+}`,
+    solutionCode: `function applyAccentColor(inputEl, color) {
+  inputEl.style.accentColor = color;
+}`,
+    testCases: [
+      { input: "applyAccentColor(inputEl, 'red')", expected: "accent-color resolves to rgb(255, 0, 0)", label: "Sets the native control's accent color directly" },
+    ],
+    hints: [
+      "accent-color is a real standalone CSS property (not a vendor-prefixed hack) — no appearance: none or pseudo-elements required for this simpler case.",
+    ],
+    orderIndex: 1257,
+  },
+  {
+    slug: "css-counter-list-numbering",
+    companies: ["Amazon", "Meta"],
+    category: "css",
+    title: "List Numbering (Custom counter-reset/counter-increment)",
+    description: `Native ordered-list numbering isn't your only option — CSS counters let you drive custom numbering (with your own formatting around the number) purely through \`counter-reset\`, \`counter-increment\`, and \`content: counter(...)\` on a generated pseudo-element.
+
+## Your task
+
+Write \`applyCustomCounter(listEl, counterName)\`, setting up \`listEl\` (and each of its direct children) so every child is automatically numbered via a CSS counter named \`counterName\`, with the number rendered before each child's content.`,
+    difficulty: "medium",
+    starterCode: `function applyCustomCounter(listEl, counterName) {
+}`,
+    solutionCode: `function applyCustomCounter(listEl, counterName) {
+  listEl.style.counterReset = counterName + " 0";
+  const style = document.createElement("style");
+  style.textContent =
+    "." + counterName + "-item { counter-increment: " + counterName + "; } " +
+    "." + counterName + "-item::before { content: counter(" + counterName + ") \\". \\"; }";
+  document.head.appendChild(style);
+  Array.from(listEl.children).forEach((li) => li.classList.add(counterName + "-item"));
+}`,
+    testCases: [
+      { input: "applyCustomCounter(listEl, 'item')", expected: "listEl has counter-reset: item 0", label: "Initializes the named counter on the list container" },
+      { input: "each of listEl's children", expected: "counter-increment: item", label: "Each child increments the counter by one" },
+      { input: "each child's ::before", expected: "a content value built from counter(item)", label: "Each child's generated content actually reads from the counter" },
+    ],
+    hints: [
+      "counter-reset lives on the shared ancestor (once), while counter-increment lives on every item that should advance the count (repeated) — mixing those two up is the most common bug with CSS counters.",
+    ],
+    orderIndex: 1258,
+  },
+  {
+    slug: "nth-child-row-striping",
+    companies: ["Meta", "Amazon", "Google"],
+    category: "css",
+    title: '"a Row" (nth-child Selectors)',
+    description: `Zebra-striping a list purely in CSS — no per-row JS class toggling, no extra markup — using \`:nth-child(even)\` to target every other row directly.
+
+## Your task
+
+Write \`applyRowStriping(listEl, stripeColor)\`, giving every even-positioned direct child of \`listEl\` a \`stripeColor\` background.`,
+    difficulty: "medium",
+    starterCode: `function applyRowStriping(listEl, stripeColor) {
+}`,
+    solutionCode: `function applyRowStriping(listEl, stripeColor) {
+  const style = document.createElement("style");
+  style.textContent = ".striped-list > *:nth-child(even) { background-color: " + stripeColor + "; }";
+  document.head.appendChild(style);
+  listEl.classList.add("striped-list");
+}`,
+    testCases: [
+      { input: "a 4-child list, applyRowStriping(listEl, 'rgb(240, 240, 240)')", expected: "the 2nd and 4th children are striped, the 1st and 3rd are not", label: "Only even-positioned children receive the stripe color" },
+    ],
+    hints: [
+      ":nth-child(even) counts from 1 and includes ALL element types among the children by default — the > combinator scoped to listEl's direct children is what keeps this from also matching further-nested descendants.",
+    ],
+    orderIndex: 1259,
+  },
+  {
+    slug: "selection-pseudo-element-style",
+    companies: ["Meta"],
+    category: "css",
+    title: "Fragment Style (::selection Styling)",
+    description: `A small, often-forgotten pseudo-element: \`::selection\` restyles the browser's own text-selection highlight (the blue box you get from click-dragging over text) instead of leaving it at the browser default.
+
+## Your task
+
+Write \`applySelectionStyle(el, bgColor)\`, giving \`el\`'s selected-text highlight a \`bgColor\` background.`,
+    difficulty: "medium",
+    starterCode: `function applySelectionStyle(el, bgColor) {
+}`,
+    solutionCode: `function applySelectionStyle(el, bgColor) {
+  const style = document.createElement("style");
+  style.textContent = ".selectable::selection { background-color: " + bgColor + "; }";
+  document.head.appendChild(style);
+  el.classList.add("selectable");
+}`,
+    testCases: [
+      { input: "applySelectionStyle(el, 'rgb(255, 200, 0)')", expected: "el's ::selection background-color is rgb(255, 200, 0)", label: "Restyles the text-selection highlight, not the element's own background" },
+    ],
+    hints: [
+      "::selection has to be written as a real CSS rule in a stylesheet — there's no el.style property for it, since it targets a browser-generated pseudo-element rather than the element itself.",
+    ],
+    orderIndex: 1260,
+  },
+  {
+    slug: "custom-scrollbar-styling",
+    companies: ["Airbnb", "Pinterest", "TikTok"],
+    category: "css",
+    title: "Custom Scrollbar Styling (::-webkit-scrollbar + scrollbar-color)",
+    description: `Restyling the scrollbar itself: WebKit/Blink browsers use \`::-webkit-scrollbar\` and its sub-elements, while Firefox uses the standardized \`scrollbar-color\`/\`scrollbar-width\` properties instead — a real cross-browser answer needs both.
+
+## Your task
+
+Write \`getCustomScrollbarCss()\`, returning a CSS text string (as it would appear in a stylesheet) for a \`.custom-scroll\` element with a thin, rounded, gray-thumbed scrollbar — covering both the WebKit pseudo-elements and the standard Firefox properties.`,
+    difficulty: "medium",
+    starterCode: `function getCustomScrollbarCss() {
+}`,
+    solutionCode: `function getCustomScrollbarCss() {
+  return (
+    ".custom-scroll::-webkit-scrollbar { width: 10px; } " +
+    ".custom-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 5px; } " +
+    ".custom-scroll { scrollbar-color: #888 transparent; scrollbar-width: thin; }"
+  );
+}`,
+    testCases: [
+      { input: "getCustomScrollbarCss()", expected: "includes a ::-webkit-scrollbar rule setting a width", label: "Covers the WebKit/Blink scrollbar track" },
+      { input: "getCustomScrollbarCss()", expected: "includes a ::-webkit-scrollbar-thumb rule", label: "Covers the WebKit/Blink scrollbar thumb specifically, not just the track" },
+      { input: "getCustomScrollbarCss()", expected: "includes scrollbar-color and scrollbar-width", label: "Also covers Firefox's standardized scrollbar properties, not just the WebKit-only ones" },
+    ],
+    hints: [
+      "Neither technique alone is cross-browser — ::-webkit-scrollbar is ignored by Firefox, and scrollbar-color/scrollbar-width are ignored by Chrome/Safari, so a real answer needs both sets of rules together.",
+    ],
+    orderIndex: 1261,
+  },
+  {
+    slug: "css-specificity-cascade-order",
+    companies: ["Google", "Meta", "Amazon"],
+    category: "css",
+    title: "CSS Specificity/Cascade Puzzle (Predict Which Rule Wins)",
+    description: `The most common "explain why this doesn't work" question: given several rules targeting the same element, which one actually wins? Specificity is compared as a tuple — (inline styles, IDs, classes/attributes/pseudo-classes, elements/pseudo-elements) — and only when two rules tie *exactly* does source order become the tiebreaker (the later rule wins).
+
+## Your task
+
+Write \`sortBySpecificity(rules)\`, where \`rules\` is an array of \`[idCount, classCount, elementCount]\` specificity tuples, listed in their original source order. Return the original indices sorted from **lowest to highest** cascade precedence — ties (equal specificity) must keep their original relative order, so the winner of a tied pair is whichever one appears later in \`rules\`.`,
+    difficulty: "medium",
+    starterCode: `function sortBySpecificity(rules) {
+}`,
+    solutionCode: `function sortBySpecificity(rules) {
+  return rules
+    .map((specificity, index) => ({ specificity, index }))
+    .sort((a, b) => {
+      for (let i = 0; i < 3; i++) {
+        if (a.specificity[i] !== b.specificity[i]) return a.specificity[i] - b.specificity[i];
+      }
+      return 0;
+    })
+    .map((entry) => entry.index);
+}`,
+    testCases: [
+      { input: "sortBySpecificity([[0,1,0], [1,0,0], [0,0,1]]) — a class, an ID, an element", expected: "[2, 0, 1] — element lowest, then class, then ID highest", label: "Orders strictly by the specificity tuple when there are no ties" },
+      { input: "sortBySpecificity([[0,1,0], [0,1,0]]) — two rules of identical specificity", expected: "[0, 1] — original order preserved, so index 1 (later in source) is the actual winner", label: "Ties are broken by keeping source order — the later rule wins" },
+      { input: "the last element of sortBySpecificity(rules)", expected: "the index of whichever rule actually wins the cascade", label: "The last entry in the returned order is always the winning rule" },
+    ],
+    hints: [
+      "Compare the tuple element-by-element (IDs first, then classes, then elements) and only fall through to the next element when the current one ties — and when everything ties, return 0 so the sort stays stable and preserves source order.",
+    ],
+    orderIndex: 1262,
+  },
+  {
+    slug: "sub-pixel-half-border-trick",
+    companies: ["Meta", "Airbnb"],
+    category: "css",
+    title: "0.5px Border (Sub-Pixel Border on High-DPI Screens)",
+    description: `A well-known trick question: browsers won't reliably render a literal \`0.5px\` border width, so getting a visually thinner border on high-DPI screens instead means drawing a full \`1px\` border on a pseudo-element twice the element's size, then shrinking that pseudo-element by half with \`transform: scale(0.5)\` — the border renders at 1px in its own coordinate space, but appears at half that width once scaled down.
+
+## Your task
+
+Write \`applyHalfPixelBorder(el, color)\`, giving \`el\` a visually half-width border of \`color\` using the scale-transform technique — not a literal \`0.5px\` border width.`,
+    difficulty: "hard",
+    starterCode: `function applyHalfPixelBorder(el, color) {
+}`,
+    solutionCode: `function applyHalfPixelBorder(el, color) {
+  el.style.position = "relative";
+  const style = document.createElement("style");
+  style.textContent =
+    ".half-border-el::after { content: \\"\\"; position: absolute; top: 0; left: 0; " +
+    "width: 200%; height: 200%; border: 1px solid " + color + "; " +
+    "transform: scale(0.5); transform-origin: top left; box-sizing: border-box; pointer-events: none; }";
+  document.head.appendChild(style);
+  el.classList.add("half-border-el");
+}`,
+    testCases: [
+      { input: "applyHalfPixelBorder(el, 'red')", expected: "the ::after pseudo-element has a real, full 1px border width — not 0.5px", label: "The border itself is drawn at a full, reliably-rendered 1px width" },
+      { input: "applyHalfPixelBorder(el, 'red')", expected: "the ::after pseudo-element has transform: scale(0.5) applied", label: "The visual half-width effect comes from scaling the whole pseudo-element down, not from the border-width value itself" },
+    ],
+    hints: [
+      "Never set border-width to 0.5px directly — sub-pixel border widths round inconsistently across browsers/DPI. Draw a real 1px border on a 2×-sized pseudo-element instead, then shrink the whole thing by half with a transform.",
+    ],
+    orderIndex: 1263,
+  },
+  {
+    slug: "scrollable-centered-modal",
+    companies: ["Amazon", "Stripe", "Airbnb"],
+    category: "css",
+    title: "Modal with Max Height (Scrollable, Centers, Clips to Viewport)",
+    description: `A modal whose content might be much taller than the viewport needs two things at once: it has to stay centered on screen, and its own content has to scroll internally once it hits a height cap — instead of overflowing off both edges of the viewport.
+
+## Your task
+
+Write \`applyScrollableModal(overlay, modal)\`. \`overlay\` should cover the full viewport and center \`modal\` within it, both horizontally and vertically; \`modal\` itself should never exceed \`80vh\` tall, scrolling its own content internally past that.`,
+    difficulty: "hard",
+    starterCode: `function applyScrollableModal(overlay, modal) {
+}`,
+    solutionCode: `function applyScrollableModal(overlay, modal) {
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.right = "0";
+  overlay.style.bottom = "0";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  modal.style.maxHeight = "80vh";
+  modal.style.overflowY = "auto";
+}`,
+    testCases: [
+      { input: "a modal containing content far taller than the viewport", expected: "the modal's rendered height never exceeds 80% of the viewport height", label: "Clips the modal to a maximum of 80vh regardless of how tall its content is" },
+      { input: "the same modal", expected: "it's centered both horizontally and vertically within the viewport", label: "Stays centered on screen even though its content overflows internally" },
+    ],
+    hints: [
+      "The centering (on the overlay) and the height-clamping (on the modal) are two independent pieces — max-height + overflow-y: auto alone won't center anything, and flex centering alone won't stop the modal from growing past the viewport.",
+    ],
+    orderIndex: 1264,
+  },
+
+  // ── typescript — standalone TypeScript Type-Challenges Roadmap, Stage 1 ────
+  {
+    slug: "implement-partial",
+    companies: ["Microsoft", "Airbnb", "Stripe"],
+    category: "typescript",
+    title: "Implement Partial<T>",
+    description: `The utility type every TS codebase reaches for daily: makes every property of \`T\` optional, so a partial update object only needs to include the fields it's actually changing.
+
+## Your task
+
+Write \`MyPartial<T>\`, a mapped type over \`keyof T\` that makes every property optional.
+
+This is graded by real TypeScript type-checking (via the actual compiler), not a runtime test — your answer needs to be a valid type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type MyPartial<T> = unknown;`,
+    solutionCode: `type MyPartial<T> = { [P in keyof T]?: T[P] };`,
+    testCases: [
+      { input: "MyPartial<{ title: string; done: boolean }>", expected: "{ title?: string; done?: boolean }", label: "Makes every property optional" },
+      { input: "MyPartial<{ a: number }>", expected: "{ a?: number }", label: "Works for a single-property object too" },
+    ],
+    hints: [
+      "A mapped type's `?` modifier applied inside `{ [P in keyof T]?: T[P] }` is the entire implementation — no conditional types needed here.",
+    ],
+    orderIndex: 1265,
+  },
+  {
+    slug: "implement-required",
+    companies: ["Microsoft", "Airbnb"],
+    category: "typescript",
+    title: "Implement Required<T>",
+    description: `The inverse of \`Partial\`: strips the \`?\` modifier from every property, so a type that started with optional fields becomes fully required.
+
+## Your task
+
+Write \`MyRequired<T>\`, making every property of \`T\` required, even ones that were originally optional.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type MyRequired<T> = unknown;`,
+    solutionCode: `type MyRequired<T> = { [P in keyof T]-?: T[P] };`,
+    testCases: [
+      { input: "MyRequired<{ title?: string; done?: boolean }>", expected: "{ title: string; done: boolean }", label: "Strips the optional modifier from every property" },
+      { input: "MyRequired<{ a?: number; b: string }>", expected: "{ a: number; b: string }", label: "Leaves an already-required property unaffected" },
+    ],
+    hints: [
+      "The `-?` modifier removes `?` the same way a plain `?` adds it — mapped-type modifiers can be subtracted, not just applied.",
+    ],
+    orderIndex: 1266,
+  },
+  {
+    slug: "implement-readonly",
+    companies: ["Microsoft", "Stripe"],
+    category: "typescript",
+    title: "Implement Readonly<T>",
+    description: `Marks every property of \`T\` as \`readonly\`, so the compiler rejects any attempt to reassign them after the object is created.
+
+## Your task
+
+Write \`MyReadonly<T>\`, making every property of \`T\` readonly.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type MyReadonly<T> = unknown;`,
+    solutionCode: `type MyReadonly<T> = { readonly [P in keyof T]: T[P] };`,
+    testCases: [
+      { input: "MyReadonly<{ title: string }>", expected: "{ readonly title: string }", label: "Marks every property readonly" },
+    ],
+    hints: [
+      "readonly is a mapped-type modifier just like `?` — it goes right before the `[P in keyof T]` clause.",
+    ],
+    orderIndex: 1267,
+  },
+  {
+    slug: "implement-pick",
+    companies: ["Microsoft", "Airbnb", "Shopify"],
+    category: "typescript",
+    title: "Implement Pick<T, K>",
+    description: `One of the most-used utility types in real code: builds a new type containing only the properties named in \`K\`.
+
+## Your task
+
+Write \`MyPick<T, K extends keyof T>\`, keeping only the properties of \`T\` whose keys are in \`K\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type MyPick<T, K extends keyof T> = unknown;`,
+    solutionCode: `type MyPick<T, K extends keyof T> = { [P in K]: T[P] };`,
+    testCases: [
+      { input: "MyPick<{ title: string; description: string; completed: boolean }, 'title'>", expected: "{ title: string }", label: "Keeps only the single named property" },
+      { input: "MyPick<{ title: string; description: string; completed: boolean }, 'title' | 'completed'>", expected: "{ title: string; completed: boolean }", label: "Works with a union of keys, not just one" },
+    ],
+    hints: [
+      "K extends keyof T as a constraint is what lets you map directly over K instead of keyof T — that's the whole difference from Partial's mapped type.",
+    ],
+    orderIndex: 1268,
+  },
+  {
+    slug: "implement-omit",
+    companies: ["Microsoft", "Airbnb", "Shopify"],
+    category: "typescript",
+    title: "Implement Omit<T, K>",
+    description: `The inverse of \`Pick\`: builds a new type with every property of \`T\` *except* the ones named in \`K\`.
+
+## Your task
+
+Write \`MyOmit<T, K extends keyof T>\`, dropping the properties of \`T\` whose keys are in \`K\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type MyOmit<T, K extends keyof T> = unknown;`,
+    solutionCode: `type MyOmit<T, K extends keyof T> = { [P in keyof T as P extends K ? never : P]: T[P] };`,
+    testCases: [
+      { input: "MyOmit<{ title: string; description: string; completed: boolean }, 'description'>", expected: "{ title: string; completed: boolean }", label: "Drops the single named property" },
+      { input: "MyOmit<{ title: string; description: string; completed: boolean }, 'description' | 'completed'>", expected: "{ title: string }", label: "Works with a union of keys to drop" },
+    ],
+    hints: [
+      "A key-remapping `as` clause that maps a dropped key to `never` is what removes it from the resulting mapped type entirely — `never` as a computed key vanishes rather than becoming a literal property.",
+    ],
+    orderIndex: 1269,
+  },
+  {
+    slug: "implement-record",
+    companies: ["Microsoft", "Amazon"],
+    category: "typescript",
+    title: "Implement Record<K, V>",
+    description: `Builds an object type with a fixed set of keys \`K\`, all mapped to the same value type \`V\` — the type-level equivalent of "a dictionary from K to V."
+
+## Your task
+
+Write \`MyRecord<K extends keyof any, V>\`, an object type whose keys are exactly \`K\`, each with value type \`V\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type MyRecord<K extends keyof any, V> = unknown;`,
+    solutionCode: `type MyRecord<K extends keyof any, V> = { [P in K]: V };`,
+    testCases: [
+      { input: "MyRecord<'a' | 'b', number>", expected: "{ a: number; b: number }", label: "Maps every key in the union to the same value type" },
+    ],
+    hints: [
+      "`keyof any` (the constraint on K) resolves to `string | number | symbol` — the universe of everything that can legally be an object key.",
+    ],
+    orderIndex: 1270,
+  },
+  {
+    slug: "implement-deep-partial",
+    companies: ["Airbnb", "Shopify"],
+    category: "typescript",
+    title: "Implement DeepPartial<T> (Recursive Partial)",
+    description: `The most common senior-level follow-up to \`Partial\`: a shallow \`Partial\` only makes the *top-level* properties optional — nested objects still require every one of their own fields. \`DeepPartial\` recurses into every nested object too.
+
+## Your task
+
+Write \`DeepPartial<T>\`, recursively making every property — at every nesting depth — optional.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type DeepPartial<T> = unknown;`,
+    solutionCode: `type DeepPartial<T> = T extends object ? { [P in keyof T]?: DeepPartial<T[P]> } : T;`,
+    testCases: [
+      { input: "DeepPartial<{ a: { b: { c: string } } }>", expected: "{ a?: { b?: { c?: string } } }", label: "Recurses into nested objects, not just the top level" },
+      { input: "DeepPartial<{ a: string }>", expected: "{ a?: string }", label: "Still behaves like plain Partial for a flat (non-nested) object" },
+    ],
+    hints: [
+      "The base case matters as much as the recursive step: a non-object type (T extends object ? ... : T) has to be returned as-is, or you'll try to recurse into primitives like string and number forever.",
+    ],
+    orderIndex: 1271,
+  },
+  {
+    slug: "implement-deep-readonly",
+    companies: ["Stripe", "Airbnb"],
+    category: "typescript",
+    title: "Implement DeepReadonly<T> (Recursive Readonly)",
+    description: `The recursive version of \`Readonly\` — reported constantly in senior-level 2026 prep guides. A shallow \`Readonly\` only locks the top-level properties; nested objects are still fully mutable. \`DeepReadonly\` locks every level.
+
+## Your task
+
+Write \`DeepReadonly<T>\`, recursively marking every property — at every nesting depth — readonly.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type DeepReadonly<T> = unknown;`,
+    solutionCode: `type DeepReadonly<T> = T extends object ? { readonly [P in keyof T]: DeepReadonly<T[P]> } : T;`,
+    testCases: [
+      { input: "DeepReadonly<{ a: { b: string } }>", expected: "{ readonly a: { readonly b: string } }", label: "Recurses into nested objects, locking every level" },
+      { input: "DeepReadonly<{ a: string }>", expected: "{ readonly a: string }", label: "Still behaves like plain Readonly for a flat object" },
+    ],
+    hints: [
+      "Same recursive shape as DeepPartial — the only difference is which mapped-type modifier you apply at each level.",
+    ],
+    orderIndex: 1272,
+  },
+
+  // ── typescript — standalone TypeScript Type-Challenges Roadmap, Stage 2 ────
+  {
+    slug: "implement-nonnullable",
+    companies: ["Microsoft", "Amazon"],
+    category: "typescript",
+    title: "Implement NonNullable<T>",
+    description: `Strips \`null\` and \`undefined\` out of a type — your first taste of a conditional type applied to a union, since a conditional type applied directly to a union member distributes over each member automatically.
+
+## Your task
+
+Write \`MyNonNullable<T>\`, removing \`null\` and \`undefined\` from \`T\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type MyNonNullable<T> = unknown;`,
+    solutionCode: `type MyNonNullable<T> = T extends null | undefined ? never : T;`,
+    testCases: [
+      { input: "MyNonNullable<string | null | undefined>", expected: "string", label: "Strips both null and undefined out of a union" },
+      { input: "MyNonNullable<number>", expected: "number", label: "Leaves a type with no null/undefined untouched" },
+    ],
+    hints: [
+      "Because T is a naked type parameter here, `T extends null | undefined ? never : T` distributes automatically over a union — you get this behavior for free, without writing any recursion.",
+    ],
+    orderIndex: 1273,
+  },
+  {
+    slug: "implement-undefined-to-null",
+    companies: ["Amazon"],
+    category: "typescript",
+    title: "Implement UndefinedToNull<T>",
+    description: `A narrower cousin of \`NonNullable\`: instead of removing \`undefined\`, it *converts* it to \`null\` — useful when normalizing API response shapes where a backend team standardized on \`null\` for "absent" instead of \`undefined\`.
+
+## Your task
+
+Write \`UndefinedToNull<T>\`, replacing \`undefined\` with \`null\` anywhere it appears in \`T\` (leaving everything else unchanged).
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type UndefinedToNull<T> = unknown;`,
+    solutionCode: `type UndefinedToNull<T> = T extends undefined ? null : T;`,
+    testCases: [
+      { input: "UndefinedToNull<string | undefined>", expected: "string | null", label: "Converts undefined to null within a union" },
+      { input: "UndefinedToNull<string>", expected: "string", label: "Leaves a type with no undefined untouched" },
+    ],
+    hints: [
+      "Same distributive-conditional shape as NonNullable — only the branch's replacement value differs.",
+    ],
+    orderIndex: 1274,
+  },
+  {
+    slug: "implement-exclude",
+    companies: ["Microsoft", "Airbnb"],
+    category: "typescript",
+    title: "Implement Exclude<T, E>",
+    description: `The generalized version of what \`NonNullable\` does for a fixed \`null | undefined\` — removes every member of union \`T\` that's assignable to \`E\`, for any \`E\` you choose.
+
+## Your task
+
+Write \`MyExclude<T, E>\`, removing every member of \`T\` that's assignable to \`E\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type MyExclude<T, E> = unknown;`,
+    solutionCode: `type MyExclude<T, E> = T extends E ? never : T;`,
+    testCases: [
+      { input: "MyExclude<'a' | 'b' | 'c', 'a'>", expected: "'b' | 'c'", label: "Removes exactly the matching union member" },
+      { input: "MyExclude<string | number | boolean, boolean>", expected: "string | number", label: "Works against any type for E, not just literal unions" },
+    ],
+    hints: [
+      "This is the exact same shape as NonNullable, generalized — NonNullable is really just Exclude<T, null | undefined> under the hood.",
+    ],
+    orderIndex: 1275,
+  },
+  {
+    slug: "implement-extract",
+    companies: ["Microsoft", "Airbnb"],
+    category: "typescript",
+    title: "Implement Extract<T, U>",
+    description: `The mirror image of \`Exclude\`: instead of removing matching members, it keeps *only* the members of \`T\` that are assignable to \`U\`.
+
+## Your task
+
+Write \`MyExtract<T, U>\`, keeping only the members of \`T\` that are assignable to \`U\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type MyExtract<T, U> = unknown;`,
+    solutionCode: `type MyExtract<T, U> = T extends U ? T : never;`,
+    testCases: [
+      { input: "MyExtract<'a' | 'b' | 'c', 'a' | 'c'>", expected: "'a' | 'c'", label: "Keeps only the matching union members" },
+      { input: "MyExtract<string | number | boolean, boolean>", expected: "boolean", label: "Works against any type for U, not just literal unions" },
+    ],
+    hints: [
+      "Flip Exclude's two branches and you have Extract — everything else about the shape is identical.",
+    ],
+    orderIndex: 1276,
+  },
+
+  // ── typescript — standalone TypeScript Type-Challenges Roadmap, Stage 3 ────
+  {
+    slug: "implement-parameters",
+    companies: ["Microsoft", "Airbnb", "Slack"],
+    category: "typescript",
+    title: "Implement Parameters<T>",
+    description: `Where \`infer\` earns its keep: pulling a piece of type information back out of a function signature — here, its parameter types, captured as a tuple.
+
+## Your task
+
+Write \`MyParameters<T extends (...args: any) => any>\`, extracting \`T\`'s parameter types as a tuple.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type MyParameters<T extends (...args: any) => any> = unknown;`,
+    solutionCode: `type MyParameters<T extends (...args: any) => any> = T extends (...args: infer P) => any ? P : never;`,
+    testCases: [
+      { input: "MyParameters<(a: string, b: number) => void>", expected: "[string, number]", label: "Captures every parameter as a tuple, in order" },
+      { input: "MyParameters<() => void>", expected: "[]", label: "Works for a function with no parameters" },
+    ],
+    hints: [
+      "infer P inside the parameter position of a function type captures the whole parameter list as a tuple — you don't need to destructure it argument by argument.",
+    ],
+    orderIndex: 1277,
+  },
+  {
+    slug: "implement-returntype",
+    companies: ["Microsoft", "Airbnb", "Discord"],
+    category: "typescript",
+    title: "Implement ReturnType<T>",
+    description: `The most commonly asked \`infer\`-based utility type to implement from scratch: pulls a function's return type back out of its signature.
+
+## Your task
+
+Write \`MyReturnType<T extends (...args: any) => any>\`, extracting \`T\`'s return type.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type MyReturnType<T extends (...args: any) => any> = unknown;`,
+    solutionCode: `type MyReturnType<T extends (...args: any) => any> = T extends (...args: any) => infer R ? R : never;`,
+    testCases: [
+      { input: "MyReturnType<() => string>", expected: "string", label: "Extracts a simple return type" },
+      { input: "MyReturnType<(x: number) => boolean>", expected: "boolean", label: "Ignores the parameters entirely, only captures the return position" },
+    ],
+    hints: [
+      "infer R in the return-type position mirrors Parameters' infer P in the parameter position — same technique, different slot of the function signature.",
+    ],
+    orderIndex: 1278,
+  },
+  {
+    slug: "implement-constructorparameters",
+    companies: ["Microsoft"],
+    category: "typescript",
+    title: "Implement ConstructorParameters<T>",
+    description: `The class-constructor counterpart to \`Parameters\` — extracts a class's constructor argument types, using \`new (...args) => any\` instead of a plain function signature.
+
+## Your task
+
+Write \`MyConstructorParameters<T extends abstract new (...args: any) => any>\`, extracting the constructor's parameter types as a tuple.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type MyConstructorParameters<T extends abstract new (...args: any) => any> = unknown;`,
+    solutionCode: `type MyConstructorParameters<T extends abstract new (...args: any) => any> = T extends abstract new (...args: infer P) => any ? P : never;`,
+    testCases: [
+      { input: "MyConstructorParameters<new (title: string, done: boolean) => object>", expected: "[string, boolean]", label: "Captures the constructor's parameter types as a tuple" },
+    ],
+    hints: [
+      "abstract new (...) => any is the type-level shape of 'a class constructor,' the same way (...) => any is the shape of 'a function' — infer works the same way in either slot.",
+    ],
+    orderIndex: 1279,
+  },
+  {
+    slug: "implement-instancetype",
+    companies: ["Microsoft"],
+    category: "typescript",
+    title: "Implement InstanceType<T>",
+    description: `Pulls the *instance* type back out of a class constructor's type — the type you'd get from actually calling \`new\` on it.
+
+## Your task
+
+Write \`MyInstanceType<T extends abstract new (...args: any) => any>\`, extracting the type of an instance constructed by \`T\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type MyInstanceType<T extends abstract new (...args: any) => any> = unknown;`,
+    solutionCode: `type MyInstanceType<T extends abstract new (...args: any) => any> = T extends abstract new (...args: any) => infer R ? R : never;`,
+    testCases: [
+      { input: "MyInstanceType<new () => { id: number }>", expected: "{ id: number }", label: "Extracts the constructed instance's shape" },
+    ],
+    hints: [
+      "Same structure as ConstructorParameters, just inferring the return position (the constructed instance) instead of the parameter position.",
+    ],
+    orderIndex: 1280,
+  },
+  {
+    slug: "implement-thisparametertype",
+    companies: ["Microsoft"],
+    category: "typescript",
+    title: "Implement ThisParameterType<T>",
+    description: `A rarer one, but it shows up: extracts a function's explicit \`this\` parameter type — the special, call-time-only parameter TypeScript lets you declare as the very first parameter of a function signature.
+
+## Your task
+
+Write \`MyThisParameterType<T>\`, extracting the \`this\` type from \`T\`'s signature (or \`unknown\` if it has none).
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type MyThisParameterType<T> = unknown;`,
+    solutionCode: `type MyThisParameterType<T> = T extends (this: infer U, ...args: any) => any ? U : unknown;`,
+    testCases: [
+      { input: "MyThisParameterType<(this: { a: number }, x: string) => void>", expected: "{ a: number }", label: "Extracts the declared this type" },
+      { input: "MyThisParameterType<(x: string) => void>", expected: "unknown", label: "Falls back to unknown when there's no explicit this parameter" },
+    ],
+    hints: [
+      "this in a function type's parameter list is purely a type-level annotation — infer can capture it exactly like any other parameter position.",
+    ],
+    orderIndex: 1281,
+  },
+  {
+    slug: "implement-omitthisparameter",
+    companies: ["Microsoft"],
+    category: "typescript",
+    title: "Implement OmitThisParameter<T>",
+    description: `The inverse of \`ThisParameterType\`: strips the \`this\` parameter back out of a function signature, leaving a callable type with the same real parameters and return type but no \`this\` requirement.
+
+## Your task
+
+Write \`MyOmitThisParameter<T>\`, removing \`T\`'s \`this\` parameter (if it has one).
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type MyOmitThisParameter<T> = unknown;`,
+    solutionCode: `type MyOmitThisParameter<T> = T extends (this: any, ...args: infer A) => infer R ? (...args: A) => R : T;`,
+    testCases: [
+      { input: "MyOmitThisParameter<(this: { a: number }, x: string) => boolean>", expected: "(x: string) => boolean", label: "Drops the this parameter, keeping the real parameters and return type" },
+    ],
+    hints: [
+      "Capture the real parameters and the return type with their own infer slots, then rebuild the function type from just those two pieces — the this parameter simply never gets copied over.",
+    ],
+    orderIndex: 1282,
+  },
+  {
+    slug: "implement-unwrap-promise",
+    companies: ["Stripe", "Airbnb", "Netflix"],
+    category: "typescript",
+    title: "Implement UnwrapPromise<T>",
+    description: `A very common real-world \`infer\` use: pulling the resolved value type back out of a \`Promise\`, needed constantly in async-heavy codebases for typing what an \`await\`-ed value actually is.
+
+## Your task
+
+Write \`UnwrapPromise<T>\`, extracting \`Promise\`'s inner type — or returning \`T\` unchanged if it isn't a \`Promise\` at all.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type UnwrapPromise<T> = unknown;`,
+    solutionCode: `type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;`,
+    testCases: [
+      { input: "UnwrapPromise<Promise<string>>", expected: "string", label: "Unwraps a Promise's inner type" },
+      { input: "UnwrapPromise<number>", expected: "number", label: "Passes through a non-Promise type unchanged" },
+    ],
+    hints: [
+      "This one only unwraps a single level — a Promise<Promise<string>> stays partly wrapped, which is exactly the gap the next question (Awaited) fixes.",
+    ],
+    orderIndex: 1283,
+  },
+  {
+    slug: "implement-awaited",
+    companies: ["Stripe", "Vercel"],
+    category: "typescript",
+    title: "Implement Awaited<T> (Recursive UnwrapPromise)",
+    description: `The built-in, recursive version of \`UnwrapPromise\` — a common senior follow-up. A single-level unwrap leaves a \`Promise<Promise<string>>\` still partially wrapped; \`Awaited\` keeps unwrapping until it hits a non-Promise type.
+
+## Your task
+
+Write \`MyAwaited<T>\`, recursively unwrapping nested Promises down to the final resolved value.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type MyAwaited<T> = unknown;`,
+    solutionCode: `type MyAwaited<T> = T extends Promise<infer U> ? MyAwaited<U> : T;`,
+    testCases: [
+      { input: "MyAwaited<Promise<Promise<string>>>", expected: "string", label: "Recursively unwraps nested Promises, not just one level" },
+      { input: "MyAwaited<Promise<number>>", expected: "number", label: "Still handles the single-level case correctly" },
+    ],
+    hints: [
+      "The only change from UnwrapPromise is recursing into MyAwaited<U> instead of returning U directly — the base case (T isn't a Promise) is identical.",
+    ],
+    orderIndex: 1284,
+  },
+
+  // ── typescript — standalone TypeScript Type-Challenges Roadmap, Stage 4 ────
+  {
+    slug: "implement-first-char",
+    companies: [],
+    category: "typescript",
+    title: "Implement FirstChar<T>",
+    description: `Template literal types let you pattern-match on the structure of a string type itself — here, splitting off just its first character via \`infer\`.
+
+## Your task
+
+Write \`FirstChar<T extends string>\`, extracting the first character of \`T\` (or \`""\` if \`T\` is empty).
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type FirstChar<T extends string> = unknown;`,
+    solutionCode: `type FirstChar<T extends string> = T extends \`\${infer F}\${string}\` ? F : "";`,
+    testCases: [
+      { input: "FirstChar<'hello'>", expected: "'h'", label: "Extracts the first character" },
+      { input: "FirstChar<''>", expected: "''", label: "Returns an empty string for an empty input" },
+    ],
+    hints: [
+      "A template literal pattern like `${infer F}${string}` matches 'one captured character, then anything' — infer works on string structure the same way it works on function signatures.",
+    ],
+    orderIndex: 1285,
+  },
+  {
+    slug: "implement-last-char",
+    companies: [],
+    category: "typescript",
+    title: "Implement LastChar<T>",
+    description: `The trickier sibling of \`FirstChar\`: since template literal patterns naturally split off the *front* of a string, getting the *last* character means recursing until only one character is left.
+
+## Your task
+
+Write \`LastChar<T extends string>\`, extracting the last character of \`T\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type LastChar<T extends string> = unknown;`,
+    solutionCode: `type LastChar<T extends string> = T extends \`\${infer First}\${infer Rest}\`
+  ? Rest extends "" ? First : LastChar<Rest>
+  : "";`,
+    testCases: [
+      { input: "LastChar<'hello'>", expected: "'o'", label: "Recurses down to the final character" },
+      { input: "LastChar<'a'>", expected: "'a'", label: "Handles a single-character string as its own base case" },
+    ],
+    hints: [
+      "Peel off one character at a time (infer First, infer Rest) and recurse on Rest — the moment Rest is empty, First is whatever's left, which is the last character.",
+    ],
+    orderIndex: 1286,
+  },
+  {
+    slug: "implement-length-of-string",
+    companies: ["Amazon"],
+    category: "typescript",
+    title: "Implement LengthOfString<S>",
+    description: `Counting a string type's characters at the type level — since there's no direct "length" operation on a string type, you build up a tuple one character at a time and read *its* length instead.
+
+## Your task
+
+Write \`LengthOfString<S extends string>\`, returning \`S\`'s character count as a numeric literal type.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type LengthOfString<S extends string> = unknown;`,
+    solutionCode: `type LengthOfString<S extends string, Acc extends unknown[] = []> =
+  S extends \`\${string}\${infer Rest}\` ? LengthOfString<Rest, [...Acc, unknown]> : Acc["length"];`,
+    testCases: [
+      { input: "LengthOfString<'hello'>", expected: "5", label: "Counts every character correctly" },
+      { input: "LengthOfString<''>", expected: "0", label: "Returns 0 for an empty string" },
+    ],
+    hints: [
+      "A tuple's `[\"length\"]` property is itself a numeric literal type — building a tuple with one element per character and reading its length is the standard trick for 'counting' at the type level.",
+    ],
+    orderIndex: 1287,
+  },
+  {
+    slug: "implement-trim",
+    companies: ["Amazon", "Shopify"],
+    category: "typescript",
+    title: "Implement Trim<S> (Leading/Trailing Spaces)",
+    description: `Strips leading and trailing spaces from a string type — recursing from each end independently, then combining both directions.
+
+## Your task
+
+Write \`Trim<S extends string>\`, removing leading and trailing spaces from \`S\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Trim<S extends string> = unknown;`,
+    solutionCode: `type TrimLeft<S extends string> = S extends \` \${infer Rest}\` ? TrimLeft<Rest> : S;
+type TrimRight<S extends string> = S extends \`\${infer Rest} \` ? TrimRight<Rest> : S;
+type Trim<S extends string> = TrimLeft<TrimRight<S>>;`,
+    testCases: [
+      { input: "Trim<'  hello  '>", expected: "'hello'", label: "Strips both leading and trailing spaces" },
+      { input: "Trim<'hello'>", expected: "'hello'", label: "Leaves a string with no surrounding spaces unchanged" },
+    ],
+    hints: [
+      "Solve the two ends independently (TrimLeft, TrimRight) and compose them — trying to handle both directions in one recursive type at once is much harder than it needs to be.",
+    ],
+    orderIndex: 1288,
+  },
+  {
+    slug: "implement-capitalize",
+    companies: ["Microsoft"],
+    category: "typescript",
+    title: "Implement Capitalize<S> (from Scratch)",
+    description: `A good warm-up for re-implementing a real TypeScript built-in: uppercase just the first character of a string type, leaving the rest untouched.
+
+## Your task
+
+Write \`MyCapitalize<S extends string>\`, uppercasing \`S\`'s first character.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type MyCapitalize<S extends string> = unknown;`,
+    solutionCode: `type MyCapitalize<S extends string> = S extends \`\${infer F}\${infer Rest}\` ? \`\${Uppercase<F>}\${Rest}\` : S;`,
+    testCases: [
+      { input: "MyCapitalize<'hello'>", expected: "'Hello'", label: "Uppercases the first character, leaves the rest alone" },
+      { input: "MyCapitalize<''>", expected: "''", label: "Handles an empty string without error" },
+    ],
+    hints: [
+      "TypeScript's built-in Uppercase<T> intrinsic does the actual case conversion — your job is just isolating the first character to apply it to.",
+    ],
+    orderIndex: 1289,
+  },
+  {
+    slug: "implement-split",
+    companies: ["Amazon", "Shopify"],
+    category: "typescript",
+    title: "Implement Split<S, D>",
+    description: `The type-level version of \`String.prototype.split\` — breaks a string type into a tuple of substrings wherever the delimiter \`D\` occurs.
+
+## Your task
+
+Write \`Split<S extends string, D extends string>\`, splitting \`S\` on every occurrence of \`D\` into a tuple.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Split<S extends string, D extends string> = unknown;`,
+    solutionCode: `type Split<S extends string, D extends string> =
+  S extends \`\${infer Head}\${D}\${infer Tail}\`
+    ? [Head, ...Split<Tail, D>]
+    : [S];`,
+    testCases: [
+      { input: "Split<'a,b,c', ','>", expected: "['a', 'b', 'c']", label: "Splits on every occurrence of the delimiter" },
+      { input: "Split<'hello', ','>", expected: "['hello']", label: "Returns a single-element tuple when the delimiter never appears" },
+    ],
+    hints: [
+      "The base case (no more delimiter found) has to wrap the remaining string in a single-element tuple, [S] — not return S bare, or the result type won't be a consistent tuple shape across recursive calls.",
+    ],
+    orderIndex: 1290,
+  },
+  {
+    slug: "implement-string-to-tuple",
+    companies: ["Amazon"],
+    category: "typescript",
+    title: "Implement StringToTuple<T>",
+    description: `The character-by-character special case of \`Split\` — turns a string type into a tuple of its individual characters, as if splitting on \`""\`.
+
+## Your task
+
+Write \`StringToTuple<S extends string>\`, turning \`S\` into a tuple of its individual characters.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type StringToTuple<S extends string> = unknown;`,
+    solutionCode: `type StringToTuple<S extends string> = S extends \`\${infer F}\${infer Rest}\` ? [F, ...StringToTuple<Rest>] : [];`,
+    testCases: [
+      { input: "StringToTuple<'abc'>", expected: "['a', 'b', 'c']", label: "Splits every character into its own tuple slot" },
+      { input: "StringToTuple<''>", expected: "[]", label: "Returns an empty tuple for an empty string" },
+    ],
+    hints: [
+      "This is simpler than Split — there's no delimiter to search for, just peel off one character per recursive call.",
+    ],
+    orderIndex: 1291,
+  },
+  {
+    slug: "implement-replace-all",
+    companies: ["Amazon"],
+    category: "typescript",
+    title: "Implement ReplaceAll<S, F, T>",
+    description: `The type-level version of \`String.prototype.replaceAll\` — every occurrence of \`F\` inside \`S\` gets replaced with \`T\`, not just the first one.
+
+## Your task
+
+Write \`ReplaceAll<S extends string, F extends string, T extends string>\`, replacing every occurrence of \`F\` in \`S\` with \`T\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type ReplaceAll<S extends string, F extends string, T extends string> = unknown;`,
+    solutionCode: `type ReplaceAll<S extends string, F extends string, T extends string> =
+  F extends "" ? S :
+  S extends \`\${infer Head}\${F}\${infer Tail}\`
+    ? \`\${Head}\${T}\${ReplaceAll<Tail, F, T>}\`
+    : S;`,
+    testCases: [
+      { input: "ReplaceAll<'foo-bar-foo', 'foo', 'baz'>", expected: "'baz-bar-baz'", label: "Replaces every occurrence, not just the first" },
+      { input: "ReplaceAll<'abc', 'x', 'y'>", expected: "'abc'", label: "Leaves the string unchanged when F never appears" },
+    ],
+    hints: [
+      "Guard against an empty F explicitly — matching against `${infer Head}${''}${infer Tail}` would otherwise match everywhere and recurse forever.",
+    ],
+    orderIndex: 1292,
+  },
+  {
+    slug: "implement-join",
+    companies: ["Amazon", "Shopify"],
+    category: "typescript",
+    title: "Implement Join<T, D> (the Inverse of Split)",
+    description: `Where \`Split\` breaks a string into a tuple, \`Join\` puts one back together — combining a tuple of strings into a single string type, with \`D\` inserted between each piece.
+
+## Your task
+
+Write \`Join<T extends readonly string[], D extends string>\`, joining every element of \`T\` with \`D\` between them.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Join<T extends readonly string[], D extends string> = unknown;`,
+    solutionCode: `type Join<T extends readonly string[], D extends string> =
+  T extends readonly [infer F extends string, ...infer Rest extends string[]]
+    ? Rest extends [] ? F : \`\${F}\${D}\${Join<Rest, D>}\`
+    : "";`,
+    testCases: [
+      { input: "Join<['a', 'b', 'c'], ','>", expected: "'a,b,c'", label: "Joins every element with the delimiter between them" },
+      { input: "Join<['hello'], ','>", expected: "'hello'", label: "A single-element tuple needs no delimiter at all" },
+    ],
+    hints: [
+      "The base case (Rest is empty) must return F bare, with no trailing delimiter — that's what stops you from getting a dangling 'c,' at the end.",
+    ],
+    orderIndex: 1293,
+  },
+  {
+    slug: "implement-prefix",
+    companies: [],
+    category: "typescript",
+    title: "Implement Prefix<T, P>",
+    description: `A small but genuinely useful pattern: prepend a fixed prefix to a string type — and since template literal types distribute over unions automatically, this works across a whole union of strings for free.
+
+## Your task
+
+Write \`Prefix<T extends string, P extends string>\`, prepending \`P\` to \`T\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type Prefix<T extends string, P extends string> = unknown;`,
+    solutionCode: `type Prefix<T extends string, P extends string> = \`\${P}\${T}\`;`,
+    testCases: [
+      { input: "Prefix<'foo', 'pre-'>", expected: "'pre-foo'", label: "Prepends the prefix to a single string" },
+      { input: "Prefix<'a' | 'b', 'x'>", expected: "'xa' | 'xb'", label: "Distributes over a union automatically, prefixing every member" },
+    ],
+    hints: [
+      "No conditional type is needed for the union case — substituting a union type parameter directly into a template literal type distributes over it on its own.",
+    ],
+    orderIndex: 1294,
+  },
+  {
+    slug: "implement-snake-case",
+    companies: ["Airbnb", "Shopify"],
+    category: "typescript",
+    title: "Implement SnakeCase<S>",
+    description: `Converting \`camelCase\` to \`snake_case\` at the type level — real API response shape conversion. Every uppercase letter needs an underscore inserted before it (and itself lowercased); everything else passes through untouched.
+
+## Your task
+
+Write \`SnakeCase<S extends string>\`, converting \`camelCase\` to \`snake_case\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type SnakeCase<S extends string> = unknown;`,
+    solutionCode: `type SnakeCase<S extends string> = S extends \`\${infer F}\${infer Rest}\`
+  ? F extends Uppercase<F>
+    ? F extends Lowercase<F>
+      ? \`\${F}\${SnakeCase<Rest>}\`
+      : \`_\${Lowercase<F>}\${SnakeCase<Rest>}\`
+    : \`\${F}\${SnakeCase<Rest>}\`
+  : S;`,
+    testCases: [
+      { input: "SnakeCase<'helloWorld'>", expected: "'hello_world'", label: "Inserts an underscore before each uppercase letter and lowercases it" },
+      { input: "SnakeCase<'foo'>", expected: "'foo'", label: "Leaves an already-lowercase string unchanged" },
+    ],
+    hints: [
+      "A character is a real uppercase LETTER (not a digit or symbol) exactly when it's equal to its own Uppercase<> but NOT equal to its own Lowercase<> — non-letter characters are equal to both, which is how you tell them apart.",
+    ],
+    orderIndex: 1295,
+  },
+  {
+    slug: "implement-camel-case",
+    companies: ["Airbnb", "Shopify"],
+    category: "typescript",
+    title: "Implement CamelCase<S>",
+    description: `The inverse conversion, and reported as very common in practice: \`snake_case\` to \`camelCase\`, needed constantly when converting API response shapes to idiomatic JS/TS naming.
+
+## Your task
+
+Write \`CamelCase<S extends string>\`, converting \`snake_case\` to \`camelCase\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type CamelCase<S extends string> = unknown;`,
+    solutionCode: `type CamelCase<S extends string> = S extends \`\${infer Head}_\${infer First}\${infer Rest}\`
+  ? \`\${Head}\${Uppercase<First>}\${CamelCase<Rest>}\`
+  : S;`,
+    testCases: [
+      { input: "CamelCase<'hello_world'>", expected: "'helloWorld'", label: "Removes the underscore and uppercases the following letter" },
+      { input: "CamelCase<'foo'>", expected: "'foo'", label: "Leaves a string with no underscores unchanged" },
+    ],
+    hints: [
+      "Match everything before an underscore, then the single character right after it, then the rest — the underscore itself is consumed by the pattern, never copied into the output.",
+    ],
+    orderIndex: 1296,
+  },
+
+  // ── typescript — standalone TypeScript Type-Challenges Roadmap, Stage 5 ────
+  {
+    slug: "implement-first-item",
+    companies: [],
+    category: "typescript",
+    title: "Implement FirstItem<T>",
+    description: `The tuple equivalent of \`FirstChar\` — pattern-matching a tuple's shape with \`infer\` to pull out its first element, the same way you'd match a string's first character.
+
+## Your task
+
+Write \`FirstItem<T extends unknown[]>\`, extracting the first element of \`T\` (or \`never\` if it's empty).
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type FirstItem<T extends unknown[]> = unknown;`,
+    solutionCode: `type FirstItem<T extends unknown[]> = T extends [infer F, ...unknown[]] ? F : never;`,
+    testCases: [
+      { input: "FirstItem<[1, 2, 3]>", expected: "1", label: "Extracts the first element" },
+      { input: "FirstItem<[]>", expected: "never", label: "Returns never for an empty tuple" },
+    ],
+    hints: [
+      "A tuple pattern like [infer F, ...unknown[]] matches 'at least one element, capture the first' — the rest spread doesn't need to be inferred if you don't use it.",
+    ],
+    orderIndex: 1297,
+  },
+  {
+    slug: "implement-last-item",
+    companies: [],
+    category: "typescript",
+    title: "Implement LastItem<T>",
+    description: `Unlike \`LastChar\`, tuples don't need recursion for this — a leading rest element in a tuple pattern lets you capture the very last item directly, in one step.
+
+## Your task
+
+Write \`LastItem<T extends unknown[]>\`, extracting the last element of \`T\` (or \`never\` if it's empty).
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type LastItem<T extends unknown[]> = unknown;`,
+    solutionCode: `type LastItem<T extends unknown[]> = T extends [...unknown[], infer L] ? L : never;`,
+    testCases: [
+      { input: "LastItem<[1, 2, 3]>", expected: "3", label: "Extracts the last element directly, no recursion needed" },
+      { input: "LastItem<[]>", expected: "never", label: "Returns never for an empty tuple" },
+    ],
+    hints: [
+      "Tuple patterns can put the rest element first: [...unknown[], infer L] matches 'anything, then capture the final element' in a single pattern.",
+    ],
+    orderIndex: 1298,
+  },
+  {
+    slug: "implement-length-of-tuple",
+    companies: ["Amazon"],
+    category: "typescript",
+    title: "Implement LengthOfTuple<T>",
+    description: `Unlike \`LengthOfString\`, a tuple's length is directly readable — no recursive counting needed, since \`["length"]\` is itself a real numeric literal type on any tuple.
+
+## Your task
+
+Write \`LengthOfTuple<T extends readonly unknown[]>\`, returning \`T\`'s length as a numeric literal type.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type LengthOfTuple<T extends readonly unknown[]> = unknown;`,
+    solutionCode: `type LengthOfTuple<T extends readonly unknown[]> = T["length"];`,
+    testCases: [
+      { input: "LengthOfTuple<[1, 2, 3]>", expected: "3", label: "Reads the tuple's length directly" },
+      { input: "LengthOfTuple<[]>", expected: "0", label: "Works for an empty tuple too" },
+    ],
+    hints: [
+      "This one's a trap for overthinking — a tuple (unlike a plain array) tracks its length as a literal type automatically, so indexing ['length'] is the entire answer.",
+    ],
+    orderIndex: 1299,
+  },
+  {
+    slug: "implement-tupletounion",
+    companies: ["Microsoft", "Airbnb"],
+    category: "typescript",
+    title: "Implement TupleToUnion<T>",
+    description: `Collapses a tuple's element types into a single union — indexing a tuple type by \`number\` (rather than a specific literal index) returns the union of every element type at once.
+
+## Your task
+
+Write \`TupleToUnion<T extends readonly unknown[]>\`, turning \`T\`'s element types into a union.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type TupleToUnion<T extends readonly unknown[]> = unknown;`,
+    solutionCode: `type TupleToUnion<T extends readonly unknown[]> = T[number];`,
+    testCases: [
+      { input: "TupleToUnion<[1, 2, 3]>", expected: "1 | 2 | 3", label: "Collapses every element type into one union" },
+    ],
+    hints: [
+      "T[number] indexes with the whole 'number' type, not a specific index — TypeScript resolves that to the union of every element's type.",
+    ],
+    orderIndex: 1300,
+  },
+  {
+    slug: "implement-shift",
+    companies: ["Amazon"],
+    category: "typescript",
+    title: "Implement Shift<T>",
+    description: `The type-level version of \`Array.prototype.shift\` — returns \`T\` with its first element removed (the type system's version doesn't mutate anything, of course; it just describes the resulting shape).
+
+## Your task
+
+Write \`Shift<T extends unknown[]>\`, returning \`T\` without its first element.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Shift<T extends unknown[]> = unknown;`,
+    solutionCode: `type Shift<T extends unknown[]> = T extends [unknown, ...infer Rest] ? Rest : [];`,
+    testCases: [
+      { input: "Shift<[1, 2, 3]>", expected: "[2, 3]", label: "Drops exactly the first element, keeps the rest in order" },
+      { input: "Shift<[]>", expected: "[]", label: "Handles an already-empty tuple without error" },
+    ],
+    hints: [
+      "You don't need to name the first element at all if you're discarding it — a bare `unknown` in the pattern's first slot is enough to match and skip it.",
+    ],
+    orderIndex: 1301,
+  },
+  {
+    slug: "implement-push",
+    companies: ["Amazon"],
+    category: "typescript",
+    title: "Implement Push<T, I>",
+    description: `Appends a new element type to the end of a tuple — the spread operator works inside tuple type literals exactly the way it does at runtime.
+
+## Your task
+
+Write \`Push<T extends unknown[], I>\`, returning a new tuple with \`I\` appended to the end of \`T\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type Push<T extends unknown[], I> = unknown;`,
+    solutionCode: `type Push<T extends unknown[], I> = [...T, I];`,
+    testCases: [
+      { input: "Push<[1, 2], 3>", expected: "[1, 2, 3]", label: "Appends the new element to the end" },
+      { input: "Push<[], 1>", expected: "[1]", label: "Works starting from an empty tuple" },
+    ],
+    hints: [
+      "No recursion or infer needed at all — this is a one-line spread, the same syntax you'd use to append at runtime.",
+    ],
+    orderIndex: 1302,
+  },
+  {
+    slug: "implement-reverse-tuple",
+    companies: ["Amazon"],
+    category: "typescript",
+    title: "Implement ReverseTuple<T>",
+    description: `Reverses a tuple's element order — peel off the first element on each recursive step, and place it at the *end* of the already-reversed remainder.
+
+## Your task
+
+Write \`ReverseTuple<T extends unknown[]>\`, returning \`T\` with its elements in reverse order.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type ReverseTuple<T extends unknown[]> = unknown;`,
+    solutionCode: `type ReverseTuple<T extends unknown[]> = T extends [infer F, ...infer Rest] ? [...ReverseTuple<Rest>, F] : [];`,
+    testCases: [
+      { input: "ReverseTuple<[1, 2, 3]>", expected: "[3, 2, 1]", label: "Reverses the element order" },
+      { input: "ReverseTuple<[]>", expected: "[]", label: "Handles an empty tuple as its own base case" },
+    ],
+    hints: [
+      "Each recursive call reverses everything after the first element, then places that first element at the very end of the result — the recursion bottoms out and builds the reversal on the way back up.",
+    ],
+    orderIndex: 1303,
+  },
+  {
+    slug: "implement-slice",
+    companies: ["Amazon"],
+    category: "typescript",
+    title: "Implement Slice<A, S, E>",
+    description: `The type-level version of \`Array.prototype.slice\` — the trick is avoiding needing real arithmetic (subtraction hasn't been built yet at this point in the roadmap): take the first \`E\` elements, then drop the first \`S\` of *those*, and what's left is exactly \`A[S:E]\`.
+
+## Your task
+
+Write \`Slice<A extends unknown[], S extends number, E extends number>\`, returning the elements of \`A\` from index \`S\` up to (not including) index \`E\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "hard",
+    starterCode: `type Slice<A extends unknown[], S extends number, E extends number> = unknown;`,
+    solutionCode: `type Take<A extends unknown[], N extends number, Acc extends unknown[] = []> =
+  Acc["length"] extends N ? Acc : A extends [infer F, ...infer Rest] ? Take<Rest, N, [...Acc, F]> : Acc;
+
+type Drop<A extends unknown[], N extends number, Acc extends unknown[] = []> =
+  Acc["length"] extends N ? A : A extends [unknown, ...infer Rest] ? Drop<Rest, N, [...Acc, unknown]> : A;
+
+type Slice<A extends unknown[], S extends number, E extends number> = Drop<Take<A, E>, S>;`,
+    testCases: [
+      { input: "Slice<[1, 2, 3, 4, 5], 1, 3>", expected: "[2, 3]", label: "Extracts the correct sub-range" },
+      { input: "Slice<[1, 2, 3], 0, 3>", expected: "[1, 2, 3]", label: "A full-range slice returns everything" },
+    ],
+    hints: [
+      "Composing Take<A, E> then Drop<result, S> sidesteps needing E - S as a real subtraction — you never actually compute the slice's length, just where it starts and ends.",
+    ],
+    orderIndex: 1304,
+  },
+  {
+    slug: "implement-flat",
+    companies: ["Meta", "Amazon"],
+    category: "typescript",
+    title: "Implement Flat<T> (Deep Flatten)",
+    description: `Recursively flattens arbitrarily nested arrays into a single flat tuple — every element gets checked: if it's itself an array, recurse into it and splice the result in; otherwise, keep it as-is.
+
+## Your task
+
+Write \`Flat<T extends unknown[]>\`, fully flattening any nested arrays inside \`T\`, at any depth.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Flat<T extends unknown[]> = unknown;`,
+    solutionCode: `type Flat<T extends unknown[]> = T extends [infer F, ...infer Rest]
+  ? F extends unknown[]
+    ? [...Flat<F>, ...Flat<Rest>]
+    : [F, ...Flat<Rest>]
+  : [];`,
+    testCases: [
+      { input: "Flat<[1, [2, [3, 4]], 5]>", expected: "[1, 2, 3, 4, 5]", label: "Flattens nested arrays at any depth, not just one level" },
+      { input: "Flat<[1, 2, 3]>", expected: "[1, 2, 3]", label: "Leaves an already-flat tuple unchanged" },
+    ],
+    hints: [
+      "Every element needs its own is-this-an-array check — F extends unknown[] decides whether to recurse into F or keep it as a single item.",
+    ],
+    orderIndex: 1305,
+  },
+  {
+    slug: "implement-includes",
+    companies: ["Amazon"],
+    category: "typescript",
+    title: "Implement Includes<T, U>",
+    description: `A tuple membership check — walk the tuple element by element, comparing each one against \`U\` for an exact type match. The exact-match \`Equal\` helper is already in scope from this platform's own test harness, the same way it would be if you pulled it in from the real type-challenges test utilities.
+
+## Your task
+
+Write \`Includes<T extends readonly unknown[], U>\`, returning \`true\` if any element of \`T\` exactly matches \`U\`, \`false\` otherwise.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Includes<T extends readonly unknown[], U> = unknown;`,
+    solutionCode: `type Includes<T extends readonly unknown[], U> = T extends [infer F, ...infer Rest]
+  ? Equal<F, U> extends true ? true : Includes<Rest, U>
+  : false;`,
+    testCases: [
+      { input: "Includes<[1, 2, 3], 2>", expected: "true", label: "Finds a matching element" },
+      { input: "Includes<[1, 2, 3], 4>", expected: "false", label: "Returns false when nothing matches" },
+    ],
+    hints: [
+      "A plain `F extends U` check is too loose here (it would treat a subtype as a match) — Equal<F, U> is what gives you exact-match semantics, which is why it's provided for you.",
+    ],
+    orderIndex: 1306,
+  },
+  {
+    slug: "implement-filter",
+    companies: ["Amazon", "Airbnb"],
+    category: "typescript",
+    title: "Implement Filter<T, A>",
+    description: `The type-level version of \`Array.prototype.filter\` — keeps only the elements of \`T\` that are assignable to \`A\`, dropping the rest, while preserving the order of the ones that remain.
+
+## Your task
+
+Write \`Filter<T extends readonly unknown[], A>\`, keeping only the elements of \`T\` assignable to \`A\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Filter<T extends readonly unknown[], A> = unknown;`,
+    solutionCode: `type Filter<T extends readonly unknown[], A> = T extends [infer F, ...infer Rest]
+  ? F extends A ? [F, ...Filter<Rest, A>] : Filter<Rest, A>
+  : [];`,
+    testCases: [
+      { input: "Filter<[1, 'a', 2, 'b'], number>", expected: "[1, 2]", label: "Keeps only the elements matching the filter type, in order" },
+      { input: "Filter<[1, 2, 3], string>", expected: "[]", label: "Returns an empty tuple when nothing matches" },
+    ],
+    hints: [
+      "Each recursive step makes an independent keep-or-drop decision on just the first element, then recurses on the rest — there's no need to track indices or build up two separate lists.",
+    ],
+    orderIndex: 1307,
+  },
+  {
+    slug: "implement-repeat",
+    companies: [],
+    category: "typescript",
+    title: "Implement Repeat<T, C>",
+    description: `Builds a tuple of length \`C\` where every element is \`T\` — an accumulator pattern, growing one element per recursive call until it reaches the target length.
+
+## Your task
+
+Write \`Repeat<T, C extends number>\`, returning a \`C\`-length tuple where every element is \`T\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Repeat<T, C extends number> = unknown;`,
+    solutionCode: `type Repeat<T, C extends number, Acc extends unknown[] = []> =
+  Acc["length"] extends C ? Acc : Repeat<T, C, [...Acc, T]>;`,
+    testCases: [
+      { input: "Repeat<'x', 3>", expected: "['x', 'x', 'x']", label: "Builds a tuple of the requested length, repeating the value" },
+      { input: "Repeat<0, 0>", expected: "[]", label: "Returns an empty tuple when the count is 0" },
+    ],
+    hints: [
+      "An accumulator parameter with a default of [] is the standard way to 'count up' at the type level — check its length against the target on every recursive call.",
+    ],
+    orderIndex: 1308,
+  },
+  {
+    slug: "implement-repeat-string",
+    companies: [],
+    category: "typescript",
+    title: "Implement RepeatString<S, C>",
+    description: `The string counterpart to \`Repeat\` — builds a single string type by concatenating \`S\` onto itself \`C\` times, using the same accumulator-and-counter recursion shape.
+
+## Your task
+
+Write \`RepeatString<S extends string, C extends number>\`, returning \`S\` repeated \`C\` times.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type RepeatString<S extends string, C extends number> = unknown;`,
+    solutionCode: `type RepeatString<S extends string, C extends number, Acc extends string = "", I extends unknown[] = []> =
+  I["length"] extends C ? Acc : RepeatString<S, C, \`\${Acc}\${S}\`, [...I, unknown]>;`,
+    testCases: [
+      { input: "RepeatString<'ab', 3>", expected: "'ababab'", label: "Concatenates the string onto itself the requested number of times" },
+      { input: "RepeatString<'x', 0>", expected: "''", label: "Returns an empty string when the count is 0" },
+    ],
+    hints: [
+      "Two accumulators are needed here, not one: a string accumulator for the growing result, and a separate tuple counter (I) since a string type has no ['length'] literal the way a tuple does.",
+    ],
+    orderIndex: 1309,
+  },
+  {
+    slug: "implement-tuple-to-string",
+    companies: [],
+    category: "typescript",
+    title: "Implement TupleToString<T>",
+    description: `The inverse of \`StringToTuple\` — joins a tuple of individual characters back into a single string type, character by character.
+
+## Your task
+
+Write \`TupleToString<T extends readonly string[]>\`, concatenating every element of \`T\` into a single string.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type TupleToString<T extends readonly string[]> = unknown;`,
+    solutionCode: `type TupleToString<T extends readonly string[]> = T extends [infer F extends string, ...infer Rest extends string[]]
+  ? \`\${F}\${TupleToString<Rest>}\`
+  : "";`,
+    testCases: [
+      { input: "TupleToString<['a', 'b', 'c']>", expected: "'abc'", label: "Concatenates every element in order" },
+      { input: "TupleToString<[]>", expected: "''", label: "Returns an empty string for an empty tuple" },
+    ],
+    hints: [
+      "This is Join without a delimiter — same recursive shape as Join, just without the D between each piece.",
+    ],
+    orderIndex: 1310,
+  },
+
+  // ── typescript — standalone TypeScript Type-Challenges Roadmap, Stage 6 ────
+  {
+    slug: "implement-isnever",
+    companies: ["Microsoft"],
+    category: "typescript",
+    title: "Implement IsNever<T>",
+    description: `A genuine gotcha: a naked \`T extends never ? true : false\` doesn't work when \`T\` actually *is* \`never\` — a conditional type over a bare type parameter distributes over unions, and \`never\` is the empty union, so it distributes into nothing and the whole expression evaluates to \`never\` instead of a boolean. Wrapping both sides in a tuple (\`[T] extends [never]\`) suppresses that distribution.
+
+## Your task
+
+Write \`IsNever<T>\`, returning \`true\` only when \`T\` is exactly \`never\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type IsNever<T> = unknown;`,
+    solutionCode: `type IsNever<T> = [T] extends [never] ? true : false;`,
+    testCases: [
+      { input: "IsNever<never>", expected: "true", label: "Correctly identifies never itself" },
+      { input: "IsNever<string>", expected: "false", label: "Returns false for any other type" },
+    ],
+    hints: [
+      "The tuple wrapper `[T] extends [never]` is the standard fix — it stops T from distributing before the comparison happens, which is exactly what breaks a naked `T extends never` check.",
+    ],
+    orderIndex: 1311,
+  },
+  {
+    slug: "implement-isany",
+    companies: ["Microsoft"],
+    category: "typescript",
+    title: "Implement IsAny<T>",
+    description: `Another genuine "trick" type: \`any\` is unique in that it's both assignable to, and assignable from, every other type — including types that shouldn't normally overlap. Intersecting it with a literal type exploits that: \`1 & T\` stays \`1\` for any normal \`T\`, but collapses to \`any\` itself when \`T\` is \`any\`.
+
+## Your task
+
+Write \`IsAny<T>\`, returning \`true\` only when \`T\` is exactly \`any\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "hard",
+    starterCode: `type IsAny<T> = unknown;`,
+    solutionCode: `type IsAny<T> = 0 extends 1 & T ? true : false;`,
+    testCases: [
+      { input: "IsAny<any>", expected: "true", label: "Correctly identifies any itself" },
+      { input: "IsAny<string>", expected: "false", label: "Returns false for a normal, specific type" },
+    ],
+    hints: [
+      "0 extends 1 & T is only ever true when T is any — for every other type, 1 & T stays 1 (or never, for incompatible types), and 0 doesn't extend either of those.",
+    ],
+    orderIndex: 1312,
+  },
+  {
+    slug: "implement-isemptytype",
+    companies: [],
+    category: "typescript",
+    title: "Implement IsEmptyType<T>",
+    description: `Checks whether an object type has zero properties — a short, self-contained building block for later, harder recursive types.
+
+## Your task
+
+Write \`IsEmptyType<T>\`, returning \`true\` only when \`T\` has no keys at all.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "easy",
+    starterCode: `type IsEmptyType<T> = unknown;`,
+    solutionCode: `type IsEmptyType<T> = keyof T extends never ? true : false;`,
+    testCases: [
+      { input: "IsEmptyType<{}>", expected: "true", label: "Identifies an empty object type" },
+      { input: "IsEmptyType<{ a: string }>", expected: "false", label: "Returns false once there's at least one key" },
+    ],
+    hints: [
+      "keyof {} evaluates to never — checking that directly is simpler than trying to count keys.",
+    ],
+    orderIndex: 1313,
+  },
+  {
+    slug: "implement-equal-type",
+    companies: ["Microsoft", "Airbnb"],
+    category: "typescript",
+    title: "Implement Equal<A, B>",
+    description: `The exact-type-equality check used as a testing utility throughout real type-challenge test suites (including this platform's own grading harness) — a plain \`A extends B ? true : false\` is too loose, since it also matches when \`A\` is merely a *subtype* of \`B\`. The real trick compares both types' behavior as constraints on a generic function instead, which is sensitive to the exact type, not just assignability.
+
+## Your task
+
+Write \`MyEqual<X, Y>\`, returning \`true\` only when \`X\` and \`Y\` are *exactly* the same type (not just mutually assignable).
+
+Note: this platform's own \`Equal\` (used to grade every other question) is already in scope — name your answer \`MyEqual\` so it doesn't collide with it.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "hard",
+    starterCode: `type MyEqual<X, Y> = unknown;`,
+    solutionCode: `type MyEqual<X, Y> = (<T>() => T extends X ? 1 : 2) extends (<T>() => T extends Y ? 1 : 2) ? true : false;`,
+    testCases: [
+      { input: "MyEqual<1, 1>", expected: "true", label: "Identical literal types are equal" },
+      { input: "MyEqual<1, 2>", expected: "false", label: "Different literal types are not equal" },
+      { input: "MyEqual<{ a: string }, { a: string }>", expected: "true", label: "Structurally identical object types are equal" },
+    ],
+    hints: [
+      "A plain X extends Y check can't tell 'exactly equal' apart from 'X happens to be assignable to Y' — comparing two generic function types (which are contravariant in their parameters) is what forces an exact match instead of a loose one.",
+    ],
+    orderIndex: 1314,
+  },
+  {
+    slug: "implement-assert-never",
+    companies: ["Microsoft", "Airbnb", "Stripe"],
+    category: "typescript",
+    title: "Implement assertNever (Exhaustiveness Checking)",
+    description: `Less flashy than the type-challenge puzzles, but the pattern you'll actually reach for constantly in real code review: a \`switch\` statement's \`default\` branch calls \`assertNever(value)\`, where \`value\`'s type has already been narrowed to \`never\` by every other case — so if a new variant is ever added to the union without a matching \`case\`, the \`default\` branch's argument is no longer \`never\`, and the whole file fails to compile until you handle it.
+
+## Your task
+
+Write \`function assertNever(value: never): never\`, throwing at runtime but — more importantly — only accepting \`never\` as its parameter type.
+
+Graded by real TypeScript type-checking — write a real function declaration, matching the exact signature described above.`,
+    difficulty: "medium",
+    starterCode: `function assertNever(value: never): never {
+  throw new Error("unreachable");
+}`,
+    solutionCode: `function assertNever(value: never): never {
+  throw new Error("Unexpected value: " + value);
+}`,
+    testCases: [
+      { input: "the full type of assertNever", expected: "(value: never) => never", label: "Matches the exact required signature — a never parameter and a never return type" },
+    ],
+    hints: [
+      "The body can genuinely be anything that throws — the exhaustiveness guarantee comes entirely from the declared parameter type being never, not from any runtime logic.",
+    ],
+    orderIndex: 1315,
+  },
+
+  // ── typescript — standalone TypeScript Type-Challenges Roadmap, Stage 7 ────
+  {
+    slug: "implement-tonumber",
+    companies: [],
+    category: "typescript",
+    title: "Implement ToNumber<T>",
+    description: `The foundational trick behind every type-level arithmetic question in this stage: since there's no direct string-to-number conversion, you count up from 0 using a growing tuple, and stop the moment the tuple's stringified length matches the input.
+
+## Your task
+
+Write \`ToNumber<T extends string>\`, converting a numeric string type into a real numeric literal type.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type ToNumber<T extends string> = unknown;`,
+    solutionCode: `type ToNumber<T extends string, Acc extends unknown[] = []> =
+  T extends \`\${Acc["length"]}\` ? Acc["length"] : ToNumber<T, [...Acc, unknown]>;`,
+    testCases: [
+      { input: "ToNumber<'5'>", expected: "5", label: "Converts a numeric string to the matching numeric literal" },
+      { input: "ToNumber<'0'>", expected: "0", label: "Handles zero as its own immediate base case" },
+    ],
+    hints: [
+      "Acc[\"length\"] is a number, but `${Acc[\"length\"]}` turns it into a string you can directly compare against T — that stringify-and-compare step is the whole trick.",
+    ],
+    orderIndex: 1316,
+  },
+  {
+    slug: "implement-string-to-number",
+    companies: [],
+    category: "typescript",
+    title: "Implement StringToNumber<S>",
+    description: `The same numeric-string-to-literal conversion as \`ToNumber\`, under a different name — reported separately in enough prep guides that it's worth recognizing under both.
+
+## Your task
+
+Write \`StringToNumber<S extends string>\`, converting a numeric string type into a real numeric literal type.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type StringToNumber<S extends string> = unknown;`,
+    solutionCode: `type StringToNumber<S extends string, Acc extends unknown[] = []> =
+  S extends \`\${Acc["length"]}\` ? Acc["length"] : StringToNumber<S, [...Acc, unknown]>;`,
+    testCases: [
+      { input: "StringToNumber<'12'>", expected: "12", label: "Converts a multi-digit numeric string correctly" },
+      { input: "StringToNumber<'0'>", expected: "0", label: "Handles zero as its own immediate base case" },
+    ],
+    hints: [
+      "Same counting-tuple technique as ToNumber — recognizing when two differently-named questions are really the same underlying trick is half the battle in this stage.",
+    ],
+    orderIndex: 1317,
+  },
+  {
+    slug: "implement-abs",
+    companies: [],
+    category: "typescript",
+    title: "Implement Abs<N>",
+    description: `The absolute value of a numeric literal type — check whether its stringified form starts with a \`-\`, and if so, convert the digits after it back into a number.
+
+## Your task
+
+Write \`Abs<N extends number>\`, returning \`N\`'s absolute value.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Abs<N extends number> = unknown;`,
+    solutionCode: `type StrToNum<S extends string, Acc extends unknown[] = []> =
+  S extends \`\${Acc["length"]}\` ? Acc["length"] : StrToNum<S, [...Acc, unknown]>;
+
+type Abs<N extends number> = \`\${N}\` extends \`-\${infer Rest}\` ? StrToNum<Rest> : N;`,
+    testCases: [
+      { input: "Abs<-5>", expected: "5", label: "Strips the negative sign and converts back to a number" },
+      { input: "Abs<5>", expected: "5", label: "Leaves an already-positive number unchanged" },
+    ],
+    hints: [
+      "Stringify N first (`${N}`) so you can pattern-match the leading '-' character the same way you would with any other string — numeric literal types don't support that kind of matching directly.",
+    ],
+    orderIndex: 1318,
+  },
+  {
+    slug: "implement-largerthan",
+    companies: [],
+    category: "typescript",
+    title: "Implement LargerThan<A, B>",
+    description: `Type-level number comparison — since there's no \`>\` operator for types, you count up from 0 with a shared counter, and see which of \`A\` or \`B\` the counter's length reaches first.
+
+## Your task
+
+Write \`LargerThan<A extends number, B extends number>\`, returning \`true\` if \`A > B\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type LargerThan<A extends number, B extends number> = unknown;`,
+    solutionCode: `type LargerThan<A extends number, B extends number, C extends unknown[] = []> =
+  A extends B ? false :
+  C["length"] extends A ? false :
+  C["length"] extends B ? true :
+  LargerThan<A, B, [...C, unknown]>;`,
+    testCases: [
+      { input: "LargerThan<5, 3>", expected: "true", label: "Correctly identifies A > B" },
+      { input: "LargerThan<3, 5>", expected: "false", label: "Correctly identifies A < B" },
+      { input: "LargerThan<3, 3>", expected: "false", label: "Equal numbers are not 'larger than' each other" },
+    ],
+    hints: [
+      "Whichever of A or B the shared counter's length reaches FIRST is the smaller one — reaching A's length first means A <= B, so the answer is false.",
+    ],
+    orderIndex: 1319,
+  },
+  {
+    slug: "implement-smallerthan",
+    companies: [],
+    category: "typescript",
+    title: "Implement SmallerThan<A, B>",
+    description: `The mirror image of \`LargerThan\` — same counting technique, with the two roles swapped.
+
+## Your task
+
+Write \`SmallerThan<A extends number, B extends number>\`, returning \`true\` if \`A < B\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type SmallerThan<A extends number, B extends number> = unknown;`,
+    solutionCode: `type SmallerThan<A extends number, B extends number, C extends unknown[] = []> =
+  A extends B ? false :
+  C["length"] extends B ? false :
+  C["length"] extends A ? true :
+  SmallerThan<A, B, [...C, unknown]>;`,
+    testCases: [
+      { input: "SmallerThan<3, 5>", expected: "true", label: "Correctly identifies A < B" },
+      { input: "SmallerThan<5, 3>", expected: "false", label: "Correctly identifies A > B" },
+      { input: "SmallerThan<3, 3>", expected: "false", label: "Equal numbers are not 'smaller than' each other" },
+    ],
+    hints: [
+      "This is LargerThan with A and B's roles in the counter-reaches-first check swapped — the overall shape is identical.",
+    ],
+    orderIndex: 1320,
+  },
+  {
+    slug: "implement-add",
+    companies: ["Microsoft"],
+    category: "typescript",
+    title: "Implement Add<A, B>",
+    description: `The type-challenges classic: real addition, done by building two tuples of lengths \`A\` and \`B\`, concatenating them, and reading the combined tuple's length.
+
+## Your task
+
+Write \`Add<A extends number, B extends number>\`, returning \`A + B\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Add<A extends number, B extends number> = unknown;`,
+    solutionCode: `type BuildTuple<L extends number, T extends unknown[] = []> = T["length"] extends L ? T : BuildTuple<L, [...T, unknown]>;
+
+type Add<A extends number, B extends number> = [...BuildTuple<A>, ...BuildTuple<B>]["length"];`,
+    testCases: [
+      { input: "Add<3, 4>", expected: "7", label: "Adds two positive numbers correctly" },
+      { input: "Add<0, 5>", expected: "5", label: "Adding zero returns the other operand unchanged" },
+    ],
+    hints: [
+      "A tuple's length IS a real number at the type level — concatenating two tuples and reading the result's length is genuinely addition, not just a simulation of it.",
+    ],
+    orderIndex: 1321,
+  },
+  {
+    slug: "implement-subtract",
+    companies: ["Microsoft"],
+    category: "typescript",
+    title: "Implement Subtract<A, B>",
+    description: `The inverse of \`Add\`: build a tuple of length \`A\`, then pattern-match a \`B\`-length prefix off the front of it — whatever's left over is \`A - B\`.
+
+## Your task
+
+Write \`Subtract<A extends number, B extends number>\`, returning \`A - B\` (assume \`A >= B\`).
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Subtract<A extends number, B extends number> = unknown;`,
+    solutionCode: `type BuildTuple<L extends number, T extends unknown[] = []> = T["length"] extends L ? T : BuildTuple<L, [...T, unknown]>;
+
+type Subtract<A extends number, B extends number> = BuildTuple<A> extends [...BuildTuple<B>, ...infer Rest] ? Rest["length"] : never;`,
+    testCases: [
+      { input: "Subtract<7, 3>", expected: "4", label: "Subtracts correctly" },
+      { input: "Subtract<5, 5>", expected: "0", label: "Subtracting a number from itself gives zero" },
+    ],
+    hints: [
+      "The pattern [...BuildTuple<B>, ...infer Rest] matched against BuildTuple<A> peels off exactly B elements from the front — Rest is whatever's left, which is your answer.",
+    ],
+    orderIndex: 1322,
+  },
+  {
+    slug: "implement-multiply",
+    companies: ["Microsoft"],
+    category: "typescript",
+    title: "Implement Multiply<A, B>",
+    description: `Repeated addition, done with two accumulators: one growing by \`B\` elements every step (the running product), and a plain counter tracking how many of the \`A\` steps have happened so far.
+
+## Your task
+
+Write \`Multiply<A extends number, B extends number>\`, returning \`A * B\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "hard",
+    starterCode: `type Multiply<A extends number, B extends number> = unknown;`,
+    solutionCode: `type BuildTuple<L extends number, T extends unknown[] = []> = T["length"] extends L ? T : BuildTuple<L, [...T, unknown]>;
+
+type Multiply<A extends number, B extends number, Acc extends unknown[] = [], Count extends unknown[] = []> =
+  Count["length"] extends A ? Acc["length"] : Multiply<A, B, [...Acc, ...BuildTuple<B>], [...Count, unknown]>;`,
+    testCases: [
+      { input: "Multiply<3, 4>", expected: "12", label: "Multiplies two positive numbers correctly" },
+      { input: "Multiply<0, 5>", expected: "0", label: "Multiplying by zero gives zero" },
+    ],
+    hints: [
+      "Count just needs to reach A — it doesn't need to know anything about B. Acc is where the real work happens, growing by a whole BuildTuple<B> on every step.",
+    ],
+    orderIndex: 1323,
+  },
+  {
+    slug: "implement-divide",
+    companies: ["Microsoft"],
+    category: "typescript",
+    title: "Implement Divide<A, B>",
+    description: `Repeated subtraction: peel a \`B\`-length chunk off the front of a shrinking \`A\`-length tuple on every recursive step, counting how many chunks it takes until nothing's left.
+
+## Your task
+
+Write \`Divide<A extends number, B extends number>\`, returning \`A / B\` (assume it divides evenly).
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "hard",
+    starterCode: `type Divide<A extends number, B extends number> = unknown;`,
+    solutionCode: `type BuildTuple<L extends number, T extends unknown[] = []> = T["length"] extends L ? T : BuildTuple<L, [...T, unknown]>;
+
+type Divide<A extends number, B extends number, Count extends unknown[] = []> =
+  BuildTuple<A> extends [...BuildTuple<B>, ...infer Rest]
+    ? Divide<Rest["length"], B, [...Count, unknown]>
+    : Count["length"];`,
+    testCases: [
+      { input: "Divide<12, 4>", expected: "3", label: "Divides evenly" },
+      { input: "Divide<10, 2>", expected: "5", label: "Works for a different pair of numbers, not hardcoded" },
+    ],
+    hints: [
+      "Each successful B-length chunk removed from the front counts as one step — the recursion stops the moment what's left is too short to contain another full chunk.",
+    ],
+    orderIndex: 1324,
+  },
+
+  // ── typescript — standalone TypeScript Type-Challenges Roadmap, Stage 8 ────
+  {
+    slug: "implement-find-index",
+    companies: ["Amazon"],
+    category: "typescript",
+    title: "Implement FindIndex<T, E>",
+    description: `Combines two techniques from earlier stages — the exact-match \`Equal\` check from \`Includes\`, and the counting-accumulator pattern from the arithmetic stage — to locate *where* a match is, not just whether one exists.
+
+## Your task
+
+Write \`FindIndex<T extends readonly unknown[], E>\`, returning the index of the first element exactly matching \`E\`, or \`-1\` if none does.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type FindIndex<T extends readonly unknown[], E> = unknown;`,
+    solutionCode: `type FindIndex<T extends readonly unknown[], E, Idx extends unknown[] = []> =
+  T extends [infer F, ...infer Rest]
+    ? Equal<F, E> extends true ? Idx["length"] : FindIndex<Rest, E, [...Idx, unknown]>
+    : -1;`,
+    testCases: [
+      { input: "FindIndex<[1, 2, 3], 2>", expected: "1", label: "Finds the correct index of a matching element" },
+      { input: "FindIndex<[1, 2, 3], 5>", expected: "-1", label: "Returns -1 when nothing matches" },
+    ],
+    hints: [
+      "Idx is just a counter, exactly like the ones from the arithmetic stage — it doesn't hold any real data, only its length matters.",
+    ],
+    orderIndex: 1325,
+  },
+  {
+    slug: "implement-diff",
+    companies: ["Airbnb", "Amazon"],
+    category: "typescript",
+    title: "Implement Diff<A, B>",
+    description: `The symmetric difference between two object types — every key that appears in exactly one of \`A\` or \`B\`, but not both (a key present in both is considered 'shared,' not part of the diff).
+
+## Your task
+
+Write \`Diff<A, B>\`, returning an object type of the keys that appear in only one of \`A\` or \`B\`.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Diff<A, B> = unknown;`,
+    solutionCode: `type Diff<A, B> = Pick<A & B, Exclude<keyof A | keyof B, keyof A & keyof B>>;`,
+    testCases: [
+      { input: "Diff<{ a: string; b: number }, { b: number; c: boolean }>", expected: "{ a: string; c: boolean }", label: "Keeps only the keys unique to one side, dropping the shared key" },
+    ],
+    hints: [
+      "keyof A & keyof B is the shared-keys set; Excluding that from keyof A | keyof B leaves exactly the symmetric difference — then Pick that key set off the intersection A & B to recover each key's real type.",
+    ],
+    orderIndex: 1326,
+  },
+  {
+    slug: "implement-object-paths",
+    companies: ["Airbnb", "Shopify"],
+    category: "typescript",
+    title: "Implement ObjectPaths<O>",
+    description: `A genuinely common senior question: generating every valid dot-notation path through a nested object type — the foundation for typed form fields and typed state-update paths (\`"user.address.city"\` as a real, checkable type, not just a string).
+
+## Your task
+
+Write \`ObjectPaths<T>\`, returning a union of every dot-notation path through \`T\`, at every nesting depth.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "hard",
+    starterCode: `type ObjectPaths<T> = unknown;`,
+    solutionCode: `type ObjectPaths<T> = T extends object
+  ? { [K in keyof T]: K extends string
+      ? T[K] extends object
+        ? K | \`\${K}.\${ObjectPaths<T[K]>}\`
+        : K
+      : never
+    }[keyof T]
+  : never;`,
+    testCases: [
+      { input: "ObjectPaths<{ a: string; b: { c: number } }>", expected: "'a' | 'b' | 'b.c'", label: "Includes both top-level keys and dotted nested paths" },
+    ],
+    hints: [
+      "Every key contributes either just itself (if its value isn't an object) or itself PLUS every one of its own nested paths, prefixed with 'thisKey.' — build both possibilities into the mapped type's value, then collapse it to a union with [keyof T].",
+    ],
+    orderIndex: 1327,
+  },
+  {
+    slug: "implement-map-string-union-to-object-union",
+    companies: ["Shopify"],
+    category: "typescript",
+    title: "Implement MapStringUnionToObjectUnion<U>",
+    description: `Converts a plain union of string literals into a union of single-property objects — the shape you'd want as a starting point for building out a discriminated union from a simpler string enum.
+
+## Your task
+
+Write \`MapStringUnionToObjectUnion<U extends string>\`, mapping each member of \`U\` to its own \`{ type: U }\` object, joined back into a union.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type MapStringUnionToObjectUnion<U extends string> = unknown;`,
+    solutionCode: `type MapStringUnionToObjectUnion<U extends string> = U extends U ? { type: U } : never;`,
+    testCases: [
+      { input: "MapStringUnionToObjectUnion<'circle' | 'square'>", expected: "{ type: 'circle' } | { type: 'square' }", label: "Produces one object per union member, not a single object with a unioned type field" },
+    ],
+    hints: [
+      "U extends U looks like a no-op, but it isn't — using U on both sides of a conditional is the standard idiom for explicitly forcing per-member distribution over the union, which is exactly what turns 'circle' | 'square' into two separate objects instead of one object with type: 'circle' | 'square'.",
+    ],
+    orderIndex: 1328,
+  },
+  {
+    slug: "implement-extract-route-params",
+    companies: ["Airbnb", "Shopify", "Vercel"],
+    category: "typescript",
+    title: "Implement ExtractRouteParams<T>",
+    description: `A very common real-world question, not just a puzzle: typed routers parse a path pattern like \`"/users/:id/posts/:postId"\` into a params object shape (\`{ id: string; postId: string }\`) purely at the type level, so a router's \`params\` object is fully typed with zero manual annotation.
+
+## Your task
+
+Write \`ExtractRouteParams<T extends string>\`, extracting every \`:paramName\` segment from a route pattern into an object type with those names as keys (each typed \`string\`).
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "hard",
+    starterCode: `type ExtractRouteParams<T extends string> = unknown;`,
+    solutionCode: `type ExtractRouteParams<T extends string> =
+  T extends \`\${string}:\${infer Param}/\${infer Rest}\`
+    ? { [K in Param | keyof ExtractRouteParams<Rest>]: string }
+    : T extends \`\${string}:\${infer Param}\`
+      ? { [K in Param]: string }
+      : {};`,
+    testCases: [
+      { input: "ExtractRouteParams<'/users/:id/posts/:postId'>", expected: "{ id: string; postId: string }", label: "Extracts every :param segment, however many there are" },
+      { input: "ExtractRouteParams<'/about'>", expected: "{}", label: "A route with no params produces an empty object" },
+    ],
+    hints: [
+      "There are genuinely two separate patterns to match: 'a param followed by more path after it' (recurse and merge) versus 'a param at the very end' (the base case, no trailing slash to match against) — a route can end in either shape.",
+    ],
+    orderIndex: 1329,
+  },
+  {
+    slug: "implement-union-to-intersection",
+    companies: ["Microsoft", "Airbnb"],
+    category: "typescript",
+    title: "Implement UnionToIntersection<T>",
+    description: `The signature "hard" type-challenge, and a genuinely non-obvious trick: there's no direct union-to-intersection operator, so this exploits function parameter **contravariance** instead — distributing a union into a union of function parameter positions, which TypeScript then has to intersect to find a single type assignable to all of them.
+
+## Your task
+
+Write \`UnionToIntersection<U>\`, converting a union type into the intersection of all its members.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "hard",
+    starterCode: `type UnionToIntersection<U> = unknown;`,
+    solutionCode: `type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void ? I : never;`,
+    testCases: [
+      { input: "UnionToIntersection<{ a: string } | { b: number }>", expected: "{ a: string } & { b: number }", label: "Converts an object-type union into the intersection of its members" },
+      { input: "UnionToIntersection<string | number>", expected: "string & number", label: "Works for primitive unions too, even ones with no realistic intersection" },
+    ],
+    hints: [
+      "Function parameters are contravariant — a function accepting 'A | B' can be used anywhere a function accepting just 'A' is expected. Distributing U into separate function types and then inferring a single common parameter type is what forces TypeScript to intersect the union's members instead of just re-unioning them.",
+    ],
+    orderIndex: 1330,
+  },
+  {
+    slug: "implement-sort",
+    companies: [],
+    category: "typescript",
+    title: "Implement Sort<T> (Numeric Tuple Sort)",
+    description: `A rare but strong-signal question: sort a tuple of number literal types into ascending order, purely at the type level — real insertion sort, built from the same numeric-comparison technique as \`LargerThan\`.
+
+## Your task
+
+Write \`Sort<T extends number[]>\`, returning \`T\`'s elements sorted into ascending order.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "hard",
+    starterCode: `type Sort<T extends number[]> = unknown;`,
+    solutionCode: `type Compare<A extends number, B extends number, C extends unknown[] = []> =
+  A extends B ? 0 :
+  C["length"] extends A ? -1 :
+  C["length"] extends B ? 1 :
+  Compare<A, B, [...C, unknown]>;
+
+type Insert<T extends number[], N extends number> =
+  T extends [infer F extends number, ...infer Rest extends number[]]
+    ? Compare<N, F> extends 1
+      ? [F, ...Insert<Rest, N>]
+      : [N, ...T]
+    : [N];
+
+type Sort<T extends number[]> =
+  T extends [infer F extends number, ...infer Rest extends number[]]
+    ? Insert<Sort<Rest>, F>
+    : [];`,
+    testCases: [
+      { input: "Sort<[3, 1, 2]>", expected: "[1, 2, 3]", label: "Sorts an unordered tuple into ascending order" },
+      { input: "Sort<[]>", expected: "[]", label: "Handles an empty tuple as its own base case" },
+    ],
+    hints: [
+      "This is real insertion sort: recursively sort everything after the first element, then Insert that first element into its correct position within the already-sorted remainder — Compare is just a 3-way (-1/0/1) version of the LargerThan technique from the arithmetic stage.",
+    ],
+    orderIndex: 1331,
+  },
+  {
+    slug: "implement-unique",
+    companies: [],
+    category: "typescript",
+    title: "Implement Unique<T>",
+    description: `Removes duplicate values from a tuple, keeping the first occurrence of each and preserving order — tracking what's already been "seen" in its own accumulator, checked via exact-match equality on every step.
+
+## Your task
+
+Write \`Unique<T extends readonly unknown[]>\`, returning \`T\` with duplicate elements removed.
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
+    difficulty: "medium",
+    starterCode: `type Unique<T extends readonly unknown[]> = unknown;`,
+    solutionCode: `type IsIncluded<T extends readonly unknown[], U> = T extends [infer F, ...infer Rest]
+  ? Equal<F, U> extends true ? true : IsIncluded<Rest, U>
+  : false;
+
+type Unique<T extends readonly unknown[], Seen extends unknown[] = []> =
+  T extends [infer F, ...infer Rest]
+    ? IsIncluded<Seen, F> extends true
+      ? Unique<Rest, Seen>
+      : [F, ...Unique<Rest, [...Seen, F]>]
+    : [];`,
+    testCases: [
+      { input: "Unique<[1, 1, 2, 3, 3, 3]>", expected: "[1, 2, 3]", label: "Removes duplicates, keeping the first occurrence of each value" },
+      { input: "Unique<[]>", expected: "[]", label: "Handles an empty tuple as its own base case" },
+    ],
+    hints: [
+      "The Seen accumulator needs the exact-match Equal check (the same reasoning as Includes) — a plain extends check would incorrectly treat similar-but-different types as duplicates of each other.",
+    ],
+    orderIndex: 1332,
+  },
+
+  // ── system-design — standalone Frontend System Design Roadmap, Stage 1 ─────
+  {
+    slug: "nested-checkboxes-tree-state",
+    companies: ["Meta", "Amazon", "Atlassian"],
+    category: "system-design",
+    title: "Nested Checkboxes (Tree State, Indeterminate Propagation)",
+    description: `**RADIO framing:** the interesting part of this widget isn't the checkbox markup — it's the state propagation rule: checking a parent must check every descendant, and a parent whose children are a *mix* of checked/unchecked must show as "indeterminate," not fully checked or unchecked. Getting this right for an arbitrarily deep tree (Jira/file-explorer-style) is the actual system design question; a flat two-level version is a much easier (and much less commonly asked) variant.
+
+## Your task
+
+Write \`toggleNode(root, targetId)\`, where \`root\` is a tree of \`{ id, checked, indeterminate, children }\` nodes. Toggling a node must: flip that node and *every descendant* to the new checked state (clearing indeterminate on all of them), then recompute \`checked\`/\`indeterminate\` on every ancestor based on its children's states. Return a new tree — don't mutate the input.`,
+    difficulty: "hard",
+    starterCode: `function toggleNode(root, targetId) {
+}`,
+    solutionCode: `function toggleNode(root, targetId) {
+  function setAll(node, checked) {
+    return {
+      ...node,
+      checked,
+      indeterminate: false,
+      children: node.children.map((c) => setAll(c, checked)),
+    };
+  }
+  function update(node) {
+    if (node.id === targetId) {
+      return setAll(node, !node.checked);
+    }
+    if (!node.children.length) return node;
+    const newChildren = node.children.map(update);
+    const allChecked = newChildren.every((c) => c.checked && !c.indeterminate);
+    const noneChecked = newChildren.every((c) => !c.checked && !c.indeterminate);
+    return {
+      ...node,
+      children: newChildren,
+      checked: allChecked,
+      indeterminate: !allChecked && !noneChecked,
+    };
+  }
+  return update(root);
+}`,
+    testCases: [
+      { input: "a parent with two unchecked children, toggle one child", expected: "that child is checked, the parent becomes indeterminate", label: "A partially-checked set of children makes the parent indeterminate" },
+      { input: "the same tree, then toggle the other child too", expected: "the parent becomes fully checked, no longer indeterminate", label: "Checking every child makes the parent fully checked" },
+      { input: "an unchecked parent with two unchecked children, toggle the parent", expected: "the parent and both children all become checked", label: "Toggling a parent propagates the new state to every descendant" },
+    ],
+    hints: [
+      "Two independent passes: toggling the target node cascades DOWN to every descendant; recomputing every ancestor's state is a separate cascade UP based on its children's already-updated states.",
+    ],
+    orderIndex: 1333,
+  },
+  {
+    slug: "star-rating-widget",
+    companies: [],
+    category: "system-design",
+    title: "Star Rating Widget",
+    description: `**RADIO framing:** a classic warm-up, but it hides a real state-modeling question: the stars shown while hovering are a *preview*, separate from the committed value — hovering must never overwrite the actual rating until the user clicks.
+
+## Your task
+
+Write \`createStarRating(max, initial)\`, returning \`{ getDisplayValue(), hover(n), clearHover(), select(n), getValue() }\`. \`getDisplayValue()\` reflects the hover preview when one is active, falling back to the real committed value otherwise; \`select(n)\` commits and clamps to \`[0, max]\`.`,
+    difficulty: "easy",
+    starterCode: `function createStarRating(max, initial) {
+}`,
+    solutionCode: `function createStarRating(max, initial) {
+  let value = initial;
+  let hovered = null;
+  return {
+    getDisplayValue() {
+      return hovered !== null ? hovered : value;
+    },
+    hover(n) {
+      hovered = n;
+    },
+    clearHover() {
+      hovered = null;
+    },
+    select(n) {
+      value = Math.max(0, Math.min(max, n));
+      hovered = null;
+    },
+    getValue() {
+      return value;
+    },
+  };
+}`,
+    testCases: [
+      { input: "createStarRating(5, 2), hover(4)", expected: "getDisplayValue() is 4, but getValue() is still 2", label: "Hovering previews without committing the real value" },
+      { input: "the same widget, clearHover()", expected: "getDisplayValue() reverts to 2", label: "Clearing the hover falls back to the committed value" },
+      { input: "select(7) on a max-5 widget", expected: "getValue() clamps to 5", label: "select() clamps to the valid [0, max] range" },
+    ],
+    hints: [
+      "hovered and value are genuinely two separate pieces of state — resist the urge to store the hover preview by temporarily overwriting value.",
+    ],
+    orderIndex: 1334,
+  },
+  {
+    slug: "tic-tac-toe-game-logic",
+    companies: ["Amazon"],
+    category: "system-design",
+    title: "Tic-Tac-Toe Game Logic",
+    description: `**RADIO framing:** the UI is trivial; the actual design question is the state machine — whose turn it is, which moves are legal, and win detection across all 8 possible lines (3 rows, 3 columns, 2 diagonals).
+
+## Your task
+
+Write \`createTicTacToe()\`, returning \`{ play(index), getBoard(), getWinner(), getTurn() }\`. \`play\` should reject moves on an already-occupied cell or after the game has a winner, and switch turns after every legal move.`,
+    difficulty: "medium",
+    starterCode: `function createTicTacToe() {
+}`,
+    solutionCode: `function createTicTacToe() {
+  let board = Array(9).fill(null);
+  let turn = "X";
+  let winner = null;
+  const LINES = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6],
+  ];
+  function checkWinner() {
+    for (const [a, b, c] of LINES) {
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
+    }
+    return null;
+  }
+  return {
+    play(index) {
+      if (board[index] || winner) return false;
+      board[index] = turn;
+      winner = checkWinner();
+      turn = turn === "X" ? "O" : "X";
+      return true;
+    },
+    getBoard() {
+      return board;
+    },
+    getWinner() {
+      return winner;
+    },
+    getTurn() {
+      return turn;
+    },
+  };
+}`,
+    testCases: [
+      { input: "play(0) on a fresh game", expected: "board[0] is 'X', turn switches to 'O'", label: "A legal move updates the board and switches turns" },
+      { input: "play(0) twice in a row (same cell)", expected: "the second call returns false and doesn't change the board", label: "Rejects a move on an already-occupied cell" },
+      { input: "X plays a full winning line (0, 1, 2)", expected: "getWinner() returns 'X'", label: "Detects a winning line across the board" },
+    ],
+    hints: [
+      "checkWinner() only needs to run after every move, checking all 8 lines — there's no need to track win state incrementally.",
+    ],
+    orderIndex: 1335,
+  },
+  {
+    slug: "toast-notification-queue",
+    companies: ["Meta", "Amazon", "Shopify"],
+    category: "system-design",
+    title: "Toast/Notification System (Queueing, Auto-Dismiss, Stacking)",
+    description: `**RADIO framing:** the real design constraint is a max-visible cap — showing 15 toasts stacked on screen at once is a real bug, not a feature. Beyond that cap, new toasts queue and only appear once an earlier one is dismissed (by the user or by its own timer).
+
+## Your task
+
+Write \`createToastQueue(maxVisible)\`, returning \`{ show(message, durationMs), dismiss(id), getVisible() }\`. Beyond \`maxVisible\` visible toasts, new ones should queue; dismissing (manually or via \`durationMs\` auto-dismiss) should promote the next queued toast into view.`,
+    difficulty: "medium",
+    starterCode: `function createToastQueue(maxVisible) {
+}`,
+    solutionCode: `function createToastQueue(maxVisible) {
+  let visible = [];
+  let queue = [];
+  let nextId = 1;
+  function show(message, durationMs) {
+    const id = nextId++;
+    const toast = { id, message };
+    if (visible.length < maxVisible) {
+      visible.push(toast);
+    } else {
+      queue.push(toast);
+    }
+    setTimeout(() => dismiss(id), durationMs);
+    return id;
+  }
+  function dismiss(id) {
+    const wasVisible = visible.some((t) => t.id === id);
+    visible = visible.filter((t) => t.id !== id);
+    queue = queue.filter((t) => t.id !== id);
+    if (wasVisible && queue.length > 0 && visible.length < maxVisible) {
+      visible.push(queue.shift());
+    }
+  }
+  return { show, dismiss, getVisible: () => visible };
+}`,
+    testCases: [
+      { input: "createToastQueue(2), show() called 3 times with a long duration", expected: "only 2 are visible, the 3rd is queued", label: "Caps visible toasts at maxVisible, queueing the rest" },
+      { input: "the same queue, then dismiss() the first visible toast", expected: "the queued 3rd toast becomes visible", label: "Dismissing promotes the next queued toast into view" },
+      { input: "show(message, 30) with a short duration, waited past it", expected: "the toast auto-dismisses on its own", label: "Auto-dismisses after the given duration without manual dismiss()" },
+    ],
+    hints: [
+      "dismiss() needs to handle both a manually-dismissed toast and a toast that was still sitting in the queue (never shown) — only promoting a queued toast when a VISIBLE slot actually opened up.",
+    ],
+    orderIndex: 1336,
+  },
+
+  // ── system-design — standalone Frontend System Design Roadmap, Stage 2 ─────
+  {
+    slug: "poll-widget-vote-tally",
+    companies: ["Meta", "Twitter"],
+    category: "system-design",
+    title: "Poll Widget (Voting UI, Result Reveal)",
+    description: `**RADIO framing:** the data-model question here is enforcing one vote per user while computing live percentages — the UI reveal is easy once the tallying logic is right.
+
+## Your task
+
+Write \`createPoll(options)\`, returning \`{ vote(userId, option), getResults() }\`. Each user may vote once; \`getResults()\` returns each option's percentage of the total votes, rounded to the nearest whole number.`,
+    difficulty: "medium",
+    starterCode: `function createPoll(options) {
+}`,
+    solutionCode: `function createPoll(options) {
+  const votes = Object.fromEntries(options.map((o) => [o, 0]));
+  const votedUsers = new Set();
+  function vote(userId, option) {
+    if (votedUsers.has(userId)) return false;
+    votedUsers.add(userId);
+    votes[option]++;
+    return true;
+  }
+  function getResults() {
+    const total = Object.values(votes).reduce((a, b) => a + b, 0);
+    return Object.fromEntries(
+      options.map((o) => [o, total === 0 ? 0 : Math.round((votes[o] / total) * 100)]),
+    );
+  }
+  return { vote, getResults };
+}`,
+    testCases: [
+      { input: "createPoll(['a', 'b']), vote('user1', 'a')", expected: "getResults() shows { a: 100, b: 0 }", label: "A single vote is reflected correctly in the percentages" },
+      { input: "the same user voting again", expected: "vote() returns false, the tally doesn't change", label: "Rejects a duplicate vote from the same user" },
+      { input: "3 votes for 'a', 1 vote for 'b'", expected: "{ a: 75, b: 25 }", label: "Computes percentages correctly across multiple voters" },
+    ],
+    hints: [
+      "A Set of userIds who've already voted is the whole duplicate-vote guard — no need to track WHAT they voted for to enforce the one-vote rule.",
+    ],
+    orderIndex: 1337,
+  },
+  {
+    slug: "slider-value-from-position",
+    companies: ["Meta", "Amazon", "Airbnb"],
+    category: "system-design",
+    title: "Slider Component (Pointer Position → Value)",
+    description: `**RADIO framing:** the accessibility and gesture-handling parts of a slider are UI plumbing; the actual algorithm is converting a raw pointer X-coordinate into a clamped, step-snapped value within the slider's range — get this wrong and every other part of the widget is wrong too.
+
+## Your task
+
+Write \`getSliderValueFromPosition({ pointerX, trackLeft, trackWidth, min, max, step })\`, returning the value the slider should show for that pointer position — clamped to \`[min, max]\` and snapped to the nearest \`step\`.`,
+    difficulty: "medium",
+    starterCode: `function getSliderValueFromPosition({ pointerX, trackLeft, trackWidth, min, max, step }) {
+}`,
+    solutionCode: `function getSliderValueFromPosition({ pointerX, trackLeft, trackWidth, min, max, step }) {
+  const ratio = Math.min(1, Math.max(0, (pointerX - trackLeft) / trackWidth));
+  const raw = min + ratio * (max - min);
+  const stepped = Math.round(raw / step) * step;
+  return Math.min(max, Math.max(min, stepped));
+}`,
+    testCases: [
+      { input: "pointerX at the very start of the track", expected: "min", label: "A pointer at the track's start resolves to the minimum value" },
+      { input: "pointerX at the very end of the track", expected: "max", label: "A pointer at the track's end resolves to the maximum value" },
+      { input: "pointerX past the end of the track (dragged beyond the edge)", expected: "still clamps to max, doesn't overshoot", label: "Clamps pointer positions outside the track's bounds" },
+      { input: "a pointer position landing between two step values", expected: "snaps to the nearest step", label: "Snaps the raw value to the nearest step, not a raw fractional value" },
+    ],
+    hints: [
+      "Work in three clean stages: normalize the pointer position to a 0–1 ratio first, THEN map that ratio onto [min, max], THEN snap to step — trying to do all three in one expression is where the bugs hide.",
+    ],
+    orderIndex: 1338,
+  },
+  {
+    slug: "carousel-autoplay-index",
+    companies: ["Amazon", "Airbnb", "Netflix"],
+    category: "system-design",
+    title: "Carousel Widget (Autoplay, Index Wrapping)",
+    description: `**RADIO framing:** touch gestures and transition animations are the visible surface; the design question underneath is index math (wrapping cleanly at both ends) plus pausing autoplay the instant a user interacts, so the carousel never fights the user's own navigation.
+
+## Your task
+
+Write \`createCarousel(slideCount, intervalMs)\`, returning \`{ getIndex(), advance(), prev(), pause(), resume(), stop() }\`. \`advance\`/\`prev\` must wrap around at both ends; autoplay must stop advancing while paused, and resume from wherever it left off.`,
+    difficulty: "medium",
+    starterCode: `function createCarousel(slideCount, intervalMs) {
+}`,
+    solutionCode: `function createCarousel(slideCount, intervalMs) {
+  let index = 0;
+  let paused = false;
+  const timer = setInterval(() => {
+    if (!paused) advance();
+  }, intervalMs);
+  function advance() {
+    index = (index + 1) % slideCount;
+  }
+  function prev() {
+    index = (index - 1 + slideCount) % slideCount;
+  }
+  function pause() {
+    paused = true;
+  }
+  function resume() {
+    paused = false;
+  }
+  function stop() {
+    clearInterval(timer);
+  }
+  return { getIndex: () => index, advance, prev, pause, resume, stop };
+}`,
+    testCases: [
+      { input: "createCarousel(3, ...), advance() from the last slide (index 2)", expected: "wraps back to index 0", label: "advance() wraps around at the end" },
+      { input: "createCarousel(3, ...), prev() from the first slide (index 0)", expected: "wraps to index 2, the last slide", label: "prev() wraps around at the start" },
+      { input: "pause() called, then waited past several autoplay intervals", expected: "the index doesn't change while paused", label: "pause() actually stops autoplay from advancing" },
+    ],
+    hints: [
+      "The modulo trick `(index - 1 + slideCount) % slideCount` (not just `(index - 1) % slideCount`) is what makes prev() wrap correctly — JavaScript's % can return a negative result for negative operands, which a bare subtraction would trigger at index 0.",
+    ],
+    orderIndex: 1339,
+  },
+  {
+    slug: "command-palette-fuzzy-match",
+    companies: ["Linear", "Notion", "Vercel"],
+    category: "system-design",
+    title: "Command Palette (Fuzzy Search + Ranking)",
+    description: `**RADIO framing:** the keyboard-navigation overlay is UI wiring; the real algorithmic core — and the part that makes a command palette feel "smart" — is fuzzy matching: a query's characters just need to appear *in order* somewhere in the target, and matches with consecutive characters should rank higher than scattered ones.
+
+## Your task
+
+Write \`fuzzySearch(query, items)\`, returning \`items\` filtered to only those containing every character of \`query\` in order, sorted with the best matches (more consecutive-character runs) first.`,
+    difficulty: "medium",
+    starterCode: `function fuzzySearch(query, items) {
+}`,
+    solutionCode: `function fuzzyScore(query, target) {
+  const q = query.toLowerCase();
+  const t = target.toLowerCase();
+  let qi = 0;
+  let score = 0;
+  let lastMatchIndex = -1;
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) {
+      score += lastMatchIndex === ti - 1 ? 2 : 1;
+      lastMatchIndex = ti;
+      qi++;
+    }
+  }
+  return qi === q.length ? score : -1;
+}
+
+function fuzzySearch(query, items) {
+  return items
+    .map((item) => ({ item, score: fuzzyScore(query, item) }))
+    .filter((r) => r.score >= 0)
+    .sort((a, b) => b.score - a.score)
+    .map((r) => r.item);
+}`,
+    testCases: [
+      { input: "fuzzySearch('gp', ['Go to Profile', 'Settings'])", expected: "['Go to Profile']", label: "Matches a subsequence in order, even non-consecutively" },
+      { input: "fuzzySearch('xyz', ['Go to Profile'])", expected: "[]", label: "Excludes items where the query's characters don't all appear in order" },
+      { input: "fuzzySearch('set', ['Settings', 'Reset Everything'])", expected: "['Settings', 'Reset Everything'], in that order", label: "Ranks a consecutive-character match higher than a scattered one" },
+    ],
+    hints: [
+      "The score bonus for consecutive matches (lastMatchIndex === ti - 1) is what separates real fuzzy ranking from a plain 'does it match at all' filter — without it, every match would tie.",
+    ],
+    orderIndex: 1340,
+  },
+
+  // ── system-design — standalone Frontend System Design Roadmap, Stage 3 ─────
+  {
+    slug: "typeahead-debounced-search",
+    companies: ["Google", "Meta", "Airbnb", "Uber"],
+    category: "system-design",
+    title: "Typeahead Widget (the #1 Frontend System Design Question)",
+    description: `**RADIO framing:** the single most commonly asked frontend system design question industry-wide. The UI is a text box and a dropdown — the actual design problem is entirely about state during network requests: debouncing keystrokes so you're not firing a request per character, and handling **race conditions**, where a slow early request resolves *after* a faster later one and must not be allowed to overwrite its results.
+
+## Your task
+
+Write \`createTypeahead(fetcher, debounceMs)\`, returning \`{ search(query, onResults) }\`. Rapid \`search\` calls within \`debounceMs\` of each other should coalesce into a single \`fetcher\` call; if an earlier request's response arrives after a later request has already started, it must be discarded, not passed to \`onResults\`.`,
+    difficulty: "hard",
+    starterCode: `function createTypeahead(fetcher, debounceMs) {
+}`,
+    solutionCode: `function createTypeahead(fetcher, debounceMs) {
+  let timer = null;
+  let requestId = 0;
+  function search(query, onResults) {
+    if (timer) clearTimeout(timer);
+    const thisRequestId = ++requestId;
+    timer = setTimeout(async () => {
+      const results = await fetcher(query);
+      if (thisRequestId === requestId) {
+        onResults(results);
+      }
+    }, debounceMs);
+  }
+  return { search };
+}`,
+    testCases: [
+      { input: "search() called 3 times rapidly, all within debounceMs", expected: "fetcher is only called once, with the last query", label: "Coalesces rapid calls into a single debounced fetch" },
+      { input: "a slow request for 'ab' followed by a fast request for 'abc', where 'ab' resolves after 'abc'", expected: "onResults only fires with 'abc's results — 'ab's stale response is discarded", label: "Discards a stale response that resolves out of order" },
+    ],
+    hints: [
+      "A monotonically increasing request counter, captured at the moment each debounced call actually fires, is the whole race-condition fix — compare it against the *current* counter when the response comes back, not when the request was sent.",
+    ],
+    orderIndex: 1341,
+  },
+  {
+    slug: "infinite-scroll-pagination-trigger",
+    companies: ["Meta", "Pinterest", "Twitter", "TikTok"],
+    category: "system-design",
+    title: "Infinite Scroller (Pagination Trigger Logic)",
+    description: `**RADIO framing:** the scroll-position math is what \`IntersectionObserver\` handles for you — the actual design problem is the state machine wrapped around it: never trigger a second fetch while one's already in flight, and stop trying entirely once the server says there's no more data. To keep this testable without a real layout engine, the observer is injected — exactly how you'd mock it in a real test suite.
+
+## Your task
+
+Write \`createInfiniteScroll(loadPage, createObserver)\`, returning \`{ isLoading(), isDone(), getPage() }\`. \`createObserver(onIntersect)\` is called once and is expected to invoke \`onIntersect(isIntersecting)\` whenever the sentinel's visibility changes; \`loadPage(pageNumber)\` resolves to a boolean — whether there's more data after this page.`,
+    difficulty: "medium",
+    starterCode: `function createInfiniteScroll(loadPage, createObserver) {
+}`,
+    solutionCode: `function createInfiniteScroll(loadPage, createObserver) {
+  let page = 0;
+  let loading = false;
+  let done = false;
+  createObserver(async (isIntersecting) => {
+    if (!isIntersecting || loading || done) return;
+    loading = true;
+    const hasMore = await loadPage(page);
+    page++;
+    loading = false;
+    if (!hasMore) done = true;
+  });
+  return { isLoading: () => loading, isDone: () => done, getPage: () => page };
+}`,
+    testCases: [
+      { input: "the sentinel becomes intersecting", expected: "loadPage(0) is called", label: "Triggers a page load when the sentinel becomes visible" },
+      { input: "the sentinel intersects again while a page is still loading", expected: "loadPage is not called a second time until the first resolves", label: "Never triggers a second fetch while one is already in flight" },
+      { input: "loadPage resolves false (no more data)", expected: "isDone() becomes true, and further intersections don't trigger more loads", label: "Stops trying once the server reports no more pages" },
+    ],
+    hints: [
+      "The loading flag has to be set BEFORE awaiting loadPage, not after — otherwise a second intersection callback firing while the first await is still pending would slip through the guard.",
+    ],
+    orderIndex: 1342,
+  },
+  {
+    slug: "api-progress-bar-aggregation",
+    companies: ["Amazon", "Dropbox", "Google"],
+    category: "system-design",
+    title: "API Progress Bar (Aggregating Multiple In-Flight Requests)",
+    description: `**RADIO framing:** a single upload's progress bar is trivial; the real design question is a *global* progress indicator tracking several concurrent uploads at once, where the overall percentage has to correctly reflect a mix of nearly-done and just-started requests — not just average the percentages naively.
+
+## Your task
+
+Write \`createProgressTracker()\`, returning \`{ start(id, totalBytes), update(id, loadedBytes), finish(id), getOverallPercent() }\`. The overall percentage should be *bytes loaded across all active requests* divided by *total bytes across all active requests* — not a simple average of each request's own percentage.`,
+    difficulty: "medium",
+    starterCode: `function createProgressTracker() {
+}`,
+    solutionCode: `function createProgressTracker() {
+  const requests = new Map();
+  function start(id, totalBytes) {
+    requests.set(id, { loaded: 0, total: totalBytes });
+  }
+  function update(id, loaded) {
+    const r = requests.get(id);
+    if (r) r.loaded = loaded;
+  }
+  function finish(id) {
+    requests.delete(id);
+  }
+  function getOverallPercent() {
+    if (requests.size === 0) return 100;
+    let loaded = 0;
+    let total = 0;
+    requests.forEach((r) => {
+      loaded += r.loaded;
+      total += r.total;
+    });
+    return total === 0 ? 0 : Math.round((loaded / total) * 100);
+  }
+  return { start, update, finish, getOverallPercent };
+}`,
+    testCases: [
+      { input: "one request, 50 of 100 bytes loaded", expected: "getOverallPercent() is 50", label: "Computes the correct percentage for a single request" },
+      { input: "two requests: 100 of 100 bytes, and 0 of 100 bytes", expected: "getOverallPercent() is 50 — weighted by total bytes, not averaged by request", label: "Aggregates by total bytes across requests, not a naive per-request average" },
+      { input: "finish() called on a completed request, leaving no active requests", expected: "getOverallPercent() returns 100", label: "An empty tracker (nothing in flight) reports 100%, not 0% or NaN" },
+    ],
+    hints: [
+      "Summing loaded and total bytes separately across every active request — then dividing those two sums — is what correctly weights a huge file's progress more heavily than a tiny one, instead of treating every request as equally important.",
+    ],
+    orderIndex: 1343,
+  },
+  {
+    slug: "chunked-file-upload-retry",
+    companies: ["Dropbox", "Google", "Amazon"],
+    category: "system-design",
+    title: "Chunked File Upload (Progress + Retry)",
+    description: `**RADIO framing:** uploading a large file as one request is fragile — a single dropped connection loses everything. The real design splits it into chunks uploaded sequentially, retrying a failed chunk in place (not restarting the whole file) up to a limit before giving up entirely.
+
+## Your task
+
+Write \`createChunkedUploader(uploadChunk, maxRetries)\`, returning \`{ uploadFile(chunks) }\`. Each chunk should retry up to \`maxRetries\` times on failure before the whole upload rejects; a chunk that eventually succeeds (within the retry budget) should let the upload continue normally to the next chunk.`,
+    difficulty: "medium",
+    starterCode: `function createChunkedUploader(uploadChunk, maxRetries) {
+}`,
+    solutionCode: `function createChunkedUploader(uploadChunk, maxRetries) {
+  async function uploadFile(chunks) {
+    for (let i = 0; i < chunks.length; i++) {
+      let attempts = 0;
+      let success = false;
+      while (attempts <= maxRetries && !success) {
+        try {
+          await uploadChunk(chunks[i], i);
+          success = true;
+        } catch (e) {
+          attempts++;
+          if (attempts > maxRetries) throw new Error("Upload failed after retries");
+        }
+      }
+    }
+    return true;
+  }
+  return { uploadFile };
+}`,
+    testCases: [
+      { input: "a chunk that fails twice, then succeeds on its 3rd attempt (within maxRetries: 3)", expected: "the upload completes successfully overall", label: "Recovers from transient failures within the retry budget" },
+      { input: "a chunk that always fails, with maxRetries: 2", expected: "uploadFile rejects after exhausting the retry budget", label: "Gives up after exceeding the retry limit, rather than retrying forever" },
+      { input: "3 chunks, all succeeding on the first try", expected: "uploadChunk is called with each chunk in order (0, 1, 2)", label: "Uploads chunks sequentially in the correct order" },
+    ],
+    hints: [
+      "A failed chunk retries in place — the loop over chunks never advances to chunk i+1 until chunk i has either succeeded or exhausted its retries and thrown.",
+    ],
+    orderIndex: 1344,
+  },
+
+  // ── system-design — standalone Frontend System Design Roadmap, Stage 4 ─────
+  {
+    slug: "analytics-event-batcher",
+    companies: ["Google", "Amazon", "Shopify"],
+    category: "system-design",
+    title: "Analytics Script (Event Batching)",
+    description: `**RADIO framing:** sending one network request per tracked event would drown a page in requests. A real analytics script batches events and flushes on whichever comes first: the batch hits a size limit, or a timer elapses — the same dual-trigger pattern behind \`navigator.sendBeacon\`-based analytics libraries.
+
+## Your task
+
+Write \`createEventBatcher(flushFn, { maxBatchSize, flushIntervalMs })\`, returning \`{ track(event), flush(), stop() }\`. Flush automatically once the batch reaches \`maxBatchSize\`, or every \`flushIntervalMs\` regardless of size; \`stop()\` should flush whatever's left before stopping.`,
+    difficulty: "medium",
+    starterCode: `function createEventBatcher(flushFn, { maxBatchSize, flushIntervalMs }) {
+}`,
+    solutionCode: `function createEventBatcher(flushFn, { maxBatchSize, flushIntervalMs }) {
+  let batch = [];
+  const timer = setInterval(flush, flushIntervalMs);
+  function track(event) {
+    batch.push(event);
+    if (batch.length >= maxBatchSize) flush();
+  }
+  function flush() {
+    if (batch.length === 0) return;
+    flushFn(batch);
+    batch = [];
+  }
+  function stop() {
+    clearInterval(timer);
+    flush();
+  }
+  return { track, flush, stop };
+}`,
+    testCases: [
+      { input: "maxBatchSize: 3, track() called 3 times", expected: "flushFn is called once, with all 3 events", label: "Flushes automatically once the batch reaches maxBatchSize" },
+      { input: "maxBatchSize: 10, track() called twice, then waited past flushIntervalMs", expected: "flushFn is called with those 2 events, even though the batch never filled", label: "Flushes on the interval even when the batch isn't full" },
+      { input: "track() called once, then stop() called immediately", expected: "flushFn is called with that 1 event before stopping", label: "stop() flushes whatever's left instead of dropping it" },
+    ],
+    hints: [
+      "flush() should be a genuine no-op (not call flushFn at all) when the batch is empty — otherwise the interval timer would fire flushFn with an empty array on every tick, even when nothing happened.",
+    ],
+    orderIndex: 1345,
+  },
+  {
+    slug: "qrcode-login-polling",
+    companies: ["Google", "Meta"],
+    category: "system-design",
+    title: "QR-Code Login System (Polling State Machine)",
+    description: `**RADIO framing:** scanning a QR code on a phone to log in a desktop session needs the desktop tab to somehow find out it happened — polling a status endpoint is the simplest reliable mechanism. The state machine has exactly three end states, and getting the timeout right matters: an abandoned login flow shouldn't poll forever.
+
+## Your task
+
+Write \`createQrLoginPoller(checkStatus, { intervalMs, timeoutMs })\`, returning \`{ getStatus(), stop() }\`. Status starts \`"pending"\`, becomes \`"approved"\` the moment \`checkStatus()\` resolves \`"approved"\`, and becomes \`"expired"\` if that never happens before \`timeoutMs\` elapses — stopping the polling either way once resolved.`,
+    difficulty: "medium",
+    starterCode: `function createQrLoginPoller(checkStatus, { intervalMs, timeoutMs }) {
+}`,
+    solutionCode: `function createQrLoginPoller(checkStatus, { intervalMs, timeoutMs }) {
+  let status = "pending";
+  let elapsed = 0;
+  const timer = setInterval(async () => {
+    elapsed += intervalMs;
+    if (elapsed >= timeoutMs) {
+      status = "expired";
+      clearInterval(timer);
+      return;
+    }
+    const result = await checkStatus();
+    if (result === "approved") {
+      status = "approved";
+      clearInterval(timer);
+    }
+  }, intervalMs);
+  return { getStatus: () => status, stop: () => clearInterval(timer) };
+}`,
+    testCases: [
+      { input: "checkStatus() resolves 'approved' on its first poll", expected: "getStatus() becomes 'approved' and polling stops", label: "Transitions to approved as soon as the status check confirms it" },
+      { input: "checkStatus() always resolves 'pending', with a short timeoutMs", expected: "getStatus() becomes 'expired' once the timeout elapses", label: "Expires after the timeout without ever being approved" },
+      { input: "polling has already resolved to 'approved'", expected: "no further checkStatus() calls happen afterward", label: "Actually stops polling once resolved, not just changing the reported status" },
+    ],
+    hints: [
+      "Check the elapsed-time-vs-timeout condition BEFORE calling checkStatus() on each tick — that's what guarantees the poller can't sneak in one more check attempt past its own deadline.",
+    ],
+    orderIndex: 1346,
+  },
+  {
+    slug: "realtime-notification-transport",
+    companies: ["Meta", "Slack", "LinkedIn"],
+    category: "system-design",
+    title: "Real-Time Notification System (Transport Fallback)",
+    description: `**RADIO framing:** a websocket connection isn't always reliable (corporate proxies, flaky networks) — a resilient real-time system falls back to polling when the primary transport fails, rather than just losing updates silently. This is the actual "websocket vs. polling vs. SSE trade-offs" system design question distilled into its core failure-handling logic.
+
+## Your task
+
+Write \`createResilientNotifier(connectWebSocket, pollFallback, onMessage)\`, returning \`{ isUsingFallback(), stop() }\`. \`connectWebSocket({ onMessage, onError })\` attempts the primary transport; on \`onError\`, switch to polling \`pollFallback()\` on an interval, delivering each message it returns to \`onMessage\`.`,
+    difficulty: "medium",
+    starterCode: `function createResilientNotifier(connectWebSocket, pollFallback, onMessage) {
+}`,
+    solutionCode: `function createResilientNotifier(connectWebSocket, pollFallback, onMessage) {
+  let usingFallback = false;
+  let pollTimer = null;
+  connectWebSocket({
+    onMessage,
+    onError: () => {
+      if (!usingFallback) {
+        usingFallback = true;
+        pollTimer = setInterval(async () => {
+          const messages = await pollFallback();
+          messages.forEach(onMessage);
+        }, 20);
+      }
+    },
+  });
+  return {
+    isUsingFallback: () => usingFallback,
+    stop() {
+      if (pollTimer) clearInterval(pollTimer);
+    },
+  };
+}`,
+    testCases: [
+      { input: "the websocket connects with no error", expected: "isUsingFallback() stays false", label: "Stays on the primary transport when nothing goes wrong" },
+      { input: "the websocket's onError fires", expected: "isUsingFallback() becomes true", label: "Switches to the polling fallback on a transport error" },
+      { input: "after falling back, pollFallback() resolves with a new message", expected: "onMessage is called with it", label: "The fallback path actually delivers messages, not just flags that it's active" },
+    ],
+    hints: [
+      "The usingFallback guard inside onError matters — a flaky connection could fire onError more than once, and you don't want to stack up multiple competing poll intervals.",
+    ],
+    orderIndex: 1347,
+  },
+
+  // ── system-design — standalone Frontend System Design Roadmap, Stage 5 ─────
+  {
+    slug: "undo-redo-command-stack",
+    companies: ["Notion", "Atlassian"],
+    category: "system-design",
+    title: "WYSIWYG Editor: Undo/Redo Command Stack",
+    description: `**RADIO framing:** \`contentEditable\` and the Selection/Range APIs are the messy, browser-specific part of building a rich-text editor — but the undo/redo stack underneath them is a clean, well-defined, and very commonly probed piece of the design on its own: a history of states, a cursor into that history, and one crucial rule — making a *new* edit after undoing has to discard the "future" you undid away from.
+
+## Your task
+
+Write \`createUndoRedoStack(initialState)\`, returning \`{ commit(newState), undo(), redo(), getState() }\`. \`commit\` after one or more \`undo\` calls must discard the now-abandoned redo branch, not just append past it.`,
+    difficulty: "medium",
+    starterCode: `function createUndoRedoStack(initialState) {
+}`,
+    solutionCode: `function createUndoRedoStack(initialState) {
+  let history = [initialState];
+  let index = 0;
+  function commit(newState) {
+    history = history.slice(0, index + 1);
+    history.push(newState);
+    index++;
+  }
+  function undo() {
+    if (index > 0) index--;
+    return history[index];
+  }
+  function redo() {
+    if (index < history.length - 1) index++;
+    return history[index];
+  }
+  function getState() {
+    return history[index];
+  }
+  return { commit, undo, redo, getState };
+}`,
+    testCases: [
+      { input: "commit('a'), commit('b'), then undo()", expected: "getState() reverts to the state before 'b'", label: "undo() reverts to the previous committed state" },
+      { input: "the same sequence, then redo()", expected: "getState() returns to 'b'", label: "redo() re-applies the state that was just undone" },
+      { input: "commit('a'), commit('b'), undo(), then commit('c')", expected: "redo() no longer returns 'b' — the abandoned branch is gone", label: "A new commit after undoing discards the redo branch entirely" },
+    ],
+    hints: [
+      "commit() truncating history to index + 1 BEFORE pushing the new state is the entire fix for the abandoned-branch rule — it silently deletes everything past the current point in history.",
+    ],
+    orderIndex: 1348,
+  },
+  {
+    slug: "kanban-board-reorder",
+    companies: ["Atlassian", "Asana", "Linear"],
+    category: "system-design",
+    title: "Kanban Board (Drag-and-Drop Reordering)",
+    description: `**RADIO framing:** the drag gesture itself is UI plumbing — the data model question is representing a card move (within a column, or across two different columns) as a single, clean operation on the board's data, independent of how the drag was performed.
+
+## Your task
+
+Write \`moveCard(board, { fromColumn, fromIndex, toColumn, toIndex })\`, where \`board\` is \`{ columnName: [cards...] }\`. Return a new board with the card moved to its new position — this must work whether \`fromColumn\` and \`toColumn\` are the same or different.`,
+    difficulty: "medium",
+    starterCode: `function moveCard(board, { fromColumn, fromIndex, toColumn, toIndex }) {
+}`,
+    solutionCode: `function moveCard(board, { fromColumn, fromIndex, toColumn, toIndex }) {
+  const newBoard = Object.fromEntries(Object.entries(board).map(([k, v]) => [k, [...v]]));
+  const [card] = newBoard[fromColumn].splice(fromIndex, 1);
+  newBoard[toColumn].splice(toIndex, 0, card);
+  return newBoard;
+}`,
+    testCases: [
+      { input: "moving a card from index 0 to index 2 within the same column", expected: "the card ends up at index 2, other cards shift to fill the gap", label: "Reorders correctly within a single column" },
+      { input: "moving a card from 'todo' to 'done'", expected: "the card is removed from 'todo' and inserted into 'done'", label: "Moves a card across two different columns" },
+      { input: "moving a card with content { id: 5, text: 'Fix bug' }", expected: "the same card object (with its full content) appears at the destination", label: "Preserves the card's full content through the move, not just its position" },
+    ],
+    hints: [
+      "splice's remove-then-insert pattern (one splice(fromIndex, 1) to pull the card out, one splice(toIndex, 0, card) to put it back in) works identically whether fromColumn and toColumn are the same array or two different ones.",
+    ],
+    orderIndex: 1349,
+  },
+
+  // ── system-design — standalone Frontend System Design Roadmap, Stage 6 ─────
+  {
+    slug: "todo-app-filter-visibility",
+    companies: [],
+    category: "system-design",
+    title: "The Perfect TODO App (CRUD + Filtering)",
+    description: `**RADIO framing:** the classic first "full app" question. The CRUD operations themselves are simple; the part worth actually designing carefully is keeping the *visible* list correctly derived from both the todos and the active filter — a common bug is filtering logic that gets out of sync with the underlying data after an edit.
+
+## Your task
+
+Write \`getVisibleTodos(state)\`, where \`state\` is \`{ todos: [{ id, text, done }], filter: "all" | "active" | "completed" }\`. Return exactly the todos that should be visible under the current filter.`,
+    difficulty: "easy",
+    starterCode: `function getVisibleTodos(state) {
+}`,
+    solutionCode: `function getVisibleTodos(state) {
+  if (state.filter === "active") return state.todos.filter((t) => !t.done);
+  if (state.filter === "completed") return state.todos.filter((t) => t.done);
+  return state.todos;
+}`,
+    testCases: [
+      { input: "filter: 'all', a mix of done and not-done todos", expected: "every todo is visible", label: "The 'all' filter shows everything" },
+      { input: "filter: 'active', a mix of done and not-done todos", expected: "only the not-done todos are visible", label: "The 'active' filter shows only incomplete todos" },
+      { input: "filter: 'completed', a mix of done and not-done todos", expected: "only the done todos are visible", label: "The 'completed' filter shows only finished todos" },
+    ],
+    hints: [
+      "This should always be a pure derivation from state.todos + state.filter, recomputed fresh — never a separately-maintained 'visible todos' list that could drift out of sync after an edit.",
+    ],
+    orderIndex: 1350,
+  },
+  {
+    slug: "course-platform-progress-tracking",
+    companies: [],
+    category: "system-design",
+    title: "Design FrontendForever.dev (Course Progress Tracking)",
+    description: `**RADIO framing:** designing a content/course platform (catalog, auth, progress tracking) is a genuinely meta question on this platform, since it's tracking your progress through *this exact roadmap* the same way. The data-model question worth isolating: rolling up completion across many small pieces (each concept's several tabs) into one overall percentage.
+
+## Your task
+
+Write \`calculateCourseProgress(concepts)\`, where \`concepts\` is an array of \`{ id, tabs: { [tabName]: boolean } }\`. Return the percentage of tabs marked \`true\` across every concept, rounded to the nearest whole number.`,
+    difficulty: "easy",
+    starterCode: `function calculateCourseProgress(concepts) {
+}`,
+    solutionCode: `function calculateCourseProgress(concepts) {
+  let totalTabs = 0;
+  let completedTabs = 0;
+  concepts.forEach((c) => {
+    Object.values(c.tabs).forEach((done) => {
+      totalTabs++;
+      if (done) completedTabs++;
+    });
+  });
+  return totalTabs === 0 ? 0 : Math.round((completedTabs / totalTabs) * 100);
+}`,
+    testCases: [
+      { input: "one concept with 4 tabs, 2 completed", expected: "50", label: "Computes the correct percentage for a single concept" },
+      { input: "an empty concepts array", expected: "0", label: "Returns 0 (not NaN) when there's nothing to track" },
+      { input: "two concepts, several tabs each, all completed", expected: "100", label: "Reaches exactly 100 once every tab across every concept is done" },
+    ],
+    hints: [
+      "Count every tab across every concept into one shared total, rather than averaging each concept's own percentage — that keeps a concept with more tabs correctly weighted more heavily.",
+    ],
+    orderIndex: 1351,
+  },
+  {
+    slug: "multistep-form-wizard-navigation",
+    companies: ["Stripe", "Amazon", "Airbnb"],
+    category: "system-design",
+    title: "Multi-Step Form Wizard (Validation + Branching)",
+    description: `**RADIO framing:** a real checkout or onboarding wizard isn't a straight line — a step's answer can determine which step comes next (branching), and a step shouldn't be navigable away from until its own data is valid.
+
+## Your task
+
+Write \`createWizard(steps)\`, where each step is \`{ id, validate(data), next(data) }\` (\`next\` returns the next step's \`id\`, or falls through to the following step in the array if omitted). Return \`{ getCurrentStep(), goNext(stepData), goBack(), getData() }\`. \`goNext\` should reject (return \`false\`, stay on the current step) if \`validate\` fails on the merged data.`,
+    difficulty: "medium",
+    starterCode: `function createWizard(steps) {
+}`,
+    solutionCode: `function createWizard(steps) {
+  let currentIndex = 0;
+  let data = {};
+  function getCurrentStep() {
+    return steps[currentIndex];
+  }
+  function goNext(stepData) {
+    const step = getCurrentStep();
+    const merged = { ...data, ...stepData };
+    if (!step.validate(merged)) return false;
+    data = merged;
+    const nextId = step.next ? step.next(data) : steps[currentIndex + 1]?.id;
+    const nextIndex = steps.findIndex((s) => s.id === nextId);
+    if (nextIndex === -1) return false;
+    currentIndex = nextIndex;
+    return true;
+  }
+  function goBack() {
+    if (currentIndex > 0) currentIndex--;
+  }
+  return { getCurrentStep, goNext, goBack, getData: () => data };
+}`,
+    testCases: [
+      { input: "a step whose validate() passes for the given data", expected: "goNext() advances to the next step", label: "Advances to the next step when validation passes" },
+      { input: "a step whose validate() fails for the given data", expected: "goNext() returns false, the wizard stays on the current step", label: "Blocks advancement when validation fails" },
+      { input: "a step with a next() that branches to a specific step id based on the data", expected: "the wizard jumps to that step, not just the next one in array order", label: "Supports branching to a specific step, not just linear progression" },
+    ],
+    hints: [
+      "Merge the new step's data into the accumulated data BEFORE calling validate — a step's own validation often depends on data collected in earlier steps too, not just what was just submitted.",
+    ],
+    orderIndex: 1352,
+  },
+
+  // ── system-design — standalone Frontend System Design Roadmap, Stage 7 ─────
+  {
+    slug: "messenger-optimistic-send",
+    companies: ["Meta", "Slack", "Discord"],
+    category: "system-design",
+    title: "Messenger Web App (Optimistic Message Delivery)",
+    description: `**RADIO framing:** a messenger that waits for the server to confirm before showing your own message feels sluggish — real chat apps show it immediately (optimistically) with a "sending" indicator, then reconcile with the server's real message ID once it's confirmed. A failed send has to stay visible (not vanish) so the user can retry it.
+
+## Your task
+
+Write \`createMessageSender(sendToServer)\`, returning \`{ sendMessage(text), getMessages() }\`. \`sendMessage\` should immediately add the message with a temporary id and \`"sending"\` status; on success, swap in the server's real id and \`"sent"\` status; on failure, keep the message visible with \`"failed"\` status.`,
+    difficulty: "medium",
+    starterCode: `function createMessageSender(sendToServer) {
+}`,
+    solutionCode: `function createMessageSender(sendToServer) {
+  let messages = [];
+  let nextTempId = 1;
+  async function sendMessage(text) {
+    const tempId = "temp-" + nextTempId++;
+    messages.push({ id: tempId, text, status: "sending" });
+    try {
+      const real = await sendToServer(text);
+      messages = messages.map((m) => (m.id === tempId ? { id: real.id, text, status: "sent" } : m));
+    } catch {
+      messages = messages.map((m) => (m.id === tempId ? { ...m, status: "failed" } : m));
+    }
+  }
+  return { sendMessage, getMessages: () => messages };
+}`,
+    testCases: [
+      { input: "sendMessage('hi'), checked synchronously before the server responds", expected: "the message is already visible with status 'sending'", label: "Shows the message immediately, before the server confirms it" },
+      { input: "a send that resolves successfully with { id: 'real-42' }", expected: "the message's id becomes 'real-42' and status becomes 'sent'", label: "Reconciles the temp id with the server's real id on success" },
+      { input: "a send that rejects", expected: "the message stays in the list with status 'failed', not removed", label: "A failed send stays visible for retry, instead of disappearing" },
+    ],
+    hints: [
+      "The message is pushed into the list synchronously, before the `await sendToServer(text)` line — that's what makes it 'optimistic' rather than waiting for confirmation.",
+    ],
+    orderIndex: 1353,
+  },
+  {
+    slug: "video-conference-grid-layout",
+    companies: ["Zoom", "Meta", "Google"],
+    category: "system-design",
+    title: "Video Conferencing UI (Gallery Grid Layout)",
+    description: `**RADIO framing:** WebRTC signaling is the hard networking half of this question; the layout half is a genuinely clean algorithm on its own — given N participants, compute a grid of rows/columns that's as close to square as possible, so the gallery view never looks lopsided.
+
+## Your task
+
+Write \`getGridLayout(participantCount)\`, returning \`{ rows, cols }\` — a grid with enough cells for every participant, with the column count no more than the row count would require (favor a wider-than-tall grid, which is how most gallery views actually lay out).`,
+    difficulty: "easy",
+    starterCode: `function getGridLayout(participantCount) {
+}`,
+    solutionCode: `function getGridLayout(participantCount) {
+  if (participantCount === 0) return { rows: 0, cols: 0 };
+  const cols = Math.ceil(Math.sqrt(participantCount));
+  const rows = Math.ceil(participantCount / cols);
+  return { rows, cols };
+}`,
+    testCases: [
+      { input: "getGridLayout(1)", expected: "{ rows: 1, cols: 1 }", label: "A single participant gets a 1x1 grid" },
+      { input: "getGridLayout(4)", expected: "{ rows: 2, cols: 2 }", label: "A perfect square count gets an exactly-square grid" },
+      { input: "getGridLayout(5)", expected: "{ rows: 2, cols: 3 }", label: "A non-square count still fits everyone, favoring extra columns over extra rows" },
+    ],
+    hints: [
+      "Compute cols first as the ceiling of the square root, then derive rows from however many of those columns are actually needed — that order is what keeps the grid wider than it is tall.",
+    ],
+    orderIndex: 1354,
+  },
+  {
+    slug: "collab-editor-ot-transform",
+    companies: ["Google", "Notion", "Figma"],
+    category: "system-design",
+    title: "Collaborative Document Editor (Operational Transform Core)",
+    description: `**RADIO framing:** consistently rated among the hardest frontend system design questions — real-time multi-user editing needs every client to converge on the same document even when edits happen concurrently. The foundational building block (behind both OT and, differently, CRDTs) is transforming one operation's position against a concurrent one that already landed first.
+
+## Your task
+
+Write \`transformPosition(opPosition, concurrentOp)\`, where \`concurrentOp\` is \`{ type: "insert", position, text }\` or \`{ type: "delete", position, length }\`. Return the adjusted position \`opPosition\` should now point to, accounting for the concurrent edit.`,
+    difficulty: "hard",
+    starterCode: `function transformPosition(opPosition, concurrentOp) {
+}`,
+    solutionCode: `function transformPosition(opPosition, concurrentOp) {
+  if (concurrentOp.type === "insert" && concurrentOp.position <= opPosition) {
+    return opPosition + concurrentOp.text.length;
+  }
+  if (concurrentOp.type === "delete" && concurrentOp.position < opPosition) {
+    return Math.max(concurrentOp.position, opPosition - concurrentOp.length);
+  }
+  return opPosition;
+}`,
+    testCases: [
+      { input: "opPosition 10, a concurrent insert of 5 characters at position 3", expected: "15 — shifted forward by the inserted length", label: "An insert before the position shifts it forward" },
+      { input: "opPosition 10, a concurrent delete of 3 characters starting at position 2", expected: "7 — shifted back by the deleted length", label: "A delete before the position shifts it backward" },
+      { input: "opPosition 5, a concurrent insert at position 8 (after opPosition)", expected: "5 — unchanged", label: "An edit that happens after the position doesn't affect it at all" },
+    ],
+    hints: [
+      "The delete case needs a floor (Math.max with the delete's own position) — if the concurrent delete removed the exact text your position pointed into, it can't land somewhere before where that deletion started.",
+    ],
+    orderIndex: 1355,
+  },
+
+  // ── system-design — standalone Frontend System Design Roadmap, Stage 8 ─────
+  {
+    slug: "twitter-optimistic-like-toggle",
+    companies: ["Twitter", "Meta"],
+    category: "system-design",
+    title: "Twitter Web App (Optimistic Like Toggle)",
+    description: `**RADIO framing:** the news-feed archetype question — infinite scroll, real-time updates, and feed architecture are all covered in earlier stages. The piece worth isolating here is the interaction every user does most often: liking a post has to feel instant, which means updating the UI *before* the server confirms, then rolling back cleanly if the request actually fails.
+
+## Your task
+
+Write \`createLikeToggler(sendToServer)\`, returning \`{ toggleLike(), getLiked(), getCount() }\`. \`toggleLike\` should update \`liked\`/\`count\` immediately, then revert both to their exact prior values if \`sendToServer\` rejects.`,
+    difficulty: "medium",
+    starterCode: `function createLikeToggler(sendToServer) {
+}`,
+    solutionCode: `function createLikeToggler(sendToServer) {
+  let liked = false;
+  let count = 0;
+  async function toggleLike() {
+    const prevLiked = liked;
+    const prevCount = count;
+    liked = !liked;
+    count += liked ? 1 : -1;
+    try {
+      await sendToServer(liked);
+    } catch {
+      liked = prevLiked;
+      count = prevCount;
+    }
+  }
+  return { toggleLike, getLiked: () => liked, getCount: () => count };
+}`,
+    testCases: [
+      { input: "toggleLike(), checked synchronously before the server responds", expected: "getLiked() is already true, getCount() already incremented", label: "Updates the UI optimistically, before the server confirms" },
+      { input: "a toggleLike() whose sendToServer call rejects", expected: "getLiked() and getCount() both revert to their pre-toggle values", label: "Rolls back cleanly to the exact prior state on failure" },
+      { input: "a toggleLike() whose sendToServer call succeeds", expected: "the optimistic state is kept as-is", label: "Leaves the optimistic update in place once the server confirms it" },
+    ],
+    hints: [
+      "Capture prevLiked and prevCount before making any change — rolling back has to restore the exact values from before the toggle, not just re-invert the current ones (which would double-flip if toggleLike were called again before the first one resolved).",
+    ],
+    orderIndex: 1356,
+  },
+  {
+    slug: "facebook-notification-grouping",
+    companies: ["Meta"],
+    category: "system-design",
+    title: "facebook.com (Notification Grouping)",
+    description: `**RADIO framing:** a real notification feed doesn't show "Alice liked your post," "Bob liked your post," and "Carol liked your post" as three separate rows — it groups them into "Alice, Bob, and 1 other liked your post." The data-model question is grouping by what the notification is *about*, not by who triggered it.
+
+## Your task
+
+Write \`groupNotifications(notifications)\`, where each is \`{ type, targetId, actor }\`. Group notifications sharing the same \`type\` and \`targetId\` into a single entry with an \`actors\` array, in the order they were first grouped.`,
+    difficulty: "medium",
+    starterCode: `function groupNotifications(notifications) {
+}`,
+    solutionCode: `function groupNotifications(notifications) {
+  const groups = new Map();
+  notifications.forEach((n) => {
+    const key = n.type + ":" + n.targetId;
+    if (!groups.has(key)) groups.set(key, { type: n.type, targetId: n.targetId, actors: [] });
+    groups.get(key).actors.push(n.actor);
+  });
+  return Array.from(groups.values());
+}`,
+    testCases: [
+      { input: "3 'like' notifications on the same post, from 3 different actors", expected: "one group with all 3 actors, not 3 separate entries", label: "Groups notifications sharing the same type and target" },
+      { input: "a 'like' and a 'comment' notification on the same post", expected: "two separate groups — different types don't merge", label: "Keeps different notification types on the same target separate" },
+      { input: "'like' notifications on two different posts", expected: "two separate groups — different targets don't merge", label: "Keeps notifications on different targets separate, even with the same type" },
+    ],
+    hints: [
+      "A composite key (type + targetId together, not either alone) is what correctly distinguishes 'likes on post A' from 'comments on post A' and from 'likes on post B'.",
+    ],
+    orderIndex: 1357,
+  },
+  {
+    slug: "instagram-stories-seen-tracker",
+    companies: ["Meta", "Pinterest"],
+    category: "system-design",
+    title: "Instagram (Stories Seen/Unseen Tracker)",
+    description: `**RADIO framing:** the colored ring around a story avatar (unseen) versus gray (all seen) is driven by per-user, per-story view tracking — and it has to be tracked independently for every viewer, since what you've seen has no bearing on what anyone else has seen.
+
+## Your task
+
+Write \`createStoriesTracker()\`, returning \`{ markSeen(userId, storyId), hasUnseenStories(userId, storyIds) }\`. \`hasUnseenStories\` should return \`true\` if any of the given \`storyIds\` haven't been marked seen by that specific \`userId\`.`,
+    difficulty: "easy",
+    starterCode: `function createStoriesTracker() {
+}`,
+    solutionCode: `function createStoriesTracker() {
+  const seen = new Map();
+  function markSeen(userId, storyId) {
+    if (!seen.has(userId)) seen.set(userId, new Set());
+    seen.get(userId).add(storyId);
+  }
+  function hasUnseenStories(userId, storyIds) {
+    const seenSet = seen.get(userId) || new Set();
+    return storyIds.some((id) => !seenSet.has(id));
+  }
+  return { markSeen, hasUnseenStories };
+}`,
+    testCases: [
+      { input: "a user who hasn't seen any of a person's 3 stories", expected: "hasUnseenStories() returns true", label: "Detects unseen stories for a viewer with no view history" },
+      { input: "the same user, after marking all 3 stories seen", expected: "hasUnseenStories() returns false", label: "Flips to false once every story has been marked seen" },
+      { input: "two different users, one has seen the stories and one hasn't", expected: "each user's hasUnseenStories() reflects only their own view history", label: "Tracks seen-state independently per user" },
+    ],
+    hints: [
+      "The Map is keyed by userId, and each value is its own independent Set of storyIds — two users' view histories should never be able to influence each other.",
+    ],
+    orderIndex: 1358,
+  },
+  {
+    slug: "youtube-adaptive-bitrate-selection",
+    companies: ["Google", "Netflix"],
+    category: "system-design",
+    title: "youtube.com (Adaptive Bitrate Selection)",
+    description: `**RADIO framing:** adaptive-bitrate streaming is the core technical concept behind youtube.com's player — given an estimated network speed, pick the highest quality level the connection can actually sustain, with a safety margin so playback doesn't stall the moment bandwidth dips slightly.
+
+## Your task
+
+Write \`selectBitrate(bandwidthKbps, qualityLevels)\`, where \`qualityLevels\` is \`[{ label, requiredKbps }]\` sorted ascending by \`requiredKbps\`. Return the \`label\` of the highest quality level whose \`requiredKbps\` fits within 80% of \`bandwidthKbps\` (the safety margin), falling back to the lowest level if even that doesn't fit.`,
+    difficulty: "medium",
+    starterCode: `function selectBitrate(bandwidthKbps, qualityLevels) {
+}`,
+    solutionCode: `function selectBitrate(bandwidthKbps, qualityLevels) {
+  const safeBandwidth = bandwidthKbps * 0.8;
+  let best = qualityLevels[0];
+  for (const level of qualityLevels) {
+    if (level.requiredKbps <= safeBandwidth) best = level;
+  }
+  return best.label;
+}`,
+    testCases: [
+      { input: "5000 Kbps bandwidth, levels up to 4000 Kbps ('1080p')", expected: "'1080p' — comfortably fits within the 80% safety margin", label: "Picks the highest quality that fits within the bandwidth safety margin" },
+      { input: "500 Kbps bandwidth, with a '240p' level requiring 400 Kbps as the lowest option", expected: "'240p' — the lowest available level, even though it's a tight fit", label: "Falls back to the lowest quality level when bandwidth is very constrained" },
+    ],
+    hints: [
+      "Applying the 80% safety margin to the AVAILABLE bandwidth once, up front, is simpler and less error-prone than adjusting each quality level's requirement individually.",
+    ],
+    orderIndex: 1359,
+  },
+  {
+    slug: "codesandbox-file-tree-crud",
+    companies: ["Vercel", "Replit"],
+    category: "system-design",
+    title: "CodeSandbox (Virtual File Tree CRUD)",
+    description: `**RADIO framing:** sandboxed iframes and live bundling are the exotic parts of an in-browser IDE — but every one of those systems sits on top of a very ordinary data structure: a virtual file tree that has to support creating and deleting files (including nested ones) correctly.
+
+## Your task
+
+Write \`createFileTree()\`, returning \`{ createFile(path), deleteFile(path), getTree() }\`. Paths are slash-separated (e.g. \`"src/utils/helpers.js"\`); \`createFile\` should create any intermediate folders that don't already exist... actually, assume all intermediate folders already exist and just insert the new file into its immediate parent.`,
+    difficulty: "medium",
+    starterCode: `function createFileTree() {
+}`,
+    solutionCode: `function createFileTree() {
+  const tree = { name: "root", type: "folder", children: [] };
+  function findParent(path) {
+    const parts = path.split("/").filter(Boolean);
+    let node = tree;
+    for (let i = 0; i < parts.length - 1; i++) {
+      node = node.children.find((c) => c.name === parts[i] && c.type === "folder");
+    }
+    return node;
+  }
+  function createFile(path, type = "file") {
+    const parent = findParent(path);
+    const name = path.split("/").filter(Boolean).pop();
+    parent.children.push({ name, type, children: type === "folder" ? [] : undefined });
+  }
+  function deleteFile(path) {
+    const parent = findParent(path);
+    const name = path.split("/").filter(Boolean).pop();
+    parent.children = parent.children.filter((c) => c.name !== name);
+  }
+  return { createFile, deleteFile, getTree: () => tree };
+}`,
+    testCases: [
+      { input: "createFile('index.js')", expected: "a file named 'index.js' appears as a direct child of the root", label: "Creates a top-level file" },
+      { input: "createFile('src', 'folder'), then createFile('src/app.js')", expected: "'app.js' appears inside the 'src' folder, not at the root", label: "Creates a file nested inside an existing folder" },
+      { input: "creating two files, then deleting one by path", expected: "only the named file is removed — the other one is untouched", label: "Deletes exactly the targeted file, leaving its siblings alone" },
+    ],
+    hints: [
+      "findParent walks the path one segment at a time, stopping one segment short of the target — that shared helper is what both createFile and deleteFile need, since they both have to locate the same immediate parent folder first.",
+    ],
+    orderIndex: 1360,
+  },
+  {
+    slug: "spreadsheet-formula-dependency-order",
+    companies: ["Google", "Microsoft"],
+    category: "system-design",
+    title: "Spreadsheet App (Formula Recalculation Order)",
+    description: `**RADIO framing:** if cell C depends on B, which depends on A, recalculating C before B (or B before A) after an edit produces a wrong, stale result. This is a classic topological sort over the cells' dependency graph — the same technique behind build systems and package managers, applied to formulas.
+
+## Your task
+
+Write \`getRecalculationOrder(dependencies)\`, where \`dependencies\` is \`{ cellId: [cellIds it directly depends on] }\`. Return an array of every cell ID, ordered so that a cell always appears *after* every cell it depends on.`,
+    difficulty: "hard",
+    starterCode: `function getRecalculationOrder(dependencies) {
+}`,
+    solutionCode: `function getRecalculationOrder(dependencies) {
+  const visited = new Set();
+  const order = [];
+  function visit(cellId) {
+    if (visited.has(cellId)) return;
+    visited.add(cellId);
+    (dependencies[cellId] || []).forEach(visit);
+    order.push(cellId);
+  }
+  Object.keys(dependencies).forEach(visit);
+  return order;
+}`,
+    testCases: [
+      { input: "C depends on B, B depends on A: { A: [], B: ['A'], C: ['B'] }", expected: "A appears before B, and B appears before C", label: "Orders a chain of dependencies correctly" },
+      { input: "two independent cells with no dependency between them", expected: "both appear in the result, in either relative order", label: "Handles independent cells that don't depend on each other" },
+      { input: "a cell depended on by two different cells: { A: [], B: ['A'], C: ['A'] }", expected: "A appears exactly once, before both B and C", label: "A shared dependency is only recalculated once, before all of its dependents" },
+    ],
+    hints: [
+      "This is depth-first traversal with a visited guard — visit every dependency recursively BEFORE adding the current cell to the result, and the visited Set is what stops a cell with multiple dependents from being processed (or added) more than once.",
+    ],
+    orderIndex: 1361,
+  },
+  {
+    slug: "analytics-dashboard-time-bucketing",
+    companies: ["Amazon", "Bloomberg"],
+    category: "system-design",
+    title: "Analytics Dashboard (Streaming Data Time-Bucketing)",
+    description: `**RADIO framing:** a real-time chart fed by a raw event stream would try to plot thousands of points and choke — the standard fix is downsampling: group incoming data points into fixed-size time windows and chart the aggregate (e.g. the average) of each window instead of every individual point.
+
+## Your task
+
+Write \`bucketDataPoints(points, bucketSizeMs)\`, where \`points\` is \`[{ timestamp, value }]\`. Group points into \`bucketSizeMs\`-wide time windows and return \`[{ timestamp, average }]\` — one entry per bucket, in chronological order, where \`timestamp\` is the start of that bucket's window.`,
+    difficulty: "medium",
+    starterCode: `function bucketDataPoints(points, bucketSizeMs) {
+}`,
+    solutionCode: `function bucketDataPoints(points, bucketSizeMs) {
+  const buckets = new Map();
+  points.forEach(({ timestamp, value }) => {
+    const bucketKey = Math.floor(timestamp / bucketSizeMs) * bucketSizeMs;
+    if (!buckets.has(bucketKey)) buckets.set(bucketKey, { sum: 0, count: 0 });
+    const b = buckets.get(bucketKey);
+    b.sum += value;
+    b.count++;
+  });
+  return Array.from(buckets.entries())
+    .sort((a, b) => a[0] - b[0])
+    .map(([timestamp, { sum, count }]) => ({ timestamp, average: sum / count }));
+}`,
+    testCases: [
+      { input: "3 points all within the same 1000ms bucket, values 10, 20, 30", expected: "one bucket with average 20", label: "Averages points that fall within the same time window" },
+      { input: "points spread across two distinct 1000ms buckets", expected: "two separate bucket entries, not merged into one", label: "Keeps points in different time windows in separate buckets" },
+      { input: "points from multiple buckets, inserted out of chronological order", expected: "the returned buckets are still sorted chronologically", label: "Returns buckets in chronological order regardless of input order" },
+    ],
+    hints: [
+      "Math.floor(timestamp / bucketSizeMs) * bucketSizeMs rounds any timestamp down to its bucket's start time — that's the entire bucketing key, no manual range-checking needed.",
+    ],
+    orderIndex: 1362,
   },
 ];
 
@@ -14618,6 +27589,8 @@ async function seed() {
         solutionCode: sql`excluded.solution_code`,
         testCases: sql`excluded.test_cases`,
         hints: sql`excluded.hints`,
+        companies: sql`excluded.companies`,
+        category: sql`excluded.category`,
         isPremium: sql`excluded.is_premium`,
         orderIndex: sql`excluded.order_index`,
       },
