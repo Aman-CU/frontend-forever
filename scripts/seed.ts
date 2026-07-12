@@ -5528,7 +5528,7 @@ getFullName({ last: "Turing" }) // "Turing"
     companies: ["Amazon", "Bloomberg"],
     category: "javascript-runtime",
     title: "undefined vs null: Classify a Value",
-    description: `\`typeof null === "object"\` is JavaScript's most infamous gotcha. This exercise makes sure the distinction is second nature.
+    description: `\`typeof null === "object"\` is JavaScript's most infamous gotcha, and it's exactly why \`typeof\` alone can't tell you whether a value is nullish. **Nullish** means "is exactly \`null\` or \`undefined\`" — a narrower category than **falsy**, which also includes \`0\`, \`""\`, and \`NaN\`. That distinction is what optional chaining (\`?.\`) and the nullish coalescing operator (\`??\`) are built around, so it's worth making second nature.
 
 ## Your task
 
@@ -5563,7 +5563,7 @@ Write \`classifyNullish(value)\` that returns:
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Implement Object.is()",
-    description: `\`Object.is()\` looks like \`===\`, but fixes its two edge cases: \`NaN\` and signed zero.
+    description: `\`Object.is()\` looks like strict equality, but patches its two weird edge cases: \`NaN === NaN\` is \`false\` under \`===\`, and \`+0 === -0\` is \`true\` even though the two are distinguishable (\`1 / -0\` gives \`-Infinity\`, not \`Infinity\`). React's dependency comparisons and other equality-sensitive internals use exactly this semantics instead of raw \`===\`.
 
 ## Your task
 
@@ -5596,7 +5596,7 @@ Write \`myObjectIs(a, b)\` that replicates \`Object.is\`:
     companies: ["Google", "Microsoft"],
     category: "javascript-runtime",
     title: "Implement your own Object.create()",
-    description: `\`Object.create(proto)\` builds a new object whose prototype is exactly the object you pass in — including \`null\`, for a prototype-less object.
+    description: `\`Object.create(proto)\` builds a new object whose prototype is exactly the object you pass in — no constructor runs, no properties are copied, it's a pure prototype-chain link. Passing \`null\` is the special case worth calling out: it produces a genuinely prototype-less object, one that doesn't even inherit \`toString\` or \`hasOwnProperty\` from \`Object.prototype\`.
 
 ## Your task
 
@@ -5626,7 +5626,7 @@ Write \`myObjectCreate(proto)\` without using the real \`Object.create\`. It mus
     companies: ["Google", "Meta", "Amazon"],
     category: "javascript-runtime",
     title: "Create your own new operator",
-    description: `The \`new\` keyword does four things under the hood. This exercise makes each one explicit.
+    description: `Every \`new Ctor(args)\` call quietly runs four steps behind the scenes: allocate an object linked to \`Ctor.prototype\`, run the constructor with \`this\` bound to it, and then decide whether to return that new object or an explicit object the constructor returned instead. This exercise makes each of those steps explicit instead of leaving them to engine magic.
 
 ## Your task
 
@@ -5661,7 +5661,7 @@ Write \`myNew(Ctor, ...args)\` that:
     companies: ["Amazon", "Stripe"],
     category: "javascript-runtime",
     title: "Implement jest.spyOn()",
-    description: `A spy wraps a real method so you can observe how it was called, without losing its real behavior.
+    description: `Testing libraries like Jest let you wrap a real method with **spyOn** to observe how it's called — arguments, call count — without losing its real behavior, since the original implementation still runs underneath. This exercise builds that wrapper by hand.
 
 ## Your task
 
@@ -5703,7 +5703,7 @@ Write \`mySpyOn(obj, methodName)\`, which replaces \`obj[methodName]\` with a wr
     companies: ["Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Detect data type in JavaScript",
-    description: `\`typeof\` alone can't tell an array from a plain object, or null from anything — this problem builds a type detector that actually can.
+    description: `\`typeof\` alone can't tell an array from a plain object, a \`Date\` from a \`RegExp\`, or \`null\` from anything else — it just reports \`"object"\` for all of them. \`Object.prototype.toString.call(value)\` exposes an internal type tag that's precise enough to build a real detector on top of, which is exactly what this problem does.
 
 ## Your task
 
@@ -5735,7 +5735,7 @@ Write \`getType(value)\`, returning a precise lowercase type string: \`"array"\`
     companies: ["Google", "Meta", "Uber"],
     category: "javascript-runtime",
     title: "Create your own Function.prototype.call",
-    description: `\`Function.prototype.call\` invokes a function with a given \`this\` and individually-listed arguments. This exercise rebuilds it from scratch.
+    description: `\`Function.prototype.call\` runs a function with an explicit \`this\` and a flat list of arguments — the classic way to borrow a method from one object and run it against another. Under the hood there's no special engine trick: you can get the same effect by temporarily attaching the function to the target object and invoking it as a method, which is exactly what this rebuild does.
 
 ## Your task
 
@@ -5767,7 +5767,7 @@ Add \`myCall(context, ...args)\` to \`Function.prototype\`, invoking the functio
     companies: ["Google", "Meta"],
     category: "javascript-runtime",
     title: "Implement your own Function.prototype.apply",
-    description: `Same idea as \`call\`, but arguments arrive as a single array instead of a flat list.
+    description: `\`Function.prototype.apply\` is \`call\`'s sibling — same idea of forcing a specific \`this\`, but arguments arrive bundled as a single array instead of listed individually. That's handy any time you already have an arguments array on hand (from \`arguments\`, a spread, or another function's output) instead of separate values to type out.
 
 ## Your task
 
@@ -5837,7 +5837,7 @@ Add \`myBind(context, ...boundArgs)\` to \`Function.prototype\`, returning a new
     companies: ["Google", "ByteDance"],
     category: "javascript-runtime",
     title: "Write your own instanceof",
-    description: `\`instanceof\` walks the prototype chain looking for a match — nothing more magical than that.
+    description: `\`a instanceof B\` isn't magic — it walks up \`a\`'s prototype chain via \`Object.getPrototypeOf\`, checking at each link whether it's \`B.prototype\`, and gives up once the chain bottoms out at \`null\`. This exercise rebuilds that walk by hand, including the primitive edge case the real operator handles too.
 
 ## Your task
 
@@ -5905,7 +5905,7 @@ Write \`es5Extend(Child, Parent)\` that makes \`Child\` inherit from \`Parent\`:
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "toBe() or not.toBe()",
-    description: `A tiny slice of a real assertion library — enough to see how \`expect(x).toBe(y)\` and its \`.not\` variant actually work under the hood.
+    description: `Every test you've ever written with Jest or Vitest bottoms out in something like this: \`expect(x).toBe(y)\`. Building a **minimal matcher** from scratch is a quick way to see there's no magic behind it — just an object whose methods throw when a comparison fails.
 
 ## Your task
 
@@ -6054,11 +6054,11 @@ pipe(addOne, double)(3) // (3 + 1) * 2 = 8
     companies: ["Amazon", "Uber"],
     category: "javascript-runtime",
     title: "Implement _.once()",
-    description: `A function wrapped in \`once\` runs its real logic exactly one time, no matter how many times it's called afterward — every later call just replays the first result.
+    description: `Some logic should genuinely only ever run once — a one-time setup routine, an analytics event that must not double-fire, a submit handler that shouldn't process a duplicate click. **\`_.once\`** wraps a function so its real body executes on the very first call, and every call after that just hands back that same cached result, arguments or not.
 
 ## Your task
 
-Write \`once(fn)\`, returning a wrapped function that invokes \`fn\` only on its first call and returns that same cached result on every subsequent call, **even if called with different arguments**.`,
+Write \`once(fn)\`, returning a wrapped function that invokes \`fn\` only on its first call and returns that same cached result on every subsequent call, **even if called with different arguments**. \`this\` should be forwarded correctly on the call that actually runs \`fn\`.`,
     difficulty: "easy",
     starterCode: `function once(fn) {
 }`,
@@ -6089,7 +6089,7 @@ Write \`once(fn)\`, returning a wrapped function that invokes \`fn\` only on its
     companies: ["Airbnb", "Uber", "TikTok"],
     category: "javascript-runtime",
     title: "Implement curry()",
-    description: `Currying turns a function of several arguments into a chain of functions, each taking one argument at a time, using the original function's arity (\`fn.length\`) to know when enough arguments have arrived.
+    description: `Currying turns a function of several arguments into a chain of one-argument functions — call it partially, and you get back another function waiting for the rest. The trick is knowing when enough arguments have arrived without hardcoding a count: \`fn.length\` reports the function's declared arity, and that's exactly the signal to use.
 
 ## Your task
 
@@ -6204,11 +6204,11 @@ Write \`sum(a)\`, returning a function that:
     companies: ["Google", "Meta"],
     category: "javascript-runtime",
     title: "Implement a general memoization function memo()",
-    description: `Memoization trades memory for speed: cache a pure function's result by its arguments, so an expensive call never runs twice for the same input.
+    description: `**Memoization** trades memory for speed: cache a pure function's result by its arguments, so an expensive computation — a slow recursive call, a heavy parse, any deterministic calculation — never runs twice for the same input. A general-purpose \`memo()\` needs to work for *any* function, no matter how many arguments it takes.
 
 ## Your task
 
-Write \`memo(fn)\`, returning a wrapped function that caches results keyed by all of its arguments (any number of them), returning the cached value on a repeat call instead of invoking \`fn\` again.`,
+Write \`memo(fn)\`, returning a wrapped function that caches results keyed by all of its arguments (any number of them), returning the cached value on a repeat call instead of invoking \`fn\` again. The cached value must match exactly what the original call would have produced.`,
     difficulty: "medium",
     starterCode: `function memo(fn) {
 }`,
@@ -6280,7 +6280,7 @@ Write \`memoizeOne(fn)\`. It should skip recomputation only when the new call's 
     companies: ["Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "shuffle() an array (Fisher–Yates)",
-    description: `The naive "sort by Math.random() - 0.5" shuffle is famously **not** uniformly random. The Fisher–Yates algorithm is the correct, well-known way to shuffle an array in place with a truly even distribution.
+    description: `The naive \`arr.sort(() => Math.random() - 0.5)\` shuffle is famously **not** uniformly random — some permutations end up far more likely than others. **Fisher–Yates** is the correct, well-known algorithm for shuffling an array with a truly even distribution over all possible orderings.
 
 ## Your task
 
@@ -6312,7 +6312,7 @@ Write \`shuffle(arr)\`, returning a new array containing the same elements as \`
     companies: ["Google", "Amazon"],
     category: "javascript-runtime",
     title: "Implement Array.prototype.filter()",
-    description: `A from-scratch \`filter\`, including one detail most naive polyfills miss: real \`filter\` skips holes in a sparse array instead of calling the callback on them.
+    description: `\`Array.prototype.filter\` builds a new array containing only the elements that pass a predicate — one of the most common **implement it yourself** interview questions. The detail most naive polyfills miss: real \`filter\` skips holes in a sparse array entirely, rather than calling the callback with \`undefined\` for them.
 
 ## Your task
 
@@ -6343,7 +6343,7 @@ Add \`myFilter(callback)\` to \`Array.prototype\`, keeping only the elements for
     companies: ["Google", "Amazon", "Meta"],
     category: "javascript-runtime",
     title: "Implement Array.prototype.map()",
-    description: `Similar spirit to \`filter\`, but \`map\` preserves the array's shape — including its holes — rather than removing anything.
+    description: `\`Array.prototype.map\` shares \`filter\`'s spirit of transforming without mutating the original, but it preserves the array's exact shape — same length, same holes — rather than removing anything. This polyfill also needs to support the optional \`thisArg\`, exactly like the real method.
 
 ## Your task
 
@@ -6416,7 +6416,7 @@ Add \`myReduce(callback, initialValue)\` to \`Array.prototype\`:
     companies: ["Meta", "Amazon", "TikTok"],
     category: "javascript-runtime",
     title: "Implement Array.prototype.flat()",
-    description: `Flattening a nested array recursively, stopping after a configurable number of levels.
+    description: `\`Array.prototype.flat\` collapses nested arrays into a single level — or several, up to a configurable \`depth\`. The recursive case is straightforward; the edge cases (\`depth = 0\` doing nothing at all, \`Infinity\` flattening all the way down) are what separate a real implementation from a half-finished one.
 
 ## Your task
 
@@ -6448,7 +6448,7 @@ Add \`myFlat(depth = 1)\` to \`Array.prototype\`, flattening nested arrays up to
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Implement Array.prototype.flatMap()",
-    description: `\`flatMap\` is \`map\` immediately followed by a flatten — but only ever one level deep, no matter how the array flattening API is configured elsewhere.
+    description: `\`flatMap\` is \`map\` immediately followed by a flatten — but always exactly one level deep, regardless of what depth you'd pass to \`flat\` elsewhere. It's the standard way to map each element to zero, one, or several output elements in a single pass, without a separate \`.map().flat()\` chain.
 
 ## Your task
 
@@ -6481,11 +6481,16 @@ Add \`myFlatMap(callback, thisArg)\` to \`Array.prototype\`: map every element, 
     companies: ["Microsoft", "Google"],
     category: "javascript-runtime",
     title: "Implement Object.assign()",
-    description: `Copies own enumerable properties from one or more source objects onto a target, later sources winning over earlier ones, mutating and returning the target itself.
+    description: `\`Object.assign\` is the classic way to shallow-merge objects: it copies own enumerable properties from one or more **source** objects onto a **target**, with later sources winning over earlier ones on key collisions — and it mutates the target in place rather than building a new object.
 
 ## Your task
 
-Write \`myObjectAssign(target, ...sources)\`. \`null\`/\`undefined\` sources should be silently skipped, matching the real \`Object.assign\`.`,
+Write \`myObjectAssign(target, ...sources)\`, matching the real \`Object.assign\`:
+
+- copies each source's own enumerable properties onto \`target\`, left to right
+- a later source's value for a key overwrites an earlier one's
+- mutates \`target\` in place and also returns that same reference
+- \`null\`/\`undefined\` sources are silently skipped, not thrown on`,
     difficulty: "medium",
     starterCode: `function myObjectAssign(target, ...sources) {
 }`,
@@ -6549,11 +6554,11 @@ Write \`completeAssign(target, ...sources)\` using \`Object.getOwnPropertyDescri
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Implement Object.groupBy()",
-    description: `Groups an iterable's items into buckets keyed by whatever a callback returns for each item — a small utility that shows up constantly in data-shaping code.
+    description: `\`Object.groupBy\` buckets an iterable's items by whatever a callback returns for each one — turning "group these orders by status" or "group these users by role" from a hand-rolled loop into a one-liner. It's the kind of utility that shows up constantly in data-shaping code.
 
 ## Your task
 
-Write \`myGroupBy(items, keyFn)\`, returning a plain object whose keys are the distinct results of \`keyFn(item)\`, and whose values are arrays of the matching items, in their original relative order.`,
+Write \`myGroupBy(items, keyFn)\`, returning a plain object whose keys are the distinct results of \`keyFn(item)\`, and whose values are arrays of the matching items, preserving each item's original relative order within its group.`,
     difficulty: "medium",
     starterCode: `function myGroupBy(items, keyFn) {
 }`,
@@ -6582,11 +6587,11 @@ Write \`myGroupBy(items, keyFn)\`, returning a plain object whose keys are the d
     companies: ["Airbnb", "LinkedIn"],
     category: "javascript-runtime",
     title: "Implement _.get()",
-    description: `Safely read a deeply nested property without a long chain of \`&&\` guards, using a path like \`"a.b[0].c"\` or an equivalent array of keys.
+    description: `Reaching into a deeply nested object safely usually means a wall of \`obj && obj.a && obj.a.b && ...\` guards. **\`_.get\`** replaces all of that with a single path string like \`"a.b[0].c"\` (or an equivalent array of keys), returning a fallback instead of throwing when any part of the path doesn't exist.
 
 ## Your task
 
-Write \`myGet(obj, path, defaultValue)\`. \`path\` may be a dot/bracket string or an array of keys. If any part of the path is missing, return \`defaultValue\` instead of throwing.`,
+Write \`myGet(obj, path, defaultValue)\`. \`path\` may be a dot/bracket-notation string (e.g. \`"a[0].b"\`) or an array of keys. Walk the path one key at a time; the moment you hit \`null\`/\`undefined\` mid-path, or the final resolved value is \`undefined\`, return \`defaultValue\` instead of throwing.`,
     difficulty: "medium",
     starterCode: `function myGet(obj, path, defaultValue) {
 }`,
@@ -6618,11 +6623,11 @@ Write \`myGet(obj, path, defaultValue)\`. \`path\` may be a dot/bracket string o
     companies: ["Airbnb", "LinkedIn"],
     category: "javascript-runtime",
     title: "Implement _.set()",
-    description: `The write counterpart to \`_.get()\`: assign a value at a deep path, creating any missing intermediate objects (or arrays, for numeric segments) along the way.
+    description: `The write counterpart to **\`_.get()\`**: instead of manually checking and creating every intermediate object before assigning deep inside a structure, \`_.set\` builds the missing scaffolding for you as it walks the path — objects for named segments, arrays for numeric ones.
 
 ## Your task
 
-Write \`mySet(obj, path, value)\`, mutating and returning \`obj\` with \`value\` written at the given dot/bracket path. Missing intermediate containers should be created as arrays for numeric path segments, objects otherwise.`,
+Write \`mySet(obj, path, value)\`, mutating and returning \`obj\` with \`value\` written at the given dot/bracket path (e.g. \`"a[0].b"\`, or an equivalent array of keys). Any missing intermediate container along the way should be created — an array if the *next* path segment is numeric, an object otherwise. Existing values at the final key are overwritten.`,
     difficulty: "medium",
     starterCode: `function mySet(obj, path, value) {
 }`,
@@ -6657,11 +6662,11 @@ Write \`mySet(obj, path, value)\`, mutating and returning \`obj\` with \`value\`
     companies: ["Uber"],
     category: "javascript-runtime",
     title: "Implement _.partial()",
-    description: `Partial application locks in some of a function's leading arguments ahead of time, returning a smaller function that only needs the rest.
+    description: `**Partial application** locks in some of a function's leading arguments ahead of time, returning a smaller function that only needs the rest — handy for turning a generic function into a specialized one, like pinning the \`greeting\` argument of a \`greet(greeting, name)\` helper to always say \`"Hello"\`. Unlike \`curry\`, it doesn't care about the function's arity and never waits for "enough" arguments — it just calls through immediately with whatever it's given.
 
 ## Your task
 
-Write \`myPartial(fn, ...presetArgs)\`, returning a function that calls \`fn\` with \`presetArgs\` followed by whatever arguments it's called with, forwarding \`this\` too.`,
+Write \`myPartial(fn, ...presetArgs)\`, returning a function that calls \`fn\` with \`presetArgs\` followed by whatever arguments it's called with at invocation time, forwarding \`this\` from the eventual call site.`,
     difficulty: "medium",
     starterCode: `function myPartial(fn, ...presetArgs) {
 }`,
@@ -6686,11 +6691,11 @@ Write \`myPartial(fn, ...presetArgs)\`, returning a function that calls \`fn\` w
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Implement _.chunk()",
-    description: `Splits an array into consecutive groups of a given size, with the final group holding whatever's left over.
+    description: `**\`_.chunk\`** splits an array into consecutive groups of a fixed size — useful for batching API requests, laying out a grid, or paginating a list client-side. The final group just holds whatever's left over when the array doesn't divide evenly.
 
 ## Your task
 
-Write \`myChunk(arr, size)\`. If \`size\` is less than 1, return an empty array.`,
+Write \`myChunk(arr, size)\`, returning an array of arrays where each inner array has at most \`size\` elements, in original order. If \`size\` is less than 1, return an empty array.`,
     difficulty: "medium",
     starterCode: `function myChunk(arr, size) {
 }`,
@@ -6719,11 +6724,11 @@ Write \`myChunk(arr, size)\`. If \`size\` is less than 1, return an empty array.
     companies: ["Meta", "Amazon"],
     category: "javascript-runtime",
     title: "Implement deep equal _.isEqual()",
-    description: `Structural (deep) equality: two values are equal if they have the same shape and the same values all the way down, not just the same reference.
+    description: `\`===\` only tells you whether two values are the *same reference* — two objects built from identical data still compare unequal. **Structural (deep) equality** instead asks whether two values have the same shape and the same values all the way down, which is what you actually want when comparing, say, two API responses or two pieces of app state.
 
 ## Your task
 
-Write \`myIsEqual(a, b)\`, recursively comparing plain objects, arrays, and primitives. Use \`Object.is\` semantics at the primitive level, so \`myIsEqual(NaN, NaN)\` is \`true\`.`,
+Write \`myIsEqual(a, b)\`, recursively comparing plain objects, arrays, and primitives. Objects/arrays are equal only if they have the same number of keys and every key's value is deeply equal. Use \`Object.is\` semantics at the primitive level, so \`myIsEqual(NaN, NaN)\` is \`true\`.`,
     difficulty: "medium",
     starterCode: `function myIsEqual(a, b) {
 }`,
@@ -6752,11 +6757,11 @@ Write \`myIsEqual(a, b)\`, recursively comparing plain objects, arrays, and prim
     companies: ["Meta", "Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Create _.cloneDeep()",
-    description: `A deep clone produces a completely independent copy — mutating any part of the clone must never affect the original, no matter how deeply nested.
+    description: `A shallow copy (\`{ ...obj }\`, \`Object.assign\`) only copies the top level — nested objects are still shared by reference, so mutating the "copy" can silently corrupt the original. A **deep clone** produces a completely independent copy: mutating any part of it, at any depth, never touches the original.
 
 ## Your task
 
-Write \`myCloneDeep(value)\`, recursively cloning plain objects, arrays, and \`Date\` instances. Primitives pass through unchanged.`,
+Write \`myCloneDeep(value)\`, recursively cloning plain objects, arrays, and \`Date\` instances (cloned as a new \`Date\` with the same time, not a plain object copy). Primitives, including \`null\`, pass through unchanged.`,
     difficulty: "medium",
     starterCode: `function myCloneDeep(value) {
 }`,
@@ -6874,7 +6879,7 @@ Write \`produce(base, recipe)\`, where \`recipe(draft)\` is called with a deep c
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Count \"1\"s in binary form",
-    description: `A bit-manipulation warm-up: count how many \`1\` bits a number has in its binary representation.
+    description: `This is the classic **Hamming weight** (popcount) problem: count how many \`1\` bits appear in a non-negative integer's binary representation. It's a bit-manipulation warm-up that shows up constantly, from bitmask flag-checking to lower-level algorithm questions.
 
 ## Your task
 
@@ -6947,11 +6952,11 @@ compressString("aabbcc")    // "aabbcc" — compression doesn't help here
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Find the first duplicate character in a string",
-    description: `Scanning left to right, find the character whose **second** occurrence comes earliest.
+    description: `Not the same as the *most frequent* character — this is about timing. Scanning left to right, which character is the first one to repeat? The answer is whichever character's **second** occurrence comes earliest in the string, not necessarily the one that repeats the most overall.
 
 ## Your task
 
-Write \`firstDuplicateChar(str)\`, returning that character, or \`null\` if every character is unique.`,
+Write \`firstDuplicateChar(str)\`, returning that character, or \`null\` if every character in \`str\` is unique.`,
     difficulty: "easy",
     starterCode: `function firstDuplicateChar(str) {
 }`,
@@ -6979,11 +6984,11 @@ Write \`firstDuplicateChar(str)\`, returning that character, or \`null\` if ever
     companies: ["Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Roman numerals to integer",
-    description: `Roman numerals are mostly additive, with one twist: a smaller symbol placed before a larger one is subtracted instead (like \`IV\` = 4, not 6).
+    description: `**Roman numerals** are mostly additive — \`VI\` reads as 5 + 1 = 6 — with one twist: a smaller symbol placed *before* a larger one is subtracted instead, so \`IV\` is 4, not 6. Handling that twist correctly is the whole problem.
 
 ## Your task
 
-Write \`romanToInt(s)\`, converting a valid Roman numeral string to its integer value.`,
+Write \`romanToInt(s)\`, converting a valid Roman numeral string to its integer value. Walk the string comparing each symbol's value to the one right after it: if the current symbol's value is smaller, subtract it; otherwise add it.`,
     difficulty: "easy",
     starterCode: `function romanToInt(s) {
 }`,
@@ -7015,11 +7020,11 @@ Write \`romanToInt(s)\`, converting a valid Roman numeral string to its integer 
     companies: ["Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Integer to roman numerals",
-    description: `The reverse conversion: greedily subtract the largest Roman value (including the subtractive pairs like \`CM\` = 900) that still fits.
+    description: `The reverse of \`romanToInt\`: build a Roman numeral one symbol at a time by greedily subtracting the largest value that still fits, including the subtractive pairs like \`CM\` (900) and \`IV\` (4) — treating each pair as a single unit keeps the greedy approach correct without extra special-casing.
 
 ## Your task
 
-Write \`intToRoman(num)\` for \`1 <= num <= 3999\`.`,
+Write \`intToRoman(num)\` for \`1 <= num <= 3999\`, returning the equivalent Roman numeral string.`,
     difficulty: "easy",
     starterCode: `function intToRoman(num) {
 }`,
@@ -7050,11 +7055,11 @@ Write \`intToRoman(num)\` for \`1 <= num <= 3999\`.`,
     slug: "semver-compare",
     category: "javascript-runtime",
     title: "semver compare",
-    description: `Comparing two semantic version strings correctly means comparing each segment **numerically**, not as strings — \`"1.10.0"\` is newer than \`"1.9.0"\`, even though \`"9" > "1"\` as characters.
+    description: `Package managers compare **semantic versions** ("semver") constantly — deciding whether to upgrade, checking a range constraint, sorting a dependency list. Doing that correctly means comparing each \`major.minor.patch\` segment **numerically**, not as strings: \`"1.10.0"\` is newer than \`"1.9.0"\`, even though \`"9" > "1"\` character by character.
 
 ## Your task
 
-Write \`compareSemver(a, b)\` for \`"major.minor.patch"\` strings, returning \`-1\`, \`0\`, or \`1\`.`,
+Write \`compareSemver(a, b)\` for \`"major.minor.patch"\` strings. Compare major, then minor, then patch as numbers, returning \`-1\` if \`a < b\`, \`1\` if \`a > b\`, or \`0\` if they're identical.`,
     difficulty: "easy",
     starterCode: `function compareSemver(a, b) {
 }`,
@@ -7084,11 +7089,11 @@ Write \`compareSemver(a, b)\` for \`"major.minor.patch"\` strings, returning \`-
     companies: ["Uber"],
     category: "javascript-runtime",
     title: "Reorder array with new indexes",
-    description: `Given a parallel array of target positions, rearrange the original array so each element lands exactly where it was told to go.
+    description: `Given a parallel array of target positions, rearrange the original array so each element lands exactly where it was told to go — a pattern that shows up whenever an API hands back items alongside a separate "new order" array, like after a drag-and-drop reorder.
 
 ## Your task
 
-Write \`reorder(arr, indices)\`, where \`indices[i]\` is the position \`arr[i]\` should occupy in the result.`,
+Write \`reorder(arr, indices)\`, where \`indices[i]\` is the position \`arr[i]\` should occupy in the result. Return a new array of the same length; don't mutate \`arr\`.`,
     difficulty: "easy",
     starterCode: `function reorder(arr, indices) {
 }`,
@@ -7114,11 +7119,11 @@ Write \`reorder(arr, indices)\`, where \`indices[i]\` is the position \`arr[i]\`
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Most frequently occurring character",
-    description: `Find which character shows up the most, breaking ties by whichever of the tied characters appears first in the string.
+    description: `Find which character shows up the most often in a string — a small building block behind things like word-frequency analysis or simple text stats.
 
 ## Your task
 
-Write \`mostFrequentChar(str)\`. Return \`null\` for an empty string.`,
+Write \`mostFrequentChar(str)\`, returning the character with the highest count. On a tie, return whichever of the tied characters appears **first** in the string. Return \`null\` for an empty string.`,
     difficulty: "easy",
     starterCode: `function mostFrequentChar(str) {
 }`,
@@ -7151,7 +7156,7 @@ Write \`mostFrequentChar(str)\`. Return \`null\` for an empty string.`,
     companies: ["Amazon", "Stripe"],
     category: "javascript-runtime",
     title: "Add comma to number",
-    description: `Format a number with thousands separators, the way you'd display a price or a large count — handling negative numbers and decimals correctly.
+    description: `Format a number with thousands separators, the way you'd display a price or a large count in a UI — essentially a hand-rolled \`toLocaleString()\`. The grouping itself is easy; getting it right for a negative sign and a decimal point without corrupting either one is the actual challenge.
 
 ## Your task
 
@@ -7189,11 +7194,11 @@ addCommas(1234.56)   // "1,234.56"
     companies: ["Meta", "Adobe"],
     category: "javascript-runtime",
     title: "Convert HEX color to RGBA",
-    description: `Convert a hex color (either shorthand \`#RGB\` or full \`#RRGGBB\`) into an \`rgba(...)\` string with a given alpha.
+    description: `CSS accepts colors in several formats, and converting between them comes up constantly. Here, turn a **hex color** (shorthand \`#RGB\` or full \`#RRGGBB\`) into an \`rgba(...)\` string so you can layer in transparency via an alpha channel.
 
 ## Your task
 
-Write \`hexToRgba(hex, alpha = 1)\`.
+Write \`hexToRgba(hex, alpha = 1)\`, expanding a shorthand 3-digit hex to 6 digits first, then converting each channel pair to its decimal value.
 
 \`\`\`js
 hexToRgba("#FF0000")      // "rgba(255, 0, 0, 1)"
@@ -7226,11 +7231,11 @@ hexToRgba("#00FF00", 0.5) // "rgba(0, 255, 0, 0.5)"
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Convert snake_case to camelCase",
-    description: `A common data-shaping task when an API returns \`snake_case\` keys but your codebase wants \`camelCase\`.
+    description: `A common data-shaping task when an API returns \`snake_case\` keys but your codebase's convention is \`camelCase\` — you end up converting strings like this constantly at the boundary between the two.
 
 ## Your task
 
-Write \`snakeToCamel(str)\`.`,
+Write \`snakeToCamel(str)\`, replacing every \`_\` followed by a letter with that letter uppercased, and removing the underscore. A string with no underscores passes through unchanged.`,
     difficulty: "medium",
     starterCode: `function snakeToCamel(str) {
 }`,
@@ -7252,11 +7257,11 @@ Write \`snakeToCamel(str)\`.`,
     companies: ["Airbnb"],
     category: "javascript-runtime",
     title: "Support negative array index in JavaScript",
-    description: `Python-style negative indexing — \`-1\` means the last element, \`-2\` the second-to-last, and so on.
+    description: `Plain JavaScript array indexing has no concept of "from the end" — \`arr[-1]\` is just \`undefined\`. Python-style **negative indexing** fixes that: \`-1\` means the last element, \`-2\` the second-to-last, and so on.
 
 ## Your task
 
-Write \`getAt(arr, index)\`, treating a negative \`index\` as counting from the end. Return \`undefined\` if it's still out of range after that adjustment.`,
+Write \`getAt(arr, index)\`, treating a negative \`index\` as counting backward from the end (\`-1\` is the last element). A non-negative \`index\` behaves like normal array access. Return \`undefined\` if the index is still out of range after that adjustment.`,
     difficulty: "medium",
     starterCode: `function getAt(arr, index) {
 }`,
@@ -7279,11 +7284,11 @@ Write \`getAt(arr, index)\`, treating a negative \`index\` as counting from the 
     companies: ["Microsoft"],
     category: "javascript-runtime",
     title: "Implement String.prototype.trim()",
-    description: `Strip leading and trailing whitespace, including tabs and newlines, without touching whitespace in the middle of the string.
+    description: `\`String.prototype.trim()\` strips leading and trailing whitespace — spaces, tabs, newlines — while leaving whitespace in the *middle* of the string completely untouched.
 
 ## Your task
 
-Add \`myTrim()\` to \`String.prototype\`.`,
+Add \`myTrim()\` to \`String.prototype\`, returning a copy of the string with all leading and trailing whitespace characters removed.`,
     difficulty: "medium",
     starterCode: `String.prototype.myTrim = function () {
 };`,
@@ -7306,11 +7311,11 @@ Add \`myTrim()\` to \`String.prototype\`.`,
     companies: ["Amazon", "Microsoft", "Cisco"],
     category: "javascript-runtime",
     title: "Validate an IP address",
-    description: `A valid IPv4 address has exactly four dot-separated octets, each a number from 0 to 255 with no leading zeros (other than the literal \`"0"\` itself).
+    description: `A valid **IPv4 address** has exactly four dot-separated octets, each a number from 0 to 255 with no leading zeros (other than the literal \`"0"\` itself) — a classic validation problem where the edge cases (leading zeros, out-of-range numbers, wrong octet count) matter more than the happy path.
 
 ## Your task
 
-Write \`isValidIp(str)\`.`,
+Write \`isValidIp(str)\`, returning \`true\` only if \`str\` splits into exactly four dot-separated parts, each part is all digits, each parses to a number between 0 and 255 inclusive, and no part has a leading zero unless it's exactly \`"0"\`.`,
     difficulty: "medium",
     starterCode: `function isValidIp(str) {
 }`,
@@ -7341,11 +7346,11 @@ Write \`isValidIp(str)\`.`,
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Remove duplicate characters in a string",
-    description: `Keep only each character's first occurrence, preserving the original order.
+    description: `Collapse a string down to its distinct characters, keeping only each one's **first** occurrence and preserving the original left-to-right order.
 
 ## Your task
 
-Write \`removeDuplicateChars(str)\`.`,
+Write \`removeDuplicateChars(str)\`, returning a new string with every repeated character removed after its first appearance.`,
     difficulty: "medium",
     starterCode: `function removeDuplicateChars(str) {
 }`,
@@ -7367,11 +7372,11 @@ Write \`removeDuplicateChars(str)\`.`,
     companies: ["Stripe", "Amazon"],
     category: "javascript-runtime",
     title: "Validate number string",
-    description: `Check whether a string represents a valid decimal number: an optional leading sign, digits, and an optional decimal point that must have digits on at least one side of it.
+    description: `Deciding whether a string "looks like a number" comes up constantly in form validation — but the rules are easy to get subtly wrong around the decimal point. A valid number here is an optional leading sign, followed by digits, with an optional decimal point that must have digits on at least one side of it.
 
 ## Your task
 
-Write \`isValidNumberString(str)\`.`,
+Write \`isValidNumberString(str)\`, returning \`true\` only for strings matching that shape (e.g. \`"123"\`, \`"-12.5"\`, \`".5"\`) and \`false\` for anything else, including a bare \`"."\` or a trailing decimal point with nothing after it (like \`"12."\`).`,
     difficulty: "medium",
     starterCode: `function isValidNumberString(str) {
 }`,
@@ -7395,11 +7400,11 @@ Write \`isValidNumberString(str)\`.`,
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Remove characters",
-    description: `Strip out every character that appears in a given "characters to remove" set.
+    description: `Strip out every character in a string that appears anywhere in a given "characters to remove" set — think stripping punctuation, or scrubbing a specific set of forbidden symbols out of user input.
 
 ## Your task
 
-Write \`removeChars(str, charsToRemove)\`.`,
+Write \`removeChars(str, charsToRemove)\`, returning a new string with every character that also appears in \`charsToRemove\` removed. An empty \`charsToRemove\` leaves \`str\` unchanged.`,
     difficulty: "medium",
     starterCode: `function removeChars(str, charsToRemove) {
 }`,
@@ -7422,11 +7427,11 @@ Write \`removeChars(str, charsToRemove)\`.`,
     companies: ["Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Uncompress a string",
-    description: `The inverse of run-length encoding: expand each character followed by an optional count back into that many repetitions. A character with no number after it appears exactly once.
+    description: `The inverse of **run-length encoding**: expand each character followed by an optional count back into that many repetitions, like turning \`"a3b2c"\` back into \`"aaabbc"\`. A character with no number after it appears exactly once.
 
 ## Your task
 
-Write \`uncompressString(str)\`, handling multi-digit counts (like \`"a10"\` meaning ten \`a\`s).`,
+Write \`uncompressString(str)\`, handling multi-digit counts correctly (like \`"a10"\` meaning ten \`a\`s, not \`a\` once followed by literal \`"10"\`).`,
     difficulty: "medium",
     starterCode: `function uncompressString(str) {
 }`,
@@ -7500,7 +7505,7 @@ function clearAllTimeout() {
     slug: "basic-debounce-warmup",
     category: "javascript-runtime",
     title: "Implement basic debounce()",
-    description: `The most commonly asked question in front-end interviews, in its simplest form: coalesce a burst of calls into one, using only the most recent call's arguments.
+    description: `**Debounce** is the most commonly asked question in front-end interviews, and this is its simplest form: collapse a rapid burst of calls — like keystrokes in a search box — into a single call, using only the most recent one's arguments. Just the core timer-reset mechanism here, no \`.cancel()\` or leading/trailing options.
 
 ## Your task
 
@@ -7529,7 +7534,7 @@ Write \`debounce(fn, delay)\`. Each new call resets the wait; \`fn\` only runs o
     slug: "basic-throttle-warmup",
     category: "javascript-runtime",
     title: "Implement basic throttle()",
-    description: `Where debounce waits for a pause, throttle guarantees a steady maximum rate — perfect for scroll/resize handlers that shouldn't run on every single event.
+    description: `Where **debounce** waits for a pause, **throttle** guarantees a steady maximum rate — perfect for scroll or resize handlers that would otherwise fire hundreds of times a second. This version keeps it simple: leading-edge only, so the first call in a window runs immediately and everything else in that window is dropped.
 
 ## Your task
 
@@ -7606,11 +7611,14 @@ Write \`debounce(fn, delay, options)\`, where \`options\` is \`{ leading = false
     companies: ["Uber", "TikTok", "Airbnb"],
     category: "javascript-runtime",
     title: "throttle() with leading & trailing option",
-    description: `The throttle equivalent of the same leading/trailing idea: control whether the very first call in a window fires immediately, and whether one more call fires at the end of the window using the most recent arguments.
+    description: `The throttle equivalent of debounce's leading/trailing options: control whether the very first call in a window fires **immediately** (\`leading\`), and whether one more call fires at the **end** of the window using the most recent arguments (\`trailing\`) — the production-grade shape most real throttle implementations (like Underscore's) actually ship.
 
 ## Your task
 
-Write \`throttle(fn, interval, options)\`, where \`options\` is \`{ leading = true, trailing = true }\`.`,
+Write \`throttle(fn, interval, options)\`, where \`options\` is \`{ leading = true, trailing = true }\`:
+
+- \`leading: true\` — the first call in a window fires immediately
+- \`trailing: true\` — one more call fires at the end of the window (using the latest arguments) if calls arrived during it`,
     difficulty: "medium",
     starterCode: `function throttle(fn, interval, options = {}) {
   const { leading = true, trailing = true } = options;
@@ -7708,7 +7716,7 @@ Write \`createFakeTimers()\`, returning \`{ setTimeout, clearTimeout, tick }\`:
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Create an interval",
-    description: `A hand-rolled \`setInterval\` built from repeated \`setTimeout\` calls, with a clean way to stop it — the same self-scheduling pattern real interval implementations often use internally.
+    description: `\`setInterval\` has a subtle drift problem: it schedules each tick from when the timer was armed, not from when the previous callback actually finished, so a slow callback can cause overlapping runs. Chaining \`setTimeout\` calls instead — where each tick only schedules the next one after the current call completes — avoids that entirely.
 
 ## Your task
 
@@ -7745,11 +7753,11 @@ Write \`createInterval(fn, delay)\`, which starts calling \`fn\` every \`delay\`
     companies: ["Google", "Meta"],
     category: "javascript-runtime",
     title: "Create a fake timer (setInterval)",
-    description: `The \`setInterval\` counterpart to the fake \`setTimeout\` clock — a manually-advanced virtual clock that fires a callback repeatedly at a fixed cadence.
+    description: `Testing code that relies on \`setInterval\` shouldn't mean waiting around in real time for it to fire. A **fake timer** replaces the real clock with a manually-advanced virtual one: nothing fires on its own — you call \`tick(ms)\` to move time forward, and any interval whose next-due time has passed fires, possibly more than once in a single tick.
 
 ## Your task
 
-Write \`createFakeIntervalTimers()\`, returning \`{ setInterval, clearInterval, tick }\`. \`tick(ms)\` should fire a given interval as many times as fit within the advanced time, catching it up correctly even across a single large tick.`,
+Write \`createFakeIntervalTimers()\`, returning \`{ setInterval, clearInterval, tick }\`. \`setInterval(fn, delay)\` registers a repeating callback and returns an id; \`clearInterval(id)\` cancels it. \`tick(ms)\` advances the virtual clock by \`ms\` and fires every due interval as many times as fit within the advanced time, catching up correctly even when a single large tick spans multiple firings.`,
     difficulty: "medium",
     starterCode: `function createFakeIntervalTimers() {
 }`,
@@ -7830,11 +7838,11 @@ Write an \`AsyncTaskQueue\` class with an \`add(taskFn)\` method. \`taskFn\` ret
     companies: ["Amazon", "Netflix"],
     category: "javascript-runtime",
     title: "Implement promisify()",
-    description: `Node's callback convention — \`fn(...args, (err, result) => {})\` — converted into a function that returns a promise instead.
+    description: `Older Node APIs follow the **error-first callback** convention — \`fn(...args, (err, result) => {})\` — which doesn't compose well with \`async\`/\`await\`. \`util.promisify\` bridges the two worlds by wrapping a callback-style function into one that returns a promise instead.
 
 ## Your task
 
-Write \`promisify(fn)\`, wrapping an error-first callback-style function into one that returns a promise resolving with the callback's result, or rejecting with its error.`,
+Write \`promisify(fn)\`, returning a function that calls \`fn\` with its arguments plus an injected \`(err, result)\` callback, and returns a promise that resolves with \`result\` on success or rejects with \`err\` on failure.`,
     difficulty: "easy",
     starterCode: `function promisify(fn) {
 }`,
@@ -7864,11 +7872,11 @@ Write \`promisify(fn)\`, wrapping an error-first callback-style function into on
     companies: ["Google", "Meta"],
     category: "javascript-runtime",
     title: "Implement Promise.race()",
-    description: `Settles as soon as the first input settles — whether that's a fulfillment or a rejection.
+    description: `\`Promise.race\` settles the instant the **first** input settles — whether that's a fulfillment or a rejection. Whichever promise crosses the finish line first, wins; every other input is simply ignored once that happens.
 
 ## Your task
 
-Write \`myPromiseRace(promises)\`.`,
+Write \`myPromiseRace(promises)\`, returning a promise that resolves or rejects with whichever input settles first. Plain (non-promise) values count as already settled, so they win instantly against any pending promise.`,
     difficulty: "easy",
     starterCode: `function myPromiseRace(promises) {
 }`,
@@ -7893,11 +7901,11 @@ Write \`myPromiseRace(promises)\`.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Async helper: race a promise against a timeout",
-    description: `A practical, everyday use of racing: give a promise a deadline, and fail fast instead of hanging forever if it doesn't settle in time.
+    description: `A practical, everyday use of \`Promise.race\`: give a promise a deadline, and fail fast instead of hanging forever if a slow network call or a stuck operation never settles.
 
 ## Your task
 
-Write \`raceWithTimeout(promise, ms)\`, which resolves/rejects exactly like \`promise\` if it settles in time, or rejects with a timeout error if \`ms\` elapses first.`,
+Write \`raceWithTimeout(promise, ms)\`, which resolves or rejects exactly like \`promise\` if it settles within \`ms\` milliseconds, or rejects with a timeout error if \`ms\` elapses first. If \`promise\` itself rejects before the timeout, that original rejection reason must win, not a generic timeout error.`,
     difficulty: "easy",
     starterCode: `function raceWithTimeout(promise, ms) {
 }`,
@@ -8018,11 +8026,11 @@ Write a \`MyPromise\` class with \`then\`, \`catch\`, and \`finally\`:
     companies: ["Google", "Meta", "Amazon"],
     category: "javascript-runtime",
     title: "Implement Promise.all()",
-    description: `Waits for every input to fulfill, preserving input order in the results — or rejects immediately the moment any single input rejects.
+    description: `\`Promise.all\` waits for **every** input to fulfill, collecting all the results in input order regardless of which one finishes first — but it's impatient about failure: the instant any single input rejects, the whole thing rejects immediately, without waiting for the rest.
 
 ## Your task
 
-Write \`myPromiseAll(promises)\`, supporting a mix of promises and plain values.`,
+Write \`myPromiseAll(promises)\`, supporting a mix of promises and plain values. Resolve with an array of results in the same order as the input once every one has fulfilled; reject immediately with the first rejection reason encountered. An empty input array resolves right away with \`[]\`.`,
     difficulty: "medium",
     starterCode: `function myPromiseAll(promises) {
 }`,
@@ -8055,11 +8063,11 @@ Write \`myPromiseAll(promises)\`, supporting a mix of promises and plain values.
     companies: ["Meta", "Amazon"],
     category: "javascript-runtime",
     title: "Implement Promise.allSettled()",
-    description: `Unlike \`Promise.all\`, this never short-circuits — it waits for every input to settle, one way or another, and reports each outcome individually.
+    description: `Unlike \`Promise.all\`, \`Promise.allSettled\` never short-circuits on a rejection — it waits for **every** input to settle, one way or another, and reports each outcome individually instead of throwing away the results of everything that succeeded.
 
 ## Your task
 
-Write \`myPromiseAllSettled(promises)\`, resolving with an array of \`{ status: "fulfilled", value }\` or \`{ status: "rejected", reason }\` objects, one per input, in order.`,
+Write \`myPromiseAllSettled(promises)\`, resolving with an array of \`{ status: "fulfilled", value }\` or \`{ status: "rejected", reason }\` objects, one per input, in the same order as \`promises\`.`,
     difficulty: "medium",
     starterCode: `function myPromiseAllSettled(promises) {
 }`,
@@ -8088,11 +8096,11 @@ Write \`myPromiseAllSettled(promises)\`, resolving with an array of \`{ status: 
     companies: ["Meta", "Amazon"],
     category: "javascript-runtime",
     title: "Implement Promise.any()",
-    description: `The mirror image of \`Promise.all\`: resolves as soon as **any** input fulfills, and only rejects once **every** input has rejected.
+    description: `The mirror image of \`Promise.all\`: \`Promise.any\` resolves as soon as **any** input fulfills — perfect for "try several sources, take whichever answers first" — and only rejects once **every single** input has rejected.
 
 ## Your task
 
-Write \`myPromiseAny(promises)\`.`,
+Write \`myPromiseAny(promises)\`, resolving with the first fulfillment value seen, or rejecting (once every input has rejected) with an \`Error\`. A rejection arriving before a later fulfillment must not affect the outcome — a fulfillment always wins if one ever occurs.`,
     difficulty: "medium",
     starterCode: `function myPromiseAny(promises) {
 }`,
@@ -8126,11 +8134,11 @@ Write \`myPromiseAny(promises)\`.`,
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Implement Promise.prototype.finally()",
-    description: `Runs a callback once a promise settles — regardless of whether it fulfilled or rejected — without changing the eventual outcome.
+    description: `\`.finally()\` runs a cleanup callback once a promise settles — regardless of whether it fulfilled or rejected — without changing the eventual outcome. It's the promise equivalent of a \`try\`/\`finally\` block, useful for things like hiding a loading spinner no matter how a request turns out.
 
 ## Your task
 
-Add \`myFinally(onFinally)\` to \`Promise.prototype\`.`,
+Add \`myFinally(onFinally)\` to \`Promise.prototype\`. \`onFinally\` runs with no arguments on either fulfillment or rejection; its return value is ignored, and the original value or rejection reason passes through unchanged afterward.`,
     difficulty: "medium",
     starterCode: `Promise.prototype.myFinally = function (onFinally) {
 };`,
@@ -8156,7 +8164,7 @@ Add \`myFinally(onFinally)\` to \`Promise.prototype\`.`,
     companies: ["Amazon", "Uber"],
     category: "javascript-runtime",
     title: "Async helper: sequence()",
-    description: `Run a list of async tasks one after another — each one only starts once the previous one has finished.
+    description: `Sometimes async work genuinely has to happen in order — task B depends on task A's side effects finishing first, not just on some value it returns. \`sequence()\` is the async equivalent of a plain loop: run a task, wait for it, then move to the next, never starting two at once.
 
 ## Your task
 
@@ -8187,7 +8195,7 @@ Write \`sequence(tasks)\`, where \`tasks\` is an array of zero-argument function
     companies: ["Amazon", "Uber"],
     category: "javascript-runtime",
     title: "Async helper: parallel()",
-    description: `The concurrent counterpart to \`sequence()\`: start every task immediately, and collect all the results once they're all done.
+    description: `The concurrent counterpart to \`sequence()\`: when tasks don't depend on each other, running them one at a time just wastes time waiting on network calls or timers that could easily overlap. \`parallel()\` kicks off every task immediately and waits only once, so the total time is roughly the slowest task's delay, not the sum of all of them.
 
 ## Your task
 
@@ -8214,11 +8222,11 @@ Write \`parallel(tasks)\`, where \`tasks\` is an array of zero-argument function
     companies: ["Airbnb"],
     category: "javascript-runtime",
     title: "Flatten a Thunk",
-    description: `A thunk is a function that takes a single \`(err, result) => {}\` callback. Sometimes a thunk's result is itself another thunk — flattening resolves that chain down to the final real value.
+    description: `A **thunk**, in the callback-style sense, is a function that takes a single \`(err, result) => {}\` callback and eventually invokes it. Compose enough thunk-returning helpers together and you can end up with a thunk whose "result" is itself another thunk, several levels deep — flattening walks that chain down to the actual final value before ever calling your callback.
 
 ## Your task
 
-Write \`flattenThunk(thunk)\`, returning a new thunk that, when called with a callback, recursively unwraps nested thunks until it reaches a non-thunk value.`,
+Write \`flattenThunk(thunk)\`, returning a new thunk that, when called with a callback, recursively unwraps nested thunks until it reaches a non-thunk value, then invokes the callback with that value. An error at any level should propagate immediately, short-circuiting the unwrapping.`,
     difficulty: "easy",
     starterCode: `function flattenThunk(thunk) {
 }`,
@@ -8249,11 +8257,11 @@ Write \`flattenThunk(thunk)\`, returning a new thunk that, when called with a ca
     companies: ["Amazon", "Uber", "Netflix"],
     category: "javascript-runtime",
     title: "Auto-retry a Promise on rejection",
-    description: `Flaky network calls are a fact of life — retrying a failed request a bounded number of times before finally giving up is a common resilience pattern.
+    description: `Flaky network calls are a fact of life — **retrying** a failed request a bounded number of times before finally giving up is a common resilience pattern, whether it's a transient server error or a dropped connection.
 
 ## Your task
 
-Write \`retry(fn, retries)\`, where \`fn\` returns a promise. On rejection, call \`fn\` again, up to \`retries\` additional times, before finally rejecting with the last error.`,
+Write \`retry(fn, retries)\`, where \`fn\` returns a promise. On rejection, call \`fn\` again, up to \`retries\` additional times, resolving as soon as any attempt succeeds. If every attempt fails, reject with the last error once \`retries\` is exhausted.`,
     difficulty: "medium",
     starterCode: `function retry(fn, retries) {
 }`,
@@ -8355,11 +8363,11 @@ Write \`dedupeAsync(fn)\`, wrapping an async function keyed by its single argume
     companies: ["Amazon", "Airbnb"],
     category: "javascript-runtime",
     title: "Call APIs with pagination",
-    description: `A cursor-paginated API returns one page of items plus a cursor pointing to the next page (or \`null\` when there isn't one) — this helper walks every page and flattens the results into one array.
+    description: `Real-world list endpoints rarely return everything in one response — a **cursor-paginated** API hands back one page of items plus a cursor pointing at the next page (or \`null\`/falsy once there isn't one). Fetching "all" of something usually means driving that pagination loop yourself: keep requesting pages, following each cursor, until the API tells you to stop.
 
 ## Your task
 
-Write \`fetchAllPages(fetchPage)\`, where \`fetchPage(cursor)\` returns a promise resolving to \`{ items, nextCursor }\`. Start with \`cursor = null\` and keep going until \`nextCursor\` is falsy.`,
+Write \`fetchAllPages(fetchPage)\`, where \`fetchPage(cursor)\` returns a promise resolving to \`{ items, nextCursor }\`. Start with \`cursor = null\`, concatenate each page's \`items\` in order, and keep requesting subsequent pages — passing each page's \`nextCursor\` into the next call — until \`nextCursor\` is falsy. Return the combined array of every page's items.`,
     difficulty: "medium",
     starterCode: `async function fetchAllPages(fetchPage) {
 }`,
@@ -8421,11 +8429,11 @@ Write \`scheduleTask(callback)\` using \`MessageChannel\`, running \`callback\` 
     companies: ["Amazon", "Microsoft", "Google"],
     category: "javascript-runtime",
     title: "Reverse a linked list",
-    description: `A classic pointer-manipulation warm-up: reverse a singly linked list in place, without building a new list.
+    description: `A classic **pointer-manipulation** warm-up: reverse a singly linked list in place by flipping every node's \`next\` pointer to point backward, without building a new list or copying any values.
 
 ## Your task
 
-Write \`reverseLinkedList(head)\`, where each node is \`{ value, next }\`. Return the new head.`,
+Write \`reverseLinkedList(head)\`, where each node is \`{ value, next }\`. Return the new head — the node that was previously the tail.`,
     difficulty: "easy",
     starterCode: `function reverseLinkedList(head) {
 }`,
@@ -8456,7 +8464,7 @@ Write \`reverseLinkedList(head)\`, where each node is \`{ value, next }\`. Retur
     companies: ["Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Detect a cycle in a linked list",
-    description: `Floyd's classic "tortoise and hare" — two pointers moving at different speeds are guaranteed to meet if (and only if) the list loops back on itself.
+    description: `Floyd's classic **tortoise and hare** algorithm: two pointers moving at different speeds are guaranteed to meet if — and only if — the list loops back on itself. It solves cycle detection in O(1) space, without tracking every visited node in a Set.
 
 ## Your task
 
@@ -8490,11 +8498,11 @@ Write \`hasCycle(head)\`, using two pointers rather than a visited-nodes Set.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Invert a binary tree",
-    description: `The (famously trivial, once you see it) tree problem: mirror a binary tree by swapping every node's left and right children, all the way down.
+    description: `Made famous by an offhand tweet about not being able to invert a binary tree on a whiteboard — it's actually one of the simplest tree problems once the recursion clicks. **Inverting** a binary tree means mirroring it: every node's left and right children swap places, all the way down to the leaves.
 
 ## Your task
 
-Write \`invertBinaryTree(root)\`, where each node is \`{ value, left, right }\`.`,
+Write \`invertBinaryTree(root)\`, where each node is \`{ value, left, right }\`. Recursively swap every node's \`left\` and \`right\` and return the (mutated) root. An empty tree (\`null\`) stays \`null\`.`,
     difficulty: "easy",
     starterCode: `function invertBinaryTree(root) {
 }`,
@@ -8521,11 +8529,11 @@ Write \`invertBinaryTree(root)\`, where each node is \`{ value, left, right }\`.
     companies: ["Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Implement a Queue using Stacks",
-    description: `A queue (FIFO) built entirely out of two stacks (LIFO) — a demonstration that the right data structure can be built from the "wrong" one with a clever amortized trick.
+    description: `A **queue** (FIFO — first in, first out) built entirely out of two **stacks** (LIFO — last in, first out) — a classic demonstration that the "wrong" data structure can simulate the right one with a clever amortized trick.
 
 ## Your task
 
-Write a \`QueueViaStacks\` class with \`enqueue(value)\` and \`dequeue()\`, using two array-backed stacks internally (no array \`.shift()\`/\`.unshift()\`).`,
+Write a \`QueueViaStacks\` class with \`enqueue(value)\` and \`dequeue()\`, using two array-backed stacks internally (only \`.push()\`/\`.pop()\`, never array \`.shift()\`/\`.unshift()\`). \`dequeue()\` must return values in the same order they were enqueued, and return \`undefined\` on an empty queue.`,
     difficulty: "medium",
     starterCode: `class QueueViaStacks {
   enqueue(value) {
@@ -8564,11 +8572,11 @@ Write a \`QueueViaStacks\` class with \`enqueue(value)\` and \`dequeue()\`, usin
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Implement a Stack using Queues",
-    description: `The mirror-image exercise: build a stack (LIFO) purely out of queue-style operations.
+    description: `The mirror-image exercise to Queue-via-Stacks: build a **stack** (LIFO) purely out of **queue**-style operations, rotating elements instead of stacking them.
 
 ## Your task
 
-Write a \`StackViaQueues\` class with \`push(value)\` and \`pop()\`, using a single array as a queue (only \`.push()\` and \`.shift()\`, never index-based LIFO access).`,
+Write a \`StackViaQueues\` class with \`push(value)\` and \`pop()\`, using a single array as a queue (only \`.push()\` and \`.shift()\`, never index-based LIFO access). \`pop()\` must return values in last-in-first-out order, and return \`undefined\` on an empty stack.`,
     difficulty: "medium",
     starterCode: `class StackViaQueues {
   push(value) {
@@ -8606,7 +8614,7 @@ Write a \`StackViaQueues\` class with \`push(value)\` and \`pop()\`, using a sin
     companies: ["Amazon", "Google"],
     category: "javascript-runtime",
     title: "Create a Priority Queue",
-    description: `A queue where items come out in priority order rather than insertion order — lower priority number dequeues first, ties broken by insertion order.
+    description: `A **priority queue** dequeues by priority instead of insertion order — the structure behind task schedulers, Dijkstra's algorithm, and any "always process the most urgent thing next" system. Here a lower priority number comes out sooner, and equal priorities fall back to plain FIFO order.
 
 ## Your task
 
@@ -8649,11 +8657,11 @@ Write a \`PriorityQueue\` class with \`enqueue(value, priority)\` and \`dequeue(
     companies: ["Amazon", "Google", "ByteDance"],
     category: "javascript-runtime",
     title: "Find Top-K Elements",
-    description: `Find the \`k\` largest values in an array, returned largest-first.
+    description: `"Top-K" problems show up everywhere — leaderboard scores, trending posts, the highest bids in an auction. This is the simplest version: find the \`k\` largest values in an array and return them largest-first.
 
 ## Your task
 
-Write \`findTopK(nums, k)\`.`,
+Write \`findTopK(nums, k)\`, returning an array of the \`k\` largest values from \`nums\`, sorted in descending order. If \`k\` is larger than \`nums.length\`, return the whole array sorted descending; if \`k\` is \`0\`, return an empty array.`,
     difficulty: "medium",
     starterCode: `function findTopK(nums, k) {
 }`,
@@ -8675,7 +8683,7 @@ Write \`findTopK(nums, k)\`.`,
     companies: ["Google", "Amazon"],
     category: "javascript-runtime",
     title: "Implement a Trie (prefix tree)",
-    description: `The data structure behind autocomplete: a tree where each path from the root spells out a prefix, letting you check both "is this an exact word?" and "does anything start with this?" efficiently.
+    description: `A **trie** (prefix tree) is the data structure behind autocomplete and spell-check: each path from the root spells out a prefix, so both "is this an exact word?" and "does anything start with this?" resolve in time proportional to the string's length, not the size of the whole dictionary.
 
 ## Your task
 
@@ -8734,11 +8742,11 @@ Write a \`Trie\` class with \`insert(word)\`, \`search(word)\` (exact match), an
     companies: ["Google", "Amazon"],
     category: "javascript-runtime",
     title: "Serialize and deserialize a binary tree",
-    description: `Turn a binary tree into a string you could save or send over the network, then rebuild an equivalent tree from that string.
+    description: `A tree only exists as connected node objects in memory — to save it to disk or send it over the network, you need to flatten it into a string, then be able to rebuild an equivalent tree from that string later.
 
 ## Your task
 
-Write \`serialize(root)\` and \`deserialize(data)\`, where each node is \`{ value, left, right }\`. Any encoding is fine as long as \`deserialize(serialize(tree))\` reconstructs an equivalent tree.`,
+Write \`serialize(root)\` and \`deserialize(data)\`, where each node is \`{ value, left, right }\`. Any encoding is fine as long as \`deserialize(serialize(tree))\` reconstructs an equivalent tree, including correctly round-tripping \`null\` for an empty tree.`,
     difficulty: "medium",
     starterCode: `function serialize(root) {
 }
@@ -8774,7 +8782,7 @@ function deserialize(data) {
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Binary tree vertical traversal",
-    description: `Group every node into a column based on its horizontal distance from the root (root = column 0, left child = column − 1, right child = column + 1), and read the columns left to right.
+    description: `**Vertical order traversal** groups every node into a column based on its horizontal distance from the root — root is column 0, a left child is one column left, a right child is one column right — then reads the columns left to right, top to bottom within each. It's a well-known interview staple precisely because the tie-breaking rule (same row *and* column) is easy to get subtly wrong.
 
 ## Your task
 
@@ -8821,7 +8829,7 @@ Write \`verticalTraversal(root)\`, returning an array of columns (left to right)
     slug: "sort-bubble",
     category: "javascript-runtime",
     title: "Bubble Sort",
-    description: `Repeatedly walk the array, swapping adjacent out-of-order pairs, until nothing is left to swap. The simplest sort to reason about, if not the fastest.
+    description: `**Bubble sort**: repeatedly walk the array, swapping adjacent out-of-order pairs, until nothing is left to swap. The simplest sort to reason about, if not the fastest — each full pass "bubbles" the largest remaining value to the end.
 
 ## Your task
 
@@ -8855,11 +8863,11 @@ Write \`bubbleSort(arr)\`, returning a new sorted array (ascending) without muta
     slug: "sort-insertion",
     category: "javascript-runtime",
     title: "Insertion Sort",
-    description: `Build up a sorted prefix one element at a time, sliding each new element backward into its correct position — the way most people sort a hand of playing cards.
+    description: `**Insertion sort**: build up a sorted prefix one element at a time, sliding each new element backward into its correct position — the way most people sort a hand of playing cards.
 
 ## Your task
 
-Write \`insertionSort(arr)\`, returning a new sorted array (ascending).`,
+Write \`insertionSort(arr)\`, returning a new sorted array (ascending) without mutating the input.`,
     difficulty: "easy",
     starterCode: `function insertionSort(arr) {
 }`,
@@ -8890,11 +8898,11 @@ Write \`insertionSort(arr)\`, returning a new sorted array (ascending).`,
     slug: "sort-selection",
     category: "javascript-runtime",
     title: "Selection Sort",
-    description: `Repeatedly find the minimum of the remaining unsorted portion and swap it into place at the front.
+    description: `**Selection sort**: repeatedly find the minimum of the remaining unsorted portion and swap it into place at the front — unlike bubble sort, only one swap happens per pass.
 
 ## Your task
 
-Write \`selectionSort(arr)\`, returning a new sorted array (ascending).`,
+Write \`selectionSort(arr)\`, returning a new sorted array (ascending) without mutating the input.`,
     difficulty: "easy",
     starterCode: `function selectionSort(arr) {
 }`,
@@ -8923,11 +8931,11 @@ Write \`selectionSort(arr)\`, returning a new sorted array (ascending).`,
     slug: "sort-merge",
     category: "javascript-runtime",
     title: "Merge Sort",
-    description: `Split the array in half recursively down to single elements, then merge sorted halves back together — the canonical divide-and-conquer sort.
+    description: `**Merge sort**: split the array in half recursively down to single elements, then merge sorted halves back together — the canonical divide-and-conquer sort, with guaranteed O(n log n) performance.
 
 ## Your task
 
-Write \`mergeSort(arr)\`.`,
+Write \`mergeSort(arr)\`, returning a new sorted array (ascending).`,
     difficulty: "medium",
     starterCode: `function mergeSort(arr) {
 }`,
@@ -8959,11 +8967,11 @@ Write \`mergeSort(arr)\`.`,
     slug: "sort-quick",
     category: "javascript-runtime",
     title: "Quick Sort",
-    description: `Pick a pivot, partition everything into less-than and greater-or-equal buckets, and recursively sort each bucket.
+    description: `**Quick sort**: pick a pivot, partition everything into less-than and greater-or-equal buckets, and recursively sort each bucket — fast in practice, thanks to good average-case cache locality.
 
 ## Your task
 
-Write \`quickSort(arr)\`.`,
+Write \`quickSort(arr)\`, returning a new sorted array (ascending).`,
     difficulty: "medium",
     starterCode: `function quickSort(arr) {
 }`,
@@ -8990,7 +8998,7 @@ Write \`quickSort(arr)\`.`,
     slug: "binary-search-basic",
     category: "javascript-runtime",
     title: "Binary Search (unique values)",
-    description: `The foundational template every other binary search variant builds on: halve the search space each step by comparing against the middle element.
+    description: `The foundational template every other binary search variant builds on: repeatedly halve the search space by comparing against the middle element, so you find a value (or prove it's absent) in O(log n) steps instead of scanning the whole array.
 
 ## Your task
 
@@ -9023,7 +9031,7 @@ Write \`binarySearch(arr, target)\` for a sorted array of unique values, returni
     slug: "binary-search-first-index",
     category: "javascript-runtime",
     title: "Search first index (possible duplicates)",
-    description: `With duplicates allowed, "found it" isn't enough — you need the leftmost occurrence specifically.
+    description: `Plain binary search stops the moment it hits any match, but with duplicates allowed, "found it" isn't enough — you need the leftmost occurrence specifically. The fix is small: on a match, don't stop, keep narrowing toward the left half in case there's an even earlier one.
 
 ## Your task
 
@@ -9062,7 +9070,7 @@ Write \`searchFirstIndex(arr, target)\`, returning the index of the first (leftm
     slug: "binary-search-last-index",
     category: "javascript-runtime",
     title: "Search last index (possible duplicates)",
-    description: `The mirror of the previous problem: find the rightmost occurrence of a value among duplicates.
+    description: `The mirror image of finding the first index: with duplicates allowed, keep narrowing toward the right half on a match instead of the left, so you land on the rightmost occurrence of the target.
 
 ## Your task
 
@@ -9101,7 +9109,7 @@ Write \`searchLastIndex(arr, target)\`.`,
     slug: "binary-search-element-before",
     category: "javascript-runtime",
     title: "Element right before target",
-    description: `Find the predecessor: the largest value in a sorted array that is strictly less than a given target, even if the target itself isn't present.
+    description: `Find the **predecessor**: the largest value in a sorted array that's strictly less than a given target — useful for things like locating where an item would be inserted, or the closest earlier entry in a sorted log. The target itself doesn't need to actually be present in the array.
 
 ## Your task
 
@@ -9138,7 +9146,7 @@ Write \`findElementBefore(arr, target)\`, returning that value, or \`undefined\`
     slug: "binary-search-element-after",
     category: "javascript-runtime",
     title: "Element right after target",
-    description: `The successor: the smallest value in a sorted array that is strictly greater than a given target.
+    description: `Find the **successor**: the smallest value in a sorted array that's strictly greater than a given target — the mirror image of finding the element right before it, narrowing toward candidates on the left instead of the right.
 
 ## Your task
 
@@ -9175,11 +9183,11 @@ Write \`findElementAfter(arr, target)\`, returning that value, or \`undefined\` 
     slug: "first-bad-version",
     category: "javascript-runtime",
     title: "First bad version",
-    description: `Given a monotonic \`isBad(version)\` check (every version after the first bad one is also bad), find that very first bad version without checking every version one by one.
+    description: `A classic version-control scenario: you ship versions \`1\` through \`n\`, something broke at some point, and every version after that first bad one is broken too (once bad, always bad). Calling \`isBad(version)\` is expensive — like running a full test suite — so checking every version one at a time isn't good enough; you want to zero in on the exact breaking point in as few calls as possible.
 
 ## Your task
 
-Write \`firstBadVersion(n, isBad)\` for versions numbered \`1\` through \`n\`.`,
+Write \`firstBadVersion(n, isBad)\`, returning the first version number in \`1..n\` for which \`isBad(version)\` is \`true\`, using binary search rather than a linear scan.`,
     difficulty: "medium",
     starterCode: `function firstBadVersion(n, isBad) {
 }`,
@@ -9208,11 +9216,11 @@ Write \`firstBadVersion(n, isBad)\` for versions numbered \`1\` through \`n\`.`,
     slug: "median-of-two-sorted-arrays",
     category: "javascript-runtime",
     title: "Median of two sorted arrays",
-    description: `Find the median of the combined values of two already-sorted arrays.
+    description: `One of the best-known "hard" interview problems, though the version asked here is more approachable than its reputation suggests: given two already-sorted arrays, find the **median** of their combined values.
 
 ## Your task
 
-Write \`findMedianSortedArrays(nums1, nums2)\`. A straightforward merge-based approach is completely valid here — the classic optimization down to O(log(min(m, n))) via a binary-search partition is a great follow-up once this works.`,
+Write \`findMedianSortedArrays(nums1, nums2)\`, returning the median of all values from both arrays combined — the middle value for an odd total count, or the average of the two middle values for an even count. A straightforward merge-based approach is completely valid here; the classic optimization down to O(log(min(m, n))) via a binary-search partition is a great follow-up once this works.`,
     difficulty: "medium",
     starterCode: `function findMedianSortedArrays(nums1, nums2) {
 }`,
@@ -9245,11 +9253,11 @@ Write \`findMedianSortedArrays(nums1, nums2)\`. A straightforward merge-based ap
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "isPrime()",
-    description: `Determine whether a number is prime, checking only up to its square root for efficiency.
+    description: `A **prime number** has exactly two divisors: 1 and itself. The naive check — testing every number up to \`n\` — works but wastes time; you only ever need to check divisors up to \`√n\`, since any factor larger than that would pair with one smaller than it.
 
 ## Your task
 
-Write \`isPrime(n)\`.`,
+Write \`isPrime(n)\`, returning \`true\` if \`n\` is prime and \`false\` otherwise. Numbers less than 2 (including 0, 1, and negatives) are not prime.`,
     difficulty: "easy",
     starterCode: `function isPrime(n) {
 }`,
@@ -9276,11 +9284,11 @@ Write \`isPrime(n)\`.`,
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "A number sequence",
-    description: `The "look-and-say" sequence: each term describes the previous one by counting consecutive digit runs. Starting from \`"1"\`: read it as "one 1", giving \`"11"\`; read that as "two 1s", giving \`"21"\`; and so on.
+    description: `The "look-and-say" sequence is a fun string-building exercise: each term describes the *previous* term by reading off its consecutive digit runs. Starting from \`"1"\`: read it aloud as "one 1", giving \`"11"\`; read that as "two 1s", giving \`"21"\`; read that as "one 2, one 1", giving \`"1211"\` — and so on.
 
 ## Your task
 
-Write \`lookAndSay(n)\`, returning the \`n\`th term (1-indexed) as a string.`,
+Write \`lookAndSay(n)\`, returning the \`n\`th term (1-indexed) as a string, built by run-length-encoding the \`(n-1)\`th term.`,
     difficulty: "easy",
     starterCode: `function lookAndSay(n) {
 }`,
@@ -9318,11 +9326,11 @@ Write \`lookAndSay(n)\`, returning the \`n\`th term (1-indexed) as a string.`,
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Fibonacci (recursion)",
-    description: `The canonical recursion exercise: each Fibonacci number is the sum of the two before it.
+    description: `The canonical recursion exercise: each **Fibonacci** number is the sum of the two before it (\`0, 1, 1, 2, 3, 5, 8, ...\`). Solved recursively, it's also the textbook example of exponential blowup from repeated work — the same sub-calls get recomputed over and over — which is exactly why memoization exists.
 
 ## Your task
 
-Write \`fibRecursive(n)\` using plain recursion (no memoization) — this version is intentionally about recursion mechanics, not performance.`,
+Write \`fibRecursive(n)\` using plain recursion (no memoization), returning the \`n\`th Fibonacci number (0-indexed: \`fibRecursive(0) === 0\`, \`fibRecursive(1) === 1\`). This version is intentionally about recursion mechanics, not performance.`,
     difficulty: "easy",
     starterCode: `function fibRecursive(n) {
 }`,
@@ -9345,11 +9353,11 @@ Write \`fibRecursive(n)\` using plain recursion (no memoization) — this versio
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Generate Fibonacci Number",
-    description: `The practical counterpart to the recursive version: generate the first several Fibonacci numbers iteratively, in O(n) time instead of exponential.
+    description: `The practical counterpart to the recursive version, where exponential blowup actually matters: generate the first several Fibonacci numbers **iteratively**, in O(n) time, by tracking just the last two values instead of recomputing the whole tree of calls.
 
 ## Your task
 
-Write \`generateFibonacci(count)\`, returning an array of the first \`count\` Fibonacci numbers, starting from 0.`,
+Write \`generateFibonacci(count)\`, returning an array of the first \`count\` Fibonacci numbers, starting from \`0\` (i.e. \`[0, 1, 1, 2, 3, ...]\`).`,
     difficulty: "medium",
     starterCode: `function generateFibonacci(count) {
 }`,
@@ -9378,7 +9386,7 @@ Write \`generateFibonacci(count)\`, returning an array of the first \`count\` Fi
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Two numbers that sum to 0",
-    description: `Find any pair of numbers in an array that are exact opposites of each other.
+    description: `Find any pair of numbers in an array that are exact opposites of each other — a warm-up variant of the classic two-sum problem, solved the same way: track what you've seen, and check for the complement you need.
 
 ## Your task
 
@@ -9409,11 +9417,11 @@ Write \`findZeroSumPair(nums)\`, returning the first such pair found while scann
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "The largest difference",
-    description: `Like the classic "best time to buy and sell a stock" — find the largest value of \`nums[j] - nums[i]\` for any \`j > i\`.
+    description: `Structurally the same problem as the classic "best time to buy and sell a stock": given a sequence of numbers, find the largest possible \`nums[j] - nums[i]\` for any \`j > i\` — buy at the lowest point *before* selling at the highest point after it, not just the overall max minus the overall min.
 
 ## Your task
 
-Write \`largestDifference(nums)\` in a single O(n) pass, tracking the minimum seen so far.`,
+Write \`largestDifference(nums)\` in a single O(n) pass, tracking the minimum value seen so far and the best difference found using it. An array with fewer than 2 elements has no valid pair — return \`undefined\`.`,
     difficulty: "easy",
     starterCode: `function largestDifference(nums) {
 }`,
@@ -9442,11 +9450,11 @@ Write \`largestDifference(nums)\` in a single O(n) pass, tracking the minimum se
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Merge sorted arrays",
-    description: `The merge step from merge sort, as its own standalone problem: combine two already-sorted arrays into one sorted array.
+    description: `The **merge step** from merge sort, pulled out as its own standalone problem: combine two already-sorted arrays into a single sorted array, without re-sorting everything from scratch.
 
 ## Your task
 
-Write \`mergeSortedArrays(a, b)\` in O(a.length + b.length) time.`,
+Write \`mergeSortedArrays(a, b)\` in O(a.length + b.length) time, using two pointers that each walk one array and always advance whichever currently points at the smaller value.`,
     difficulty: "easy",
     starterCode: `function mergeSortedArrays(a, b) {
 }`,
@@ -9474,11 +9482,11 @@ Write \`mergeSortedArrays(a, b)\` in O(a.length + b.length) time.`,
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Intersection of two sorted arrays",
-    description: `Find the values common to two sorted arrays, using the sortedness to do it in one linear pass instead of hashing.
+    description: `Two-pointer classics don't get much cleaner than this: because both inputs are already sorted, you can walk them once, together, advancing whichever pointer is behind — no hashing needed, unlike the unsorted version of this same problem.
 
 ## Your task
 
-Write \`intersectSorted(a, b)\`, returning the unique common values in ascending order.`,
+Write \`intersectSorted(a, b)\`, returning the unique values common to both sorted arrays, in ascending order.`,
     difficulty: "easy",
     starterCode: `function intersectSorted(a, b) {
 }`,
@@ -9515,11 +9523,11 @@ Write \`intersectSorted(a, b)\`, returning the unique common values in ascending
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Intersection of unsorted arrays",
-    description: `The same problem without the sortedness assumption — solved with a hash set instead of two pointers.
+    description: `The same intersection problem, minus the sortedness guarantee that made the two-pointer trick possible — so the tool of choice becomes a **hash set** instead, trading the ordered walk for O(1) membership checks.
 
 ## Your task
 
-Write \`intersectUnsorted(a, b)\`, returning the unique common values (order doesn't matter).`,
+Write \`intersectUnsorted(a, b)\`, returning the unique values common to both arrays; order in the result doesn't matter.`,
     difficulty: "easy",
     starterCode: `function intersectUnsorted(a, b) {
 }`,
@@ -9542,11 +9550,11 @@ Write \`intersectUnsorted(a, b)\`, returning the unique common values (order doe
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Find available meeting slots",
-    description: `Given a list of busy \`[start, end]\` intervals within a workday, find the free gaps where a meeting could be scheduled.
+    description: `A miniature calendar-scheduling problem: given a list of busy \`[start, end]\` intervals scattered across a workday, find the free gaps where a new meeting could actually fit — the same core logic behind any "find available time" feature.
 
 ## Your task
 
-Write \`findAvailableSlots(busy, workStart, workEnd)\`, returning an array of \`[start, end]\` free intervals, in order. \`busy\` may be given in any order and may contain overlapping intervals.`,
+Write \`findAvailableSlots(busy, workStart, workEnd)\`, returning an array of \`[start, end]\` free intervals, in chronological order. \`busy\` may be given in any order and may contain overlapping intervals — sort/merge as needed before computing the gaps.`,
     difficulty: "medium",
     starterCode: `function findAvailableSlots(busy, workStart, workEnd) {
 }`,
@@ -9577,11 +9585,11 @@ Write \`findAvailableSlots(busy, workStart, workEnd)\`, returning an array of \`
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Longest substring with unique characters",
-    description: `A sliding-window classic: find the length of the longest substring that has no repeated characters.
+    description: `A **sliding-window** classic: find the length of the longest substring that has no repeated characters. The naive approach checks every substring; the sliding-window version instead grows a window from the right and only jumps its left edge forward when a repeat is actually found inside the current window.
 
 ## Your task
 
-Write \`lengthOfLongestUniqueSubstring(s)\` in O(n) time.`,
+Write \`lengthOfLongestUniqueSubstring(s)\` in O(n) time, returning the length (not the substring itself) of the longest run of unique characters in \`s\`.`,
     difficulty: "easy",
     starterCode: `function lengthOfLongestUniqueSubstring(s) {
 }`,
@@ -9615,11 +9623,11 @@ Write \`lengthOfLongestUniqueSubstring(s)\` in O(n) time.`,
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Validate string of parentheses",
-    description: `Check whether every bracket in a string is properly opened, closed, and nested — for \`()\`, \`[]\`, and \`{}\`.
+    description: `Check whether every bracket in a string is properly opened, closed, and nested — for \`()\`, \`[]\`, and \`{}\` — the kind of validation that also underlies checking whether code or a parser's input is well-formed.
 
 ## Your task
 
-Write \`isValidParens(s)\`.`,
+Write \`isValidParens(s)\`, returning \`true\` only if every closing bracket matches the most recently opened, still-unclosed bracket of the same type, and no bracket is left unclosed at the end.`,
     difficulty: "easy",
     starterCode: `function isValidParens(s) {
 }`,
@@ -9651,11 +9659,11 @@ Write \`isValidParens(s)\`.`,
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Pick up stones",
-    description: `A Nim-style game: two players alternate taking 1, 2, or 3 stones from a pile; whoever takes the last stone wins. Determine whether the player who goes first can force a win.
+    description: `A **Nim-style** game theory problem: two players alternate taking 1, 2, or 3 stones from a pile; whoever takes the last stone wins. Work out whether the player who goes first can force a win, no matter what the second player does.
 
 ## Your task
 
-Write \`canFirstPlayerWin(n)\` for a starting pile of \`n\` stones, assuming both players play optimally.`,
+Write \`canFirstPlayerWin(n)\` for a starting pile of \`n\` stones, assuming both players play optimally, returning \`true\` if the first player can force a win.`,
     difficulty: "easy",
     starterCode: `function canFirstPlayerWin(n) {
 }`,
@@ -9677,11 +9685,11 @@ Write \`canFirstPlayerWin(n)\` for a starting pile of \`n\` stones, assuming bot
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Find the single integer",
-    description: `Every number in an array appears exactly twice, except one — find it in O(n) time and O(1) space.
+    description: `Every number in the array appears exactly twice, except one lone value — find it, but skip the obvious hash-count approach and do it in O(n) time with **O(1) extra space** instead, using a neat bitwise trick.
 
 ## Your task
 
-Write \`singleNumber(nums)\` using bitwise XOR.`,
+Write \`singleNumber(nums)\` using bitwise XOR: XOR-ing a value with itself cancels to \`0\`, and XOR is associative and commutative, so XOR-ing every element together leaves only the unpaired value standing.`,
     difficulty: "easy",
     starterCode: `function singleNumber(nums) {
 }`,
@@ -9703,11 +9711,11 @@ Write \`singleNumber(nums)\` using bitwise XOR.`,
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Move zeros",
-    description: `Push every \`0\` to the end of the array while preserving the relative order of the non-zero elements, in place.
+    description: `Push every \`0\` to the end of the array while preserving the relative order of the non-zero elements — and do it **in place**, without allocating a new array for the result.
 
 ## Your task
 
-Write \`moveZeroes(nums)\`, mutating and returning \`nums\`.`,
+Write \`moveZeroes(nums)\`, mutating \`nums\` so all non-zero elements keep their original relative order at the front, followed by all the zeros, and returning that same mutated array.`,
     difficulty: "medium",
     starterCode: `function moveZeroes(nums) {
 }`,
@@ -9739,7 +9747,7 @@ Write \`moveZeroes(nums)\`, mutating and returning \`nums\`.`,
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Count palindromic substrings",
-    description: `Count every substring (including single characters) that reads the same forwards and backwards, using the expand-around-center technique.
+    description: `Count every substring (including single characters) that reads the same forwards and backwards. Checking all O(n²) substrings one by one works but is wasteful — the **expand-around-center** technique does better by growing outward from each of the \`2n - 1\` possible centers (every character, plus every gap between two characters) and stopping the moment symmetry breaks.
 
 ## Your task
 
@@ -9777,7 +9785,7 @@ Write \`countPalindromicSubstrings(s)\`.`,
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Angle between clock hands",
-    description: `Compute the smaller angle between the hour and minute hands of an analog clock at a given time.
+    description: `Compute the smaller angle between the hour and minute hands of an analog clock at a given time — a classic brain-teaser because the hour hand isn't pinned to its hour mark, it creeps forward continuously as the minutes pass.
 
 ## Your task
 
@@ -9807,11 +9815,11 @@ Write \`angleBetweenHands(hours, minutes)\`, returning the angle in degrees (0-1
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "K-th largest element in an unsorted array",
-    description: `Find the k-th largest value in an array — not the k-th *distinct* value, duplicates count individually.
+    description: `Find the k-th largest value in an array — not the k-th *distinct* value, so duplicates each count as their own position (the array \`[5,5,4]\`'s 2nd largest is \`5\`, not \`4\`).
 
 ## Your task
 
-Write \`kthLargest(nums, k)\`.`,
+Write \`kthLargest(nums, k)\`, returning the k-th largest value in \`nums\`. Sorting descending and indexing at \`k - 1\` is completely valid here; a heap-based O(n log k) solution is a nice follow-up once this works.`,
     difficulty: "medium",
     starterCode: `function kthLargest(nums, k) {
 }`,
@@ -9835,11 +9843,11 @@ Write \`kthLargest(nums, k)\`.`,
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Implement Math.pow()",
-    description: `Exponentiation by hand, including negative exponents.
+    description: `Hand-rolled exponentiation, done the way real implementations do it: **fast (divide-and-conquer) exponentiation**, which computes \`base^exponent\` in O(log n) multiplications instead of the O(n) you'd get from multiplying \`base\` by itself \`exponent\` times in a loop.
 
 ## Your task
 
-Write \`myPow(base, exponent)\` using fast (divide-and-conquer) exponentiation rather than a naive multiplication loop.`,
+Write \`myPow(base, exponent)\`, handling negative exponents (invert the positive-exponent result) and \`exponent === 0\` (always \`1\`), using the halving identity \`base^n = (base^(n/2))^2\` rather than a naive multiplication loop.`,
     difficulty: "easy",
     starterCode: `function myPow(base, exponent) {
 }`,
@@ -9865,11 +9873,11 @@ Write \`myPow(base, exponent)\` using fast (divide-and-conquer) exponentiation r
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Implement Math.sqrt()",
-    description: `Approximate a square root using Newton's method: repeatedly refine a guess until it converges.
+    description: `Approximate a square root the way numerical methods actually do it: **Newton's method** starts from a rough guess and repeatedly refines it — \`guess = (guess + x / guess) / 2\` — until the guess converges to the true root.
 
 ## Your task
 
-Write \`mySqrt(x)\`, converging to a precise floating-point result.`,
+Write \`mySqrt(x)\`, converging to a precise floating-point result via repeated refinement. Return \`0\` for \`x === 0\` and \`NaN\` for a negative \`x\`.`,
     difficulty: "medium",
     starterCode: `function mySqrt(x) {
 }`,
@@ -9898,11 +9906,11 @@ Write \`mySqrt(x)\`, converging to a precise floating-point result.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Implement Math.clz32()",
-    description: `Count the leading zero bits in a number's 32-bit unsigned binary representation — a low-level primitive V8 exposes for bit-twiddling code.
+    description: `\`Math.clz32\` — "count leading zeros, 32-bit" — is a low-level bit-twiddling primitive V8 exposes for exactly the operation its name suggests: count how many leading zero bits a number has in its **32-bit unsigned** binary representation, useful for things like computing the next power of two or a fast integer log2.
 
 ## Your task
 
-Write \`myClz32(x)\`.`,
+Write \`myClz32(x)\`, treating \`x\` as an unsigned 32-bit integer and returning the count of leading zero bits before the first \`1\`. \`myClz32(0)\` is \`32\` — a value with no set bits has all 32 bits counted as leading zeros.`,
     difficulty: "medium",
     starterCode: `function myClz32(x) {
 }`,
@@ -9932,7 +9940,7 @@ Write \`myClz32(x)\`.`,
     companies: ["Google", "ByteDance"],
     category: "javascript-runtime",
     title: "BigInt addition",
-    description: `Add two arbitrarily large non-negative integers represented as strings — beyond what \`Number\` can represent exactly.
+    description: `\`Number\` can only represent integers exactly up to \`Number.MAX_SAFE_INTEGER\` (about 9 quadrillion) — anything bigger silently loses precision. Representing huge integers as strings and adding them digit by digit, the same way you'd add on paper, sidesteps that limit entirely.
 
 ## Your task
 
@@ -9972,7 +9980,7 @@ Write \`bigIntAdd(a, b)\`, doing grade-school column addition digit by digit, wi
     companies: ["Google"],
     category: "javascript-runtime",
     title: "BigInt subtraction",
-    description: `Subtract one arbitrarily large non-negative integer string from another, assuming the result is non-negative (\`a >= b\`).
+    description: `The subtraction counterpart to string-based BigInt addition: same column-by-column approach, but borrowing instead of carrying whenever a digit in \`a\` is smaller than the corresponding digit in \`b\`. This version assumes the result is non-negative (\`a >= b\`) — the signed version handles the general case.
 
 ## Your task
 
@@ -10016,7 +10024,7 @@ Write \`bigIntSubtract(a, b)\`, using column subtraction with borrowing.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "BigInt addition with sign",
-    description: `Extend big-integer addition to handle negative numbers (a leading \`-\`), correctly falling back to subtraction of magnitudes when the signs differ.
+    description: `Extend big-integer addition to handle negative numbers (a leading \`-\`). The real complexity isn't the digit math — it's the sign bookkeeping: same-sign operands just add their magnitudes, but opposite signs mean subtracting the smaller magnitude from the larger and taking the sign of whichever was bigger.
 
 ## Your task
 
@@ -10098,7 +10106,7 @@ Write \`bigIntAddSigned(a, b)\`, where either argument may start with \`-\`.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "BigInt subtraction with sign",
-    description: `\`a - b\` is the same as \`a + (-b)\` — extend that idea to arbitrarily large signed integer strings.
+    description: `\`a - b\` is really just \`a + (-b)\` — flip the second operand's effective sign and reuse the exact same same-sign/different-sign addition logic. This exercise extends that idea to arbitrarily large signed integer strings.
 
 ## Your task
 
@@ -10180,7 +10188,7 @@ Write \`bigIntSubtractSigned(a, b)\`.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "BigInt multiplication",
-    description: `Multiply two arbitrarily large non-negative integer strings using the grade-school digit-by-digit method, accumulating partial products at the right positions.
+    description: `Multiply two arbitrarily large non-negative integer strings the way you'd do it on paper: every digit pair \`a[i] * b[j]\` contributes to a specific position in the result, so the whole thing works out to grade-school long multiplication instead of a native \`*\` that would silently overflow \`Number\`'s safe integer range.
 
 ## Your task
 
@@ -10219,7 +10227,7 @@ Write \`bigIntMultiply(a, b)\`.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "BigInt division",
-    description: `Long division on arbitrarily large non-negative integer strings, producing the integer (floored) quotient.
+    description: `Long division on arbitrarily large non-negative integer strings: process the dividend one digit at a time, build up a running remainder, and repeatedly subtract the divisor from it to count how many times it fits. The result is the integer (floored) quotient, no fractional part.
 
 ## Your task
 
@@ -10283,7 +10291,7 @@ Write \`bigIntDivide(a, b)\`.`,
     companies: ["Stripe"],
     category: "javascript-runtime",
     title: "BigDecimal addition",
-    description: `Floating-point math famously gets \`0.1 + 0.2\` wrong (\`0.30000000000000004\`). Fixed-point decimal-string arithmetic avoids that entirely by never converting to a binary float.
+    description: `Floating-point math famously gets \`0.1 + 0.2\` wrong (\`0.30000000000000004\`), because binary floats can't represent most decimal fractions exactly — a real problem when the numbers are money. Fixed-point decimal-string arithmetic avoids that entirely by never converting to a binary float in the first place, working digit-by-digit instead.
 
 ## Your task
 
@@ -10338,7 +10346,7 @@ Write \`bigDecimalAdd(a, b)\`, adding two non-negative decimal strings (like \`"
     companies: ["Stripe"],
     category: "javascript-runtime",
     title: "BigDecimal subtraction",
-    description: `The subtraction counterpart, assuming \`a >= b\`, with a borrow that can cross from the fractional part into the integer part.
+    description: `The subtraction counterpart to decimal-string addition, assuming \`a >= b\`. The tricky part is a borrow that can cross the decimal point entirely — subtracting \`1.25\` from \`5.00\` needs to borrow from the integer part, not just within the fractional digits.
 
 ## Your task
 
@@ -10397,7 +10405,7 @@ Write \`bigDecimalSubtract(a, b)\`.`,
     companies: ["Stripe"],
     category: "javascript-runtime",
     title: "BigDecimal multiplication",
-    description: `Multiply two decimal strings exactly, by multiplying their digits as plain integers and reinserting the decimal point based on the total number of fractional digits involved.
+    description: `Multiply two decimal strings exactly: strip the decimal points, multiply the digits as plain integers using grade-school long multiplication, then reinsert the decimal point based on the total number of fractional digits across both inputs combined.
 
 ## Your task
 
@@ -10446,7 +10454,7 @@ Write \`bigDecimalMultiply(a, b)\`.`,
     companies: ["Stripe"],
     category: "javascript-runtime",
     title: "BigDecimal division",
-    description: `Division can produce an infinitely repeating decimal (like \`1/3\`), so this version takes an explicit precision and truncates to that many fractional digits.
+    description: `Division can produce an infinitely repeating decimal (\`1/3\` never terminates), so unlike the other BigDecimal operations, this one can't just compute an exact result — it takes an explicit \`precision\` and truncates (not rounds) to that many fractional digits instead.
 
 ## Your task
 
@@ -10524,7 +10532,7 @@ Write \`bigDecimalDivide(a, b, precision)\`, returning the quotient as a string 
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Next Right Sibling",
-    description: `Given a tree and a node inside it, find whichever node sits immediately to its right at the exact same level — regardless of which parent each one belongs to.
+    description: `Given a tree and a node inside it, find whichever node sits immediately to its right at the exact same **depth** — regardless of which parent each one belongs to. Two nodes under different parents still count as neighbors if they're at the same level.
 
 ## Your task
 
@@ -10562,11 +10570,11 @@ Write \`findNextRightSibling(root, targetId)\`, where each node is \`{ id, child
     companies: ["Meta", "Google"],
     category: "javascript-runtime",
     title: "Traverse DOM level by level",
-    description: `A breadth-first traversal grouping nodes by their depth in the tree.
+    description: `A **breadth-first traversal** that groups nodes by their depth in the tree instead of flattening everything into one list — the same shape of traversal DevTools-style tree inspectors and org-chart renderers rely on.
 
 ## Your task
 
-Write \`levelOrderTraversal(root)\`, where each node is \`{ id, children }\`. Return an array of arrays of ids, one inner array per level.`,
+Write \`levelOrderTraversal(root)\`, where each node is \`{ id, children }\`. Return an array of arrays of ids, one inner array per level, ordered top to bottom.`,
     difficulty: "easy",
     starterCode: `function levelOrderTraversal(root) {
 }`,
@@ -10639,7 +10647,7 @@ Write \`$(selector)\`, returning an object wrapping every element matching \`sel
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Create a simple store for DOM elements",
-    description: `Associate arbitrary data with DOM elements without touching the elements themselves (no custom attributes, no expando properties) — and without leaking memory when an element is later removed.
+    description: `Associate arbitrary data with DOM elements without touching the elements themselves — no custom attributes, no expando properties — and without leaking memory once an element is removed from the DOM and should be garbage collected. This is exactly the problem \`WeakMap\` was added to solve, and it's the same trick libraries like jQuery's \`.data()\` rely on internally.
 
 ## Your task
 
@@ -10679,11 +10687,11 @@ Write \`createElementStore()\`, returning \`{ set(el, data), get(el), has(el), d
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Find corresponding node in two identical DOM trees",
-    description: `Given two structurally identical DOM trees and a node inside the first one, find the node at the exact same structural position in the second tree.
+    description: `A common problem when diffing or syncing two renders of the same UI — think a virtual DOM's old and new tree, or a preview pane mirroring an editor: given two DOM trees with identical structure and a node inside the first one, find the node sitting at that exact same structural position in the second tree.
 
 ## Your task
 
-Write \`findCorrespondingNode(rootA, rootB, target)\`, where \`target\` is a real descendant element of \`rootA\`.`,
+Write \`findCorrespondingNode(rootA, rootB, target)\`, where \`target\` is a real descendant element of \`rootA\`, returning the element at the matching position within \`rootB\`.`,
     difficulty: "easy",
     starterCode: `function findCorrespondingNode(rootA, rootB, target) {
 }`,
@@ -10760,11 +10768,11 @@ Write \`createTwoWayBinding(inputEl, initialValue)\`, returning \`{ getValue(), 
     companies: ["Meta", "Google"],
     category: "javascript-runtime",
     title: "Get DOM tree height",
-    description: `Compute how many levels deep a tree goes.
+    description: `A basic recursive-tree measurement: how many levels deep does the tree go? Same idea whether you're measuring a DOM subtree, a component tree, or any nested \`{ children }\` structure — the height follows whichever branch goes deepest, not the average.
 
 ## Your task
 
-Write \`treeHeight(root)\`, where each node is \`{ id, children }\`. A single node with no children has height 1; an empty tree (\`null\`) has height 0.`,
+Write \`treeHeight(root)\`, where each node is \`{ id, children }\`. A single node with no children has height \`1\`; an empty tree (\`null\`) has height \`0\`; otherwise the height is \`1\` plus the tallest child's height.`,
     difficulty: "medium",
     starterCode: `function treeHeight(root) {
 }`,
@@ -10788,11 +10796,11 @@ Write \`treeHeight(root)\`, where each node is \`{ id, children }\`. A single no
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Get DOM tags",
-    description: `Flatten a tree into the full list of every tag name it contains, in preorder (parent, then each child in order), duplicates included.
+    description: `A flattening exercise: walk a nested \`{ tag, children }\` tree — modeling a simplified DOM — and collect every tag name into a single flat array, **in preorder** (a node before any of its children, children visited left to right), duplicates and all.
 
 ## Your task
 
-Write \`getAllTags(root)\`, where each node is \`{ tag, children }\`.`,
+Write \`getAllTags(root)\`, where each node is \`{ tag, children }\`, returning an array of every tag name in preorder. An empty tree (\`null\`) returns \`[]\`.`,
     difficulty: "medium",
     starterCode: `function getAllTags(root) {
 }`,
@@ -10815,11 +10823,11 @@ Write \`getAllTags(root)\`, where each node is \`{ tag, children }\`.`,
     companies: ["Meta", "Grammarly"],
     category: "javascript-runtime",
     title: "Highlight keywords in an HTML string",
-    description: `Wrap every occurrence of a set of keywords in \`<mark>\` tags, case-insensitively, while preserving each match's original casing.
+    description: `Search-result highlighting — think a docs site's search box, or Grammarly-style keyword flagging — usually boils down to wrapping every match of a set of terms in \`<mark>\` tags. The tricky part: matching case-insensitively (so searching "world" finds "WORLD") while still preserving each match's *original* casing in the output, rather than normalizing it.
 
 ## Your task
 
-Write \`highlightKeywords(html, keywords)\`. (This simplified version works directly on the string — matching inside existing tag names/attributes is out of scope.)`,
+Write \`highlightKeywords(html, keywords)\`, wrapping every occurrence of any keyword in \`<mark>...</mark>\`. (This simplified version works directly on the string — matching inside existing tag names/attributes is out of scope.)`,
     difficulty: "medium",
     starterCode: `function highlightKeywords(html, keywords) {
 }`,
@@ -10844,11 +10852,11 @@ Write \`highlightKeywords(html, keywords)\`. (This simplified version works dire
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Extract all anchor elements from an HTML string",
-    description: `Parse a raw HTML string and pull out every \`<a>\` tag's link and visible text.
+    description: `Scraping links out of a blob of HTML — say, extracting outbound links from an email body or a fetched page — means turning raw markup into a real, queryable document first, rather than reaching for regex on HTML (which breaks in all sorts of edge cases).
 
 ## Your task
 
-Write \`extractAnchors(html)\`, using \`DOMParser\` to return an array of \`{ href, text }\` objects, one per anchor, in document order.`,
+Write \`extractAnchors(html)\`, using \`DOMParser\` to parse \`html\` into a document and return an array of \`{ href, text }\` objects — one per \`<a>\` element, in document order — where \`href\` is the anchor's \`href\` attribute and \`text\` is its visible text content.`,
     difficulty: "medium",
     starterCode: `function extractAnchors(html) {
 }`,
@@ -10874,11 +10882,11 @@ Write \`extractAnchors(html)\`, using \`DOMParser\` to return an array of \`{ hr
     companies: ["Meta", "Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Event delegation",
-    description: `Attach a single listener on a container that only reacts when the actual click target matches a given selector — including elements added to the container *after* the listener was set up.
+    description: `Attaching a listener to every row of a table (or every item in a list you keep adding to) doesn't scale, and misses anything added later. **Event delegation** solves both problems at once: attach one listener to a shared container, and let it figure out — using event bubbling — whether the actual click target matches a selector you care about, including elements added to the container *after* the listener was set up.
 
 ## Your task
 
-Write \`createDelegatedListener(container, selector, eventType, handler)\`, returning an unsubscribe function. \`handler\` should be called with \`this\` set to the matched element.`,
+Write \`createDelegatedListener(container, selector, eventType, handler)\`, returning an unsubscribe function that removes the listener. \`handler\` should be called with \`this\` set to the matched element (the nearest ancestor of the actual event target matching \`selector\`), not the container.`,
     difficulty: "medium",
     starterCode: `function createDelegatedListener(container, selector, eventType, handler) {
 }`,
@@ -10908,11 +10916,11 @@ Write \`createDelegatedListener(container, selector, eventType, handler)\`, retu
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Previous Left Sibling",
-    description: `The mirror image of Next Right Sibling: find whichever node sits immediately to the left of a target at the same level, regardless of parent.
+    description: `The mirror image of **Next Right Sibling**: find whichever node sits immediately to the left of a target at the same depth, regardless of which parent either one belongs to.
 
 ## Your task
 
-Write \`findPreviousLeftSibling(root, targetId)\`, where each node is \`{ id, children }\`.`,
+Write \`findPreviousLeftSibling(root, targetId)\`, where each node is \`{ id, children }\`. Return the neighbor's \`id\`, or \`null\` if the target is the leftmost node at its level.`,
     difficulty: "medium",
     starterCode: `function findPreviousLeftSibling(root, targetId) {
 }`,
@@ -10945,11 +10953,11 @@ Write \`findPreviousLeftSibling(root, targetId)\`, where each node is \`{ id, ch
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Generate a CSS Selector for a target element",
-    description: `Build a CSS selector string that uniquely resolves back to a specific element — the same kind of thing browser DevTools does for "Copy selector".
+    description: `Build a CSS selector string that uniquely resolves back to a specific element — the same feature browser DevTools uses for "Copy selector". The simplest reliable selector is an \`#id\`; failing that, you need a path of tag-and-position segments walking up from the element to something stable.
 
 ## Your task
 
-Write \`generateSelector(el)\`. Prefer an \`#id\` selector when the element has one; otherwise, build a path of \`tag:nth-child(n)\` segments up to \`document.body\`.`,
+Write \`generateSelector(el)\`. If the element has an \`id\`, return \`"#" + id\` directly. Otherwise, recursively build a path of \`tag:nth-child(n)\` segments (1-indexed position among siblings) from the element up through its ancestors to \`document.body\`, joined with \`" > "\`. \`document.querySelector(generateSelector(el))\` must resolve back to \`el\` exactly.`,
     difficulty: "medium",
     starterCode: `function generateSelector(el) {
 }`,
@@ -11019,11 +11027,11 @@ function stringifyCookie(name, value, options = {}) {
     companies: ["Amazon", "Airbnb"],
     category: "javascript-runtime",
     title: "localStorage with expiration",
-    description: `Extend simple key-value storage with a time-to-live: an entry should silently disappear once it's expired, without needing a separate cleanup pass.
+    description: `Session tokens, cached API responses, rate-limit counters — a lot of key-value data is only valid for a limited time. This extends simple storage with a **time-to-live**: instead of running a background sweep to clean up stale entries, expiry is checked lazily — an expired entry just silently disappears the next time someone tries to read it.
 
 ## Your task
 
-Write \`createExpiringStorage()\`, returning \`{ set(key, value, ttlMs), get(key) }\`. Omitting \`ttlMs\` means the entry never expires.`,
+Write \`createExpiringStorage()\`, returning \`{ set(key, value, ttlMs), get(key) }\`. \`set\` stores \`value\` under \`key\`, expiring after \`ttlMs\` milliseconds; omitting \`ttlMs\` means the entry never expires. \`get\` returns the stored value, or \`null\` if the key doesn't exist or has expired.`,
     difficulty: "medium",
     starterCode: `function createExpiringStorage() {
 }`,
@@ -11060,11 +11068,11 @@ Write \`createExpiringStorage()\`, returning \`{ set(key, value, ttlMs), get(key
     companies: ["Google"],
     category: "javascript-runtime",
     title: "LRU-style automatic eviction cache",
-    description: `A fixed-capacity cache that automatically evicts its least-recently-used entry once full — the same eviction policy browsers use for things like the HTTP cache.
+    description: `A fixed-capacity cache needs some rule for what to throw away once it's full. **LRU (least-recently-used)** eviction is the classic choice — the same policy browsers use for the HTTP cache: when a new entry needs room, whichever entry hasn't been touched in the longest time is the one that goes.
 
 ## Your task
 
-Write \`createLRUCache(capacity)\`, returning \`{ get(key), set(key, value) }\`. Both reading and writing an entry should count as "using" it, refreshing its recency.`,
+Write \`createLRUCache(capacity)\`, returning \`{ get(key), set(key, value) }\`. Both reading and writing an entry should count as "using" it, refreshing its recency. Once the cache is at \`capacity\` and a new key is set, evict the least-recently-used entry to make room.`,
     difficulty: "medium",
     starterCode: `function createLRUCache(capacity) {
 }`,
@@ -11103,11 +11111,11 @@ Write \`createLRUCache(capacity)\`, returning \`{ get(key), set(key, value) }\`.
     companies: ["Airbnb", "Pinterest", "TikTok"],
     category: "javascript-runtime",
     title: "Implement an infinite scroll / pagination loader",
-    description: `The data layer behind infinite scroll: accumulate pages of results, track whether more exist, and guard against firing a duplicate fetch while one is already in flight.
+    description: `Infinite scroll looks simple on the surface, but the data layer behind it has a few real gotchas: accumulate items across pages, know when you've actually run out of data, and — critically — never let a fast scroller trigger two overlapping fetches for the same next page.
 
 ## Your task
 
-Write \`createInfiniteScrollLoader(fetchPage)\`, where \`fetchPage(cursor)\` returns a promise resolving to \`{ items, nextCursor }\`. Return \`{ getItems(), hasMore(), loadNext() }\`.`,
+Write \`createInfiniteScrollLoader(fetchPage)\`, where \`fetchPage(cursor)\` returns a promise resolving to \`{ items, nextCursor }\`. Return \`{ getItems(), hasMore(), loadNext() }\`: \`getItems()\` returns everything accumulated so far, \`hasMore()\` reports whether another page exists, and \`loadNext()\` fetches and appends the next page — a no-op if a load is already in flight or there's nothing left to fetch.`,
     difficulty: "medium",
     starterCode: `function createInfiniteScrollLoader(fetchPage) {
 }`,
@@ -11189,7 +11197,7 @@ Write \`createVirtualList(items, itemHeight, containerHeight, overscan = 3)\`, r
     companies: ["Meta", "Uber", "LinkedIn", "Amazon"],
     category: "javascript-runtime",
     title: "Create an Event Emitter",
-    description: `One of the most common front-end interview questions across the industry: a pub-sub primitive for decoupled communication between parts of an app.
+    description: `One of the most common front-end interview questions across the industry: build the **pub-sub** primitive — on/off/emit — that lets decoupled parts of an app talk to each other without holding direct references. Node's own \`EventEmitter\` and the DOM's own event system both work this way under the hood.
 
 ## Your task
 
@@ -11247,7 +11255,7 @@ Write an \`EventEmitter\` class with \`on(event, handler)\`, \`off(event, handle
     companies: ["Uber"],
     category: "javascript-runtime",
     title: "Implement a Publish/Subscribe module",
-    description: `A topic-based cousin of the Event Emitter: subscribers register per-topic, and unsubscribing is done via the function \`subscribe\` itself returns — no separate \`off()\` call needed.
+    description: `A topic-based cousin of the Event Emitter, in the style of a message bus: subscribers register per-topic instead of per-event-name, and unsubscribing happens through the function \`subscribe\` itself returns — no separate \`off()\` call, and no risk of accidentally removing the wrong handler.
 
 ## Your task
 
@@ -11284,11 +11292,11 @@ Write \`createPubSub()\`, returning \`{ publish(topic, data), subscribe(topic, f
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Interpolation (template-string engine)",
-    description: `A minimal templating engine: replace \`{{path}}\` placeholders in a string with values pulled from a data object, supporting dotted paths for nested lookups.
+    description: `A minimal **templating engine**, the same basic mechanism behind Mustache or Handlebars: replace \`{{path}}\` placeholders in a string with values pulled from a data object, supporting dotted paths for reaching into nested objects.
 
 ## Your task
 
-Write \`interpolate(template, data)\`. A placeholder whose path can't be resolved should be replaced with an empty string.`,
+Write \`interpolate(template, data)\`, replacing every \`{{path}}\` placeholder with the value found by walking \`path\` (e.g. \`"user.name"\`) into \`data\`. A placeholder whose path can't be resolved should be replaced with an empty string, not left as-is or throw.`,
     difficulty: "medium",
     starterCode: `function interpolate(template, data) {
 }`,
@@ -11314,11 +11322,11 @@ Write \`interpolate(template, data)\`. A placeholder whose path can't be resolve
     companies: ["X", "Meta"],
     category: "javascript-runtime",
     title: "Twitter mentions (text parsing — entities)",
-    description: `Extract every \`@username\` mention from a block of text — while correctly ignoring the \`@\` in something like an email address.
+    description: `Parsing \`@mentions\` out of free text — the same feature behind Twitter/X, Slack, and GitHub comments — sounds like a simple regex until you hit an email address: \`user@example.com\` has an \`@\` too, and that one should **not** count as a mention.
 
 ## Your task
 
-Write \`extractMentions(text)\`, returning an array of usernames (without the \`@\`), in the order they appear.`,
+Write \`extractMentions(text)\`, returning an array of usernames (without the \`@\`), in the order they appear. An \`@\` immediately preceded by a word character (like the local part of an email address) must not be treated as the start of a mention.`,
     difficulty: "medium",
     starterCode: `function extractMentions(text) {
 }`,
@@ -11341,7 +11349,7 @@ Write \`extractMentions(text)\`, returning an array of usernames (without the \`
     companies: ["Meta", "Airbnb"],
     category: "javascript-runtime",
     title: "Create a middleware system (Express/Redux-style)",
-    description: `The core mechanic behind Express and Redux middleware: a chain of functions, each explicitly deciding whether to hand off to the next one.
+    description: `The core mechanic behind Express and Redux middleware, sometimes called the **onion model**: a chain of functions wraps around the real work, and each layer explicitly decides whether to call \`next()\` and hand off to the layer inside it, or stop the chain right there.
 
 ## Your task
 
@@ -11384,11 +11392,11 @@ Write \`createMiddlewarePipeline()\`, returning \`{ use(fn), run(context) }\`. E
     companies: ["ByteDance"],
     category: "javascript-runtime",
     title: "Create LazyMan()",
-    description: `A classic chainable-API puzzle: build a fluent interface where \`.sleep()\` genuinely delays every call chained after it, without blocking the ones before it.
+    description: `A classic chainable-API puzzle, and a good workout for task queues: build a fluent interface where each chained call — \`.eat()\`, \`.sleep()\` — queues up rather than running immediately, so a \`.sleep()\` genuinely delays every call chained *after* it, without blocking (or being blocked by) the ones before it.
 
 ## Your task
 
-Write \`LazyMan(name)\`. It immediately logs \`"Hi I am " + name\`. Chained \`.eat(food)\` logs \`"Eat " + food\`; chained \`.sleep(seconds)\` delays every subsequent chained call by that many seconds before it runs.`,
+Write \`LazyMan(name)\`. It immediately logs \`"Hi I am " + name\`. Chained \`.eat(food)\` logs \`"Eat " + food\`; chained \`.sleep(seconds)\` delays every subsequent chained call by that many seconds before it runs. Both \`.eat()\` and \`.sleep()\` must be chainable off the same returned object.`,
     difficulty: "medium",
     starterCode: `function LazyMan(name) {
 }`,
@@ -11436,7 +11444,7 @@ Write \`LazyMan(name)\`. It immediately logs \`"Hi I am " + name\`. Chained \`.e
     companies: ["Meta", "Google"],
     category: "javascript-runtime",
     title: "Create a browser history (undo/redo stack)",
-    description: `The data structure behind undo/redo: a stack of states with a movable cursor, where pushing a new state after undoing discards the abandoned "future".
+    description: `The data structure behind undo/redo in any editor: a stack of states with a movable cursor. The subtle part is what happens after an undo — pushing a brand-new state at that point has to discard the abandoned "future" states, the same way a real browser history does when you navigate somewhere new after going back.
 
 ## Your task
 
@@ -11527,7 +11535,7 @@ Write \`createRouter(routes)\`, returning \`{ navigate(path) }\`. \`routes\` map
     companies: ["Google", "Netflix"],
     category: "javascript-runtime",
     title: "Create an Observable",
-    description: `The foundational primitive behind RxJS: a lazy, re-runnable producer of values over time, distinct from a Promise (which is eager and settles once).
+    description: `The foundational primitive behind RxJS: a **lazy**, re-runnable producer of values over time. Unlike a Promise — which starts running the moment it's created and settles exactly once — an Observable does nothing until something subscribes, and a fresh execution starts on every single subscription.
 
 ## Your task
 
@@ -11564,11 +11572,11 @@ Write an \`Observable\` class: \`new Observable(subscribeFn)\`, where \`subscrib
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Observable interval()",
-    description: `An Observable that emits an increasing integer every \`ms\` milliseconds, forever, until unsubscribed.
+    description: `RxJS's \`interval\` as a minimal **Observable**: emit an increasing integer (starting at 0) every \`ms\` milliseconds, forever, until whoever subscribed decides to stop.
 
 ## Your task
 
-Write \`interval(ms)\`, returning an Observable (include a minimal \`Observable\` class in your solution).`,
+Write \`interval(ms)\`, returning an Observable that emits \`0, 1, 2, ...\` at that cadence (include a minimal \`Observable\` class in your solution). Calling \`unsubscribe()\` on the returned subscription must stop further emissions.`,
     difficulty: "easy",
     starterCode: `function interval(ms) {
 }`,
@@ -11602,11 +11610,11 @@ function interval(ms) {
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Observable fromEvent()",
-    description: `Turn any DOM event into an Observable stream of events.
+    description: `RxJS's \`fromEvent\`: turn any DOM event into an **Observable** stream, so a click or keypress can be piped through the same \`map\`/\`filter\`-style operators as any other stream of values instead of being handled with a raw \`addEventListener\` callback.
 
 ## Your task
 
-Write \`fromEvent(target, eventType)\`, returning an Observable that emits each event object as it fires (include a minimal \`Observable\` class in your solution).`,
+Write \`fromEvent(target, eventType)\`, returning an Observable that emits each event object as it fires (include a minimal \`Observable\` class in your solution). Unsubscribing must remove the underlying event listener from \`target\`.`,
     difficulty: "easy",
     starterCode: `function fromEvent(target, eventType) {
 }`,
@@ -11642,11 +11650,11 @@ function fromEvent(target, eventType) {
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Observable Transformation Operators",
-    description: `\`map\` and \`filter\`, reimagined for Observables: each wraps a source Observable and returns a new one that transforms what flows through it.
+    description: `\`map\` and \`filter\`, reimagined for **Observables**: each wraps a source Observable and returns a new one that transforms or filters whatever flows through it, the same way they'd transform an array — except here the values arrive over time instead of all at once.
 
 ## Your task
 
-Write \`mapOperator(source, project)\` and \`filterOperator(source, predicate)\` (include a minimal \`Observable\` class in your solution).`,
+Write \`mapOperator(source, project)\`, emitting \`project(value)\` for every value the source emits, and \`filterOperator(source, predicate)\`, emitting only the values for which \`predicate(value)\` is truthy (include a minimal \`Observable\` class in your solution). Both operators must compose correctly when chained together.`,
     difficulty: "easy",
     starterCode: `function mapOperator(source, project) {
 }
@@ -11692,11 +11700,11 @@ function filterOperator(source, predicate) {
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Observable from()",
-    description: `Turn a plain array (or any iterable) into an Observable that synchronously emits every value, then completes.
+    description: `RxJS's \`from\`: turn a plain array (or any iterable) into an **Observable** that synchronously emits every value in order, then signals completion — a bridge between "static, already-known data" and the Observable APIs built to consume streams.
 
 ## Your task
 
-Write \`from(iterable)\` (include a minimal \`Observable\` class in your solution). The observer's \`complete()\` should be called after every value has been emitted.`,
+Write \`from(iterable)\` (include a minimal \`Observable\` class in your solution). Every value in \`iterable\` should be emitted via \`observer.next()\`, in order, and \`observer.complete()\` called once all of them have been emitted — even for an empty iterable.`,
     difficulty: "medium",
     starterCode: `function from(iterable) {
 }`,
@@ -11775,11 +11783,11 @@ Write a \`Subject\` class with \`subscribe(observer)\` (returning \`{ unsubscrib
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Implement btoa()",
-    description: `Base64-encode a string by hand, without calling the real \`btoa\`.
+    description: `**Base64** encodes arbitrary data as printable ASCII by repacking bits: every 3 raw bytes (24 bits) become 4 base64 characters (4 × 6 bits), with \`=\` padding when the input doesn't divide evenly into groups of three. \`btoa\` is the browser's built-in encoder — this rebuilds it by hand.
 
 ## Your task
 
-Write \`myBtoa(str)\` for ASCII input, matching the real \`btoa\`'s output exactly (including \`=\` padding).`,
+Write \`myBtoa(str)\` for ASCII input, matching the real \`btoa\`'s output exactly, including \`=\` padding: one \`=\` for a 2-byte final group, two for a 1-byte final group.`,
     difficulty: "easy",
     starterCode: `function myBtoa(str) {
 }`,
@@ -11815,11 +11823,11 @@ Write \`myBtoa(str)\` for ASCII input, matching the real \`btoa\`'s output exact
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Implement atob()",
-    description: `The inverse of the previous problem: decode a base64 string back into its original text, by hand.
+    description: `The inverse of \`myBtoa\`: decode a base64 string back into its original text, by hand — reversing the bit-repacking, pulling 8-bit bytes back out of a stream of 6-bit base64 characters, and ignoring any trailing \`=\` padding along the way.
 
 ## Your task
 
-Write \`myAtob(str)\`.`,
+Write \`myAtob(str)\`, decoding a base64-encoded string \`str\` (as produced by the real \`btoa\`) back into its original text.`,
     difficulty: "medium",
     starterCode: `function myAtob(str) {
 }`,
@@ -11855,11 +11863,11 @@ Write \`myAtob(str)\`.`,
     companies: ["Google", "Meta", "Amazon"],
     category: "javascript-runtime",
     title: "Implement JSON.parse()",
-    description: `A recursive-descent parser for a subset of JSON: objects, arrays, strings, numbers, booleans, and null.
+    description: `Under the hood, \`JSON.parse\` is a **recursive-descent parser**: it looks at the next character to decide what kind of value is coming (object, array, string, number, or literal), and recurses to handle nested structures. Building a subset of it by hand is a good way to actually understand that process instead of treating it as a black box.
 
 ## Your task
 
-Write \`myJSONParse(str)\`. (Escaped characters within strings, like \`\\"\`, are out of scope for this version — assume string values don't contain them.)`,
+Write \`myJSONParse(str)\`, parsing a JSON string into the equivalent JS value — objects, arrays, strings, numbers, booleans, and \`null\`, including nested combinations and surrounding/internal whitespace. (Escaped characters within strings, like \`\\"\`, are out of scope for this version — assume string values don't contain them.)`,
     difficulty: "medium",
     starterCode: `function myJSONParse(str) {
 }`,
@@ -12006,11 +12014,11 @@ function decode(str) {
     companies: ["Google", "Meta"],
     category: "javascript-runtime",
     title: "Implement JSON.stringify()",
-    description: `The serialization counterpart to your JSON parser — including one detail people often miss: \`undefined\` values are omitted from objects entirely, not written as \`null\`.
+    description: `The serialization counterpart to your JSON parser, with one detail people often miss: \`undefined\` has no representation in JSON at all — it's silently **omitted** from object keys (not written as \`"key":null\`), turned into \`null\` inside an array, and if the top-level value itself is \`undefined\`, the whole result is \`undefined\`, not the string \`"undefined"\`.
 
 ## Your task
 
-Write \`myJSONStringify(value)\`, supporting objects, arrays, strings, numbers, booleans, and null. (Escaping special characters within strings, like quotes, is out of scope for this version.)`,
+Write \`myJSONStringify(value)\`, supporting objects, arrays, strings, numbers, booleans, and \`null\`. Only a value's own enumerable properties (not inherited ones) should be included. (Escaping special characters within strings, like quotes, is out of scope for this version.)`,
     difficulty: "hard",
     starterCode: `function myJSONStringify(value) {
 }`,
@@ -12056,11 +12064,11 @@ Write \`myJSONStringify(value)\`, supporting objects, arrays, strings, numbers, 
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Implement your own URLSearchParams",
-    description: `A working subset of the real \`URLSearchParams\`: parse a query string, and support reading, writing, and re-serializing it, correctly URL-encoding/decoding along the way.
+    description: `A working subset of the real \`URLSearchParams\`: parse a query string into structured key/value pairs, and support reading, writing, and re-serializing it — correctly percent-encoding/decoding values along the way, and supporting duplicate keys (like \`?tag=a&tag=b\`), which a plain object can't represent cleanly.
 
 ## Your task
 
-Write a \`MyURLSearchParams\` class: constructed from a query string (with or without a leading \`?\`), supporting \`get\`, \`getAll\`, \`has\`, \`set\`, \`append\`, \`delete\`, and \`toString\`.`,
+Write a \`MyURLSearchParams\` class: constructed from a query string (with or without a leading \`?\`), supporting \`get(key)\` (first value or \`null\`), \`getAll(key)\` (every value for that key), \`has(key)\`, \`set(key, value)\` (replaces every existing value for that key with one), \`append(key, value)\` (adds another value without removing existing ones), \`delete(key)\`, and \`toString()\` (re-serializes, percent-encoding keys and values).`,
     difficulty: "hard",
     starterCode: `class MyURLSearchParams {
   constructor(init = "") {
@@ -12134,11 +12142,11 @@ Write a \`MyURLSearchParams\` class: constructed from a query string (with or wi
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Virtual DOM II — createElement",
-    description: `The foundational function every virtual-DOM library builds on: turn a type, some props, and a list of children into a plain object description of an element — a "vnode."
+    description: `The foundational function every **virtual-DOM** library builds on: turn a type, some props, and a list of children into a plain object description of an element — a **"vnode"** — that a renderer can later turn into real DOM. This is exactly the shape JSX compiles down to under the hood.
 
 ## Your task
 
-Write \`createElement(type, props, ...children)\`. No children should produce an empty array; exactly one child should be stored directly (not wrapped in an array); more than one should be an array.`,
+Write \`createElement(type, props, ...children)\`, returning \`{ type, props: { ...props, children } }\`. No children should produce an empty array; exactly one child should be stored directly (not wrapped in an array); more than one should be stored as an array.`,
     difficulty: "easy",
     starterCode: `function createElement(type, props, ...children) {
 }`,
@@ -12205,11 +12213,11 @@ function render(template) {
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Virtual DOM III — Functional Component",
-    description: `A functional component is just a function that returns a vnode. Rendering one means calling it and recursively resolving whatever it returns — which might itself be another functional component.
+    description: `A **functional component** is just a function that returns a vnode. Rendering one means calling it and recursively resolving whatever it returns — which might itself be another functional component — down to plain host elements like \`"div"\`.
 
 ## Your task
 
-Write \`renderComponent(vnode)\`, resolving \`vnode.type\` when it's a function (a component) down to a plain-element vnode, recursing into children along the way.`,
+Write \`renderComponent(vnode)\`, resolving \`vnode.type\` when it's a function (a component) down to a plain-element vnode, calling it with \`vnode.props\` and recursing on the result. Plain-element vnodes pass through as-is, with their children recursively processed the same way.`,
     difficulty: "easy",
     starterCode: `function renderComponent(vnode) {
 }`,
@@ -12244,11 +12252,11 @@ Write \`renderComponent(vnode)\`, resolving \`vnode.type\` when it's a function 
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Implement classNames()",
-    description: `The ubiquitous \`classnames\`/\`clsx\` utility: combine strings, conditional objects, and arrays of either into a single space-separated class string, dropping anything falsy.
+    description: `The ubiquitous \`classnames\`/\`clsx\` utility that shows up in nearly every React codebase: combine plain strings, conditional \`{ className: boolean }\` objects, and arrays of either — nested to any depth — into a single space-separated class string, silently dropping anything falsy along the way.
 
 ## Your task
 
-Write \`classNames(...args)\`.`,
+Write \`classNames(...args)\`, accepting any mix of strings, objects (include a key only if its value is truthy), arrays (flattened recursively, following the same rules), and falsy values (skipped entirely — \`null\`, \`undefined\`, \`false\`, \`0\`, \`''\`). Return the combined class names joined by a single space.`,
     difficulty: "medium",
     starterCode: `function classNames(...args) {
 }`,
@@ -12287,11 +12295,11 @@ Write \`classNames(...args)\`.`,
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Uglify CSS class names",
-    description: `The kind of minification CSS Modules does in production: replace long, readable class names with short generated ones, consistently — the same original name always maps to the same short one.
+    description: `The kind of minification **CSS Modules** does in production: replace long, readable class names like \`.card-header-title\` with short generated ones to shrink bundle size — consistently, so the same original name always maps to the same short one everywhere it's used.
 
 ## Your task
 
-Write \`createClassNameUglifier()\`, returning a function that maps a class name to a short one: \`"a"\`, \`"b"\`, ..., \`"z"\`, \`"aa"\`, \`"ab"\`, ... in the order new names are first seen.`,
+Write \`createClassNameUglifier()\`, returning a function that maps a class name to a short one: \`"a"\`, \`"b"\`, ..., \`"z"\`, \`"aa"\`, \`"ab"\`, ... in the order new names are first seen, reusing the same short name on every repeat call for a given original name.`,
     difficulty: "medium",
     starterCode: `function createClassNameUglifier() {
 }`,
@@ -12562,7 +12570,7 @@ Write \`createReactiveSystem()\`, returning \`{ reactive(target), effect(fn) }\`
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Decode message",
-    description: `A digit string was encoded by mapping \`'A'\` → \`"1"\`, \`'B'\` → \`"2"\`, ..., \`'Z'\` → \`"26"\`. Count how many distinct ways it could be decoded back into letters.
+    description: `A digit string was encoded by mapping \`'A'\` → \`"1"\`, \`'B'\` → \`"2"\`, ..., \`'Z'\` → \`"26"\`. Count how many distinct ways it could be decoded back into letters — a classic dynamic-programming problem, since each position can extend either a 1-digit or a 2-digit decoding from just before it, Fibonacci-style.
 
 ## Your task
 
@@ -12600,7 +12608,7 @@ Write \`countDecodeWays(s)\`. A leading \`"0"\` (or any digit group that doesn't
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Create a tokenizer",
-    description: `Before an expression can be parsed or evaluated, it first has to be broken into meaningful pieces — numbers, operators, and parentheses — ignoring whitespace.
+    description: `Before an expression can be parsed or evaluated, it first has to be broken into meaningful pieces — numbers, operators, and parentheses — ignoring whitespace entirely. This **lexing** stage is the first step of any real calculator or parser, turning a raw string into a clean list of tokens the next stage can consume without worrying about spacing or multi-digit numbers.
 
 ## Your task
 
@@ -12647,11 +12655,11 @@ Write \`tokenize(expr)\`, returning an array of string tokens.`,
     companies: ["Google", "Amazon", "Bloomberg"],
     category: "javascript-runtime",
     title: "Calculate an arithmetic expression",
-    description: `A small recursive-descent calculator supporting \`+\`, \`-\`, \`*\`, \`/\`, and parentheses, with correct operator precedence.
+    description: `Building a real expression evaluator — like the engine behind a calculator app or a spreadsheet formula bar — comes down to respecting **operator precedence**: \`2 + 3 * 4\` must evaluate to \`14\`, not \`20\`, and parentheses should be able to override that precedence entirely. A small recursive-descent parser, structured as one function per precedence level, handles this naturally without an explicit precedence table.
 
 ## Your task
 
-Write \`evaluateExpression(str)\`.`,
+Write \`evaluateExpression(str)\`, evaluating a string expression made of non-negative numbers, \`+\`, \`-\`, \`*\`, \`/\`, and parentheses, and returning the numeric result with correct precedence (\`*\`/\`/\` bind tighter than \`+\`/\`-\`) and left-to-right evaluation within the same precedence level.`,
     difficulty: "medium",
     starterCode: `function evaluateExpression(str) {
 }`,
@@ -12703,7 +12711,7 @@ Write \`evaluateExpression(str)\`.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "CSS Grid Layout auto-placement algorithm — dense",
-    description: `Simulate CSS Grid's \`grid-auto-flow: row dense\` packing: place items left-to-right, top-to-bottom, but let a later, smaller item fill any gap left behind by an earlier item that couldn't fit — even if that gap is in an earlier row.
+    description: `Simulate CSS Grid's \`grid-auto-flow: row dense\` packing algorithm: place items left-to-right, top-to-bottom, but let a later, smaller item fill any gap left behind by an earlier item that couldn't fit — even if that gap is in an earlier row. It's what keeps a masonry-style grid free of empty holes, at the cost of visually reordering items away from their source order.
 
 ## Your task
 
@@ -12984,7 +12992,7 @@ Write \`todoReducer(state, action)\`, where \`state\` is an array of \`{ id, tex
     companies: ["Meta", "Amazon", "Airbnb", "Uber"],
     category: "react",
     title: "useToggle()",
-    description: `One of the most-repeated "write a custom hook" openers. A boolean piece of state with three ways to move it: flip it, or force it to a specific side.
+    description: `One of the most-repeated "write a custom hook" openers, because it's the simplest possible shape of shared state: a single **boolean** with three ways to move it — flip whatever it currently is, or force it to a specific side regardless of the current value.
 
 ## Your task
 
@@ -13056,7 +13064,7 @@ Write \`createIsFirstRenderTracker()\`, returning \`{ checkAndAdvance() }\`. Eac
     companies: ["Meta", "Amazon", "Shopify"],
     category: "react",
     title: "usePrevious()",
-    description: `A hook for comparing a value against what it was on the last render — useful for things like "only animate when a prop actually changed direction."
+    description: `Comparing a value against what it was on the **previous** render is a common need — animating only when a prop changes direction, or logging a diff — but React doesn't expose the last render's props or state directly; you have to stash it yourself. \`createPreviousTracker\` simulates that: each call records the current value and hands back whatever was recorded on the call before it.
 
 ## Your task
 
@@ -13119,7 +13127,7 @@ Write \`createEffectOnce(effectFn)\`, returning a function \`run()\`. \`effectFn
     companies: ["Meta", "Amazon"],
     category: "react",
     title: "useIsMounted()",
-    description: `The classic guard against "Can't perform a React state update on an unmounted component" — an async callback checks this before calling \`setState\`, instead of letting the update fire into the void.
+    description: `An async callback — a fetch response, a timer — can resolve after its component has already unmounted, and calling \`setState\` at that point throws React's well-known **"Can't perform a React state update on an unmounted component"** warning. The standard guard is a ref-like flag the callback checks before updating state, instead of letting the update fire into the void.
 
 ## Your task
 
@@ -13272,7 +13280,7 @@ Write \`createEventListenerHook(target, eventName, handler)\`, returning \`{ upd
     companies: ["Meta", "Airbnb"],
     category: "react",
     title: "useHover()",
-    description: `A hover-state hook — tracks whether the pointer is currently over an element, using the two events that bracket a hover: \`mouseenter\` and \`mouseleave\`.
+    description: `There's no CSS-only way to read hover state back into JS — \`:hover\` styles the element, but a component that needs to *branch on* whether something is hovered (to conditionally render a tooltip, say) needs that as real state. \`createHoverWatcher\` tracks it with the **\`mouseenter\`**/**\`mouseleave\`** pair, which — unlike \`mouseover\`/\`mouseout\` — don't bubble, so they won't misfire as the pointer crosses a child element.
 
 ## Your task
 
@@ -13315,7 +13323,7 @@ Write \`createHoverWatcher(el)\`, returning \`{ isHovered(), destroy() }\`.`,
     companies: ["Meta"],
     category: "react",
     title: "useFocus()",
-    description: `Tracks whether an element currently has focus, via the \`focus\`/\`blur\` event pair — useful for showing a "focused" style on a wrapping element that isn't itself focusable.
+    description: `A component often needs to know whether one of its elements currently has focus — to show a highlighted border on a wrapping card, say, when an inner input is focused, since the input's own \`:focus\` style can't reach outside itself. \`createFocusWatcher\` tracks that by listening for the **\`focus\`**/**\`blur\`** event pair directly on the target element.
 
 ## Your task
 
@@ -13513,7 +13521,7 @@ Write \`createThrottledValue(initial, intervalMs)\`, returning \`{ getValue(), s
     companies: ["Meta", "Amazon"],
     category: "react",
     title: "useTimeout()",
-    description: `A declarative wrapper around \`setTimeout\`/\`clearTimeout\` that's easy to restart or cancel — cleaner than sprinkling raw timer-ref bookkeeping through a component.
+    description: `Raw \`setTimeout\`/\`clearTimeout\` bookkeeping gets messy fast once a component needs to **restart** a pending timer on some events and **cancel** it outright on others — a save-draft-after-idle feature, say, that resets its delay on every keystroke but cancels entirely if the user navigates away. \`createTimeoutRunner\` wraps that bookkeeping behind two verbs instead of manual ref-juggling.
 
 ## Your task
 
@@ -14388,7 +14396,7 @@ Write \`applyBoxSizing(el, mode)\`, which sets \`el\`'s \`box-sizing\` to \`mode
     companies: ["Meta", "Amazon", "Google", "Airbnb", "Microsoft"],
     category: "css",
     title: "Center an Element Vertically",
-    description: `The most universally asked CSS question there is. The modern answer is a one-line flexbox trick: make the parent a flex container and let \`align-items\` handle the vertical centering for you.
+    description: `Vertical centering is the single most-repeated CSS interview question, and for years the honest answer was "it's surprisingly annoying" — table-cell hacks, negative margins, absolute positioning with manual offsets. **Flexbox** ended that: make the parent a flex container and set \`align-items: center\`, and any child centers vertically regardless of its own height, with nothing to measure by hand.
 
 ## Your task
 
@@ -14414,7 +14422,7 @@ Write \`centerVertically(container)\`, which makes \`container\`'s children cent
     companies: ["Meta", "Amazon", "Google", "Airbnb", "Microsoft"],
     category: "css",
     title: "Center an Element Both Horizontally and Vertically",
-    description: `The two-axis version of the classic centering question — the same flexbox trick as vertical-only centering, with one more property added for the horizontal axis.
+    description: `The two-axis follow-up to vertical-only centering: center a child both **horizontally** and **vertically** at once. Flexbox handles both axes with the same mental model — \`align-items\` controls the cross axis, \`justify-content\` controls the main axis — so getting one axis right is really just getting both right with two properties instead of one.
 
 ## Your task
 
@@ -14442,7 +14450,7 @@ Write \`centerBoth(container)\`, which centers \`container\`'s children both hor
     companies: ["Meta", "Amazon", "Airbnb", "Shopify"],
     category: "css",
     title: "Truncate Text in One Line (with Ellipsis)",
-    description: `The classic three-property combo for cutting off overflowing text with "…" instead of letting it wrap or spill out of its container.
+    description: `Long text — a filename, a table cell, a nav label — will happily overflow or wrap and break a layout unless you explicitly tell it not to. The classic fix is a **three-property combo**: stop the text from wrapping, hide whatever spills past the box, and swap that hidden overflow for a trailing "…" so it's visually obvious the text was cut off.
 
 ## Your task
 
@@ -14470,7 +14478,7 @@ Write \`truncateSingleLine(el)\`, which sets up \`el\` so any text overflowing i
     companies: ["Meta", "Amazon", "Airbnb"],
     category: "css",
     title: "Truncate Text in Multiple Lines (with Ellipsis)",
-    description: `The multi-line version needs the \`-webkit-line-clamp\` combo instead of \`white-space: nowrap\` — it lets text wrap normally for a fixed number of lines, then clips and ellipsizes whatever's left.
+    description: `Single-line ellipsis truncation is one property combo; clipping to a **fixed number of lines** instead — a card description that should never grow past 3 lines, however long the text is — needs a different mechanism, since \`white-space: nowrap\` only makes sense for a single line. \`-webkit-line-clamp\` lets text wrap normally up to a set line count, then clips and ellipsizes whatever's left over.
 
 ## Your task
 
@@ -14610,7 +14618,7 @@ Write \`applyFlexLayoutOne(container)\`, where \`container\` has exactly 3 child
     companies: ["Amazon", "Shopify"],
     category: "css",
     title: "Flex Layout: Equal-Height Wrapping Cards",
-    description: `A row of cards with wildly different amounts of content still looks tidy if every card in the row is exactly as tall as the tallest one — which flexbox gives you for free, without measuring anything in JS.
+    description: `A row of cards with wildly different amounts of content only looks tidy if every card in the row is exactly as tall as the tallest one — normally that means measuring heights in JS and setting them manually. **Flexbox** gives you this for free: its default \`align-items: stretch\` already stretches every flex item in a row to match the tallest sibling, before you write a single line of layout code for it.
 
 ## Your task
 
@@ -14636,7 +14644,7 @@ Write \`applyEqualHeightCards(container)\`, making \`container\`'s children wrap
     companies: ["Amazon", "Microsoft"],
     category: "css",
     title: "Two-Column Layout (Fixed Sidebar + Flexible Main)",
-    description: `The two-column cousin of the fixed-flexible-fixed pattern — a sidebar of a caller-specified width, with the main content area taking up everything else.
+    description: `A sidebar-plus-main-content shell is one of the most common page layouts there is — a nav or filter panel pinned to a fixed width, with the actual content area soaking up whatever space is left. It's the two-column cousin of the fixed-flexible-fixed pattern: drop the third fixed-width column and let the second one absorb everything else.
 
 ## Your task
 
@@ -14719,7 +14727,7 @@ Write \`fixFlexChildTruncation(flexChild)\`, which is the one missing property n
     companies: ["Meta", "Amazon", "Google"],
     category: "css",
     title: "CSS Grid Layout 1: Equal Columns",
-    description: `The Grid equivalent of a basic equal-width column layout — one line shorter than the flexbox version, since Grid lets you declare all the column tracks up front instead of setting \`flex\` on each child individually.
+    description: `**CSS Grid**'s answer to an equal-width column layout, and the first thing worth comparing against the flexbox version: instead of setting \`flex\` on every child individually, Grid lets the parent declare all the column tracks in one \`grid-template-columns\` line, and every child just falls into place.
 
 ## Your task
 
@@ -14745,7 +14753,7 @@ Write \`applyGridLayoutOne(container)\`, laying \`container\`'s children out in 
     companies: ["Meta", "Amazon"],
     category: "css",
     title: "CSS Grid Layout 2: Fixed Sidebar + Flexible Main",
-    description: `The Grid version of the fixed-sidebar-plus-flexible-main pattern — a single \`grid-template-columns\` declaration instead of setting \`flex\` on two separate children.
+    description: `The **Grid** counterpart to the flexbox fixed-sidebar-plus-flexible-main pattern — instead of setting \`flex\` separately on two children, one \`grid-template-columns\` declaration on the parent defines both a fixed-width track and a \`1fr\` track that absorbs the rest.
 
 ## Your task
 
@@ -14799,7 +14807,7 @@ Write \`applyResponsiveGrid(container, minItemWidth)\`, laying out \`container\`
     companies: ["Amazon", "Adobe"],
     category: "css",
     title: "Multi-Column Text (CSS Multi-Column Layout)",
-    description: `A newspaper-style layout the multi-column module gives you for free: flow one block of text across several columns, letting the browser handle the column breaks — no manual splitting into separate elements required.
+    description: `Splitting a long block of text into newspaper-style columns used to mean manually chopping it into separate elements — brittle the moment the content or container size changed. The **CSS multi-column** module does it with one property: give an element a \`column-count\`, and the browser reflows that same continuous text across that many columns, recalculating the breaks itself.
 
 ## Your task
 
@@ -14919,7 +14927,7 @@ Write \`applyProductGrid(container, columns, gapPx)\`, laying \`container\`'s ch
     companies: ["Adobe"],
     category: "css",
     title: "Golden-Ratio Rectangle",
-    description: `Design-systems-heavy interviews sometimes ask for this directly: a rectangle whose width-to-height ratio matches the golden ratio (≈1.618), a proportion designers reach for constantly.
+    description: `Design systems lean on the **golden ratio** (≈1.618) constantly — for card proportions, hero images, and typographic scales — because a rectangle at that width-to-height ratio reads as naturally balanced rather than arbitrary. Design-systems-heavy interviews sometimes ask for the calculation directly instead of assuming you'll eyeball it.
 
 ## Your task
 
@@ -14945,7 +14953,7 @@ Write \`applyGoldenRatioRectangle(el, width)\`, setting \`el\`'s \`width\` to \`
     companies: [],
     category: "css",
     title: "CSS-Only Triangle/Arrow Shapes (the Border Trick)",
-    description: `The classic pure-CSS shape trick: give a zero-size element a solid border on one side and transparent borders on the other two, and the borders themselves meet at a point — forming a triangle out of nothing but border geometry.
+    description: `Before \`clip-path\` and ubiquitous SVG, arrows and triangles for tooltips, dropdown carets, and speech bubbles were built entirely out of **borders**. Collapse an element's width and height to 0, then give it a border on one side only, with the other two sides transparent — the borders still meet at 45° angles the way a picture frame's corners do, and a zero-size box means the solid edge tapers to a single point.
 
 ## Your task
 
@@ -15036,7 +15044,7 @@ Write \`applyToggleSwitch(rootEl)\`, where \`rootEl\` contains a checkbox (\`.to
     companies: ["Meta", "Amazon"],
     category: "css",
     title: 'Close Button in CSS (an "X" from Pure CSS)',
-    description: `Building an "X" icon with zero images or SVG: two identical bars, generated as \`::before\`/\`::after\` pseudo-elements, rotated in opposite directions so they cross.
+    description: `Modals, toasts, and dismissible banners all need a close button, and shipping one as an image or SVG for something this simple is overkill. The classic pure-CSS trick builds the **X** entirely out of two \`::before\`/\`::after\` pseudo-element bars, rotated ±45° so they cross at the center — zero markup, zero image requests.
 
 ## Your task
 
@@ -15123,7 +15131,7 @@ Write \`applyDoughnutChart(el, segments)\`, where \`segments\` is an array of \`
     companies: ["Amazon", "Airbnb", "Pinterest"],
     category: "css",
     title: "Fit the Image (object-fit Exercises)",
-    description: `Forcing an image into a fixed-size box without distorting it: \`object-fit\` controls how the image's intrinsic content fills that box — crop-to-fill (\`cover\`), shrink-to-fit (\`contain\`), or stretch (\`fill\`).
+    description: `Dropping a real photo into a fixed-size box — a thumbnail, an avatar, a card image — almost always means the image's natural aspect ratio doesn't match the box, and squishing it with \`width\`/\`height\` alone distorts it. **\`object-fit\`** controls how the image's content fills that box instead: crop-to-fill (\`cover\`), shrink-to-fit-inside (\`contain\`), or stretch-to-match (\`fill\`) — without touching the image file itself.
 
 ## Your task
 
@@ -15203,7 +15211,7 @@ Write \`applyBackgroundSize(el, mode)\`, setting \`el\`'s \`background-size\` to
     companies: ["Stripe", "Amazon"],
     category: "css",
     title: "Color of Input Elements (Styling Native Form Controls)",
-    description: `Before reaching for a full custom-checkbox rebuild, \`accent-color\` restyles a native checkbox/radio/range input's own checked/filled color directly — one property, full native behavior (focus rings, keyboard support) kept intact.
+    description: `Rebuilding a checkbox or radio from scratch with \`appearance: none\` and pseudo-elements is a lot of ceremony just to change its color — and it costs you the native focus ring and keyboard behavior unless you rebuild those too. **\`accent-color\`** restyles a native checkbox, radio, or range input's own checked/filled color directly, in one property, while keeping all of its native behavior intact.
 
 ## Your task
 
@@ -15259,7 +15267,7 @@ Write \`applyCustomCounter(listEl, counterName)\`, setting up \`listEl\` (and ea
     companies: ["Meta", "Amazon", "Google"],
     category: "css",
     title: '"a Row" (nth-child Selectors)',
-    description: `Zebra-striping a list purely in CSS — no per-row JS class toggling, no extra markup — using \`:nth-child(even)\` to target every other row directly.
+    description: `**Zebra-striping** a table or list — alternating row background colors for readability — used to mean looping over rows in JS and toggling a class on every other one. \`:nth-child(even)\` does the same job as a pure CSS selector, matching every second element with no markup changes and no JS at all.
 
 ## Your task
 
@@ -15286,7 +15294,7 @@ Write \`applyRowStriping(listEl, stripeColor)\`, giving every even-positioned di
     companies: ["Meta"],
     category: "css",
     title: "Fragment Style (::selection Styling)",
-    description: `A small, often-forgotten pseudo-element: \`::selection\` restyles the browser's own text-selection highlight (the blue box you get from click-dragging over text) instead of leaving it at the browser default.
+    description: `Every browser ships a default text-selection highlight — the flat blue box you get from click-dragging over text — and most sites never touch it. **\`::selection\`** is the pseudo-element that lets you restyle it to match your brand instead of leaving the OS default, a small detail that's easy to forget exists as a styling hook at all.
 
 ## Your task
 
