@@ -7,6 +7,7 @@ export type { SandboxStatus } from "@/hooks/useSandbox";
 export { runInSandbox } from "@/lib/sandbox";
 export type { SandboxTest, TestResult, SandboxRunResult } from "@/lib/sandbox";
 export { getTestSpec } from "./testSpecs";
+export { useChallengeGrading } from "./useChallengeGrading";
 export { useLiveSandbox } from "./useLiveSandbox";
 export { getLiveDriver } from "./liveDrivers";
 export { buildLiveDoc } from "./buildLiveDoc";

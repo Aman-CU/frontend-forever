@@ -362,7 +362,7 @@ Never use `dangerouslySetInnerHTML` with user-supplied content. The only accepta
 
 ### MDX Content is Safe — User Content is Not
 
-MDX files are source-controlled content authored by the FF team — they are safe. User-supplied content (bios, usernames) must never be rendered as HTML. Always render as plain text.
+MDX files are source-controlled content authored by the FF team — they are safe. User-supplied content (bios, usernames) must never be rendered as HTML. Always render as plain text. Practice's Discussion feature (Feature 29 — `challenge_discussion_posts.body`/`.code`) is the platform's first free-text user-generated content surface; `DiscussionThread.tsx` deliberately does **not** reuse the shared `Markdown` renderer (even though that renderer happens to be `dangerouslySetInnerHTML`-free) — it renders `body` as plain text (`whitespace-pre-wrap`) and `code` inside a plain `<pre><code>` block, both via ordinary React children, never parsed as markup.
 
 ```typescript
 // Safe — MDX content from source-controlled files
@@ -404,6 +404,8 @@ function isSafeUrl(url: string): boolean {
 | `/api/progress` | 20 requests | 10 seconds |
 | `/api/auth/*` | 5 requests | 60 seconds |
 | `/api/practice/grade-type-challenge` | 20 requests | 10 seconds |
+| `/api/practice/submit` | 20 requests | 10 seconds |
+| `/api/practice/discussion` | 20 requests | 10 seconds |
 | All other write routes | 20 requests | 10 seconds |
 
 Rate limit key is always `user.id` — never IP address for authenticated routes.

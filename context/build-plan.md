@@ -534,19 +534,22 @@ Each simulator tracks `simulate_completed` when the user plays through all steps
 
 ### 29 Challenge Editor Page
 
+**Built. Scope expanded significantly beyond this original spec, via explicit mid-build user request** — see `progress-tracker.md`'s Feature 29 entry for the full decision trail. What follows is the spec as originally written, with a note on what actually shipped on top of it.
+
 **UI:**
 
 - Left panel, tabbed: Description (Markdown) | Hints (progressive reveal) | Test Cases spec — tabbed rather than all-visible-at-once, keeps the panel calm instead of BFE's cluttered always-on row of icon buttons
 - Right: Monaco editor + Run Tests button + output panel
 - Header: challenge title, difficulty badge, back to practice link
-- **Future, out of scope for this feature:** a single reserved slot for one tastefully-positioned sponsor/premium banner (not a scattered ad-network style) — deferred until real traffic justifies it; do not build placeholder ad UI now
+- **Future, out of scope for this feature:** a single reserved slot for one tastefully-positioned sponsor/premium banner (not a scattered ad-network style) — deferred until real traffic justifies it; do not build placeholder ad UI now — **still deferred, not built**
+- **Shipped beyond this spec:** two more tabs — **Solution** (official reference solution, pass-or-3-attempts gated) and **Discussion** (community comments and shared solutions, open to every viewer, flat one-level replies, no voting/edit/delete in v1) — a **Share row** in the header (X/Facebook real share intents + a dynamic per-challenge OG image; Instagram best-effort copy-caption-and-download, since no third-party site can pre-fill an Instagram post), and, from two same-session follow-up rounds against the running page: a sticky 50/50 editor layout with a JS/TS language badge, a video-walkthrough link (admin-curated `challenges.video_url`) placed above the editor rather than in the Solution tab, category-scoped Prev/Next question navigation, platform-wide syntax-highlighted description code blocks, and a per-page SEO/GEO pass (JSON-LD, canonical/OG metadata). See `ui-registry.md` → "Challenge Editor Page (Feature 29)" (plus its "Layout, SEO, and content-rendering redesign" follow-up) for the full component/route breakdown, including the internal-linking "More Questions" section that was built for the SEO pass and then removed the same session on user request. **Still open:** rewriting the ~620 existing challenge descriptions to greater depth — explicitly requested by the user, but scoped as a separate multi-session content-authoring effort, not part of this feature's build.
 
 **Logic — two grading paths, chosen by category:**
 
 - **JS / React / CSS / System Design:** code execution in the iframe sandbox (`allow-scripts` only), test runner compares output to expected values against the `SandboxTest[]` entries in `src/features/practice/sandbox/testSpecs.ts`.
-- **TypeScript:** no runtime to execute — instead, `POST /api/practice/grade-type-challenge` runs the real TypeScript Compiler API server-side (`src/lib/typeChecker/gradeTypeChallenge.ts`) against the `TypeChallengeTest[]` entries in `src/features/practice/sandbox/typeChallengeSpecs.ts`, and returns pass/fail per assertion based on real compiler diagnostics. See `context/security.md` → "Server-Side Compiler Execution" for the risk model this path introduces (distinct from the iframe sandbox's).
-- The Editor page must pick the grading path by the challenge's category, not assume the iframe path universally.
-- On all pass (either path): write to `user_challenge_submissions` + XP event.
+- **TypeScript:** no runtime to execute — instead, `POST /api/practice/grade-type-challenge` runs the real TypeScript Compiler API server-side (`src/lib/typeChecker/gradeTypeChallenge.ts`) against the `TypeChallengeTest[]` entries in `src/features/practice/sandbox/typeChallengeSpecs.ts`, and returns pass/fail per assertion based on real compiler diagnostics. See `context/security.md` → "Server-Side Compiler Execution" for the risk model this path introduces (distinct from the iframe sandbox's). **Requires login** (that route is auth-gated); the Editor page disables Run Tests for logged-out users on TypeScript challenges rather than surfacing a raw "Unauthorized" as a fake test failure.
+- The Editor page picks the grading path via a unifying `useChallengeGrading(category, slug)` hook, not an inline branch per call site.
+- **On every Run Tests attempt, pass or fail:** write a row to `user_challenge_submissions` (`POST /api/practice/submit`) — the table has no unique constraint, by design, so every attempt is logged. XP (`CHALLENGE_SOLVED_XP` = 10, not the originally-planned 20 — see `architecture.md` → XP System) and the daily streak bump fire only on a user's first-ever pass for that challenge.
 
 ---
 

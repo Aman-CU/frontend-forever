@@ -474,6 +474,12 @@ A small set of tokens are deliberately **not** redefined inside `.dark {}` — t
 | `--color-cta-dark` | `#0A0A0A` | Full-bleed "always dark" marketing bands (e.g. `CTASection`) that should look identical in light and dark mode, not lighten/darken with the page |
 | `--color-editor-surface` | `#1E1E1E` | Code-surface background that must match Monaco's always-`vs-dark` editor regardless of site theme — the `ChallengeEditor` loading skeleton and `SolutionPanel` code block (Feature 24) |
 | `--color-editor-foreground` | `#D4D4D4` | Code text/skeleton bars on `--color-editor-surface`, matching Monaco's vs-dark foreground |
+| `--color-editor-keyword` | `#569CD6` | Fenced-code-block syntax highlighting in `Markdown.tsx` (Feature 29) — same vs-dark blue Monaco uses for keywords |
+| `--color-editor-string` | `#CE9178` | Same, for string literals |
+| `--color-editor-comment` | `#6A9955` | Same, for `//`/`/* */` comments |
+| `--color-editor-number` | `#B5CEA9` | Same, for numeric literals |
+| `--color-editor-function` | `#DCDCAA` | Same, for function/method names |
+| `--color-ts-badge-bg` / `--color-ts-badge-text` | `#3178C6` / `#FFFFFF` | TypeScript's brand blue language badge (Feature 29's Editor page language pill), sibling to the pre-existing `--color-js-badge-*` pair |
 
 **Never pair a *theme-following* token (`text-inverse`, `bg-surface`, `bg-background`) with a fixed/theme-invariant background** — `text-inverse` flips white→near-black to track the page theme, so on a background that *doesn't* flip (like `bg-cta-dark` or `bg-accent-darker`) it can go invisible in one theme. Caught this exact mistake once already in Feature 06 (`ProjectEditorMiniVisual`) and again in Feature 08 (`CTASection`'s first draft) — see `ui-registry.md` for both. If a component's background is meant to stay constant across themes, every text/foreground color on top of it must come from this theme-invariant set, not the page-tracking one.
 

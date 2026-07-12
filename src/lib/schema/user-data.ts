@@ -116,6 +116,37 @@ export const userChallengeSubmissions = pgTable(
   ],
 ).enableRLS();
 
+// ── challenge_discussion_posts ────────────────────────────────────────────────
+// Feature 29's Discussion tab — one unified table for both freeform comments
+// and shared solutions (a post with a non-null `code` reads as a shared
+// solution; a post with none is a plain comment). Flat, one-level replies
+// only: parentId is null for a top-level post, or points at a top-level
+// post's id for a reply — app code never lets a reply itself be replied to,
+// so parentId never chains more than one level deep. Open to every viewer,
+// logged in or not, solved or not (no spoiler gate — user decision).
+
+export const challengeDiscussionPosts = pgTable(
+  "challenge_discussion_posts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    challengeId: uuid("challenge_id")
+      .notNull()
+      .references(() => challenges.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    parentId: uuid("parent_id"),
+    title: text("title"),
+    body: text("body").notNull(),
+    code: text("code"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("cdp_challenge_id_idx").on(table.challengeId),
+    index("cdp_parent_id_idx").on(table.parentId),
+  ],
+).enableRLS();
+
 // ── user_interview_reviews ────────────────────────────────────────────────────
 
 export const userInterviewReviews = pgTable(
@@ -220,6 +251,20 @@ export const userChallengeSubmissionsRelations = relations(
     }),
     challenge: one(challenges, {
       fields: [userChallengeSubmissions.challengeId],
+      references: [challenges.id],
+    }),
+  }),
+);
+
+export const challengeDiscussionPostsRelations = relations(
+  challengeDiscussionPosts,
+  ({ one }) => ({
+    profile: one(profiles, {
+      fields: [challengeDiscussionPosts.userId],
+      references: [profiles.id],
+    }),
+    challenge: one(challenges, {
+      fields: [challengeDiscussionPosts.challengeId],
       references: [challenges.id],
     }),
   }),

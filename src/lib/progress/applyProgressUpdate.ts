@@ -34,11 +34,13 @@ const TAB_FLAG_KEY: Record<ConceptTab, keyof ProgressInsert> = {
 
 // UTC calendar day — there is no per-user timezone system in the app today,
 // so "today"/"yesterday" for streak purposes is the server's UTC date.
-function todayUtc(): string {
+// Exported for reuse by applyChallengeSubmission.ts (Feature 29) — Practice
+// challenge solves feed the same daily streak as concept-tab completions.
+export function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-function yesterdayUtc(): string {
+export function yesterdayUtc(): string {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() - 1);
   return d.toISOString().slice(0, 10);
