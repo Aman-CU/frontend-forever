@@ -10942,7 +10942,7 @@ const TEST_SPECS: Record<string, SandboxTest[]> = {
   "fetch-request-deduper": FETCH_REQUEST_DEDUPER_TESTS,
   "global-store-pubsub": GLOBAL_STORE_PUBSUB_TESTS,
   "valtio-style-proxy-store": VALTIO_STYLE_PROXY_STORE_TESTS,
-  "mini-redux-store": MINI_REDUX_STORE_TESTS,
+  "create-redux-store": MINI_REDUX_STORE_TESTS,
 
   // Practice — standalone React Custom Hooks & Patterns Roadmap, Stage R7
   "usestate-from-scratch": USESTATE_FROM_SCRATCH_TESTS,

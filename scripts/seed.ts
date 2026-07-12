@@ -13996,7 +13996,7 @@ Write \`createValtioStore(initialState)\`, returning \`{ store, subscribe(callba
     orderIndex: 1218,
   },
   {
-    slug: "mini-redux-store",
+    slug: "create-redux-store",
     companies: ["Amazon", "Airbnb"],
     category: "react",
     title: "Minimal Redux-Like Store: createStore, useSelector, useDispatch",

@@ -86,9 +86,11 @@ export function ChallengeListRow({
           "flex h-5 w-5 shrink-0 items-center justify-center rounded",
           completed ? "bg-success" : "border-2 border-border",
         )}
-        aria-hidden
       >
-        {completed && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+        {completed && (
+          <Check className="h-3 w-3 text-success-foreground" strokeWidth={3} aria-hidden />
+        )}
+        <span className="sr-only">{completed ? "Completed" : "Not completed"}</span>
       </span>
     </Link>
   );

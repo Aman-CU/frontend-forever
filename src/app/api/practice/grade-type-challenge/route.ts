@@ -1,9 +1,7 @@
 import { auth } from "@/lib/auth/server";
 import { ratelimit } from "@/lib/upstash";
-import { gradeTypeChallenge } from "@/lib/typeChecker/gradeTypeChallenge";
+import { gradeTypeChallenge, MAX_CODE_LENGTH } from "@/lib/typeChecker/gradeTypeChallenge";
 import { getTypeChallengeSpec } from "@/features/practice/sandbox/typeChallengeSpecs";
-
-const MAX_CODE_LENGTH = 20_000;
 
 export async function POST(req: Request) {
   // 1. Auth — grading runs the real TypeScript compiler, which is CPU-heavy

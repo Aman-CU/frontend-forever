@@ -94,6 +94,7 @@ export function ChallengeListClient({ challenges }: Props) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search challenges…"
+          aria-label="Search challenges"
           className="h-11 w-full pl-10 text-sm"
         />
       </div>

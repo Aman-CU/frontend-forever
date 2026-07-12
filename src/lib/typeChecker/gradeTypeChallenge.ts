@@ -17,7 +17,7 @@ type NotEqual<X, Y> = Equal<X, Y> extends true ? false : true;
 const VIRTUAL_FILE = "solution.ts";
 // A student is only ever writing a handful of type aliases — this is a
 // generous ceiling against pathological input, not a realistic answer size.
-const MAX_CODE_LENGTH = 20_000;
+export const MAX_CODE_LENGTH = 20_000;
 
 const COMPILER_OPTIONS: ts.CompilerOptions = {
   strict: true,
@@ -58,7 +58,12 @@ export function gradeTypeChallenge(
   }
 
   const testBlockLines = tests.map((t, i) => `type __test${i} = Expect<${t.assertion}>;`);
-  const fullSource = `${HARNESS}\n${userCode}\n${testBlockLines.join("\n")}\n`;
+  // Built from a known prefix, not located by searching for "__test0" in the
+  // compiled source — student code can itself contain that literal (a
+  // comment, a string), which would match before the real test block and
+  // throw off every test's line mapping.
+  const prefix = `${HARNESS}\n${userCode}\n`;
+  const fullSource = `${prefix}${testBlockLines.join("\n")}\n`;
 
   const host = ts.createCompilerHost(COMPILER_OPTIONS);
   const originalGetSourceFile = host.getSourceFile.bind(host);
@@ -98,8 +103,9 @@ export function gradeTypeChallenge(
     else diagnosticsByLine.set(line, [message]);
   });
 
-  const sourceLines = fullSource.split("\n");
-  const firstTestLineIndex = sourceLines.findIndex((line) => line.includes("__test0"));
+  // The prefix always ends in "\n", so the number of newlines it contains is
+  // exactly the 0-indexed line number where the test block starts.
+  const firstTestLineIndex = (prefix.match(/\n/g) ?? []).length;
 
   return tests.map((t, i) => {
     const lineIndex = firstTestLineIndex + i;
