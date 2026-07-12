@@ -6,11 +6,9 @@ Update this file after every completed feature. Any AI agent reading this should
 
 ## Current Status
 
-**This header was stale for a long time (frozen at Feature 06 while the file's body — the authoritative running log — progressed all the way through Feature 48 on `develop` and Feature 28 on this branch). Brought back in sync 2026-07-12; see the full body below for real detail, this block is a summary pointer only.**
-
 **Phase:** Phase 5 — Practice Section, in progress
-**Last completed on `develop`:** 48 System Design Concepts (Phase 10 Concept Curriculum Expansion) — merged via PR #65 (merge commit `218135e`). Phase 10 is now fully complete: all 8 concept categories have a full Understand/Challenge/Interview/Build catalog.
-**Currently building:** 28 Practice Hub + Category List Pages, on branch `feature/28-practice-hub`. Pushed to origin; **PR #67 is open and under review** — see the Feature 28 entry below for the full arc. UI, real backend logic (challenges/companies/solved-state queries), and content-authoring are all complete: 620 total challenges across all 5 Practice categories (263 pre-existing + 357 new standalone ones authored this session), plus a new server-side TypeScript Compiler API grading path (`/api/practice/grade-type-challenge`) for the TypeScript category, since types can't be graded by the existing browser-sandbox mechanism.
+**Last completed:** 28 Practice Hub + Category List Pages — merged to `develop` via PR #67 (merge commit `6420ca7`), branch `feature/28-practice-hub`. UI, real backend logic (challenges/companies/solved-state queries), and content-authoring are all complete: 620 total challenges across all 5 Practice categories (263 pre-existing + 357 new standalone ones authored this session), plus a new server-side TypeScript Compiler API grading path (`/api/practice/grade-type-challenge`) for the TypeScript category, since types can't be graded by the existing browser-sandbox mechanism. `develop` tip is `6420ca7`. See the full Feature 28 entry below for the arc.
+**Currently building:** Nothing.
 **Next:** 29 Challenge Editor Page — the only remaining gap before Practice is fully functional end-to-end. Must wire up two distinct grading paths: the existing client-side `SandboxTest`/iframe mechanism (javascript-runtime/react/css/system-design) and the new server-side `/api/practice/grade-type-challenge` (typescript) — branch on `category === "typescript"`.
 
 ---
@@ -550,6 +548,8 @@ Update this file after every completed feature. Any AI agent reading this should
     2. **`context/security.md` had zero coverage of server-side compiler execution** — its "Code Execution Security" section only covers the browser iframe model, but the new TypeScript grading path runs the real Compiler API server-side, a different risk class. Added a new "Server-Side Compiler Execution (TypeScript Practice Grading)" section documenting why it's safe (`noEmit: true`, TS's own recursion-depth guards, auth + rate-limit gating, input size cap) and what it must never do (never emit/execute compiled output, never log user code, never skip the auth/rate-limit gate). Also added the route to the Rate Limiting Reference table.
     3. **`context/build-plan.md`'s Feature 29 spec still described a single iframe-only grading path** — updated its "Logic" section to document both grading paths (iframe for JS/React/CSS/system-design, server-side compiler for TypeScript) and note the Editor page must branch on category, with a pointer to `security.md`'s new section for the risk model.
     - No Critical findings; the authored content itself (all 357 new challenges) was already independently validated in every prior follow-up and required no changes.
+  - **Follow-up (CodeRabbit review on PR #67, verified each finding against current code before touching anything):** fixed 6 real issues, no findings skipped. Two were genuine defects, not style nitpicks: (1) the standalone react-category `mini-redux-store` challenge silently shared its slug with an unrelated, older concept-linked challenge — re-seeding was clobbering whichever upserted second; renamed the standalone entry to `create-redux-store` (`scripts/seed.ts` + its `TEST_SPECS` key). (2) `gradeTypeChallenge`'s line-mapping located the test block by searching compiled source for the literal `__test0`, which student code could itself contain (a comment, a string) and match first, corrupting every test's line attribution — replaced with a deterministic prefix-length calculation, verified against real compiler execution with the exact adversarial decoy case (a `__test0`-containing comment placed before the real test block), confirmed correct in both the normal and adversarial runs. Also fixed: accessible state (`sr-only` "Completed"/"Not completed") on the row completion checkbox, an `aria-label` on the Practice search input, the check icon's hardcoded `text-white` swapped for the `success-foreground` token, `gradeTypeChallenge`'s `MAX_CODE_LENGTH` exported and reused in the route instead of duplicated, and `ui-registry.md`'s `ChallengeListRow`/`ChallengeListClient` entries corrected (both still described a dropped concept-tag second line and the pre-`layout="position"` animation mode). `tsc --noEmit` and `eslint src/ scripts/` both clean; re-ran `npx tsx -r dotenv/config scripts/seed.ts` to confirm the slug rename upserts cleanly (436 challenges, unchanged count). Pushed as commit `de19579` on the same branch/PR.
+  - **Merged to `develop` via PR #67 (merge commit `6420ca7`)**, branch `feature/28-practice-hub`, commits `e238b30` (content + TS grading infrastructure + UI fixes + review-driven fixes), `ccf147b` (progress-tracker Current Status header sync), `de19579` (CodeRabbit fixes). `develop` tip is `6420ca7`.
 
 ---
 
@@ -600,7 +600,7 @@ Update this file after every completed feature. Any AI agent reading this should
 
 ### Phase 5 — Practice Section
 
-- [ ] 28 Practice List Page
+- [x] 28 Practice Hub + Category List Pages
 - [ ] 29 Challenge Editor Page
 
 ### Phase 6 — Interview Prep
