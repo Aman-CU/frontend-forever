@@ -27,3 +27,9 @@ export const PRACTICE_CATEGORY_LABELS: Record<PracticeCategory, string> = {
   typescript: "TypeScript Puzzles",
   "system-design": "Front-End System Design Questions",
 };
+
+// Shared type guard — was private to [category]/page.tsx until the Editor
+// page (Feature 29) and its opengraph-image route needed the same check.
+export function isPracticeCategory(value: string): value is PracticeCategory {
+  return (PRACTICE_CATEGORIES as readonly string[]).includes(value);
+}

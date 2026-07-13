@@ -96,10 +96,22 @@
    */
   --color-editor-surface: #1E1E1E;
   --color-editor-foreground: #D4D4D4;
+  /*
+   * Syntax-highlight token colors (Feature 29) — same vs-dark palette Monaco
+   * itself renders with, so a description's fenced code block and the real
+   * editor look like the same theme, not two different products.
+   */
+  --color-editor-keyword: #569CD6;
+  --color-editor-string: #CE9178;
+  --color-editor-comment: #6A9955;
+  --color-editor-number: #B5CEA9;
+  --color-editor-function: #DCDCAA;
 
   /* ─── Language Badges (theme-invariant — not overridden in .dark {}) ─── */
   --color-js-badge-bg: #FFFF00;
   --color-js-badge-text: #111827;
+  --color-ts-badge-bg: #3178C6;
+  --color-ts-badge-text: #FFFFFF;
 
   /* ─── Border Radius ─── */
   --radius-xs: 4px;

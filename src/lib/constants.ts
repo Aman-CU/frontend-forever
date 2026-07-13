@@ -73,3 +73,8 @@ export const TAB_XP_EVENT_TYPE: Record<ConceptTab, XPEventType> = {
 
 export const CONCEPT_COMPLETED_BONUS_XP = 50;
 export const STREAK_BONUS_XP = 5;
+// Awarded once, on a user's first-ever passing submission for a given
+// Practice challenge (Feature 29). Deliberately below TAB_XP_REWARDS.challenge
+// (25) — Practice has ~620 standalone challenges vs. ~76 Learn concepts, so
+// paying the same rate would let grinding badly out-earn the Learn track.
+export const CHALLENGE_SOLVED_XP = 10;

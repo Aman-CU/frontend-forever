@@ -85,6 +85,13 @@
       "when": 1783764580746,
       "tag": "0011_cuddly_microbe",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1783855495534,
+      "tag": "0012_rapid_weapon_omega",
+      "breakpoints": true
     }
   ]
 }

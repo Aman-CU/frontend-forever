@@ -5,17 +5,12 @@ import { CATEGORY_META } from "@/features/learn/lib/categoryMeta";
 import { PracticeBreadcrumb } from "@/features/practice/components/PracticeBreadcrumb";
 import { ChallengeListClient } from "@/features/practice/components/ChallengeListClient";
 import {
-  PRACTICE_CATEGORIES,
   PRACTICE_CATEGORY_LABELS,
-  type PracticeCategory,
+  isPracticeCategory,
 } from "@/features/practice/lib/practiceCategories";
 import { getPracticeChallengesByCategory } from "@/features/practice/lib/queries";
 
 type Params = { category: string };
-
-function isPracticeCategory(value: string): value is PracticeCategory {
-  return (PRACTICE_CATEGORIES as readonly string[]).includes(value);
-}
 
 export default async function PracticeCategoryPage({ params }: { params: Promise<Params> }) {
   const { category } = await params;
@@ -33,7 +28,10 @@ export default async function PracticeCategoryPage({ params }: { params: Promise
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
-      <PracticeBreadcrumb currentLabel={label} />
+      <PracticeBreadcrumb
+        backHref="/practice"
+        crumbs={[{ label: "Practice", href: "/practice" }, { label }]}
+      />
 
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-text-primary">{label}</h1>

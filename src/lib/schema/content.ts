@@ -84,6 +84,9 @@ export const challenges = pgTable(
     // Companies the challenge is attributed to (Practice's Company filter,
     // Feature 28) — same shape/precedent as interviewQuestions.companies below.
     companies: text("companies").array().notNull().default([]),
+    // Admin/seed-curated YouTube walkthrough link (Feature 29's Solution tab).
+    // Nullable — most challenges have no video yet; no user-submission path.
+    videoUrl: text("video_url"),
     isPremium: boolean("is_premium").notNull().default(false),
     orderIndex: integer("order_index").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

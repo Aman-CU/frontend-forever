@@ -45,7 +45,7 @@ function renderBlocks(src: string): ReactNode[] {
           className="overflow-x-auto rounded-lg bg-editor-surface p-3.5"
         >
           <code className="font-mono text-xs leading-relaxed text-editor-foreground">
-            {code.join("\n")}
+            {highlightCode(code.join("\n"))}
           </code>
         </pre>,
       );
@@ -155,6 +155,55 @@ function renderBlocks(src: string): ReactNode[] {
   }
 
   return blocks;
+}
+
+// A small, deliberately non-exhaustive JS/TS syntax highlighter for fenced code
+// blocks (Feature 29) — same "roll our own minimal, no dependency" ethos as this
+// file's markdown parsing itself. Content is always authored by us, same trust
+// tier as the rest of this file. Colors match Monaco's real vs-dark theme
+// (ui-tokens.md's --color-editor-* set) so a description's example code and the
+// actual editor read as the same product, not two different-looking ones.
+const JS_KEYWORDS =
+  "const|let|var|function|return|if|else|for|while|class|new|this|typeof|instanceof|in|of|try|catch|finally|throw|async|await|yield|import|export|default|from|extends|implements|interface|type|enum|public|private|protected|readonly|static|as|is|keyof|infer|never|unknown|any|void|null|undefined|true|false|switch|case|break|continue|do|delete|super";
+const TOKEN_RE = new RegExp(
+  `(?<comment>//.*|/\\*[\\s\\S]*?\\*/)|(?<string>'(?:[^'\\\\]|\\\\.)*'|"(?:[^"\\\\]|\\\\.)*"|\`(?:[^\`\\\\]|\\\\.)*\`)|(?<number>\\b\\d+\\.?\\d*\\b)|(?<keyword>\\b(?:${JS_KEYWORDS})\\b)|(?<func>[a-zA-Z_$][\\w$]*)(?=\\s*\\()`,
+  "g",
+);
+const TOKEN_CLASS: Record<string, string> = {
+  comment: "text-editor-comment",
+  string: "text-editor-string",
+  number: "text-editor-number",
+  keyword: "text-editor-keyword",
+  func: "text-editor-function",
+};
+
+function highlightCode(code: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  let last = 0;
+  let key = 0;
+  let match: RegExpExecArray | null;
+  TOKEN_RE.lastIndex = 0;
+  while ((match = TOKEN_RE.exec(code)) !== null) {
+    if (match.index > last) {
+      nodes.push(<Fragment key={key++}>{code.slice(last, match.index)}</Fragment>);
+    }
+    const groupName = Object.keys(match.groups ?? {}).find((name) => match!.groups![name] !== undefined);
+    const className = groupName ? TOKEN_CLASS[groupName] : undefined;
+    nodes.push(
+      className ? (
+        <span key={key++} className={className}>
+          {match[0]}
+        </span>
+      ) : (
+        <Fragment key={key++}>{match[0]}</Fragment>
+      ),
+    );
+    last = TOKEN_RE.lastIndex;
+  }
+  if (last < code.length) {
+    nodes.push(<Fragment key={key++}>{code.slice(last)}</Fragment>);
+  }
+  return nodes;
 }
 
 // Inline `code`, **bold**, and *italic* spans. The `**` alternative precedes the

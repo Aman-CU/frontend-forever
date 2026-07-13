@@ -377,13 +377,14 @@ Accessed via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), 
 | test_cases | jsonb | Array of {input, expected, label} |
 | hints | text[] | Progressive hints, ordered |
 | companies | text[] | Companies attributed to the challenge (Practice's Company filter, Feature 28) — added migration `0010_wakeful_raider`, same shape as `interview_questions.companies` below. Default `[]`. Currently populated only on the 49 concept-linked challenges from Feature 28's first (superseded) design — orphaned there now that Practice no longer queries concept-linked rows; will apply to real standalone Practice content going forward |
+| video_url | text | Nullable. Admin/seed-curated YouTube walkthrough link, rendered in the Editor page's Solution tab (Feature 29) — added migration `0012_rapid_weapon_omega`. No user-submission path; most challenges have no video yet |
 | is_premium | boolean | Default false |
 | order_index | integer | |
 | created_at | timestamptz | |
 
 ### `user_challenge_submissions`
 
-**Currently unwritten — schema exists, nothing inserts into it yet.** Reserved for Feature 29's Editor page ("Run Tests"/submit flow). This *is* the correct table for Practice's "solved" state (Feature 28) — Practice questions are standalone (no `concept_id`), so `user_concept_progress` doesn't apply to them at all; `getSolvedChallengeIds` reads this table keyed by `challenge_id` directly. It's just empty until Feature 29 gives it a real write path, so every Practice challenge correctly shows as unsolved until then — an honest empty state, not a bug.
+**Real write path since Feature 29** (`POST /api/practice/submit` → `applyChallengeSubmission.ts`). One row per Run Tests attempt, pass or fail — the table has no unique constraint by design, since every attempt is logged, not just the winning one. This is the correct table for Practice's "solved" state (Feature 28) — Practice questions are standalone (no `concept_id`), so `user_concept_progress` doesn't apply to them at all; `getSolvedChallengeIds`/`hasPassedChallenge` read this table keyed by `challenge_id` directly.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -393,6 +394,21 @@ Accessed via a direct Postgres connection (`lib/db.ts`, Drizzle ORM over `pg`), 
 | status | text | passed / failed |
 | code | text | Submitted code snapshot |
 | submitted_at | timestamptz | |
+
+### `challenge_discussion_posts`
+
+**New in Feature 29.** One unified table for both freeform comments and shared solutions on a Practice challenge — a post with a non-null `code` reads as a shared solution, not a separate system. Flat, one-level replies only, enforced at the write layer (`POST /api/practice/discussion` rejects a reply whose target `parent_id` is itself non-null). Open to every viewer, logged in or not, solved or not — no spoiler gate (explicit product decision, see `progress-tracker.md`). No voting/likes, no edit/delete in v1.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | |
+| challenge_id | uuid | References challenges, `ON DELETE CASCADE` |
+| user_id | text | References profiles, `ON DELETE CASCADE` |
+| parent_id | uuid | Nullable — null for a top-level post, points at a top-level post's id for a reply |
+| title | text | Nullable. Only ever set on top-level posts; the write route silently drops it on a reply |
+| body | text | Freeform text, max 4,000 chars, rendered as plain text (`whitespace-pre-wrap`), never as markdown/HTML — no sanitizer exists for user-generated content in this codebase |
+| code | text | Nullable, max 4,000 chars. Present → the post renders as a shared solution |
+| created_at | timestamptz | |
 
 ### `interview_questions`
 
@@ -625,10 +641,12 @@ Verified via repeated `curl` bursts against the running dev server: before the f
 | Complete Challenge tab | 25 XP |
 | Complete Interview tab | 20 XP |
 | Complete Build tab | 30 XP |
-| Solve a practice challenge | 20 XP |
+| Solve a practice challenge (first pass only, per challenge) | 10 XP |
 | Answer an interview question (review) | 10 XP |
 | Daily streak bonus | 5 XP |
 | First-time concept completion bonus | +50 XP |
+
+`CHALLENGE_SOLVED_XP` (`lib/constants.ts`) was lowered from this table's original 20 XP to 10 XP when Feature 29 (the Editor page) actually implemented the write path — Practice has ~620 standalone challenges vs. ~76 Learn concepts, so paying the same-order reward would let grinding badly out-earn the Learn track. Awarded once per (user, challenge) via `applyChallengeSubmission.ts`, on the first-ever *passing* `user_challenge_submissions` row for that challenge — every Run Tests attempt (pass or fail) still writes its own submission row (no unique constraint on that table, by design), but only a first pass triggers XP + the daily streak bump.
 
 ---
 
