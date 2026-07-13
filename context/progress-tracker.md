@@ -631,6 +631,23 @@ Verified: `tsc --noEmit` + `eslint src/` clean. Playwright re-screenshots (deskt
 
 ---
 
+### Refactor — `scripts/seed.ts` split into `scripts/seed/*`
+
+**Not a numbered feature** — a structural refactor of the seed script itself, prompted by the real pain this session's Content Initiative hit first-hand: a single 30,536-line file caused stale line-range assumptions, a worktree sparse-checkout gap, and a genuine lost-update race between parallel subagents all editing the same monolithic file. `scripts/seed.ts` never affects the running app (it's a one-off script, imported by nothing under `src/`), so this only ever touches `scripts/`.
+
+**What changed:** the file's 5 top-level content arrays (`CONCEPTS`, `CHALLENGES`, `INTERVIEW_QUESTIONS`, `PROJECT_BRIEFS`, `ROADMAPS`) and their shared type definitions moved out into `scripts/seed/`:
+- `scripts/seed/types.ts` — the 5 `*Seed` type definitions (moved verbatim, unchanged).
+- `scripts/seed/concepts.ts`, `projectBriefs.ts`, `roadmaps.ts` — single files (744/4,418/17 lines respectively; no clean sub-split axis, or too small to need one).
+- `scripts/seed/challenges/` — split by Practice `category` (the actual axis this session's parallel content-rewrite agents were already dispatched along): `conceptLinked.ts` (74, no category — Learn Challenge-tab-only entries), `javascriptRuntime.ts` (189), `react.ts` (38), `css.ts` (37), `typescript.ts` (68), `systemDesign.ts` (30), recombined by `index.ts` into the same `CHALLENGES` export.
+- `scripts/seed/interviewQuestions/` — split by `collection` (the 4 `INTERVIEW_COLLECTIONS` values: `ff75.ts`, `ffJavascript.ts`, `ffReact.ts`, `ffSystemDesign.ts`), recombined by `index.ts`.
+- `scripts/seed.ts` itself is now ~235 lines — dotenv/DB connection setup + the `seed()` upsert logic only, importing the 5 arrays from the files above. Array concatenation order in each `index.ts` is cosmetic; every table's real ordering comes from each row's own `orderIndex` field, never from array position, so reordering during the split changes nothing at the DB level.
+
+**How the split was done — mechanically, not by hand:** hand-editing or regex-splitting a 30k-line file risked silent corruption (the file mixes backtick template literals, `${}` expressions, and nested arrays, so naive line/bracket matching is unsafe — confirmed early: a first attempt using string-join-then-regex-cleanup to fix stray commas between spliced elements left 5 `CHALLENGES` entries and 3 `INTERVIEW_QUESTIONS` entries as silently-elided array holes wherever an inline comment sat between two entries, caught before commit by the verification step below, root-caused, and fixed by stripping each chunk's leading separator comma explicitly instead of regex-collapsing doubled commas after the fact). The real split used the TypeScript compiler API (`ts.createSourceFile` + AST walk) to locate each top-level array and slice out each element's exact source text by node boundaries — never regenerating or reformatting content, so every backtick/comment/string byte is preserved.
+
+**Verified zero data loss, not assumed:** a second AST-based script parsed both the original monolithic file and the new split files independently and compared, per table, the full multiset of identity keys (`slug` for `CONCEPTS`/`CHALLENGES`/`PROJECT_BRIEFS`/`ROADMAPS`, `question` text for `INTERVIEW_QUESTIONS`, since that table has no slug) — including duplicates, not just counts. All 5 tables came back byte-for-byte identical (76/436/395/76/2 entries respectively) once the comma bug above was fixed. `tsc --noEmit` and `eslint scripts/` both clean on the new file tree. Not run against the dev DB in this pass — the upsert logic itself is untouched, and the AST-level comparison is a stronger guarantee for a pure data-relocation refactor than a live seed run would add; left for the user's own test pass per their request, since this was built on a dedicated worktree/branch (`refactor/split-seed-data`) precisely so it could be tried before merging.
+
+---
+
 ## Progress
 
 ### Phase 0 — Foundation
