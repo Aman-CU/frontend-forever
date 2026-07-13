@@ -1,8 +1,12 @@
+import { eq } from "drizzle-orm";
+
 import { auth } from "@/lib/auth/server";
 import { ratelimit } from "@/lib/upstash";
 import { db } from "@/lib/db";
 import { getPostgresErrorCode } from "@/lib/dbErrors";
+import { challenges } from "@/lib/schema";
 import { CHALLENGE_STATUSES, type ChallengeStatus } from "@/lib/constants";
+import { isPracticeCategory } from "@/features/practice/lib/practiceCategories";
 import { applyChallengeSubmission } from "@/lib/progress/applyChallengeSubmission";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -52,7 +56,21 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid challengeId, status, or code" }, { status: 400 });
   }
 
-  // 4. Submission write + (on a first pass) XP + streak, all-or-nothing.
+  // 4. The challenge must exist and actually belong to Practice's category
+  // set — this endpoint awards XP/streak, and challenges.category is
+  // nullable (Learn-only, concept-attached challenges have no category), so
+  // without this check any valid challenge id anywhere in the table could
+  // be submitted here for a reward, not just the ones surfaced in Practice.
+  const [challenge] = await db
+    .select({ category: challenges.category })
+    .from(challenges)
+    .where(eq(challenges.id, challengeId))
+    .limit(1);
+  if (!challenge || !challenge.category || !isPracticeCategory(challenge.category)) {
+    return Response.json({ error: "Challenge not found" }, { status: 404 });
+  }
+
+  // 5. Submission write + (on a first pass) XP + streak, all-or-nothing.
   try {
     const result = await db.transaction((tx) =>
       applyChallengeSubmission(tx, session.user.id, challengeId, status, code),

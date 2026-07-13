@@ -22,8 +22,17 @@ function initials(author: DiscussionReply["author"]): string {
   return name.slice(0, 2).toUpperCase();
 }
 
+// Explicit locale + timeZone (not `undefined`, which resolves to the
+// runtime's own locale/offset) so server-rendered and client-rendered output
+// are byte-identical — otherwise a non-US-locale or non-UTC browser produces
+// a different string than the SSR pass and React logs a hydration mismatch.
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 // One unified space for both freeform comments and shared solutions — a post
@@ -208,6 +217,7 @@ function NewPostForm({
       {!compact && (
         <input
           type="text"
+          aria-label="Post title (optional)"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder={'Title (optional) — e.g. "O(n) two-pointer approach"'}
@@ -216,6 +226,7 @@ function NewPostForm({
         />
       )}
       <textarea
+        aria-label={compact ? "Reply" : "Post body"}
         value={body}
         onChange={(event) => setBody(event.target.value)}
         placeholder={compact ? "Write a reply…" : "Share your thoughts or a solution…"}
@@ -226,6 +237,7 @@ function NewPostForm({
 
       {showCode ? (
         <textarea
+          aria-label="Code (optional)"
           value={code}
           onChange={(event) => setCode(event.target.value)}
           placeholder="Paste your code…"

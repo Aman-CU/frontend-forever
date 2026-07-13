@@ -39,6 +39,7 @@ export function ChallengeEditorWorkspace({
   const [code, setCode] = useState(challenge.starterCode);
   const [attempts, setAttempts] = useState(0);
   const [hasPassed, setHasPassed] = useState(initialHasPassed);
+  const [saveError, setSaveError] = useState(false);
 
   const passed =
     !!grading.result &&
@@ -60,7 +61,14 @@ export function ChallengeEditorWorkspace({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ challengeId: challenge.id, status, code }),
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        // The run result already rendered locally, but the attempt/XP write
+        // didn't land — surface it rather than silently losing it, since
+        // the user would otherwise believe it was saved.
+        setSaveError(true);
+        return;
+      }
+      setSaveError(false);
       const data = (await res.json()) as { firstPass?: boolean };
       if (data.firstPass) {
         setHasPassed(true);
@@ -70,8 +78,7 @@ export function ChallengeEditorWorkspace({
         router.refresh();
       }
     } catch {
-      // A failed submission write is non-fatal — the run result already
-      // rendered locally; nothing to roll back or retry here.
+      setSaveError(true);
     }
   }
 
@@ -80,8 +87,12 @@ export function ChallengeEditorWorkspace({
     const outcome = await grading.run(code);
     if (!outcome) return;
 
-    const didPass =
-      !outcome.error && outcome.results.length > 0 && outcome.results.every((r) => r.passed);
+    // A grading-infra error (compiler/sandbox failure) is not the same as a
+    // genuine wrong-answer attempt — it shouldn't count toward the
+    // REVEAL_AFTER_ATTEMPTS unlock or get written as a "failed" submission.
+    if (outcome.error) return;
+
+    const didPass = outcome.results.length > 0 && outcome.results.every((r) => r.passed);
     if (didPass) {
       await submitAttempt("passed");
     } else {
@@ -108,7 +119,7 @@ export function ChallengeEditorWorkspace({
           role="tabpanel"
           aria-labelledby={`editor-tab-${activeTab}`}
           tabIndex={0}
-          className="mt-4 outline-none"
+          className="mt-4 outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           {activeTab === "description" && <ChallengeDescription markdown={challenge.description} />}
 
@@ -191,6 +202,12 @@ export function ChallengeEditorWorkspace({
               <YoutubeLogo className="h-4 w-4 text-error" />
               Video walkthrough
             </a>
+          )}
+
+          {saveError && (
+            <span className="text-xs text-error">
+              Couldn&apos;t save your result — run again to retry.
+            </span>
           )}
 
           {passed ? (

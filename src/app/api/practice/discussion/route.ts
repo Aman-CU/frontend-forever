@@ -4,7 +4,8 @@ import { auth } from "@/lib/auth/server";
 import { ratelimit } from "@/lib/upstash";
 import { db } from "@/lib/db";
 import { getPostgresErrorCode } from "@/lib/dbErrors";
-import { challengeDiscussionPosts } from "@/lib/schema";
+import { challengeDiscussionPosts, challenges } from "@/lib/schema";
+import { isPracticeCategory } from "@/features/practice/lib/practiceCategories";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_TITLE_LENGTH = 200;
@@ -68,7 +69,20 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid parentId" }, { status: 400 });
   }
 
-  // 4. A reply's parent must itself be a top-level post on the same
+  // 4. The challenge must exist and belong to Practice's category set — same
+  // reasoning as /api/practice/submit: challenges.category is nullable
+  // (Learn-only entries), so without this a post could be attached to any
+  // challenge id in the table, not just ones the Discussion tab is shown on.
+  const [challenge] = await db
+    .select({ category: challenges.category })
+    .from(challenges)
+    .where(eq(challenges.id, challengeId))
+    .limit(1);
+  if (!challenge || !challenge.category || !isPracticeCategory(challenge.category)) {
+    return Response.json({ error: "Challenge not found" }, { status: 404 });
+  }
+
+  // 5. A reply's parent must itself be a top-level post on the same
   // challenge — enforces the flat, one-level-deep decision at the write
   // layer, not just in the UI (a client could otherwise post a reply-to-a-reply).
   if (typeof parentId === "string") {
@@ -90,7 +104,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // 5. Write. Replies never carry a title, even if one was sent.
+  // 6. Write. Replies never carry a title, even if one was sent.
   try {
     const [row] = await db
       .insert(challengeDiscussionPosts)
