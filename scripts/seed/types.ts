@@ -13,9 +13,7 @@ export type ConceptSeed = {
   category: ConceptCategory;
   difficulty: ConceptDifficulty;
   // Omit for a free concept (the default) — same optional-if-free convention as
-  // ChallengeSeed/ProjectBriefSeed's isPremium. Needed so the onConflictDoUpdate
-  // below has a real seed-controlled value to write instead of always falling
-  // back to the column default on every reseed.
+  // ChallengeSeed/ProjectBriefSeed's isPremium.
   isPremium?: boolean;
   orderIndex: number;
 };
