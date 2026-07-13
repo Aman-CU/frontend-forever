@@ -5536,7 +5536,13 @@ Write \`classifyNullish(value)\` that returns:
 
 - \`"undefined"\` if the value is exactly \`undefined\`
 - \`"null"\` if the value is exactly \`null\`
-- \`"value"\` for anything else (including \`0\`, \`""\`, and \`NaN\`, which are falsy but **not** nullish)`,
+- \`"value"\` for anything else (including \`0\`, \`""\`, and \`NaN\`, which are falsy but **not** nullish)
+
+\`\`\`js
+classifyNullish(undefined) // "undefined"
+classifyNullish(null) // "null"
+classifyNullish(0) // "value" — falsy, but not nullish
+\`\`\``,
     difficulty: "easy",
     starterCode: `function classifyNullish(value) {
   // return "undefined", "null", or "value"
@@ -5571,7 +5577,13 @@ Write \`myObjectIs(a, b)\` that replicates \`Object.is\`:
 
 - \`NaN\` is equal to itself (unlike \`===\`)
 - \`+0\` and \`-0\` are **not** equal to each other (unlike \`===\`)
-- everything else behaves exactly like \`===\``,
+- everything else behaves exactly like \`===\`
+
+\`\`\`js
+myObjectIs(NaN, NaN) // true — unlike NaN === NaN
+myObjectIs(0, -0) // false — unlike 0 === -0
+myObjectIs(1, 1) // true
+\`\`\``,
     difficulty: "easy",
     starterCode: `function myObjectIs(a, b) {
 }`,
@@ -5600,7 +5612,13 @@ Write \`myObjectIs(a, b)\` that replicates \`Object.is\`:
 
 ## Your task
 
-Write \`myObjectCreate(proto)\` without using the real \`Object.create\`. It must support \`proto\` being \`null\`.`,
+Write \`myObjectCreate(proto)\` without using the real \`Object.create\`. It must support \`proto\` being \`null\`.
+
+\`\`\`js
+const proto = { greet() { return "hi"; } };
+myObjectCreate(proto).greet() // "hi" — inherited through the prototype chain
+myObjectCreate(null) // an object with no prototype at all
+\`\`\``,
     difficulty: "easy",
     starterCode: `function myObjectCreate(proto) {
 }`,
@@ -5635,7 +5653,12 @@ Write \`myNew(Ctor, ...args)\` that:
 1. creates a new object linked to \`Ctor.prototype\`
 2. calls \`Ctor\` with \`this\` bound to that object and \`args\` forwarded
 3. returns the constructor's own return value **only if it's an object**
-4. otherwise returns the newly created object`,
+4. otherwise returns the newly created object
+
+\`\`\`js
+function Person(name) { this.name = name; }
+myNew(Person, "Ada") // Person { name: "Ada" }, instanceof Person
+\`\`\``,
     difficulty: "easy",
     starterCode: `function myNew(Ctor, ...args) {
 }`,
@@ -5669,7 +5692,14 @@ Write \`mySpyOn(obj, methodName)\`, which replaces \`obj[methodName]\` with a wr
 
 - still calls through to the original implementation and returns its result
 - records every call's arguments on a \`.calls\` array
-- exposes \`.restore()\` to put the original method back`,
+- exposes \`.restore()\` to put the original method back
+
+\`\`\`js
+const obj = { add: (a, b) => a + b };
+const spy = mySpyOn(obj, "add");
+obj.add(2, 3) // 5 — real behavior still runs
+spy.calls // [[2, 3]] — arguments recorded
+\`\`\``,
     difficulty: "easy",
     starterCode: `function mySpyOn(obj, methodName) {
 }`,
@@ -5707,7 +5737,14 @@ Write \`mySpyOn(obj, methodName)\`, which replaces \`obj[methodName]\` with a wr
 
 ## Your task
 
-Write \`getType(value)\`, returning a precise lowercase type string: \`"array"\`, \`"null"\`, \`"date"\`, \`"regexp"\`, \`"object"\`, \`"function"\`, \`"number"\`, \`"string"\`, \`"boolean"\`, or \`"undefined"\`.`,
+Write \`getType(value)\`, returning a precise lowercase type string: \`"array"\`, \`"null"\`, \`"date"\`, \`"regexp"\`, \`"object"\`, \`"function"\`, \`"number"\`, \`"string"\`, \`"boolean"\`, or \`"undefined"\`.
+
+\`\`\`js
+getType([]) // "array"
+getType(null) // "null"
+getType(new Date()) // "date"
+getType(/abc/) // "regexp"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function getType(value) {
 }`,
@@ -5739,7 +5776,12 @@ Write \`getType(value)\`, returning a precise lowercase type string: \`"array"\`
 
 ## Your task
 
-Add \`myCall(context, ...args)\` to \`Function.prototype\`, invoking the function it's called on with \`this\` set to \`context\` and \`args\` forwarded, returning its result.`,
+Add \`myCall(context, ...args)\` to \`Function.prototype\`, invoking the function it's called on with \`this\` set to \`context\` and \`args\` forwarded, returning its result.
+
+\`\`\`js
+function getName(greeting) { return greeting + ", " + this.name; }
+getName.myCall({ name: "Ada" }, "Hello") // "Hello, Ada"
+\`\`\``,
     difficulty: "medium",
     starterCode: `Function.prototype.myCall = function (context, ...args) {
 };`,
@@ -5771,7 +5813,12 @@ Add \`myCall(context, ...args)\` to \`Function.prototype\`, invoking the functio
 
 ## Your task
 
-Add \`myApply(context, argsArray)\` to \`Function.prototype\`. \`argsArray\` may be omitted, in which case the function is called with no arguments.`,
+Add \`myApply(context, argsArray)\` to \`Function.prototype\`. \`argsArray\` may be omitted, in which case the function is called with no arguments.
+
+\`\`\`js
+function getName(greeting) { return greeting + ", " + this.name; }
+getName.myApply({ name: "Ada" }, ["Hello"]) // "Hello, Ada"
+\`\`\``,
     difficulty: "medium",
     starterCode: `Function.prototype.myApply = function (context, argsArray) {
 };`,
@@ -5808,7 +5855,12 @@ Add \`myBind(context, ...boundArgs)\` to \`Function.prototype\`, returning a new
 
 - always calls the original with \`this\` set to \`context\`
 - prepends \`boundArgs\` before any arguments passed at call time
-- when invoked with \`new\`, ignores the bound \`context\` and behaves like a normal constructor call instead`,
+- when invoked with \`new\`, ignores the bound \`context\` and behaves like a normal constructor call instead
+
+\`\`\`js
+function greet(greeting, punct) { return greeting + ", " + this.name + punct; }
+greet.myBind({ name: "Ada" }, "Hello")("!") // "Hello, Ada!"
+\`\`\``,
     difficulty: "medium",
     starterCode: `Function.prototype.myBind = function (context, ...boundArgs) {
 };`,
@@ -5841,7 +5893,13 @@ Add \`myBind(context, ...boundArgs)\` to \`Function.prototype\`, returning a new
 
 ## Your task
 
-Write \`myInstanceof(obj, Ctor)\`, replicating \`obj instanceof Ctor\` by walking \`Object.getPrototypeOf\`.`,
+Write \`myInstanceof(obj, Ctor)\`, replicating \`obj instanceof Ctor\` by walking \`Object.getPrototypeOf\`.
+
+\`\`\`js
+myInstanceof([], Array) // true
+myInstanceof([], Object) // true — further up the prototype chain
+myInstanceof(5, Number) // false — primitives are never instances
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myInstanceof(obj, Ctor) {
 }`,
@@ -5880,7 +5938,15 @@ Write \`es5Extend(Child, Parent)\` that makes \`Child\` inherit from \`Parent\`:
 - instances of \`Child\` can call methods defined on \`Parent.prototype\`
 - \`Child.prototype\` methods still take priority over inherited ones
 - \`Child.prototype.constructor\` correctly points back to \`Child\`, not \`Parent\`
-- \`instanceof\` correctly recognizes \`Child\` instances as \`Parent\` instances too`,
+- \`instanceof\` correctly recognizes \`Child\` instances as \`Parent\` instances too
+
+\`\`\`js
+function Animal() {}
+Animal.prototype.speak = function () { return this.name + " makes a sound."; };
+function Dog(name) { this.name = name; }
+es5Extend(Dog, Animal);
+new Dog("Rex").speak() // "Rex makes a sound." — inherited from Animal.prototype
+\`\`\``,
     difficulty: "medium",
     starterCode: `function es5Extend(Child, Parent) {
 }`,
@@ -5912,7 +5978,13 @@ Write \`es5Extend(Child, Parent)\` that makes \`Child\` inherit from \`Parent\`:
 Write \`expect(actual)\`, returning an object with:
 
 - \`toBe(expected)\` — throws if \`actual\` and \`expected\` aren't \`Object.is\`-equal
-- \`not.toBe(expected)\` — throws if they **are** equal`,
+- \`not.toBe(expected)\` — throws if they **are** equal
+
+\`\`\`js
+expect(1).toBe(1) // passes silently
+expect(1).toBe(2) // throws
+expect(NaN).toBe(NaN) // passes — uses Object.is, not ===
+\`\`\``,
     difficulty: "medium",
     starterCode: `function expect(actual) {
 }`,
@@ -5956,7 +6028,13 @@ Write \`createCounter(start = 0)\`, returning an object with:
 - \`increment(step = 1)\` — adds \`step\`, returns the object (chainable)
 - \`decrement(step = 1)\` — subtracts \`step\`, returns the object (chainable)
 - \`reset()\` — resets back to \`start\`, returns the object (chainable)
-- \`get()\` — returns the current count`,
+- \`get()\` — returns the current count
+
+\`\`\`js
+const counter = createCounter();
+counter.increment().increment().get() // 2
+createCounter(10).increment(3).reset().get() // 10 — reset() returns to the starting value, not 0
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createCounter(start = 0) {
 }`,
@@ -5990,7 +6068,14 @@ Write \`createCounter(start = 0)\`, returning an object with:
 
 ## Your task
 
-Write \`createCountFunction()\`, returning a **function** that returns \`1\` on its first call, \`2\` on its second, and so on. The returned function also has a \`.reset()\` method that starts it back at \`1\`. Each call to \`createCountFunction()\` must produce an independent counter.`,
+Write \`createCountFunction()\`, returning a **function** that returns \`1\` on its first call, \`2\` on its second, and so on. The returned function also has a \`.reset()\` method that starts it back at \`1\`. Each call to \`createCountFunction()\` must produce an independent counter.
+
+\`\`\`js
+const count = createCountFunction();
+count(); count(); count() // 1, 2, 3
+count.reset();
+count() // 1 — reset() starts the sequence over
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createCountFunction() {
 }`,
@@ -6058,7 +6143,14 @@ pipe(addOne, double)(3) // (3 + 1) * 2 = 8
 
 ## Your task
 
-Write \`once(fn)\`, returning a wrapped function that invokes \`fn\` only on its first call and returns that same cached result on every subsequent call, **even if called with different arguments**. \`this\` should be forwarded correctly on the call that actually runs \`fn\`.`,
+Write \`once(fn)\`, returning a wrapped function that invokes \`fn\` only on its first call and returns that same cached result on every subsequent call, **even if called with different arguments**. \`this\` should be forwarded correctly on the call that actually runs \`fn\`.
+
+\`\`\`js
+let calls = 0;
+const initialize = once(() => { calls++; return "done"; });
+initialize(); // "done" — runs the real logic, calls is now 1
+initialize(); // "done" — cached result, calls is still 1
+\`\`\``,
     difficulty: "easy",
     starterCode: `function once(fn) {
 }`,
@@ -6093,7 +6185,13 @@ Write \`once(fn)\`, returning a wrapped function that invokes \`fn\` only on its
 
 ## Your task
 
-Write \`curry(fn)\`, returning a curried version of \`fn\` that collects one argument per call until it has \`fn.length\` arguments, then invokes \`fn\` with all of them.`,
+Write \`curry(fn)\`, returning a curried version of \`fn\` that collects one argument per call until it has \`fn.length\` arguments, then invokes \`fn\` with all of them.
+
+\`\`\`js
+function multiply(a, b) { return a * b; }
+curry(multiply)(2)(3) // 6
+curry(multiply)(2, 3) // 6 — all arguments at once also works
+\`\`\``,
     difficulty: "easy",
     starterCode: `function curry(fn) {
 }`,
@@ -6174,7 +6272,12 @@ Write \`sum(a)\`, returning a function that:
 
 - when called again with a number, adds it and returns itself (chainable)
 - when called with no arguments, returns the running total
-- also converts to its running total via \`valueOf\`, so \`Number(sum(1)(2))\` works too`,
+- also converts to its running total via \`valueOf\`, so \`Number(sum(1)(2))\` works too
+
+\`\`\`js
+sum(1)(2)(3)() // 6 — a trailing empty call returns the total
+Number(sum(1)(2)(3)) // 6 — valueOf lets it coerce directly
+\`\`\``,
     difficulty: "medium",
     starterCode: `function sum(a) {
 }`,
@@ -6208,7 +6311,15 @@ Write \`sum(a)\`, returning a function that:
 
 ## Your task
 
-Write \`memo(fn)\`, returning a wrapped function that caches results keyed by all of its arguments (any number of them), returning the cached value on a repeat call instead of invoking \`fn\` again. The cached value must match exactly what the original call would have produced.`,
+Write \`memo(fn)\`, returning a wrapped function that caches results keyed by all of its arguments (any number of them), returning the cached value on a repeat call instead of invoking \`fn\` again. The cached value must match exactly what the original call would have produced.
+
+\`\`\`js
+let calls = 0;
+const slowSquare = memo((n) => { calls++; return n * n; });
+slowSquare(4); // 16, calls is 1
+slowSquare(4); // 16, calls is still 1 — cached
+slowSquare(5); // 25, calls is 2 — a new argument recomputes
+\`\`\``,
     difficulty: "medium",
     starterCode: `function memo(fn) {
 }`,
@@ -6242,7 +6353,14 @@ Write \`memo(fn)\`, returning a wrapped function that caches results keyed by al
 
 ## Your task
 
-Write \`memoizeOne(fn)\`. It should skip recomputation only when the new call's arguments shallow-equal the **immediately preceding** call's arguments — a call sandwiched between two different ones always recomputes, even if its arguments repeat an older call.`,
+Write \`memoizeOne(fn)\`. It should skip recomputation only when the new call's arguments shallow-equal the **immediately preceding** call's arguments — a call sandwiched between two different ones always recomputes, even if its arguments repeat an older call.
+
+\`\`\`js
+let calls = 0;
+const add = memoizeOne((a, b) => { calls++; return a + b; });
+add(1, 2); add(1, 2); // calls is 1 — same as the immediately preceding call
+add(3, 4); add(1, 2); // calls is 3 — args repeat an older call, but not the last one
+\`\`\``,
     difficulty: "medium",
     starterCode: `function memoizeOne(fn) {
 }`,
@@ -6284,7 +6402,12 @@ Write \`memoizeOne(fn)\`. It should skip recomputation only when the new call's 
 
 ## Your task
 
-Write \`shuffle(arr)\`, returning a new array containing the same elements as \`arr\` in a randomized order. \`arr\` itself must not be mutated.`,
+Write \`shuffle(arr)\`, returning a new array containing the same elements as \`arr\` in a randomized order. \`arr\` itself must not be mutated.
+
+\`\`\`js
+shuffle([1, 2, 3, 4, 5])
+// e.g. [3, 1, 5, 2, 4] — same elements, random order, original array untouched
+\`\`\``,
     difficulty: "easy",
     starterCode: `function shuffle(arr) {
 }`,
@@ -6316,7 +6439,12 @@ Write \`shuffle(arr)\`, returning a new array containing the same elements as \`
 
 ## Your task
 
-Add \`myFilter(callback)\` to \`Array.prototype\`, keeping only the elements for which \`callback(element, index, array)\` is truthy.`,
+Add \`myFilter(callback)\` to \`Array.prototype\`, keeping only the elements for which \`callback(element, index, array)\` is truthy.
+
+\`\`\`js
+[1, 2, 3, 4].myFilter((x) => x % 2 === 0) // [2, 4]
+[1, , 3].myFilter(() => true) // [1, 3] — a hole is skipped, not treated as undefined
+\`\`\``,
     difficulty: "easy",
     starterCode: `Array.prototype.myFilter = function (callback) {
 };`,
@@ -6347,7 +6475,12 @@ Add \`myFilter(callback)\` to \`Array.prototype\`, keeping only the elements for
 
 ## Your task
 
-Add \`myMap(callback, thisArg)\` to \`Array.prototype\`. \`thisArg\`, if given, becomes \`this\` inside \`callback\`. A hole in the input array should stay a hole in the output, not become \`undefined\`.`,
+Add \`myMap(callback, thisArg)\` to \`Array.prototype\`. \`thisArg\`, if given, becomes \`this\` inside \`callback\`. A hole in the input array should stay a hole in the output, not become \`undefined\`.
+
+\`\`\`js
+[1, 2, 3].myMap((x) => x * 2) // [2, 4, 6]
+[1, , 3].myMap((x) => x) // length 3, index 1 stays a hole
+\`\`\``,
     difficulty: "medium",
     starterCode: `Array.prototype.myMap = function (callback, thisArg) {
 };`,
@@ -6382,7 +6515,13 @@ Add \`myReduce(callback, initialValue)\` to \`Array.prototype\`:
 
 - with an initial value, start there and iterate every element
 - without one, use the first element as the initial accumulator and start from the second
-- calling on an empty array with no initial value must throw a \`TypeError\``,
+- calling on an empty array with no initial value must throw a \`TypeError\`
+
+\`\`\`js
+[1, 2, 3, 4].myReduce((a, b) => a + b, 0) // 10
+[1, 2, 3, 4].myReduce((a, b) => a + b) // 10 — first element used as the initial value
+[].myReduce((a, b) => a + b) // throws TypeError — empty array, no initial value
+\`\`\``,
     difficulty: "medium",
     starterCode: `Array.prototype.myReduce = function (callback, initialValue) {
 };`,
@@ -6420,7 +6559,12 @@ Add \`myReduce(callback, initialValue)\` to \`Array.prototype\`:
 
 ## Your task
 
-Add \`myFlat(depth = 1)\` to \`Array.prototype\`, flattening nested arrays up to \`depth\` levels deep. Support \`Infinity\` for a fully flat result.`,
+Add \`myFlat(depth = 1)\` to \`Array.prototype\`, flattening nested arrays up to \`depth\` levels deep. Support \`Infinity\` for a fully flat result.
+
+\`\`\`js
+[1, [2, 3], [4, [5, 6]]].myFlat() // [1, 2, 3, 4, [5, 6]] — default depth of 1
+[1, [2, [3, [4]]]].myFlat(Infinity) // [1, 2, 3, 4]
+\`\`\``,
     difficulty: "medium",
     starterCode: `Array.prototype.myFlat = function (depth = 1) {
 };`,
@@ -6452,7 +6596,12 @@ Add \`myFlat(depth = 1)\` to \`Array.prototype\`, flattening nested arrays up to
 
 ## Your task
 
-Add \`myFlatMap(callback, thisArg)\` to \`Array.prototype\`: map every element, then flatten exactly one level.`,
+Add \`myFlatMap(callback, thisArg)\` to \`Array.prototype\`: map every element, then flatten exactly one level.
+
+\`\`\`js
+[1, 2, 3].myFlatMap((x) => [x, x * 2]) // [1, 2, 2, 4, 3, 6]
+[1, 2].myFlatMap((x) => [[x]]) // [[1], [2]] — only one level is flattened
+\`\`\``,
     difficulty: "medium",
     starterCode: `Array.prototype.myFlatMap = function (callback, thisArg) {
 };`,
@@ -6490,7 +6639,12 @@ Write \`myObjectAssign(target, ...sources)\`, matching the real \`Object.assign\
 - copies each source's own enumerable properties onto \`target\`, left to right
 - a later source's value for a key overwrites an earlier one's
 - mutates \`target\` in place and also returns that same reference
-- \`null\`/\`undefined\` sources are silently skipped, not thrown on`,
+- \`null\`/\`undefined\` sources are silently skipped, not thrown on
+
+\`\`\`js
+myObjectAssign({ a: 1 }, { b: 2 }, { c: 3 }) // { a: 1, b: 2, c: 3 }
+myObjectAssign({}, { a: 1 }, { a: 2 }) // { a: 2 } — later sources win
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myObjectAssign(target, ...sources) {
 }`,
@@ -6524,7 +6678,14 @@ Write \`myObjectAssign(target, ...sources)\`, matching the real \`Object.assign\
 
 ## Your task
 
-Write \`completeAssign(target, ...sources)\` using \`Object.getOwnPropertyDescriptor\` and \`Object.defineProperties\` so accessor properties stay accessors on the target. Only a source's own **enumerable** properties should be copied.`,
+Write \`completeAssign(target, ...sources)\` using \`Object.getOwnPropertyDescriptor\` and \`Object.defineProperties\` so accessor properties stay accessors on the target. Only a source's own **enumerable** properties should be copied.
+
+\`\`\`js
+const source = { get double() { return 4; } };
+const result = completeAssign({}, source);
+result.double // 4 — the getter still runs
+typeof Object.getOwnPropertyDescriptor(result, "double").get // "function" — still a real getter
+\`\`\``,
     difficulty: "medium",
     starterCode: `function completeAssign(target, ...sources) {
 }`,
@@ -6558,7 +6719,12 @@ Write \`completeAssign(target, ...sources)\` using \`Object.getOwnPropertyDescri
 
 ## Your task
 
-Write \`myGroupBy(items, keyFn)\`, returning a plain object whose keys are the distinct results of \`keyFn(item)\`, and whose values are arrays of the matching items, preserving each item's original relative order within its group.`,
+Write \`myGroupBy(items, keyFn)\`, returning a plain object whose keys are the distinct results of \`keyFn(item)\`, and whose values are arrays of the matching items, preserving each item's original relative order within its group.
+
+\`\`\`js
+myGroupBy([1, 2, 3, 4], (n) => (n % 2 === 0 ? "even" : "odd"))
+// { odd: [1, 3], even: [2, 4] }
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myGroupBy(items, keyFn) {
 }`,
@@ -6591,7 +6757,13 @@ Write \`myGroupBy(items, keyFn)\`, returning a plain object whose keys are the d
 
 ## Your task
 
-Write \`myGet(obj, path, defaultValue)\`. \`path\` may be a dot/bracket-notation string (e.g. \`"a[0].b"\`) or an array of keys. Walk the path one key at a time; the moment you hit \`null\`/\`undefined\` mid-path, or the final resolved value is \`undefined\`, return \`defaultValue\` instead of throwing.`,
+Write \`myGet(obj, path, defaultValue)\`. \`path\` may be a dot/bracket-notation string (e.g. \`"a[0].b"\`) or an array of keys. Walk the path one key at a time; the moment you hit \`null\`/\`undefined\` mid-path, or the final resolved value is \`undefined\`, return \`defaultValue\` instead of throwing.
+
+\`\`\`js
+myGet({ a: { b: { c: 42 } } }, "a.b.c") // 42
+myGet({ a: [{ b: 1 }] }, "a[0].b") // 1
+myGet({ a: 1 }, "x.y.z", "fallback") // "fallback" — missing path returns the default
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myGet(obj, path, defaultValue) {
 }`,
@@ -6627,7 +6799,12 @@ Write \`myGet(obj, path, defaultValue)\`. \`path\` may be a dot/bracket-notation
 
 ## Your task
 
-Write \`mySet(obj, path, value)\`, mutating and returning \`obj\` with \`value\` written at the given dot/bracket path (e.g. \`"a[0].b"\`, or an equivalent array of keys). Any missing intermediate container along the way should be created — an array if the *next* path segment is numeric, an object otherwise. Existing values at the final key are overwritten.`,
+Write \`mySet(obj, path, value)\`, mutating and returning \`obj\` with \`value\` written at the given dot/bracket path (e.g. \`"a[0].b"\`, or an equivalent array of keys). Any missing intermediate container along the way should be created — an array if the *next* path segment is numeric, an object otherwise. Existing values at the final key are overwritten.
+
+\`\`\`js
+mySet({}, "a.b.c", 42) // { a: { b: { c: 42 } } } — missing objects are created
+mySet({}, "a[0].b", 1) // { a: [ { b: 1 } ] } — a numeric segment creates an array
+\`\`\``,
     difficulty: "medium",
     starterCode: `function mySet(obj, path, value) {
 }`,
@@ -6666,7 +6843,12 @@ Write \`mySet(obj, path, value)\`, mutating and returning \`obj\` with \`value\`
 
 ## Your task
 
-Write \`myPartial(fn, ...presetArgs)\`, returning a function that calls \`fn\` with \`presetArgs\` followed by whatever arguments it's called with at invocation time, forwarding \`this\` from the eventual call site.`,
+Write \`myPartial(fn, ...presetArgs)\`, returning a function that calls \`fn\` with \`presetArgs\` followed by whatever arguments it's called with at invocation time, forwarding \`this\` from the eventual call site.
+
+\`\`\`js
+function greet(greeting, name) { return greeting + ", " + name + "!"; }
+myPartial(greet, "Hello")("Ada") // "Hello, Ada!"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myPartial(fn, ...presetArgs) {
 }`,
@@ -6695,7 +6877,12 @@ Write \`myPartial(fn, ...presetArgs)\`, returning a function that calls \`fn\` w
 
 ## Your task
 
-Write \`myChunk(arr, size)\`, returning an array of arrays where each inner array has at most \`size\` elements, in original order. If \`size\` is less than 1, return an empty array.`,
+Write \`myChunk(arr, size)\`, returning an array of arrays where each inner array has at most \`size\` elements, in original order. If \`size\` is less than 1, return an empty array.
+
+\`\`\`js
+myChunk([1, 2, 3, 4, 5], 2) // [[1, 2], [3, 4], [5]] — the last chunk holds the remainder
+myChunk([1, 2, 3], 0) // [] — a size under 1 produces no chunks
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myChunk(arr, size) {
 }`,
@@ -6728,7 +6915,12 @@ Write \`myChunk(arr, size)\`, returning an array of arrays where each inner arra
 
 ## Your task
 
-Write \`myIsEqual(a, b)\`, recursively comparing plain objects, arrays, and primitives. Objects/arrays are equal only if they have the same number of keys and every key's value is deeply equal. Use \`Object.is\` semantics at the primitive level, so \`myIsEqual(NaN, NaN)\` is \`true\`.`,
+Write \`myIsEqual(a, b)\`, recursively comparing plain objects, arrays, and primitives. Objects/arrays are equal only if they have the same number of keys and every key's value is deeply equal. Use \`Object.is\` semantics at the primitive level, so \`myIsEqual(NaN, NaN)\` is \`true\`.
+
+\`\`\`js
+myIsEqual({ a: 1, b: { c: 2 } }, { a: 1, b: { c: 2 } }) // true — same shape and values, different references
+myIsEqual(NaN, NaN) // true — uses Object.is semantics
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myIsEqual(a, b) {
 }`,
@@ -6761,7 +6953,14 @@ Write \`myIsEqual(a, b)\`, recursively comparing plain objects, arrays, and prim
 
 ## Your task
 
-Write \`myCloneDeep(value)\`, recursively cloning plain objects, arrays, and \`Date\` instances (cloned as a new \`Date\` with the same time, not a plain object copy). Primitives, including \`null\`, pass through unchanged.`,
+Write \`myCloneDeep(value)\`, recursively cloning plain objects, arrays, and \`Date\` instances (cloned as a new \`Date\` with the same time, not a plain object copy). Primitives, including \`null\`, pass through unchanged.
+
+\`\`\`js
+const original = { nested: { x: 1 } };
+const clone = myCloneDeep(original);
+clone.nested.x = 999;
+original.nested.x // 1 — untouched, even though the mutation happened deep inside the clone
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myCloneDeep(value) {
 }`,
@@ -6840,11 +7039,19 @@ update({ a: { b: 1 } }, { a: { b: { $set: 2 } } }) // { a: { b: 2 } }
     companies: ["Meta", "Airbnb"],
     category: "javascript-runtime",
     title: "Implement a mini Immer produce()",
-    description: `Immer lets you write mutation-style code against a "draft" and get an immutable update back — the real library does this with Proxies for structural sharing, but a simplified clone-then-mutate version demonstrates the same core idea.
+    description: `**Immer** lets you write mutation-style code against a "draft" and get an immutable update back — instead of hand-writing spread operators like \`{ ...state, count: state.count + 1 }\` to update nested state immutably, you just mutate a draft directly and Immer produces the new object for you. The real library does this efficiently with Proxies and structural sharing; a simplified clone-then-mutate version demonstrates the same core idea.
 
 ## Your task
 
-Write \`produce(base, recipe)\`, where \`recipe(draft)\` is called with a deep clone of \`base\` and may mutate that draft freely. \`produce\` returns the mutated draft, leaving \`base\` completely untouched.`,
+Write \`produce(base, recipe)\`, where \`recipe(draft)\` is called with a deep clone of \`base\` and may mutate that draft freely, including nested objects and arrays. \`produce\` returns the mutated draft, leaving \`base\` completely untouched at every level of nesting.
+
+\`\`\`js
+produce({ count: 1 }, (draft) => { draft.count++; })
+// { count: 2 } — base.count is still 1
+
+produce({ items: [1, 2] }, (draft) => { draft.items.push(3); })
+// { items: [1, 2, 3] } — base.items is still length 2
+\`\`\``,
     difficulty: "medium",
     starterCode: `function produce(base, recipe) {
 }`,
@@ -6879,11 +7086,17 @@ Write \`produce(base, recipe)\`, where \`recipe(draft)\` is called with a deep c
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Count \"1\"s in binary form",
-    description: `This is the classic **Hamming weight** (popcount) problem: count how many \`1\` bits appear in a non-negative integer's binary representation. It's a bit-manipulation warm-up that shows up constantly, from bitmask flag-checking to lower-level algorithm questions.
+    description: `Counting **set bits** (population count, or "popcount") means counting how many \`1\`s appear in a number's binary representation — a classic bit-manipulation warm-up that shows up in interview prep for things like Hamming weight and bitmask problems.
 
 ## Your task
 
-Write \`countBinaryOnes(n)\` for a non-negative integer \`n\`.`,
+Write \`countBinaryOnes(n)\` for a non-negative integer \`n\`, returning the number of \`1\` bits in its binary form.
+
+\`\`\`js
+countBinaryOnes(7)   // 3 — 7 is 111 in binary
+countBinaryOnes(8)   // 1 — 8 is 1000 in binary
+countBinaryOnes(255) // 8 — 255 is 11111111 in binary
+\`\`\``,
     difficulty: "easy",
     starterCode: `function countBinaryOnes(n) {
 }`,
@@ -6912,15 +7125,15 @@ Write \`countBinaryOnes(n)\` for a non-negative integer \`n\`.`,
     companies: ["Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Compress a string",
-    description: `Basic run-length encoding: collapse consecutive repeated characters into a character followed by its run length — but only if that's actually shorter.
+    description: `**Run-length encoding (RLE)** is a simple compression technique that collapses consecutive repeated characters into a character followed by its run length — it's the same core idea behind compressing repetitive data before more advanced schemes take over, and a common string-manipulation interview question.
 
 ## Your task
 
-Write \`compressString(str)\`. A run of 1 doesn't get a number written after it. If the compressed form isn't shorter than the original, return the original string unchanged.
+Write \`compressString(str)\`. A run of length 1 doesn't get a number written after it. If the compressed form isn't actually shorter than the original, return the original string unchanged.
 
 \`\`\`js
 compressString("aaabbbccd") // "a3b3c2d"
-compressString("aabbcc")    // "aabbcc" — compression doesn't help here
+compressString("aabbcc")    // "aabbcc" — compression doesn't help here, so the original is returned
 \`\`\``,
     difficulty: "easy",
     starterCode: `function compressString(str) {
@@ -6952,11 +7165,17 @@ compressString("aabbcc")    // "aabbcc" — compression doesn't help here
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Find the first duplicate character in a string",
-    description: `Not the same as the *most frequent* character — this is about timing. Scanning left to right, which character is the first one to repeat? The answer is whichever character's **second** occurrence comes earliest in the string, not necessarily the one that repeats the most overall.
+    description: `Finding the **first duplicate character** in a string means scanning left to right and returning the character whose *second* occurrence comes earliest — not necessarily the character that repeats most, just the first repeat you'd hit while reading the string.
 
 ## Your task
 
-Write \`firstDuplicateChar(str)\`, returning that character, or \`null\` if every character in \`str\` is unique.`,
+Write \`firstDuplicateChar(str)\`, returning that character, or \`null\` if every character in \`str\` is unique.
+
+\`\`\`js
+firstDuplicateChar("abcba")  // "b" — b's second occurrence (index 3) comes before a's (index 4)
+firstDuplicateChar("aabbcc") // "a" — a repeats immediately
+firstDuplicateChar("abcdef") // null — no character repeats
+\`\`\``,
     difficulty: "easy",
     starterCode: `function firstDuplicateChar(str) {
 }`,
@@ -6984,11 +7203,17 @@ Write \`firstDuplicateChar(str)\`, returning that character, or \`null\` if ever
     companies: ["Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Roman numerals to integer",
-    description: `**Roman numerals** are mostly additive — \`VI\` reads as 5 + 1 = 6 — with one twist: a smaller symbol placed *before* a larger one is subtracted instead, so \`IV\` is 4, not 6. Handling that twist correctly is the whole problem.
+    description: `**Roman numerals** are mostly additive — \`VI\` is 5 + 1 = 6 — with one twist: a smaller symbol placed immediately before a larger one is *subtracted* instead of added, so \`IV\` is 4 (not 6) and \`IX\` is 9 (not 11). Converting Roman numerals to integers is a frequent "parse the string, respect the edge case" interview question.
 
 ## Your task
 
-Write \`romanToInt(s)\`, converting a valid Roman numeral string to its integer value. Walk the string comparing each symbol's value to the one right after it: if the current symbol's value is smaller, subtract it; otherwise add it.`,
+Write \`romanToInt(s)\`, converting a valid Roman numeral string to its integer value.
+
+\`\`\`js
+romanToInt("III")     // 3 — purely additive
+romanToInt("IV")      // 4 — I before V subtracts
+romanToInt("MCMXCIV") // 1994 — M + (CM=900) + (XC=90) + IV=4
+\`\`\``,
     difficulty: "easy",
     starterCode: `function romanToInt(s) {
 }`,
@@ -7020,11 +7245,17 @@ Write \`romanToInt(s)\`, converting a valid Roman numeral string to its integer 
     companies: ["Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Integer to roman numerals",
-    description: `The reverse of \`romanToInt\`: build a Roman numeral one symbol at a time by greedily subtracting the largest value that still fits, including the subtractive pairs like \`CM\` (900) and \`IV\` (4) — treating each pair as a single unit keeps the greedy approach correct without extra special-casing.
+    description: `Converting an integer to a **Roman numeral** is the reverse of Roman-to-integer parsing: greedily subtract the largest Roman value that still fits — including the six subtractive pairs like \`CM\` (900) and \`IV\` (4) — and append its symbol, repeating until nothing's left.
 
 ## Your task
 
-Write \`intToRoman(num)\` for \`1 <= num <= 3999\`, returning the equivalent Roman numeral string.`,
+Write \`intToRoman(num)\` for \`1 <= num <= 3999\`.
+
+\`\`\`js
+intToRoman(3)    // "III"
+intToRoman(58)   // "LVIII"    — L + V + III
+intToRoman(1994) // "MCMXCIV"  — M + CM + XC + IV
+\`\`\``,
     difficulty: "easy",
     starterCode: `function intToRoman(num) {
 }`,
@@ -7055,11 +7286,17 @@ Write \`intToRoman(num)\` for \`1 <= num <= 3999\`, returning the equivalent Rom
     slug: "semver-compare",
     category: "javascript-runtime",
     title: "semver compare",
-    description: `Package managers compare **semantic versions** ("semver") constantly — deciding whether to upgrade, checking a range constraint, sorting a dependency list. Doing that correctly means comparing each \`major.minor.patch\` segment **numerically**, not as strings: \`"1.10.0"\` is newer than \`"1.9.0"\`, even though \`"9" > "1"\` character by character.
+    description: `Comparing two **semantic version** strings (\`major.minor.patch\`, as used in \`package.json\`) correctly means comparing each segment *numerically*, not as strings — \`"1.10.0"\` is a newer version than \`"1.9.0"\`, even though \`"9" > "1"\` when compared character by character. Naively using \`a > b\` on the raw strings gets this wrong.
 
 ## Your task
 
-Write \`compareSemver(a, b)\` for \`"major.minor.patch"\` strings. Compare major, then minor, then patch as numbers, returning \`-1\` if \`a < b\`, \`1\` if \`a > b\`, or \`0\` if they're identical.`,
+Write \`compareSemver(a, b)\` for two \`"major.minor.patch"\` strings, returning \`-1\` if \`a < b\`, \`1\` if \`a > b\`, or \`0\` if they're equal.
+
+\`\`\`js
+compareSemver("1.2.3", "1.2.4")   // -1 — smaller patch version
+compareSemver("2.0.0", "1.9.9")   // 1  — higher major version wins regardless of the rest
+compareSemver("1.10.0", "1.9.0")  // 1  — 10 > 9 numerically, not string-wise
+\`\`\``,
     difficulty: "easy",
     starterCode: `function compareSemver(a, b) {
 }`,
@@ -7089,11 +7326,19 @@ Write \`compareSemver(a, b)\` for \`"major.minor.patch"\` strings. Compare major
     companies: ["Uber"],
     category: "javascript-runtime",
     title: "Reorder array with new indexes",
-    description: `Given a parallel array of target positions, rearrange the original array so each element lands exactly where it was told to go — a pattern that shows up whenever an API hands back items alongside a separate "new order" array, like after a drag-and-drop reorder.
+    description: `Given an array and a parallel array of **target indexes**, rearrange the original array so each element lands exactly where it was told to go — a pattern that shows up when reordering list items (e.g. after a drag-and-drop) using a separate "new position" mapping instead of directly swapping elements.
 
 ## Your task
 
-Write \`reorder(arr, indices)\`, where \`indices[i]\` is the position \`arr[i]\` should occupy in the result. Return a new array of the same length; don't mutate \`arr\`.`,
+Write \`reorder(arr, indices)\`, where \`indices[i]\` is the position \`arr[i]\` should occupy in the result array.
+
+\`\`\`js
+reorder(["a", "b", "c"], [2, 0, 1])
+// ["b", "c", "a"] — "a" moves to index 2, "b" to index 0, "c" to index 1
+
+reorder(["x", "y"], [1, 0])
+// ["y", "x"] — a simple swap
+\`\`\``,
     difficulty: "easy",
     starterCode: `function reorder(arr, indices) {
 }`,
@@ -7119,11 +7364,17 @@ Write \`reorder(arr, indices)\`, where \`indices[i]\` is the position \`arr[i]\`
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Most frequently occurring character",
-    description: `Find which character shows up the most often in a string — a small building block behind things like word-frequency analysis or simple text stats.
+    description: `Finding the **most frequently occurring character** in a string means counting occurrences of each character and picking the highest count — with a common tie-breaking rule: if two characters are tied for the top count, whichever one *appears first in the string* wins.
 
 ## Your task
 
-Write \`mostFrequentChar(str)\`, returning the character with the highest count. On a tie, return whichever of the tied characters appears **first** in the string. Return \`null\` for an empty string.`,
+Write \`mostFrequentChar(str)\`. Return \`null\` for an empty string.
+
+\`\`\`js
+mostFrequentChar("aabbbcc") // "b" — b appears 3 times, more than any other character
+mostFrequentChar("abcabc")  // "a" — a, b, and c are tied at 2 each, so the first in the string wins
+mostFrequentChar("")        // null
+\`\`\``,
     difficulty: "easy",
     starterCode: `function mostFrequentChar(str) {
 }`,
@@ -7156,16 +7407,16 @@ Write \`mostFrequentChar(str)\`, returning the character with the highest count.
     companies: ["Amazon", "Stripe"],
     category: "javascript-runtime",
     title: "Add comma to number",
-    description: `Format a number with thousands separators, the way you'd display a price or a large count in a UI — essentially a hand-rolled \`toLocaleString()\`. The grouping itself is easy; getting it right for a negative sign and a decimal point without corrupting either one is the actual challenge.
+    description: `Adding **thousands separators** (commas) to a number is how you'd format a price, a large count, or any number for display — \`1234567\` reads much faster as \`1,234,567\`. The formatting needs to handle negative numbers and decimals without misplacing the sign or corrupting the fractional part.
 
 ## Your task
 
-Write \`addCommas(num)\`.
+Write \`addCommas(num)\`, inserting a comma every three digits from the right in the integer part, leaving the sign and any decimal part untouched.
 
 \`\`\`js
-addCommas(1234567)   // "1,234,567"
-addCommas(-1234)     // "-1,234"
-addCommas(1234.56)   // "1,234.56"
+addCommas(1234567) // "1,234,567"
+addCommas(-1234)   // "-1,234"   — the minus sign stays outside the grouping
+addCommas(1234.56) // "1,234.56" — the decimal part is untouched
 \`\`\``,
     difficulty: "medium",
     starterCode: `function addCommas(num) {
@@ -7194,15 +7445,16 @@ addCommas(1234.56)   // "1,234.56"
     companies: ["Meta", "Adobe"],
     category: "javascript-runtime",
     title: "Convert HEX color to RGBA",
-    description: `CSS accepts colors in several formats, and converting between them comes up constantly. Here, turn a **hex color** (shorthand \`#RGB\` or full \`#RRGGBB\`) into an \`rgba(...)\` string so you can layer in transparency via an alpha channel.
+    description: `Converting a **HEX color** to **RGBA** is a routine task when a design system hands you hex values but your CSS-in-JS or canvas code needs \`rgba(r, g, b, a)\` for opacity control. It has to handle both the shorthand 3-digit form (\`#RGB\`) and the full 6-digit form (\`#RRGGBB\`).
 
 ## Your task
 
-Write \`hexToRgba(hex, alpha = 1)\`, expanding a shorthand 3-digit hex to 6 digits first, then converting each channel pair to its decimal value.
+Write \`hexToRgba(hex, alpha = 1)\`, converting either hex format into an \`rgba(...)\` string.
 
 \`\`\`js
 hexToRgba("#FF0000")      // "rgba(255, 0, 0, 1)"
 hexToRgba("#00FF00", 0.5) // "rgba(0, 255, 0, 0.5)"
+hexToRgba("#03F")         // "rgba(0, 51, 255, 1)" — shorthand #03F expands to #0033FF first
 \`\`\``,
     difficulty: "medium",
     starterCode: `function hexToRgba(hex, alpha = 1) {
@@ -7231,11 +7483,17 @@ hexToRgba("#00FF00", 0.5) // "rgba(0, 255, 0, 0.5)"
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Convert snake_case to camelCase",
-    description: `A common data-shaping task when an API returns \`snake_case\` keys but your codebase's convention is \`camelCase\` — you end up converting strings like this constantly at the boundary between the two.
+    description: `Converting **snake_case to camelCase** is a common data-shaping task when a backend API returns \`snake_case\` keys (typical in Python/Ruby conventions) but your JavaScript/TypeScript codebase expects \`camelCase\`.
 
 ## Your task
 
-Write \`snakeToCamel(str)\`, replacing every \`_\` followed by a letter with that letter uppercased, and removing the underscore. A string with no underscores passes through unchanged.`,
+Write \`snakeToCamel(str)\`, removing each underscore and capitalizing the letter that followed it.
+
+\`\`\`js
+snakeToCamel("hello_world")      // "helloWorld"
+snakeToCamel("user_first_name")  // "userFirstName"
+snakeToCamel("already")          // "already" — no underscores, no change
+\`\`\``,
     difficulty: "medium",
     starterCode: `function snakeToCamel(str) {
 }`,
@@ -7257,11 +7515,17 @@ Write \`snakeToCamel(str)\`, replacing every \`_\` followed by a letter with tha
     companies: ["Airbnb"],
     category: "javascript-runtime",
     title: "Support negative array index in JavaScript",
-    description: `Plain JavaScript array indexing has no concept of "from the end" — \`arr[-1]\` is just \`undefined\`. Python-style **negative indexing** fixes that: \`-1\` means the last element, \`-2\` the second-to-last, and so on.
+    description: `JavaScript arrays don't natively support **Python-style negative indexing**, where \`-1\` means "the last element," \`-2\` means "second-to-last," and so on. Implementing this yourself is a common warm-up for understanding how array indexing and bounds-checking work under the hood.
 
 ## Your task
 
-Write \`getAt(arr, index)\`, treating a negative \`index\` as counting backward from the end (\`-1\` is the last element). A non-negative \`index\` behaves like normal array access. Return \`undefined\` if the index is still out of range after that adjustment.`,
+Write \`getAt(arr, index)\`, treating a negative \`index\` as counting from the end of \`arr\`. Return \`undefined\` if the resulting index is still out of range.
+
+\`\`\`js
+getAt([1, 2, 3], -1)  // 3   — the last element
+getAt([1, 2, 3], -3)  // 1   — counts all the way back to the first element
+getAt([1, 2, 3], -10) // undefined — still out of range after adjustment
+\`\`\``,
     difficulty: "medium",
     starterCode: `function getAt(arr, index) {
 }`,
@@ -7284,11 +7548,17 @@ Write \`getAt(arr, index)\`, treating a negative \`index\` as counting backward 
     companies: ["Microsoft"],
     category: "javascript-runtime",
     title: "Implement String.prototype.trim()",
-    description: `\`String.prototype.trim()\` strips leading and trailing whitespace — spaces, tabs, newlines — while leaving whitespace in the *middle* of the string completely untouched.
+    description: `\`String.prototype.trim()\` strips leading and trailing **whitespace** — spaces, tabs, newlines — without touching whitespace in the middle of the string. Reimplementing it is a good way to practice anchored regular expressions.
 
 ## Your task
 
-Add \`myTrim()\` to \`String.prototype\`, returning a copy of the string with all leading and trailing whitespace characters removed.`,
+Add \`myTrim()\` to \`String.prototype\`, stripping whitespace from both ends of \`this\`.
+
+\`\`\`js
+"  hi  ".myTrim()        // "hi"
+"\\t\\nhello\\n".myTrim() // "hello" — tabs and newlines count as whitespace too
+"noSpaces".myTrim()      // "noSpaces" — nothing to strip
+\`\`\``,
     difficulty: "medium",
     starterCode: `String.prototype.myTrim = function () {
 };`,
@@ -7311,11 +7581,18 @@ Add \`myTrim()\` to \`String.prototype\`, returning a copy of the string with al
     companies: ["Amazon", "Microsoft", "Cisco"],
     category: "javascript-runtime",
     title: "Validate an IP address",
-    description: `A valid **IPv4 address** has exactly four dot-separated octets, each a number from 0 to 255 with no leading zeros (other than the literal \`"0"\` itself) — a classic validation problem where the edge cases (leading zeros, out-of-range numbers, wrong octet count) matter more than the happy path.
+    description: `A valid **IPv4 address** has exactly four dot-separated octets, each a decimal number from 0 to 255, with no leading zeros (other than the literal \`"0"\` itself — so \`"01"\` is invalid but \`"0"\` is fine). Validating this correctly is a common form-input and networking-adjacent interview question.
 
 ## Your task
 
-Write \`isValidIp(str)\`, returning \`true\` only if \`str\` splits into exactly four dot-separated parts, each part is all digits, each parses to a number between 0 and 255 inclusive, and no part has a leading zero unless it's exactly \`"0"\`.`,
+Write \`isValidIp(str)\`, returning \`true\` only if \`str\` is a well-formed IPv4 address.
+
+\`\`\`js
+isValidIp("192.168.1.1") // true
+isValidIp("256.1.1.1")   // false — 256 is out of the 0–255 range
+isValidIp("01.1.1.1")    // false — leading zero on a multi-digit octet
+isValidIp("1.1.1")       // false — only three octets
+\`\`\``,
     difficulty: "medium",
     starterCode: `function isValidIp(str) {
 }`,
@@ -7346,11 +7623,17 @@ Write \`isValidIp(str)\`, returning \`true\` only if \`str\` splits into exactly
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Remove duplicate characters in a string",
-    description: `Collapse a string down to its distinct characters, keeping only each one's **first** occurrence and preserving the original left-to-right order.
+    description: `Removing **duplicate characters** from a string means keeping only each character's first occurrence and dropping every later repeat, while preserving the original left-to-right order of what remains.
 
 ## Your task
 
-Write \`removeDuplicateChars(str)\`, returning a new string with every repeated character removed after its first appearance.`,
+Write \`removeDuplicateChars(str)\`.
+
+\`\`\`js
+removeDuplicateChars("mississippi") // "misp" — only the first m, i, s, p survive
+removeDuplicateChars("aabbcc")      // "abc"
+removeDuplicateChars("")            // ""
+\`\`\``,
     difficulty: "medium",
     starterCode: `function removeDuplicateChars(str) {
 }`,
@@ -7372,11 +7655,19 @@ Write \`removeDuplicateChars(str)\`, returning a new string with every repeated 
     companies: ["Stripe", "Amazon"],
     category: "javascript-runtime",
     title: "Validate number string",
-    description: `Deciding whether a string "looks like a number" comes up constantly in form validation — but the rules are easy to get subtly wrong around the decimal point. A valid number here is an optional leading sign, followed by digits, with an optional decimal point that must have digits on at least one side of it.
+    description: `Validating a **number string** means checking whether a string looks like a valid decimal number: an optional leading \`+\`/\`-\` sign, digits, and an optional decimal point that must have at least one digit on either side of it (so \`"12."\` and \`"."\` are invalid, but \`".5"\` and \`"12.5"\` are fine).
 
 ## Your task
 
-Write \`isValidNumberString(str)\`, returning \`true\` only for strings matching that shape (e.g. \`"123"\`, \`"-12.5"\`, \`".5"\`) and \`false\` for anything else, including a bare \`"."\` or a trailing decimal point with nothing after it (like \`"12."\`).`,
+Write \`isValidNumberString(str)\`.
+
+\`\`\`js
+isValidNumberString("123")   // true
+isValidNumberString("-12.5") // true  — a signed decimal
+isValidNumberString(".5")    // true  — leading decimal point with digits after it
+isValidNumberString("12.")   // false — trailing decimal point with no digits after it
+isValidNumberString("abc")   // false
+\`\`\``,
     difficulty: "medium",
     starterCode: `function isValidNumberString(str) {
 }`,
@@ -7400,11 +7691,17 @@ Write \`isValidNumberString(str)\`, returning \`true\` only for strings matching
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Remove characters",
-    description: `Strip out every character in a string that appears anywhere in a given "characters to remove" set — think stripping punctuation, or scrubbing a specific set of forbidden symbols out of user input.
+    description: `Removing a set of unwanted **characters** from a string — every character that appears anywhere in a given "characters to remove" list gets stripped out, wherever it occurs in the source string.
 
 ## Your task
 
-Write \`removeChars(str, charsToRemove)\`, returning a new string with every character that also appears in \`charsToRemove\` removed. An empty \`charsToRemove\` leaves \`str\` unchanged.`,
+Write \`removeChars(str, charsToRemove)\`.
+
+\`\`\`js
+removeChars("hello world", "lo") // "he wrd" — every "l" and "o" is stripped
+removeChars("abcdef", "")        // "abcdef" — nothing to remove
+removeChars("aaa", "a")          // ""       — removing every character leaves an empty string
+\`\`\``,
     difficulty: "medium",
     starterCode: `function removeChars(str, charsToRemove) {
 }`,
@@ -7427,11 +7724,17 @@ Write \`removeChars(str, charsToRemove)\`, returning a new string with every cha
     companies: ["Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Uncompress a string",
-    description: `The inverse of **run-length encoding**: expand each character followed by an optional count back into that many repetitions, like turning \`"a3b2c"\` back into \`"aaabbc"\`. A character with no number after it appears exactly once.
+    description: `**Uncompressing** a run-length-encoded string reverses the RLE process: expand each character followed by an optional count back into that many repetitions. A character with no number after it appears exactly once, and counts can be multiple digits long.
 
 ## Your task
 
-Write \`uncompressString(str)\`, handling multi-digit counts correctly (like \`"a10"\` meaning ten \`a\`s, not \`a\` once followed by literal \`"10"\`).`,
+Write \`uncompressString(str)\`, handling multi-digit counts (like \`"a10"\` meaning ten \`a\`s).
+
+\`\`\`js
+uncompressString("a3b2c") // "aaabbc" — a counted run, plus an uncounted trailing character
+uncompressString("a10")   // "aaaaaaaaaa" — a multi-digit count
+uncompressString("abc")   // "abc" — no counts at all, every character appears once
+\`\`\``,
     difficulty: "medium",
     starterCode: `function uncompressString(str) {
 }`,
@@ -7469,11 +7772,21 @@ Write \`uncompressString(str)\`, handling multi-digit counts correctly (like \`"
     companies: ["Uber"],
     category: "javascript-runtime",
     title: "Implement clearAllTimeout()",
-    description: `A small registry layered on top of \`setTimeout\` so every pending timeout scheduled through it can be cancelled in one shot — useful for cleaning up on unmount or navigation.
+    description: `A small registry layered on top of \`setTimeout\` so every pending timeout scheduled through it can be **cancelled in one shot** — a pattern used to clean up all pending timers on component unmount or page navigation, instead of tracking and clearing each timeout id individually.
 
 ## Your task
 
-Write \`trackedSetTimeout(fn, delay)\` (works like \`setTimeout\`, but records the id) and \`clearAllTimeout()\` (cancels every timeout \`trackedSetTimeout\` has scheduled so far). Timeouts scheduled *after* \`clearAllTimeout()\` runs must be unaffected.`,
+Write \`trackedSetTimeout(fn, delay)\` (works like \`setTimeout\`, but records the returned id) and \`clearAllTimeout()\` (cancels every timeout \`trackedSetTimeout\` has scheduled so far). Timeouts scheduled *after* \`clearAllTimeout()\` runs must be unaffected.
+
+\`\`\`js
+trackedSetTimeout(() => console.log("a"), 100);
+trackedSetTimeout(() => console.log("b"), 200);
+clearAllTimeout();
+// neither "a" nor "b" ever logs
+
+trackedSetTimeout(() => console.log("c"), 100);
+// "c" still logs normally — it was scheduled after clearAllTimeout()
+\`\`\``,
     difficulty: "easy",
     starterCode: `const timeoutIds = [];
 function trackedSetTimeout(fn, delay) {
@@ -7505,11 +7818,17 @@ function clearAllTimeout() {
     slug: "basic-debounce-warmup",
     category: "javascript-runtime",
     title: "Implement basic debounce()",
-    description: `**Debounce** is the most commonly asked question in front-end interviews, and this is its simplest form: collapse a rapid burst of calls — like keystrokes in a search box — into a single call, using only the most recent one's arguments. Just the core timer-reset mechanism here, no \`.cancel()\` or leading/trailing options.
+    description: `The most commonly asked question in front-end interviews, in its simplest form: **debounce** coalesces a burst of rapid calls into a single call, using only the most recent call's arguments — useful for things like a search-box input handler that shouldn't fire an API request on every keystroke.
 
 ## Your task
 
-Write \`debounce(fn, delay)\`. Each new call resets the wait; \`fn\` only runs once \`delay\` ms pass with no further calls, using that last call's arguments and \`this\`.`,
+Write \`debounce(fn, delay)\`. Each new call resets the wait; \`fn\` only runs once \`delay\` ms pass with no further calls, using that last call's arguments and \`this\`.
+
+\`\`\`js
+const log = debounce((msg) => console.log(msg), 300);
+log("a"); log("b"); log("c");
+// only "c" logs, 300ms after the last call — "a" and "b" are discarded
+\`\`\``,
     difficulty: "easy",
     starterCode: `function debounce(fn, delay) {
 }`,
@@ -7534,11 +7853,19 @@ Write \`debounce(fn, delay)\`. Each new call resets the wait; \`fn\` only runs o
     slug: "basic-throttle-warmup",
     category: "javascript-runtime",
     title: "Implement basic throttle()",
-    description: `Where **debounce** waits for a pause, **throttle** guarantees a steady maximum rate — perfect for scroll or resize handlers that would otherwise fire hundreds of times a second. This version keeps it simple: leading-edge only, so the first call in a window runs immediately and everything else in that window is dropped.
+    description: `Where **debounce** waits for a pause before firing, **throttle** guarantees a steady maximum rate — perfect for scroll or resize handlers that shouldn't run on every single event, but still need to fire regularly while the events keep coming.
 
 ## Your task
 
-Write \`throttle(fn, interval)\` using a simple leading-edge strategy: the first call runs immediately, and any call within \`interval\` ms of the last one that actually ran is dropped.`,
+Write \`throttle(fn, interval)\` using a simple leading-edge strategy: the first call runs immediately, and any call within \`interval\` ms of the last one that actually ran is dropped.
+
+\`\`\`js
+const onScroll = throttle(() => console.log("scrolled"), 100);
+onScroll(); // runs immediately
+onScroll(); // dropped — called within 100ms of the last run
+// ...100ms later
+onScroll(); // runs — the interval has fully elapsed
+\`\`\``,
     difficulty: "medium",
     starterCode: `function throttle(fn, interval) {
 }`,
@@ -7567,14 +7894,28 @@ Write \`throttle(fn, interval)\` using a simple leading-edge strategy: the first
     companies: ["Uber", "TikTok", "Airbnb"],
     category: "javascript-runtime",
     title: "debounce() with leading & trailing option",
-    description: `A production-grade debounce supports firing on the **leading** edge of a burst (immediately), the **trailing** edge (after the burst goes quiet), or both.
+    description: `A production-grade **debounce** supports firing on the **leading** edge of a burst (immediately, on the first call), the **trailing** edge (once the burst goes quiet), or both — Lodash's \`_.debounce\` exposes exactly these two options.
+
+## The idea
+
+With both \`leading\` and \`trailing\` enabled, a burst of calls fires twice: once immediately, and once again after things go quiet — *unless* the burst was only a single call, in which case the leading fire already covered it and there's no separate trailing fire.
 
 ## Your task
 
 Write \`debounce(fn, delay, options)\`, where \`options\` is \`{ leading = false, trailing = true }\`:
 
 - \`leading: true\` — fire immediately on the first call of a burst
-- \`trailing: true\` — fire again after the burst goes quiet, **unless** it was the burst's only call and \`leading\` already handled it`,
+- \`trailing: true\` — fire again after the burst goes quiet, **unless** it was the burst's only call and \`leading\` already handled it
+
+\`\`\`js
+const fn = debounce(save, 300, { leading: true, trailing: true });
+fn(); fn(); fn();
+// fires immediately (leading), then once more 300ms after the last call (trailing)
+
+const onlyLeading = debounce(save, 300, { leading: true, trailing: false });
+onlyLeading(); onlyLeading(); onlyLeading();
+// fires exactly once, immediately — no trailing call at all
+\`\`\``,
     difficulty: "medium",
     starterCode: `function debounce(fn, delay, options = {}) {
   const { leading = false, trailing = true } = options;
@@ -7611,14 +7952,22 @@ Write \`debounce(fn, delay, options)\`, where \`options\` is \`{ leading = false
     companies: ["Uber", "TikTok", "Airbnb"],
     category: "javascript-runtime",
     title: "throttle() with leading & trailing option",
-    description: `The throttle equivalent of debounce's leading/trailing options: control whether the very first call in a window fires **immediately** (\`leading\`), and whether one more call fires at the **end** of the window using the most recent arguments (\`trailing\`) — the production-grade shape most real throttle implementations (like Underscore's) actually ship.
+    description: `The **throttle** equivalent of the leading/trailing idea: control whether the very first call in a window fires immediately, and whether one more call fires at the end of the window using the most recent arguments — this is the same shape as Underscore.js's \`_.throttle\`.
 
 ## Your task
 
-Write \`throttle(fn, interval, options)\`, where \`options\` is \`{ leading = true, trailing = true }\`:
+Write \`throttle(fn, interval, options)\`, where \`options\` is \`{ leading = true, trailing = true }\`.
 
-- \`leading: true\` — the first call in a window fires immediately
-- \`trailing: true\` — one more call fires at the end of the window (using the latest arguments) if calls arrived during it`,
+\`\`\`js
+const fn = throttle(log, 100, { leading: true, trailing: true });
+fn("a"); // fires immediately with "a"
+fn("b"); // within the window — scheduled for the trailing edge
+// ~100ms later: fires with "b" (the most recent arguments)
+
+const onlyLeading = throttle(log, 100, { leading: true, trailing: false });
+onlyLeading("x"); onlyLeading("y"); onlyLeading("z");
+// fires exactly once, immediately, with "x"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function throttle(fn, interval, options = {}) {
   const { leading = true, trailing = true } = options;
@@ -7664,7 +8013,7 @@ Write \`throttle(fn, interval, options)\`, where \`options\` is \`{ leading = tr
     companies: ["Google", "Meta"],
     category: "javascript-runtime",
     title: "Create a fake timer (setTimeout)",
-    description: `The kind of tool that powers Jest's fake timers: a virtual clock you control manually, useful for testing time-dependent code without actually waiting in real time.
+    description: `The kind of tool that powers Jest's fake timers: a **virtual clock** you advance manually, useful for testing time-dependent code (debounce, throttle, retry-with-backoff) without actually waiting in real time during your test suite.
 
 ## Your task
 
@@ -7672,7 +8021,14 @@ Write \`createFakeTimers()\`, returning \`{ setTimeout, clearTimeout, tick }\`:
 
 - \`setTimeout(fn, delay)\` schedules \`fn\` against the virtual clock and returns an id
 - \`clearTimeout(id)\` cancels a pending callback
-- \`tick(ms)\` advances the virtual clock by \`ms\` and synchronously runs every callback now due, in chronological order`,
+- \`tick(ms)\` advances the virtual clock by \`ms\` and synchronously runs every callback now due, in chronological order
+
+\`\`\`js
+const timers = createFakeTimers();
+timers.setTimeout(() => console.log("fired"), 100);
+timers.tick(50);  // nothing happens yet — only 50ms have passed
+timers.tick(50);  // "fired" — the full 100ms delay has now elapsed
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createFakeTimers() {
 }`,
@@ -7716,11 +8072,17 @@ Write \`createFakeTimers()\`, returning \`{ setTimeout, clearTimeout, tick }\`:
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Create an interval",
-    description: `\`setInterval\` has a subtle drift problem: it schedules each tick from when the timer was armed, not from when the previous callback actually finished, so a slow callback can cause overlapping runs. Chaining \`setTimeout\` calls instead — where each tick only schedules the next one after the current call completes — avoids that entirely.
+    description: `A hand-rolled \`setInterval\` built from repeated \`setTimeout\` calls, with a clean way to stop it — the same self-scheduling pattern real interval implementations often use internally, since it avoids the callback pile-up you can get from a busy native \`setInterval\`.
 
 ## Your task
 
-Write \`createInterval(fn, delay)\`, which starts calling \`fn\` every \`delay\` ms and returns a function that stops it. \`fn\` should not run before the first \`delay\` has elapsed.`,
+Write \`createInterval(fn, delay)\`, which starts calling \`fn\` every \`delay\` ms and returns a function that stops it. \`fn\` should not run before the first \`delay\` has elapsed.
+
+\`\`\`js
+const stop = createInterval(() => console.log("tick"), 1000);
+// "tick" logs roughly every 1000ms, starting after the first 1000ms — not immediately
+stop(); // no further "tick" logs after this
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createInterval(fn, delay) {
 }`,
@@ -7753,11 +8115,18 @@ Write \`createInterval(fn, delay)\`, which starts calling \`fn\` every \`delay\`
     companies: ["Google", "Meta"],
     category: "javascript-runtime",
     title: "Create a fake timer (setInterval)",
-    description: `Testing code that relies on \`setInterval\` shouldn't mean waiting around in real time for it to fire. A **fake timer** replaces the real clock with a manually-advanced virtual one: nothing fires on its own — you call \`tick(ms)\` to move time forward, and any interval whose next-due time has passed fires, possibly more than once in a single tick.
+    description: `The \`setInterval\` counterpart to the fake \`setTimeout\` clock — a manually-advanced **virtual clock** that fires a callback repeatedly at a fixed cadence, so interval-driven code can be tested deterministically without real wall-clock waiting.
 
 ## Your task
 
-Write \`createFakeIntervalTimers()\`, returning \`{ setInterval, clearInterval, tick }\`. \`setInterval(fn, delay)\` registers a repeating callback and returns an id; \`clearInterval(id)\` cancels it. \`tick(ms)\` advances the virtual clock by \`ms\` and fires every due interval as many times as fit within the advanced time, catching up correctly even when a single large tick spans multiple firings.`,
+Write \`createFakeIntervalTimers()\`, returning \`{ setInterval, clearInterval, tick }\`. \`tick(ms)\` should fire a given interval as many times as fit within the advanced time, catching it up correctly even across a single large tick.
+
+\`\`\`js
+const timers = createFakeIntervalTimers();
+timers.setInterval(() => console.log("tick"), 10);
+timers.tick(35);
+// logs "tick" 3 times — one large tick catches up on every firing that's now due
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createFakeIntervalTimers() {
 }`,
@@ -7802,11 +8171,19 @@ Write \`createFakeIntervalTimers()\`, returning \`{ setInterval, clearInterval, 
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Implement AsyncTaskQueue",
-    description: `A queue that guarantees async tasks run strictly one at a time, in the order they were added — even if a new task is added while an earlier one is still in flight.
+    description: `An **async task queue** guarantees that async tasks run strictly one at a time, in the order they were added — even if a new task is enqueued while an earlier one is still in flight. This is the pattern behind things like a UI that must never send two save requests concurrently.
 
 ## Your task
 
-Write an \`AsyncTaskQueue\` class with an \`add(taskFn)\` method. \`taskFn\` returns a promise; \`add\` returns a promise that resolves with that specific task's result once it's actually run. A rejected task must not block the tasks after it.`,
+Write an \`AsyncTaskQueue\` class with an \`add(taskFn)\` method. \`taskFn\` returns a promise; \`add\` returns a promise that resolves with that specific task's result once it's actually run. A rejected task must not block the tasks queued after it.
+
+\`\`\`js
+const queue = new AsyncTaskQueue();
+queue.add(() => delay(300).then(() => "first"));  // starts running immediately
+queue.add(() => delay(50).then(() => "second"));  // waits for "first" to finish first
+// resolves in order: "first" (after ~300ms), then "second" (~50ms later) —
+// never both in flight at once, even though "second" has the shorter delay
+\`\`\``,
     difficulty: "easy",
     starterCode: `class AsyncTaskQueue {
   add(taskFn) {
@@ -7838,11 +8215,21 @@ Write an \`AsyncTaskQueue\` class with an \`add(taskFn)\` method. \`taskFn\` ret
     companies: ["Amazon", "Netflix"],
     category: "javascript-runtime",
     title: "Implement promisify()",
-    description: `Older Node APIs follow the **error-first callback** convention — \`fn(...args, (err, result) => {})\` — which doesn't compose well with \`async\`/\`await\`. \`util.promisify\` bridges the two worlds by wrapping a callback-style function into one that returns a promise instead.
+    description: `**Node's callback convention** — \`fn(...args, (err, result) => {})\`, where the callback's first argument is an error (or \`null\`) and the second is the result — predates Promises. \`promisify\` converts a function built on that convention into one that returns a Promise instead, the same utility Node's own \`util.promisify\` provides.
 
 ## Your task
 
-Write \`promisify(fn)\`, returning a function that calls \`fn\` with its arguments plus an injected \`(err, result)\` callback, and returns a promise that resolves with \`result\` on success or rejects with \`err\` on failure.`,
+Write \`promisify(fn)\`, wrapping an error-first callback-style function into one that returns a promise: it resolves with the callback's result when \`err\` is falsy, or rejects with \`err\` otherwise.
+
+\`\`\`js
+function readFileCb(path, cb) {
+  // ...eventually calls cb(null, "file contents") or cb(new Error("not found"))
+}
+const readFile = promisify(readFileCb);
+readFile("a.txt").then((contents) => console.log(contents));
+// resolves with "file contents" if the callback succeeds,
+// or rejects with the Error if the callback passes one
+\`\`\``,
     difficulty: "easy",
     starterCode: `function promisify(fn) {
 }`,
@@ -7872,11 +8259,21 @@ Write \`promisify(fn)\`, returning a function that calls \`fn\` with its argumen
     companies: ["Google", "Meta"],
     category: "javascript-runtime",
     title: "Implement Promise.race()",
-    description: `\`Promise.race\` settles the instant the **first** input settles — whether that's a fulfillment or a rejection. Whichever promise crosses the finish line first, wins; every other input is simply ignored once that happens.
+    description: `\`Promise.race()\` settles as soon as the **first** input settles — whether that's a fulfillment or a rejection — and ignores every input that settles afterward. It's the building block behind patterns like "resolve with whichever of these finishes first."
 
 ## Your task
 
-Write \`myPromiseRace(promises)\`, returning a promise that resolves or rejects with whichever input settles first. Plain (non-promise) values count as already settled, so they win instantly against any pending promise.`,
+Write \`myPromiseRace(promises)\`, mirroring the native \`Promise.race\`.
+
+\`\`\`js
+const fast = new Promise((res) => setTimeout(() => res("fast"), 50));
+const slow = new Promise((res) => setTimeout(() => res("slow"), 500));
+myPromiseRace([slow, fast]).then(console.log);
+// "fast" — resolves with whichever settles first, regardless of array order
+
+myPromiseRace([slow, Promise.reject("early error")]).catch(console.log);
+// "early error" — a fast rejection wins the race too
+\`\`\``,
     difficulty: "easy",
     starterCode: `function myPromiseRace(promises) {
 }`,
@@ -7901,11 +8298,19 @@ Write \`myPromiseRace(promises)\`, returning a promise that resolves or rejects 
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Async helper: race a promise against a timeout",
-    description: `A practical, everyday use of \`Promise.race\`: give a promise a deadline, and fail fast instead of hanging forever if a slow network call or a stuck operation never settles.
+    description: `A practical, everyday use of racing promises: give a promise a **deadline**, and fail fast with a timeout error instead of hanging forever if it doesn't settle in time — the pattern behind "cancel this fetch if it takes longer than 5 seconds."
 
 ## Your task
 
-Write \`raceWithTimeout(promise, ms)\`, which resolves or rejects exactly like \`promise\` if it settles within \`ms\` milliseconds, or rejects with a timeout error if \`ms\` elapses first. If \`promise\` itself rejects before the timeout, that original rejection reason must win, not a generic timeout error.`,
+Write \`raceWithTimeout(promise, ms)\`, which resolves or rejects exactly like \`promise\` if it settles before \`ms\` milliseconds pass, or rejects with a timeout error if \`ms\` elapses first.
+
+\`\`\`js
+raceWithTimeout(fetch("/slow-api"), 3000)
+  .then((res) => console.log("got it in time"))
+  .catch((err) => console.log(err.message));
+// "timeout" — if the fetch takes longer than 3000ms
+// otherwise resolves normally with the fetch's own result
+\`\`\``,
     difficulty: "easy",
     starterCode: `function raceWithTimeout(promise, ms) {
 }`,
@@ -7930,7 +8335,11 @@ Write \`raceWithTimeout(promise, ms)\`, which resolves or rejects exactly like \
     companies: ["Google", "Meta", "Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Create your own Promise",
-    description: `One of the most common 'hard round' front-end interview questions: implement enough of \`Promise\` — states, chaining, error propagation — to convince someone you understand how it actually works.
+    description: `Implementing your own \`Promise\` class — states, chaining, error propagation — is one of the most common "hard round" front-end interview questions, meant to prove you understand how \`.then()\` chaining and async error handling actually work under the hood, not just how to use them.
+
+## The idea
+
+A promise has exactly three states — **pending**, **fulfilled**, **rejected** — and once it settles into fulfilled or rejected, it can never change again. \`.then()\` always returns a *new* promise, which is what makes chaining (\`p.then(a).then(b)\`) and error propagation through a chain possible.
 
 ## Your task
 
@@ -7939,7 +8348,18 @@ Write a \`MyPromise\` class with \`then\`, \`catch\`, and \`finally\`:
 - three states: pending, fulfilled, rejected, each settled exactly once
 - \`.then(onFulfilled, onRejected)\` returns a **new** promise for chaining
 - an error thrown inside the executor rejects the promise
-- resolving with a thenable adopts that thenable's eventual state`,
+- resolving with a thenable adopts that thenable's eventual state
+
+\`\`\`js
+new MyPromise((resolve) => resolve(1))
+  .then((v) => v + 1)
+  .then((v) => console.log(v));
+// 2 — each .then() passes its return value to the next
+
+new MyPromise(() => { throw new Error("boom"); })
+  .catch((err) => console.log(err.message));
+// "boom" — a synchronous throw in the executor rejects the promise
+\`\`\``,
     difficulty: "medium",
     starterCode: `class MyPromise {
   constructor(executor) {
@@ -8026,11 +8446,21 @@ Write a \`MyPromise\` class with \`then\`, \`catch\`, and \`finally\`:
     companies: ["Google", "Meta", "Amazon"],
     category: "javascript-runtime",
     title: "Implement Promise.all()",
-    description: `\`Promise.all\` waits for **every** input to fulfill, collecting all the results in input order regardless of which one finishes first — but it's impatient about failure: the instant any single input rejects, the whole thing rejects immediately, without waiting for the rest.
+    description: `\`Promise.all()\` waits for **every** input to fulfill, preserving input order in the results regardless of which one finishes first — but rejects immediately the moment any single input rejects, without waiting for the rest.
 
 ## Your task
 
-Write \`myPromiseAll(promises)\`, supporting a mix of promises and plain values. Resolve with an array of results in the same order as the input once every one has fulfilled; reject immediately with the first rejection reason encountered. An empty input array resolves right away with \`[]\`.`,
+Write \`myPromiseAll(promises)\`, supporting a mix of promises and plain (non-promise) values.
+
+\`\`\`js
+const p1 = new Promise((res) => setTimeout(() => res("one"), 200));
+const p2 = new Promise((res) => setTimeout(() => res("two"), 50));
+myPromiseAll([p1, p2, "three"]).then(console.log);
+// ["one", "two", "three"] — order matches the input array, even though p2 resolved first
+
+myPromiseAll([p1, Promise.reject("fail")]).catch(console.log);
+// "fail" — rejects as soon as any single input rejects, without waiting for p1
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myPromiseAll(promises) {
 }`,
@@ -8063,11 +8493,22 @@ Write \`myPromiseAll(promises)\`, supporting a mix of promises and plain values.
     companies: ["Meta", "Amazon"],
     category: "javascript-runtime",
     title: "Implement Promise.allSettled()",
-    description: `Unlike \`Promise.all\`, \`Promise.allSettled\` never short-circuits on a rejection — it waits for **every** input to settle, one way or another, and reports each outcome individually instead of throwing away the results of everything that succeeded.
+    description: `Unlike \`Promise.all\`, \`Promise.allSettled()\` never short-circuits on a rejection — it waits for **every** input to settle, one way or another, and reports each outcome individually instead of failing the whole batch.
 
 ## Your task
 
-Write \`myPromiseAllSettled(promises)\`, resolving with an array of \`{ status: "fulfilled", value }\` or \`{ status: "rejected", reason }\` objects, one per input, in the same order as \`promises\`.`,
+Write \`myPromiseAllSettled(promises)\`, resolving with an array of \`{ status: "fulfilled", value }\` or \`{ status: "rejected", reason }\` objects, one per input, in the same order as the input array.
+
+\`\`\`js
+myPromiseAllSettled([
+  Promise.resolve("ok"),
+  Promise.reject("oops"),
+]).then(console.log);
+// [
+//   { status: "fulfilled", value: "ok" },
+//   { status: "rejected", reason: "oops" }
+// ] — both outcomes are reported, nothing short-circuits
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myPromiseAllSettled(promises) {
 }`,
@@ -8096,11 +8537,22 @@ Write \`myPromiseAllSettled(promises)\`, resolving with an array of \`{ status: 
     companies: ["Meta", "Amazon"],
     category: "javascript-runtime",
     title: "Implement Promise.any()",
-    description: `The mirror image of \`Promise.all\`: \`Promise.any\` resolves as soon as **any** input fulfills — perfect for "try several sources, take whichever answers first" — and only rejects once **every single** input has rejected.
+    description: `\`Promise.any()\` is the mirror image of \`Promise.all\`: it resolves as soon as **any** input fulfills — ignoring rejections along the way — and only rejects once **every single** input has rejected.
 
 ## Your task
 
-Write \`myPromiseAny(promises)\`, resolving with the first fulfillment value seen, or rejecting (once every input has rejected) with an \`Error\`. A rejection arriving before a later fulfillment must not affect the outcome — a fulfillment always wins if one ever occurs.`,
+Write \`myPromiseAny(promises)\`.
+
+\`\`\`js
+const fails = Promise.reject("nope");
+const succeeds = new Promise((res) => setTimeout(() => res("yes"), 100));
+myPromiseAny([fails, succeeds]).then(console.log);
+// "yes" — resolves as soon as any input fulfills, even though "fails" rejected first
+
+myPromiseAny([Promise.reject("a"), Promise.reject("b")]).catch((err) => {
+  console.log(err.message); // "All promises were rejected" — only once every input has rejected
+});
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myPromiseAny(promises) {
 }`,
@@ -8134,11 +8586,23 @@ Write \`myPromiseAny(promises)\`, resolving with the first fulfillment value see
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Implement Promise.prototype.finally()",
-    description: `\`.finally()\` runs a cleanup callback once a promise settles — regardless of whether it fulfilled or rejected — without changing the eventual outcome. It's the promise equivalent of a \`try\`/\`finally\` block, useful for things like hiding a loading spinner no matter how a request turns out.
+    description: `\`Promise.prototype.finally()\` runs a callback once a promise **settles** — regardless of whether it fulfilled or rejected — without changing the eventual outcome. It's the promise equivalent of a \`try/finally\` block, handy for things like hiding a loading spinner no matter how a request ends.
 
 ## Your task
 
-Add \`myFinally(onFinally)\` to \`Promise.prototype\`. \`onFinally\` runs with no arguments on either fulfillment or rejection; its return value is ignored, and the original value or rejection reason passes through unchanged afterward.`,
+Add \`myFinally(onFinally)\` to \`Promise.prototype\`. \`onFinally\` receives no arguments, and its return value is ignored — the original value or rejection reason passes through unchanged.
+
+\`\`\`js
+Promise.resolve(42)
+  .myFinally(() => console.log("done"))
+  .then((v) => console.log(v));
+// logs "done", then 42 — the resolved value passes through untouched
+
+Promise.reject("error")
+  .myFinally(() => console.log("done"))
+  .catch((err) => console.log(err));
+// logs "done", then "error" — the rejection still propagates
+\`\`\``,
     difficulty: "medium",
     starterCode: `Promise.prototype.myFinally = function (onFinally) {
 };`,
@@ -8164,11 +8628,20 @@ Add \`myFinally(onFinally)\` to \`Promise.prototype\`. \`onFinally\` runs with n
     companies: ["Amazon", "Uber"],
     category: "javascript-runtime",
     title: "Async helper: sequence()",
-    description: `Sometimes async work genuinely has to happen in order — task B depends on task A's side effects finishing first, not just on some value it returns. \`sequence()\` is the async equivalent of a plain loop: run a task, wait for it, then move to the next, never starting two at once.
+    description: `A \`sequence()\` helper runs a list of async tasks **one after another** — each task only starts once the previous one has fully finished — useful when later steps depend on earlier ones, or when you need to strictly rate-limit how many requests are in flight at once (one).
 
 ## Your task
 
-Write \`sequence(tasks)\`, where \`tasks\` is an array of zero-argument functions each returning a promise (or plain value). Return a promise resolving with all results, in order.`,
+Write \`sequence(tasks)\`, where \`tasks\` is an array of zero-argument functions each returning a promise (or plain value). Return a promise resolving with all results, in the same order as \`tasks\`. If a task rejects, \`sequence()\` rejects with that reason and later tasks never run.
+
+\`\`\`js
+const tasks = [
+  () => delay(100).then(() => "a"),
+  () => delay(50).then(() => "b"),
+];
+sequence(tasks).then(console.log);
+// ["a", "b"] — task 2 doesn't even start until task 1 resolves, ~150ms total
+\`\`\``,
     difficulty: "medium",
     starterCode: `async function sequence(tasks) {
 }`,
@@ -8195,11 +8668,20 @@ Write \`sequence(tasks)\`, where \`tasks\` is an array of zero-argument function
     companies: ["Amazon", "Uber"],
     category: "javascript-runtime",
     title: "Async helper: parallel()",
-    description: `The concurrent counterpart to \`sequence()\`: when tasks don't depend on each other, running them one at a time just wastes time waiting on network calls or timers that could easily overlap. \`parallel()\` kicks off every task immediately and waits only once, so the total time is roughly the slowest task's delay, not the sum of all of them.
+    description: `A \`parallel()\` helper is the concurrent counterpart to \`sequence()\`: it starts **every task immediately**, and collects all the results once they're all done — so the total time is roughly the slowest task's delay, not the sum of every task's delay.
 
 ## Your task
 
-Write \`parallel(tasks)\`, where \`tasks\` is an array of zero-argument functions each returning a promise (or plain value). Results should come back in the same order as \`tasks\`, regardless of which one finishes first.`,
+Write \`parallel(tasks)\`, where \`tasks\` is an array of zero-argument functions each returning a promise (or plain value). Results come back in the same order as \`tasks\`, regardless of which one finishes first. If any task rejects, \`parallel()\` rejects with that reason.
+
+\`\`\`js
+const tasks = [
+  () => delay(100).then(() => "a"),
+  () => delay(50).then(() => "b"),
+];
+parallel(tasks).then(console.log);
+// ["a", "b"] — both tasks start at once, so this resolves in ~100ms (the slower one), not 150ms
+\`\`\``,
     difficulty: "medium",
     starterCode: `function parallel(tasks) {
 }`,
@@ -8226,7 +8708,15 @@ Write \`parallel(tasks)\`, where \`tasks\` is an array of zero-argument function
 
 ## Your task
 
-Write \`flattenThunk(thunk)\`, returning a new thunk that, when called with a callback, recursively unwraps nested thunks until it reaches a non-thunk value, then invokes the callback with that value. An error at any level should propagate immediately, short-circuiting the unwrapping.`,
+Write \`flattenThunk(thunk)\`, returning a new thunk that, when called with a callback, recursively unwraps nested thunks until it reaches a non-thunk value, then invokes the callback with that value. An error at any level should propagate immediately, short-circuiting the unwrapping.
+
+\`\`\`js
+const inner = (cb) => cb(null, 42);
+const outer = (cb) => cb(null, inner); // resolves to another thunk, not a value
+flattenThunk(outer)((err, result) => {
+  console.log(result); // 42 — nested thunks are unwrapped down to the final value
+});
+\`\`\``,
     difficulty: "easy",
     starterCode: `function flattenThunk(thunk) {
 }`,
@@ -8261,7 +8751,18 @@ Write \`flattenThunk(thunk)\`, returning a new thunk that, when called with a ca
 
 ## Your task
 
-Write \`retry(fn, retries)\`, where \`fn\` returns a promise. On rejection, call \`fn\` again, up to \`retries\` additional times, resolving as soon as any attempt succeeds. If every attempt fails, reject with the last error once \`retries\` is exhausted.`,
+Write \`retry(fn, retries)\`, where \`fn\` returns a promise. On rejection, call \`fn\` again, up to \`retries\` additional times, resolving as soon as any attempt succeeds. If every attempt fails, reject with the last error once \`retries\` is exhausted.
+
+\`\`\`js
+let attempts = 0;
+const flaky = () => {
+  attempts++;
+  return attempts < 3 ? Promise.reject("network error") : Promise.resolve("ok");
+};
+retry(flaky, 3).then((result) => {
+  console.log(result); // "ok" — resolved on the 3rd attempt after two failures
+});
+\`\`\``,
     difficulty: "medium",
     starterCode: `function retry(fn, retries) {
 }`,
@@ -8291,7 +8792,15 @@ Write \`retry(fn, retries)\`, where \`fn\` returns a promise. On rejection, call
 
 ## Your task
 
-Write \`runWithConcurrency(tasks, limit)\`, where \`tasks\` is an array of zero-argument functions returning promises. At most \`limit\` tasks should be in flight at any moment. Resolve with all results in original input order.`,
+Write \`runWithConcurrency(tasks, limit)\`, where \`tasks\` is an array of zero-argument functions returning promises. At most \`limit\` tasks should be in flight at any moment. Resolve with all results in original input order.
+
+\`\`\`js
+const delay = (ms, value) => () => new Promise((res) => setTimeout(() => res(value), ms));
+const tasks = [delay(30, "a"), delay(10, "b"), delay(20, "c")];
+runWithConcurrency(tasks, 2).then((results) => {
+  console.log(results); // ["a", "b", "c"] — input order, even though "b" finishes first
+});
+\`\`\``,
     difficulty: "medium",
     starterCode: `function runWithConcurrency(tasks, limit) {
 }`,
@@ -8334,7 +8843,18 @@ Write \`runWithConcurrency(tasks, limit)\`, where \`tasks\` is an array of zero-
 
 ## Your task
 
-Write \`dedupeAsync(fn)\`, wrapping an async function keyed by its single argument. Concurrent calls with the same key share one underlying call; once that call settles, a later call with the same key triggers a fresh one.`,
+Write \`dedupeAsync(fn)\`, wrapping an async function keyed by its single argument. Concurrent calls with the same key share one underlying call; once that call settles, a later call with the same key triggers a fresh one.
+
+\`\`\`js
+let calls = 0;
+const fetchUser = dedupeAsync(async (id) => {
+  calls++;
+  return { id };
+});
+Promise.all([fetchUser(1), fetchUser(1)]).then(() => {
+  console.log(calls); // 1 — both concurrent calls for id 1 shared one underlying request
+});
+\`\`\``,
     difficulty: "medium",
     starterCode: `function dedupeAsync(fn) {
 }`,
@@ -8367,7 +8887,19 @@ Write \`dedupeAsync(fn)\`, wrapping an async function keyed by its single argume
 
 ## Your task
 
-Write \`fetchAllPages(fetchPage)\`, where \`fetchPage(cursor)\` returns a promise resolving to \`{ items, nextCursor }\`. Start with \`cursor = null\`, concatenate each page's \`items\` in order, and keep requesting subsequent pages — passing each page's \`nextCursor\` into the next call — until \`nextCursor\` is falsy. Return the combined array of every page's items.`,
+Write \`fetchAllPages(fetchPage)\`, where \`fetchPage(cursor)\` returns a promise resolving to \`{ items, nextCursor }\`. Start with \`cursor = null\`, concatenate each page's \`items\` in order, and keep requesting subsequent pages — passing each page's \`nextCursor\` into the next call — until \`nextCursor\` is falsy. Return the combined array of every page's items.
+
+\`\`\`js
+let calls = 0;
+function fetchPage(cursor) {
+  calls++;
+  if (calls === 1) return Promise.resolve({ items: [1, 2], nextCursor: "p2" });
+  return Promise.resolve({ items: [3, 4], nextCursor: null });
+}
+fetchAllPages(fetchPage).then((items) => {
+  console.log(items); // [1, 2, 3, 4] — both pages concatenated in order
+});
+\`\`\``,
     difficulty: "medium",
     starterCode: `async function fetchAllPages(fetchPage) {
 }`,
@@ -8402,7 +8934,14 @@ Write \`fetchAllPages(fetchPage)\`, where \`fetchPage(cursor)\` returns a promis
 
 ## Your task
 
-Write \`scheduleTask(callback)\` using \`MessageChannel\`, running \`callback\` asynchronously (never synchronously, and after any already-queued microtasks).`,
+Write \`scheduleTask(callback)\` using \`MessageChannel\`, running \`callback\` asynchronously (never synchronously, and after any already-queued microtasks).
+
+\`\`\`js
+console.log("1: sync");
+scheduleTask(() => console.log("3: scheduled task"));
+Promise.resolve().then(() => console.log("2: microtask"));
+// logs "1: sync", then "2: microtask", then "3: scheduled task"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function scheduleTask(callback) {
 }`,
@@ -8433,7 +8972,13 @@ Write \`scheduleTask(callback)\` using \`MessageChannel\`, running \`callback\` 
 
 ## Your task
 
-Write \`reverseLinkedList(head)\`, where each node is \`{ value, next }\`. Return the new head — the node that was previously the tail.`,
+Write \`reverseLinkedList(head)\`, where each node is \`{ value, next }\`. Return the new head — the node that was previously the tail.
+
+\`\`\`js
+const head = { value: 1, next: { value: 2, next: { value: 3, next: null } } };
+reverseLinkedList(head);
+// 3 -> 2 -> 1 -> null (the returned head is the node that used to be the tail)
+\`\`\``,
     difficulty: "easy",
     starterCode: `function reverseLinkedList(head) {
 }`,
@@ -8468,7 +9013,16 @@ Write \`reverseLinkedList(head)\`, where each node is \`{ value, next }\`. Retur
 
 ## Your task
 
-Write \`hasCycle(head)\`, using two pointers rather than a visited-nodes Set.`,
+Write \`hasCycle(head)\`, using two pointers rather than a visited-nodes Set.
+
+\`\`\`js
+const a = { value: 1 };
+const b = { value: 2 };
+a.next = b;
+b.next = a; // the tail loops back into the list
+hasCycle(a);
+// true
+\`\`\``,
     difficulty: "easy",
     starterCode: `function hasCycle(head) {
 }`,
@@ -8502,7 +9056,17 @@ Write \`hasCycle(head)\`, using two pointers rather than a visited-nodes Set.`,
 
 ## Your task
 
-Write \`invertBinaryTree(root)\`, where each node is \`{ value, left, right }\`. Recursively swap every node's \`left\` and \`right\` and return the (mutated) root. An empty tree (\`null\`) stays \`null\`.`,
+Write \`invertBinaryTree(root)\`, where each node is \`{ value, left, right }\`. Recursively swap every node's \`left\` and \`right\` and return the (mutated) root. An empty tree (\`null\`) stays \`null\`.
+
+\`\`\`js
+const root = {
+  value: 1,
+  left: { value: 2, left: null, right: null },
+  right: { value: 3, left: null, right: null },
+};
+invertBinaryTree(root);
+// root.left.value === 3, root.right.value === 2 — children swapped
+\`\`\``,
     difficulty: "easy",
     starterCode: `function invertBinaryTree(root) {
 }`,
@@ -8533,7 +9097,16 @@ Write \`invertBinaryTree(root)\`, where each node is \`{ value, left, right }\`.
 
 ## Your task
 
-Write a \`QueueViaStacks\` class with \`enqueue(value)\` and \`dequeue()\`, using two array-backed stacks internally (only \`.push()\`/\`.pop()\`, never array \`.shift()\`/\`.unshift()\`). \`dequeue()\` must return values in the same order they were enqueued, and return \`undefined\` on an empty queue.`,
+Write a \`QueueViaStacks\` class with \`enqueue(value)\` and \`dequeue()\`, using two array-backed stacks internally (only \`.push()\`/\`.pop()\`, never array \`.shift()\`/\`.unshift()\`). \`dequeue()\` must return values in the same order they were enqueued, and return \`undefined\` on an empty queue.
+
+\`\`\`js
+const q = new QueueViaStacks();
+q.enqueue(1);
+q.enqueue(2);
+q.enqueue(3);
+q.dequeue(); // 1 — FIFO order, even though it's built from two LIFO stacks
+q.dequeue(); // 2
+\`\`\``,
     difficulty: "medium",
     starterCode: `class QueueViaStacks {
   enqueue(value) {
@@ -8576,7 +9149,16 @@ Write a \`QueueViaStacks\` class with \`enqueue(value)\` and \`dequeue()\`, usin
 
 ## Your task
 
-Write a \`StackViaQueues\` class with \`push(value)\` and \`pop()\`, using a single array as a queue (only \`.push()\` and \`.shift()\`, never index-based LIFO access). \`pop()\` must return values in last-in-first-out order, and return \`undefined\` on an empty stack.`,
+Write a \`StackViaQueues\` class with \`push(value)\` and \`pop()\`, using a single array as a queue (only \`.push()\` and \`.shift()\`, never index-based LIFO access). \`pop()\` must return values in last-in-first-out order, and return \`undefined\` on an empty stack.
+
+\`\`\`js
+const s = new StackViaQueues();
+s.push(1);
+s.push(2);
+s.push(3);
+s.pop(); // 3 — LIFO order, even though it's built from queue rotations
+s.pop(); // 2
+\`\`\``,
     difficulty: "medium",
     starterCode: `class StackViaQueues {
   push(value) {
@@ -8618,7 +9200,14 @@ Write a \`StackViaQueues\` class with \`push(value)\` and \`pop()\`, using a sin
 
 ## Your task
 
-Write a \`PriorityQueue\` class with \`enqueue(value, priority)\` and \`dequeue()\`.`,
+Write a \`PriorityQueue\` class with \`enqueue(value, priority)\` and \`dequeue()\`.
+
+\`\`\`js
+const pq = new PriorityQueue();
+pq.enqueue("low", 5);
+pq.enqueue("high", 1);
+pq.dequeue(); // "high" — priority 1 comes out before priority 5
+\`\`\``,
     difficulty: "medium",
     starterCode: `class PriorityQueue {
   enqueue(value, priority) {
@@ -8661,7 +9250,12 @@ Write a \`PriorityQueue\` class with \`enqueue(value, priority)\` and \`dequeue(
 
 ## Your task
 
-Write \`findTopK(nums, k)\`, returning an array of the \`k\` largest values from \`nums\`, sorted in descending order. If \`k\` is larger than \`nums.length\`, return the whole array sorted descending; if \`k\` is \`0\`, return an empty array.`,
+Write \`findTopK(nums, k)\`, returning an array of the \`k\` largest values from \`nums\`, sorted in descending order. If \`k\` is larger than \`nums.length\`, return the whole array sorted descending; if \`k\` is \`0\`, return an empty array.
+
+\`\`\`js
+findTopK([3, 1, 4, 1, 5, 9, 2, 6], 3)
+// [9, 6, 5]
+\`\`\``,
     difficulty: "medium",
     starterCode: `function findTopK(nums, k) {
 }`,
@@ -8687,7 +9281,15 @@ Write \`findTopK(nums, k)\`, returning an array of the \`k\` largest values from
 
 ## Your task
 
-Write a \`Trie\` class with \`insert(word)\`, \`search(word)\` (exact match), and \`startsWith(prefix)\` (any inserted word begins with this).`,
+Write a \`Trie\` class with \`insert(word)\`, \`search(word)\` (exact match), and \`startsWith(prefix)\` (any inserted word begins with this).
+
+\`\`\`js
+const trie = new Trie();
+trie.insert("cat");
+trie.search("cat"); // true
+trie.search("ca"); // false — "ca" was never inserted as a complete word
+trie.startsWith("ca"); // true — "cat" starts with "ca"
+\`\`\``,
     difficulty: "medium",
     starterCode: `class Trie {
   insert(word) {
@@ -8746,7 +9348,15 @@ Write a \`Trie\` class with \`insert(word)\`, \`search(word)\` (exact match), an
 
 ## Your task
 
-Write \`serialize(root)\` and \`deserialize(data)\`, where each node is \`{ value, left, right }\`. Any encoding is fine as long as \`deserialize(serialize(tree))\` reconstructs an equivalent tree, including correctly round-tripping \`null\` for an empty tree.`,
+Write \`serialize(root)\` and \`deserialize(data)\`, where each node is \`{ value, left, right }\`. Any encoding is fine as long as \`deserialize(serialize(tree))\` reconstructs an equivalent tree, including correctly round-tripping \`null\` for an empty tree.
+
+\`\`\`js
+const tree = { value: 1, left: { value: 2, left: null, right: null }, right: null };
+const data = serialize(tree);
+// data: "1,2,null,null,null"
+deserialize(data);
+// an equivalent tree: { value: 1, left: { value: 2, left: null, right: null }, right: null }
+\`\`\``,
     difficulty: "medium",
     starterCode: `function serialize(root) {
 }
@@ -8786,7 +9396,17 @@ function deserialize(data) {
 
 ## Your task
 
-Write \`verticalTraversal(root)\`, returning an array of columns (left to right), each an array of values top-to-bottom. Nodes landing at the exact same row and column break ties by ascending value.`,
+Write \`verticalTraversal(root)\`, returning an array of columns (left to right), each an array of values top-to-bottom. Nodes landing at the exact same row and column break ties by ascending value.
+
+\`\`\`js
+const root = {
+  value: 1,
+  left: { value: 2, left: null, right: null },
+  right: { value: 3, left: null, right: null },
+};
+verticalTraversal(root)
+// [[2], [1], [3]] — left child's column, then root's column, then right child's column
+\`\`\``,
     difficulty: "hard",
     starterCode: `function verticalTraversal(root) {
 }`,
@@ -8833,7 +9453,12 @@ Write \`verticalTraversal(root)\`, returning an array of columns (left to right)
 
 ## Your task
 
-Write \`bubbleSort(arr)\`, returning a new sorted array (ascending) without mutating the input.`,
+Write \`bubbleSort(arr)\`, returning a new sorted array (ascending) without mutating the input.
+
+\`\`\`js
+bubbleSort([5, 3, 8, 1, 2])
+// [1, 2, 3, 5, 8]
+\`\`\``,
     difficulty: "easy",
     starterCode: `function bubbleSort(arr) {
 }`,
@@ -8867,7 +9492,12 @@ Write \`bubbleSort(arr)\`, returning a new sorted array (ascending) without muta
 
 ## Your task
 
-Write \`insertionSort(arr)\`, returning a new sorted array (ascending) without mutating the input.`,
+Write \`insertionSort(arr)\`, returning a new sorted array (ascending) without mutating the input.
+
+\`\`\`js
+insertionSort([5, 3, 8, 1, 2])
+// [1, 2, 3, 5, 8]
+\`\`\``,
     difficulty: "easy",
     starterCode: `function insertionSort(arr) {
 }`,
@@ -8902,7 +9532,12 @@ Write \`insertionSort(arr)\`, returning a new sorted array (ascending) without m
 
 ## Your task
 
-Write \`selectionSort(arr)\`, returning a new sorted array (ascending) without mutating the input.`,
+Write \`selectionSort(arr)\`, returning a new sorted array (ascending) without mutating the input.
+
+\`\`\`js
+selectionSort([5, 3, 8, 1, 2])
+// [1, 2, 3, 5, 8]
+\`\`\``,
     difficulty: "easy",
     starterCode: `function selectionSort(arr) {
 }`,
@@ -8935,7 +9570,12 @@ Write \`selectionSort(arr)\`, returning a new sorted array (ascending) without m
 
 ## Your task
 
-Write \`mergeSort(arr)\`, returning a new sorted array (ascending).`,
+Write \`mergeSort(arr)\`, returning a new sorted array (ascending).
+
+\`\`\`js
+mergeSort([5, 3, 8, 1, 2])
+// [1, 2, 3, 5, 8]
+\`\`\``,
     difficulty: "medium",
     starterCode: `function mergeSort(arr) {
 }`,
@@ -8971,7 +9611,12 @@ Write \`mergeSort(arr)\`, returning a new sorted array (ascending).`,
 
 ## Your task
 
-Write \`quickSort(arr)\`, returning a new sorted array (ascending).`,
+Write \`quickSort(arr)\`, returning a new sorted array (ascending).
+
+\`\`\`js
+quickSort([5, 3, 8, 1, 2])
+// [1, 2, 3, 5, 8]
+\`\`\``,
     difficulty: "medium",
     starterCode: `function quickSort(arr) {
 }`,
@@ -9002,7 +9647,14 @@ Write \`quickSort(arr)\`, returning a new sorted array (ascending).`,
 
 ## Your task
 
-Write \`binarySearch(arr, target)\` for a sorted array of unique values, returning the index of \`target\`, or \`-1\` if it's not present.`,
+Write \`binarySearch(arr, target)\` for a sorted array of unique values, returning the index of \`target\`, or \`-1\` if it's not present.
+
+\`\`\`js
+binarySearch([1, 3, 5, 7, 9], 7)
+// 3
+binarySearch([1, 3, 5, 7, 9], 4)
+// -1 — not present in the array
+\`\`\``,
     difficulty: "easy",
     starterCode: `function binarySearch(arr, target) {
 }`,
@@ -9035,7 +9687,12 @@ Write \`binarySearch(arr, target)\` for a sorted array of unique values, returni
 
 ## Your task
 
-Write \`searchFirstIndex(arr, target)\`, returning the index of the first (leftmost) occurrence of \`target\`, or \`-1\`.`,
+Write \`searchFirstIndex(arr, target)\`, returning the index of the first (leftmost) occurrence of \`target\`, or \`-1\`.
+
+\`\`\`js
+searchFirstIndex([1, 2, 2, 2, 3], 2)
+// 1 — the leftmost of the three 2s
+\`\`\``,
     difficulty: "easy",
     starterCode: `function searchFirstIndex(arr, target) {
 }`,
@@ -9074,7 +9731,12 @@ Write \`searchFirstIndex(arr, target)\`, returning the index of the first (leftm
 
 ## Your task
 
-Write \`searchLastIndex(arr, target)\`.`,
+Write \`searchLastIndex(arr, target)\`.
+
+\`\`\`js
+searchLastIndex([1, 2, 2, 2, 3], 2)
+// 3 — the rightmost of the three 2s
+\`\`\``,
     difficulty: "easy",
     starterCode: `function searchLastIndex(arr, target) {
 }`,
@@ -9113,7 +9775,12 @@ Write \`searchLastIndex(arr, target)\`.`,
 
 ## Your task
 
-Write \`findElementBefore(arr, target)\`, returning that value, or \`undefined\` if none exists.`,
+Write \`findElementBefore(arr, target)\`, returning that value, or \`undefined\` if none exists.
+
+\`\`\`js
+findElementBefore([1, 3, 5, 7, 9], 6)
+// 5 — the largest value strictly less than 6
+\`\`\``,
     difficulty: "easy",
     starterCode: `function findElementBefore(arr, target) {
 }`,
@@ -9150,7 +9817,12 @@ Write \`findElementBefore(arr, target)\`, returning that value, or \`undefined\`
 
 ## Your task
 
-Write \`findElementAfter(arr, target)\`, returning that value, or \`undefined\` if none exists.`,
+Write \`findElementAfter(arr, target)\`, returning that value, or \`undefined\` if none exists.
+
+\`\`\`js
+findElementAfter([1, 3, 5, 7, 9], 6)
+// 7 — the smallest value strictly greater than 6
+\`\`\``,
     difficulty: "easy",
     starterCode: `function findElementAfter(arr, target) {
 }`,
@@ -9187,7 +9859,13 @@ Write \`findElementAfter(arr, target)\`, returning that value, or \`undefined\` 
 
 ## Your task
 
-Write \`firstBadVersion(n, isBad)\`, returning the first version number in \`1..n\` for which \`isBad(version)\` is \`true\`, using binary search rather than a linear scan.`,
+Write \`firstBadVersion(n, isBad)\`, returning the first version number in \`1..n\` for which \`isBad(version)\` is \`true\`, using binary search rather than a linear scan.
+
+\`\`\`js
+const isBad = (version) => version >= 5;
+firstBadVersion(10, isBad)
+// 5 — the first version where isBad(version) becomes true
+\`\`\``,
     difficulty: "medium",
     starterCode: `function firstBadVersion(n, isBad) {
 }`,
@@ -9220,7 +9898,14 @@ Write \`firstBadVersion(n, isBad)\`, returning the first version number in \`1..
 
 ## Your task
 
-Write \`findMedianSortedArrays(nums1, nums2)\`, returning the median of all values from both arrays combined — the middle value for an odd total count, or the average of the two middle values for an even count. A straightforward merge-based approach is completely valid here; the classic optimization down to O(log(min(m, n))) via a binary-search partition is a great follow-up once this works.`,
+Write \`findMedianSortedArrays(nums1, nums2)\`, returning the median of all values from both arrays combined — the middle value for an odd total count, or the average of the two middle values for an even count. A straightforward merge-based approach is completely valid here; the classic optimization down to O(log(min(m, n))) via a binary-search partition is a great follow-up once this works.
+
+\`\`\`js
+findMedianSortedArrays([1, 3], [2])
+// 2 — the middle value of the merged [1, 2, 3]
+findMedianSortedArrays([1, 2], [3, 4])
+// 2.5 — the average of the two middle values in [1, 2, 3, 4]
+\`\`\``,
     difficulty: "medium",
     starterCode: `function findMedianSortedArrays(nums1, nums2) {
 }`,
@@ -9257,7 +9942,14 @@ Write \`findMedianSortedArrays(nums1, nums2)\`, returning the median of all valu
 
 ## Your task
 
-Write \`isPrime(n)\`, returning \`true\` if \`n\` is prime and \`false\` otherwise. Numbers less than 2 (including 0, 1, and negatives) are not prime.`,
+Write \`isPrime(n)\`, returning \`true\` if \`n\` is prime and \`false\` otherwise. Numbers less than 2 (including 0, 1, and negatives) are not prime.
+
+\`\`\`js
+isPrime(7)
+// true
+isPrime(8)
+// false — 8 = 2 x 4
+\`\`\``,
     difficulty: "easy",
     starterCode: `function isPrime(n) {
 }`,
@@ -9288,7 +9980,12 @@ Write \`isPrime(n)\`, returning \`true\` if \`n\` is prime and \`false\` otherwi
 
 ## Your task
 
-Write \`lookAndSay(n)\`, returning the \`n\`th term (1-indexed) as a string, built by run-length-encoding the \`(n-1)\`th term.`,
+Write \`lookAndSay(n)\`, returning the \`n\`th term (1-indexed) as a string, built by run-length-encoding the \`(n-1)\`th term.
+
+\`\`\`js
+lookAndSay(4)
+// "1211" — the 3rd term "21" read aloud as "one 2, one 1"
+\`\`\``,
     difficulty: "easy",
     starterCode: `function lookAndSay(n) {
 }`,
@@ -9330,7 +10027,12 @@ Write \`lookAndSay(n)\`, returning the \`n\`th term (1-indexed) as a string, bui
 
 ## Your task
 
-Write \`fibRecursive(n)\` using plain recursion (no memoization), returning the \`n\`th Fibonacci number (0-indexed: \`fibRecursive(0) === 0\`, \`fibRecursive(1) === 1\`). This version is intentionally about recursion mechanics, not performance.`,
+Write \`fibRecursive(n)\` using plain recursion (no memoization), returning the \`n\`th Fibonacci number (0-indexed: \`fibRecursive(0) === 0\`, \`fibRecursive(1) === 1\`). This version is intentionally about recursion mechanics, not performance.
+
+\`\`\`js
+fibRecursive(10)
+// 55
+\`\`\``,
     difficulty: "easy",
     starterCode: `function fibRecursive(n) {
 }`,
@@ -9357,7 +10059,12 @@ Write \`fibRecursive(n)\` using plain recursion (no memoization), returning the 
 
 ## Your task
 
-Write \`generateFibonacci(count)\`, returning an array of the first \`count\` Fibonacci numbers, starting from \`0\` (i.e. \`[0, 1, 1, 2, 3, ...]\`).`,
+Write \`generateFibonacci(count)\`, returning an array of the first \`count\` Fibonacci numbers, starting from \`0\` (i.e. \`[0, 1, 1, 2, 3, ...]\`).
+
+\`\`\`js
+generateFibonacci(5)
+// [0, 1, 1, 2, 3]
+\`\`\``,
     difficulty: "medium",
     starterCode: `function generateFibonacci(count) {
 }`,
@@ -9390,7 +10097,12 @@ Write \`generateFibonacci(count)\`, returning an array of the first \`count\` Fi
 
 ## Your task
 
-Write \`findZeroSumPair(nums)\`, returning the first such pair found while scanning left to right (as \`[earlierValue, laterValue]\`), or \`null\` if none exists.`,
+Write \`findZeroSumPair(nums)\`, returning the first such pair found while scanning left to right (as \`[earlierValue, laterValue]\`), or \`null\` if none exists.
+
+\`\`\`js
+findZeroSumPair([4, -4, 2])
+// [4, -4]
+\`\`\``,
     difficulty: "easy",
     starterCode: `function findZeroSumPair(nums) {
 }`,
@@ -9421,7 +10133,12 @@ Write \`findZeroSumPair(nums)\`, returning the first such pair found while scann
 
 ## Your task
 
-Write \`largestDifference(nums)\` in a single O(n) pass, tracking the minimum value seen so far and the best difference found using it. An array with fewer than 2 elements has no valid pair — return \`undefined\`.`,
+Write \`largestDifference(nums)\` in a single O(n) pass, tracking the minimum value seen so far and the best difference found using it. An array with fewer than 2 elements has no valid pair — return \`undefined\`.
+
+\`\`\`js
+largestDifference([7, 1, 5, 3, 6, 4])
+// 5 — buy at 1, sell at 6
+\`\`\``,
     difficulty: "easy",
     starterCode: `function largestDifference(nums) {
 }`,
@@ -9454,7 +10171,12 @@ Write \`largestDifference(nums)\` in a single O(n) pass, tracking the minimum va
 
 ## Your task
 
-Write \`mergeSortedArrays(a, b)\` in O(a.length + b.length) time, using two pointers that each walk one array and always advance whichever currently points at the smaller value.`,
+Write \`mergeSortedArrays(a, b)\` in O(a.length + b.length) time, using two pointers that each walk one array and always advance whichever currently points at the smaller value.
+
+\`\`\`js
+mergeSortedArrays([1, 3, 5], [2, 4, 6])
+// [1, 2, 3, 4, 5, 6]
+\`\`\``,
     difficulty: "easy",
     starterCode: `function mergeSortedArrays(a, b) {
 }`,
@@ -9486,7 +10208,12 @@ Write \`mergeSortedArrays(a, b)\` in O(a.length + b.length) time, using two poin
 
 ## Your task
 
-Write \`intersectSorted(a, b)\`, returning the unique values common to both sorted arrays, in ascending order.`,
+Write \`intersectSorted(a, b)\`, returning the unique values common to both sorted arrays, in ascending order.
+
+\`\`\`js
+intersectSorted([1, 2, 2, 3], [2, 2, 4])
+// [2] — common values are deduplicated
+\`\`\``,
     difficulty: "easy",
     starterCode: `function intersectSorted(a, b) {
 }`,
@@ -9527,7 +10254,12 @@ Write \`intersectSorted(a, b)\`, returning the unique values common to both sort
 
 ## Your task
 
-Write \`intersectUnsorted(a, b)\`, returning the unique values common to both arrays; order in the result doesn't matter.`,
+Write \`intersectUnsorted(a, b)\`, returning the unique values common to both arrays; order in the result doesn't matter.
+
+\`\`\`js
+intersectUnsorted([3, 1, 2, 1], [2, 2, 4])
+// [2] — the only value common to both, deduplicated
+\`\`\``,
     difficulty: "easy",
     starterCode: `function intersectUnsorted(a, b) {
 }`,
@@ -9554,7 +10286,12 @@ Write \`intersectUnsorted(a, b)\`, returning the unique values common to both ar
 
 ## Your task
 
-Write \`findAvailableSlots(busy, workStart, workEnd)\`, returning an array of \`[start, end]\` free intervals, in chronological order. \`busy\` may be given in any order and may contain overlapping intervals — sort/merge as needed before computing the gaps.`,
+Write \`findAvailableSlots(busy, workStart, workEnd)\`, returning an array of \`[start, end]\` free intervals, in chronological order. \`busy\` may be given in any order and may contain overlapping intervals — sort/merge as needed before computing the gaps.
+
+\`\`\`js
+findAvailableSlots([[10, 11], [13, 14]], 9, 17)
+// [[9, 10], [11, 13], [14, 17]] — the gaps before, between, and after the meetings
+\`\`\``,
     difficulty: "medium",
     starterCode: `function findAvailableSlots(busy, workStart, workEnd) {
 }`,
@@ -9585,11 +10322,16 @@ Write \`findAvailableSlots(busy, workStart, workEnd)\`, returning an array of \`
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Longest substring with unique characters",
-    description: `A **sliding-window** classic: find the length of the longest substring that has no repeated characters. The naive approach checks every substring; the sliding-window version instead grows a window from the right and only jumps its left edge forward when a repeat is actually found inside the current window.
+    description: `A **sliding window** classic for finding the longest run of non-repeating characters in a string — the pattern behind "longest substring without repeating characters" as commonly asked in JS interviews. Instead of restarting the scan on every repeat, you track each character's last-seen index and jump the window's start forward only as far as needed, keeping the whole scan O(n).
 
 ## Your task
 
-Write \`lengthOfLongestUniqueSubstring(s)\` in O(n) time, returning the length (not the substring itself) of the longest run of unique characters in \`s\`.`,
+Write \`lengthOfLongestUniqueSubstring(s)\` in O(n) time. It returns the length of the longest contiguous substring of \`s\` with no repeated characters.
+
+\`\`\`js
+lengthOfLongestUniqueSubstring("abcabcbb")
+// 3 — the longest run is "abc"
+\`\`\``,
     difficulty: "easy",
     starterCode: `function lengthOfLongestUniqueSubstring(s) {
 }`,
@@ -9623,11 +10365,18 @@ Write \`lengthOfLongestUniqueSubstring(s)\` in O(n) time, returning the length (
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Validate string of parentheses",
-    description: `Check whether every bracket in a string is properly opened, closed, and nested — for \`()\`, \`[]\`, and \`{}\` — the kind of validation that also underlies checking whether code or a parser's input is well-formed.
+    description: `A **stack-based** check for whether every bracket in a string is properly opened, closed, and nested — the classic "valid parentheses" interview question, extended here to all three bracket types: \`()\`, \`[]\`, and \`{}\`.
 
 ## Your task
 
-Write \`isValidParens(s)\`, returning \`true\` only if every closing bracket matches the most recently opened, still-unclosed bracket of the same type, and no bracket is left unclosed at the end.`,
+Write \`isValidParens(s)\`, returning \`true\` if every bracket is matched and correctly nested, \`false\` otherwise.
+
+\`\`\`js
+isValidParens("({[]})")
+// true — every bracket closes in the right order
+isValidParens("(]")
+// false — mismatched bracket types
+\`\`\``,
     difficulty: "easy",
     starterCode: `function isValidParens(s) {
 }`,
@@ -9659,11 +10408,22 @@ Write \`isValidParens(s)\`, returning \`true\` only if every closing bracket mat
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Pick up stones",
-    description: `A **Nim-style** game theory problem: two players alternate taking 1, 2, or 3 stones from a pile; whoever takes the last stone wins. Work out whether the player who goes first can force a win, no matter what the second player does.
+    description: `A **Nim-style** combinatorial game: two players alternate taking 1, 2, or 3 stones from a pile, and whoever takes the last stone wins. Determining the winner ahead of time — without simulating every possible sequence of moves — comes down to a single modulo check once you see the pattern.
+
+## The idea
+
+Whatever the first player takes, the opponent can always take enough to make the pair of moves sum to 4. So any pile that's a multiple of 4 is a forced loss for whoever has to move into it next.
 
 ## Your task
 
-Write \`canFirstPlayerWin(n)\` for a starting pile of \`n\` stones, assuming both players play optimally, returning \`true\` if the first player can force a win.`,
+Write \`canFirstPlayerWin(n)\` for a starting pile of \`n\` stones, assuming both players play optimally. Return \`true\` if the first player can force a win.
+
+\`\`\`js
+canFirstPlayerWin(4)
+// false — a multiple of 4 is a forced loss for the first player
+canFirstPlayerWin(5)
+// true — the first player can force a win
+\`\`\``,
     difficulty: "easy",
     starterCode: `function canFirstPlayerWin(n) {
 }`,
@@ -9685,11 +10445,16 @@ Write \`canFirstPlayerWin(n)\` for a starting pile of \`n\` stones, assuming bot
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Find the single integer",
-    description: `Every number in the array appears exactly twice, except one lone value — find it, but skip the obvious hash-count approach and do it in O(n) time with **O(1) extra space** instead, using a neat bitwise trick.
+    description: `A classic **bitwise XOR** trick: given an array where every number appears exactly twice except one, find that one unpaired number in O(n) time and O(1) space — no extra hash set required. It works because \`x ^ x === 0\` and XOR is associative and commutative, so XOR-ing the whole array cancels every paired number down to zero, leaving only the singleton.
 
 ## Your task
 
-Write \`singleNumber(nums)\` using bitwise XOR: XOR-ing a value with itself cancels to \`0\`, and XOR is associative and commutative, so XOR-ing every element together leaves only the unpaired value standing.`,
+Write \`singleNumber(nums)\` using bitwise XOR.
+
+\`\`\`js
+singleNumber([4, 1, 2, 1, 2])
+// 4 — every other number appears twice and cancels out
+\`\`\``,
     difficulty: "easy",
     starterCode: `function singleNumber(nums) {
 }`,
@@ -9711,11 +10476,16 @@ Write \`singleNumber(nums)\` using bitwise XOR: XOR-ing a value with itself canc
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Move zeros",
-    description: `Push every \`0\` to the end of the array while preserving the relative order of the non-zero elements — and do it **in place**, without allocating a new array for the result.
+    description: `An in-place array rearrangement often asked as "move all zeroes to the end": push every \`0\` in an array to the back while preserving the relative order of the non-zero elements, without allocating a new array.
 
 ## Your task
 
-Write \`moveZeroes(nums)\`, mutating \`nums\` so all non-zero elements keep their original relative order at the front, followed by all the zeros, and returning that same mutated array.`,
+Write \`moveZeroes(nums)\`, mutating \`nums\` in place and returning it. Non-zero elements keep their original relative order; every \`0\` ends up at the end.
+
+\`\`\`js
+moveZeroes([0, 1, 0, 3, 12])
+// [1, 3, 12, 0, 0]
+\`\`\``,
     difficulty: "medium",
     starterCode: `function moveZeroes(nums) {
 }`,
@@ -9747,11 +10517,16 @@ Write \`moveZeroes(nums)\`, mutating \`nums\` so all non-zero elements keep thei
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Count palindromic substrings",
-    description: `Count every substring (including single characters) that reads the same forwards and backwards. Checking all O(n²) substrings one by one works but is wasteful — the **expand-around-center** technique does better by growing outward from each of the \`2n - 1\` possible centers (every character, plus every gap between two characters) and stopping the moment symmetry breaks.
+    description: `Counting every **palindromic substring** in a string — including single characters and overlapping matches — using the expand-around-center technique: every palindrome has a center (a character, for odd length, or a gap between two characters, for even length), so trying all 2n-1 centers and expanding outward while both sides match finds them all in O(n²).
 
 ## Your task
 
-Write \`countPalindromicSubstrings(s)\`.`,
+Write \`countPalindromicSubstrings(s)\`, returning the total count of palindromic substrings (including single characters, and counting overlapping ones separately).
+
+\`\`\`js
+countPalindromicSubstrings("aaa")
+// 6 — a, a, a, aa, aa, aaa all count individually
+\`\`\``,
     difficulty: "medium",
     starterCode: `function countPalindromicSubstrings(s) {
 }`,
@@ -9785,11 +10560,16 @@ Write \`countPalindromicSubstrings(s)\`.`,
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "Angle between clock hands",
-    description: `Compute the smaller angle between the hour and minute hands of an analog clock at a given time — a classic brain-teaser because the hour hand isn't pinned to its hour mark, it creeps forward continuously as the minutes pass.
+    description: `A classic **clock angle problem**: compute the smaller angle between an analog clock's hour and minute hands at a given time. The minute hand moves 6° per minute; the hour hand moves 30° per hour *plus* an extra 0.5° per minute, since it creeps forward between hour marks rather than jumping.
 
 ## Your task
 
-Write \`angleBetweenHands(hours, minutes)\`, returning the angle in degrees (0-180).`,
+Write \`angleBetweenHands(hours, minutes)\`, returning the angle in degrees, always the smaller of the two possible angles (0-180).
+
+\`\`\`js
+angleBetweenHands(3, 0)
+// 90 — the hour hand at 3 and the minute hand at 12 are a quarter-turn apart
+\`\`\``,
     difficulty: "medium",
     starterCode: `function angleBetweenHands(hours, minutes) {
 }`,
@@ -9815,11 +10595,16 @@ Write \`angleBetweenHands(hours, minutes)\`, returning the angle in degrees (0-1
     companies: ["Google", "Amazon", "Meta", "ByteDance"],
     category: "javascript-runtime",
     title: "K-th largest element in an unsorted array",
-    description: `Find the k-th largest value in an array — not the k-th *distinct* value, so duplicates each count as their own position (the array \`[5,5,4]\`'s 2nd largest is \`5\`, not \`4\`).
+    description: `Finding the **k-th largest element** in an unsorted array — a staple "quickselect vs. sort" interview question. Note it's the k-th largest value *by position*, not the k-th distinct value: duplicates each count individually toward k.
 
 ## Your task
 
-Write \`kthLargest(nums, k)\`, returning the k-th largest value in \`nums\`. Sorting descending and indexing at \`k - 1\` is completely valid here; a heap-based O(n log k) solution is a nice follow-up once this works.`,
+Write \`kthLargest(nums, k)\`.
+
+\`\`\`js
+kthLargest([3, 2, 1, 5, 6, 4], 2)
+// 5 — the 2nd largest value in the array
+\`\`\``,
     difficulty: "medium",
     starterCode: `function kthLargest(nums, k) {
 }`,
@@ -9843,11 +10628,18 @@ Write \`kthLargest(nums, k)\`, returning the k-th largest value in \`nums\`. Sor
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Implement Math.pow()",
-    description: `Hand-rolled exponentiation, done the way real implementations do it: **fast (divide-and-conquer) exponentiation**, which computes \`base^exponent\` in O(log n) multiplications instead of the O(n) you'd get from multiplying \`base\` by itself \`exponent\` times in a loop.
+    description: `Implementing **\`Math.pow()\`** from scratch using fast exponentiation (divide-and-conquer / "exponentiation by squaring") instead of a naive loop that multiplies \`base\` by itself \`exponent\` times. Halving the exponent at each recursive step gets this down to O(log n) instead of O(n), and negative exponents just invert the positive-exponent result.
 
 ## Your task
 
-Write \`myPow(base, exponent)\`, handling negative exponents (invert the positive-exponent result) and \`exponent === 0\` (always \`1\`), using the halving identity \`base^n = (base^(n/2))^2\` rather than a naive multiplication loop.`,
+Write \`myPow(base, exponent)\`, handling negative exponents.
+
+\`\`\`js
+myPow(2, 10)
+// 1024
+myPow(2, -2)
+// 0.25 — a negative exponent inverts the result
+\`\`\``,
     difficulty: "easy",
     starterCode: `function myPow(base, exponent) {
 }`,
@@ -9873,11 +10665,16 @@ Write \`myPow(base, exponent)\`, handling negative exponents (invert the positiv
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Implement Math.sqrt()",
-    description: `Approximate a square root the way numerical methods actually do it: **Newton's method** starts from a rough guess and repeatedly refines it — \`guess = (guess + x / guess) / 2\` — until the guess converges to the true root.
+    description: `Implementing **\`Math.sqrt()\`** from scratch with Newton's method: starting from a guess, repeatedly refine it with \`guess = (guess + x / guess) / 2\` until it converges on the true square root — no built-in \`Math.sqrt\` allowed.
 
 ## Your task
 
-Write \`mySqrt(x)\`, converging to a precise floating-point result via repeated refinement. Return \`0\` for \`x === 0\` and \`NaN\` for a negative \`x\`.`,
+Write \`mySqrt(x)\`, converging to a precise floating-point result via Newton's method.
+
+\`\`\`js
+mySqrt(16)
+// 4
+\`\`\``,
     difficulty: "medium",
     starterCode: `function mySqrt(x) {
 }`,
@@ -9906,11 +10703,18 @@ Write \`mySqrt(x)\`, converging to a precise floating-point result via repeated 
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Implement Math.clz32()",
-    description: `\`Math.clz32\` — "count leading zeros, 32-bit" — is a low-level bit-twiddling primitive V8 exposes for exactly the operation its name suggests: count how many leading zero bits a number has in its **32-bit unsigned** binary representation, useful for things like computing the next power of two or a fast integer log2.
+    description: `Implementing **\`Math.clz32()\`** — count leading zero bits ("count leading zeros") in a number's 32-bit unsigned binary representation, a low-level primitive V8 exposes for bit-twiddling code like hashing and fast integer math.
 
 ## Your task
 
-Write \`myClz32(x)\`, treating \`x\` as an unsigned 32-bit integer and returning the count of leading zero bits before the first \`1\`. \`myClz32(0)\` is \`32\` — a value with no set bits has all 32 bits counted as leading zeros.`,
+Write \`myClz32(x)\`, scanning from the most significant bit (31) down to the first set bit.
+
+\`\`\`js
+myClz32(1000)
+// 22 — 1000 needs 10 bits, leaving 22 leading zeros in a 32-bit word
+myClz32(0)
+// 32 — no bits are set at all
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myClz32(x) {
 }`,
@@ -9940,11 +10744,16 @@ Write \`myClz32(x)\`, treating \`x\` as an unsigned 32-bit integer and returning
     companies: ["Google", "ByteDance"],
     category: "javascript-runtime",
     title: "BigInt addition",
-    description: `\`Number\` can only represent integers exactly up to \`Number.MAX_SAFE_INTEGER\` (about 9 quadrillion) — anything bigger silently loses precision. Representing huge integers as strings and adding them digit by digit, the same way you'd add on paper, sidesteps that limit entirely.
+    description: `**BigInt addition without native BigInt**: add two arbitrarily large non-negative integers represented as strings, digit by digit from the right, exactly like grade-school column addition — necessary once numbers exceed what JS's \`Number\` type can represent exactly (beyond \`Number.MAX_SAFE_INTEGER\`).
 
 ## Your task
 
-Write \`bigIntAdd(a, b)\`, doing grade-school column addition digit by digit, without converting to \`Number\` or using the native \`BigInt\`.`,
+Write \`bigIntAdd(a, b)\`, doing column addition with a carry, without converting to \`Number\` or using the native \`BigInt\`.
+
+\`\`\`js
+bigIntAdd("999", "1")
+// "1000" — the carry cascades all the way through
+\`\`\``,
     difficulty: "easy",
     starterCode: `function bigIntAdd(a, b) {
 }`,
@@ -9980,11 +10789,16 @@ Write \`bigIntAdd(a, b)\`, doing grade-school column addition digit by digit, wi
     companies: ["Google"],
     category: "javascript-runtime",
     title: "BigInt subtraction",
-    description: `The subtraction counterpart to string-based BigInt addition: same column-by-column approach, but borrowing instead of carrying whenever a digit in \`a\` is smaller than the corresponding digit in \`b\`. This version assumes the result is non-negative (\`a >= b\`) — the signed version handles the general case.
+    description: `The subtraction counterpart to string-based BigInt addition: subtract one arbitrarily large non-negative integer string from another using column subtraction with borrowing, assuming the result is non-negative (\`a >= b\`).
 
 ## Your task
 
-Write \`bigIntSubtract(a, b)\`, using column subtraction with borrowing.`,
+Write \`bigIntSubtract(a, b)\`, assuming \`a >= b\`.
+
+\`\`\`js
+bigIntSubtract("1000", "999")
+// "1" — a borrow cascades through multiple digits
+\`\`\``,
     difficulty: "easy",
     starterCode: `function bigIntSubtract(a, b) {
 }`,
@@ -10024,11 +10838,18 @@ Write \`bigIntSubtract(a, b)\`, using column subtraction with borrowing.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "BigInt addition with sign",
-    description: `Extend big-integer addition to handle negative numbers (a leading \`-\`). The real complexity isn't the digit math — it's the sign bookkeeping: same-sign operands just add their magnitudes, but opposite signs mean subtracting the smaller magnitude from the larger and taking the sign of whichever was bigger.
+    description: `Extending string-based BigInt addition to handle **negative numbers** (a leading \`-\`): same-sign operands add their magnitudes and keep that sign, while different-sign operands fall back to subtracting the smaller magnitude from the larger and taking the sign of whichever had the bigger magnitude.
 
 ## Your task
 
-Write \`bigIntAddSigned(a, b)\`, where either argument may start with \`-\`.`,
+Write \`bigIntAddSigned(a, b)\`, where either argument may start with \`-\`.
+
+\`\`\`js
+bigIntAddSigned("-5", "3")
+// "-2" — a negative plus a smaller positive stays negative
+bigIntAddSigned("5", "-8")
+// "-3" — a positive plus a larger-magnitude negative goes negative
+\`\`\``,
     difficulty: "medium",
     starterCode: `function bigIntAddSigned(a, b) {
 }`,
@@ -10106,11 +10927,16 @@ Write \`bigIntAddSigned(a, b)\`, where either argument may start with \`-\`.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "BigInt subtraction with sign",
-    description: `\`a - b\` is really just \`a + (-b)\` — flip the second operand's effective sign and reuse the exact same same-sign/different-sign addition logic. This exercise extends that idea to arbitrarily large signed integer strings.
+    description: `\`a - b\` is the same as \`a + (-b)\` — this extends that identity to arbitrarily large signed integer strings, reusing the same same-sign/different-sign logic as signed BigInt addition but with \`b\`'s effective sign flipped first.
 
 ## Your task
 
-Write \`bigIntSubtractSigned(a, b)\`.`,
+Write \`bigIntSubtractSigned(a, b)\`.
+
+\`\`\`js
+bigIntSubtractSigned("3", "5")
+// "-2" — subtracting a larger number goes negative
+\`\`\``,
     difficulty: "medium",
     starterCode: `function bigIntSubtractSigned(a, b) {
 }`,
@@ -10188,11 +11014,16 @@ Write \`bigIntSubtractSigned(a, b)\`.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "BigInt multiplication",
-    description: `Multiply two arbitrarily large non-negative integer strings the way you'd do it on paper: every digit pair \`a[i] * b[j]\` contributes to a specific position in the result, so the whole thing works out to grade-school long multiplication instead of a native \`*\` that would silently overflow \`Number\`'s safe integer range.
+    description: `**BigInt multiplication without native BigInt**: multiply two arbitrarily large non-negative integer strings using the grade-school digit-by-digit method, where each pair of digits \`a[i] * b[j]\` contributes to positions \`i+j\` and \`i+j+1\` of a result array before it's converted back to a string.
 
 ## Your task
 
-Write \`bigIntMultiply(a, b)\`.`,
+Write \`bigIntMultiply(a, b)\`.
+
+\`\`\`js
+bigIntMultiply("123", "456")
+// "56088"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function bigIntMultiply(a, b) {
 }`,
@@ -10227,11 +11058,16 @@ Write \`bigIntMultiply(a, b)\`.`,
     companies: ["Google"],
     category: "javascript-runtime",
     title: "BigInt division",
-    description: `Long division on arbitrarily large non-negative integer strings: process the dividend one digit at a time, build up a running remainder, and repeatedly subtract the divisor from it to count how many times it fits. The result is the integer (floored) quotient, no fractional part.
+    description: `**Long division on arbitrarily large integer strings**: process the dividend one digit at a time, building up a running remainder and repeatedly subtracting the divisor from it to count how many times it fits — exactly like long division on paper — producing the floored integer quotient.
 
 ## Your task
 
-Write \`bigIntDivide(a, b)\`.`,
+Write \`bigIntDivide(a, b)\`.
+
+\`\`\`js
+bigIntDivide("7", "2")
+// "3" — the result is floored, not fractional
+\`\`\``,
     difficulty: "medium",
     starterCode: `function bigIntDivide(a, b) {
 }`,
@@ -10291,11 +11127,16 @@ Write \`bigIntDivide(a, b)\`.`,
     companies: ["Stripe"],
     category: "javascript-runtime",
     title: "BigDecimal addition",
-    description: `Floating-point math famously gets \`0.1 + 0.2\` wrong (\`0.30000000000000004\`), because binary floats can't represent most decimal fractions exactly — a real problem when the numbers are money. Fixed-point decimal-string arithmetic avoids that entirely by never converting to a binary float in the first place, working digit-by-digit instead.
+    description: `Floating-point math famously gets \`0.1 + 0.2\` wrong (\`0.30000000000000004\`) because binary floats can't represent most decimal fractions exactly. **Fixed-point decimal-string arithmetic** avoids that entirely by never converting to a binary float — instead it pads the fractional parts to equal length and adds them as plain integer strings.
 
 ## Your task
 
-Write \`bigDecimalAdd(a, b)\`, adding two non-negative decimal strings (like \`"12.34"\`) exactly.`,
+Write \`bigDecimalAdd(a, b)\`, adding two non-negative decimal strings exactly.
+
+\`\`\`js
+bigDecimalAdd("0.1", "0.2")
+// "0.3" — exact, unlike native floating-point 0.1 + 0.2
+\`\`\``,
     difficulty: "medium",
     starterCode: `function bigDecimalAdd(a, b) {
 }`,
@@ -10346,11 +11187,16 @@ Write \`bigDecimalAdd(a, b)\`, adding two non-negative decimal strings (like \`"
     companies: ["Stripe"],
     category: "javascript-runtime",
     title: "BigDecimal subtraction",
-    description: `The subtraction counterpart to decimal-string addition, assuming \`a >= b\`. The tricky part is a borrow that can cross the decimal point entirely — subtracting \`1.25\` from \`5.00\` needs to borrow from the integer part, not just within the fractional digits.
+    description: `The subtraction counterpart to decimal-string addition, assuming \`a >= b\`: pad both fractional parts to equal length, then subtract — with a borrow that can cross from the fractional part all the way into the integer part.
 
 ## Your task
 
-Write \`bigDecimalSubtract(a, b)\`.`,
+Write \`bigDecimalSubtract(a, b)\`.
+
+\`\`\`js
+bigDecimalSubtract("5.00", "1.25")
+// "3.75" — a borrow crosses from the fractional part into the integer part
+\`\`\``,
     difficulty: "medium",
     starterCode: `function bigDecimalSubtract(a, b) {
 }`,
@@ -10405,11 +11251,16 @@ Write \`bigDecimalSubtract(a, b)\`.`,
     companies: ["Stripe"],
     category: "javascript-runtime",
     title: "BigDecimal multiplication",
-    description: `Multiply two decimal strings exactly: strip the decimal points, multiply the digits as plain integers using grade-school long multiplication, then reinsert the decimal point based on the total number of fractional digits across both inputs combined.
+    description: `Multiplying two decimal strings **exactly** — no floating-point rounding — by stripping the decimal points, multiplying the digits as plain integers, and reinserting the decimal point based on the total number of fractional digits in both inputs combined.
 
 ## Your task
 
-Write \`bigDecimalMultiply(a, b)\`.`,
+Write \`bigDecimalMultiply(a, b)\`.
+
+\`\`\`js
+bigDecimalMultiply("0.1", "0.2")
+// "0.02" — stays exact, unlike native floating-point multiplication
+\`\`\``,
     difficulty: "medium",
     starterCode: `function bigDecimalMultiply(a, b) {
 }`,
@@ -10454,11 +11305,16 @@ Write \`bigDecimalMultiply(a, b)\`.`,
     companies: ["Stripe"],
     category: "javascript-runtime",
     title: "BigDecimal division",
-    description: `Division can produce an infinitely repeating decimal (\`1/3\` never terminates), so unlike the other BigDecimal operations, this one can't just compute an exact result — it takes an explicit \`precision\` and truncates (not rounds) to that many fractional digits instead.
+    description: `Division can produce an infinitely repeating decimal (like \`1/3\`), so this version takes an explicit \`precision\` and **truncates** (not rounds) the quotient to that many fractional digits, by scaling the numerator up with extra zeros before running ordinary long division.
 
 ## Your task
 
-Write \`bigDecimalDivide(a, b, precision)\`, returning the quotient as a string with exactly \`precision\` digits after the decimal point (truncated, not rounded).`,
+Write \`bigDecimalDivide(a, b, precision)\`, returning the quotient as a string with exactly \`precision\` digits after the decimal point, truncated rather than rounded.
+
+\`\`\`js
+bigDecimalDivide("1", "3", 4)
+// "0.3333" — a repeating decimal, truncated at the requested precision
+\`\`\``,
     difficulty: "medium",
     starterCode: `function bigDecimalDivide(a, b, precision) {
 }`,
@@ -10532,11 +11388,22 @@ Write \`bigDecimalDivide(a, b, precision)\`, returning the quotient as a string 
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Next Right Sibling",
-    description: `Given a tree and a node inside it, find whichever node sits immediately to its right at the exact same **depth** — regardless of which parent each one belongs to. Two nodes under different parents still count as neighbors if they're at the same level.
+    description: `A **level-order (BFS) tree traversal** puzzle: given a tree and a target node inside it, find whichever node sits immediately to its right at the exact same depth — even if that neighbor belongs to a completely different parent. This is the same idea as "next right pointers" problems, applied to a plain nested-object tree instead of a binary tree.
+
+## The idea
+
+A BFS traversal visits every node at a given depth in left-to-right order, one queue snapshot at a time. Within that snapshot, the node right after the target is its next right sibling — parent boundaries don't matter.
 
 ## Your task
 
-Write \`findNextRightSibling(root, targetId)\`, where each node is \`{ id, children }\`. Return the sibling's \`id\`, or \`null\` if the target is the rightmost node at its level.`,
+Write \`findNextRightSibling(root, targetId)\`, where each node is \`{ id, children }\`. Return the sibling's \`id\`, or \`null\` if the target is the rightmost node at its level.
+
+\`\`\`js
+// tree: a -> [b -> [d, e], c -> [f]]
+// level 2 (left to right): d, e, f
+findNextRightSibling(root, "e")
+// "f" — e and f are on the same level even though they have different parents
+\`\`\``,
     difficulty: "easy",
     starterCode: `function findNextRightSibling(root, targetId) {
 }`,
@@ -10570,11 +11437,17 @@ Write \`findNextRightSibling(root, targetId)\`, where each node is \`{ id, child
     companies: ["Meta", "Google"],
     category: "javascript-runtime",
     title: "Traverse DOM level by level",
-    description: `A **breadth-first traversal** that groups nodes by their depth in the tree instead of flattening everything into one list — the same shape of traversal DevTools-style tree inspectors and org-chart renderers rely on.
+    description: `A **breadth-first (level-order) traversal** that groups every node by its depth in the tree, returning one array of ids per level — the same shape you'd want to render a tree visually row by row, or to compute per-level statistics.
 
 ## Your task
 
-Write \`levelOrderTraversal(root)\`, where each node is \`{ id, children }\`. Return an array of arrays of ids, one inner array per level, ordered top to bottom.`,
+Write \`levelOrderTraversal(root)\`, where each node is \`{ id, children }\`. Return an array of arrays of ids, one inner array per level, top to bottom.
+
+\`\`\`js
+// tree: a -> [b, c], b -> [d]
+levelOrderTraversal(a)
+// [["a"], ["b", "c"], ["d"]]
+\`\`\``,
     difficulty: "easy",
     starterCode: `function levelOrderTraversal(root) {
 }`,
@@ -10603,11 +11476,16 @@ Write \`levelOrderTraversal(root)\`, where each node is \`{ id, children }\`. Re
     companies: ["Meta", "Amazon"],
     category: "javascript-runtime",
     title: "A simple DOM wrapper for method chaining",
-    description: `A tiny jQuery-style wrapper: select elements once, then chain multiple mutations onto all of them in a single expression.
+    description: `A miniature **jQuery-style DOM wrapper**: select a group of elements once, then chain multiple mutations onto all of them in a single fluent expression, the way \`$('.box').css(...).addClass(...).text(...)\` works in real jQuery.
 
 ## Your task
 
-Write \`$(selector)\`, returning an object wrapping every element matching \`selector\` (via \`document.querySelectorAll\`), with chainable \`css(prop, value)\`, \`addClass(cls)\`, and \`text(str)\` methods (each applying to every matched element and returning the wrapper for chaining), plus a \`length\` property.`,
+Write \`$(selector)\`, returning an object wrapping every element matching \`selector\` (via \`document.querySelectorAll\`), with chainable \`css(prop, value)\`, \`addClass(cls)\`, and \`text(str)\` methods — each applying to every matched element and returning the wrapper itself so calls can chain — plus a \`length\` property.
+
+\`\`\`js
+$(".box").addClass("active").text("hi")
+// every element matching .box now has class "active" and text "hi"
+\`\`\``,
     difficulty: "easy",
     starterCode: `function $(selector) {
 }`,
@@ -10647,11 +11525,18 @@ Write \`$(selector)\`, returning an object wrapping every element matching \`sel
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Create a simple store for DOM elements",
-    description: `Associate arbitrary data with DOM elements without touching the elements themselves — no custom attributes, no expando properties — and without leaking memory once an element is removed from the DOM and should be garbage collected. This is exactly the problem \`WeakMap\` was added to solve, and it's the same trick libraries like jQuery's \`.data()\` rely on internally.
+    description: `Associating arbitrary data with DOM elements **without mutating the elements themselves** — no custom attributes, no expando properties — and without leaking memory once an element is removed from the page and garbage collected.
 
 ## Your task
 
-Write \`createElementStore()\`, returning \`{ set(el, data), get(el), has(el), delete(el) }\`.`,
+Write \`createElementStore()\`, returning \`{ set(el, data), get(el), has(el), delete(el) }\`.
+
+\`\`\`js
+const store = createElementStore();
+store.set(el, { count: 1 });
+store.get(el)
+// { count: 1 }
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createElementStore() {
 }`,
@@ -10687,11 +11572,17 @@ Write \`createElementStore()\`, returning \`{ set(el, data), get(el), has(el), d
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Find corresponding node in two identical DOM trees",
-    description: `A common problem when diffing or syncing two renders of the same UI — think a virtual DOM's old and new tree, or a preview pane mirroring an editor: given two DOM trees with identical structure and a node inside the first one, find the node sitting at that exact same structural position in the second tree.
+    description: `Given **two structurally identical DOM trees** and a node inside the first one, find the node at the exact same structural position in the second tree — useful for diffing two renders of the same component, or syncing a preview pane with an editor pane.
 
 ## Your task
 
-Write \`findCorrespondingNode(rootA, rootB, target)\`, where \`target\` is a real descendant element of \`rootA\`, returning the element at the matching position within \`rootB\`.`,
+Write \`findCorrespondingNode(rootA, rootB, target)\`, where \`target\` is a real descendant element of \`rootA\`. Record the path of child indices from \`rootA\` down to \`target\`, then replay that same path of indices starting from \`rootB\`.
+
+\`\`\`js
+// rootA and rootB are identical <ul><li>A</li><li>B</li></ul> trees
+findCorrespondingNode(rootA, rootB, rootA.children[1])
+// rootB.children[1] — the second <li> in the second tree
+\`\`\``,
     difficulty: "easy",
     starterCode: `function findCorrespondingNode(rootA, rootB, target) {
 }`,
@@ -10729,11 +11620,18 @@ Write \`findCorrespondingNode(rootA, rootB, target)\`, where \`target\` is a rea
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Two-way binding",
-    description: `The core mechanic behind frameworks' \`v-model\`/controlled-input two-way binding: keep an input element and an in-memory value in sync, in both directions.
+    description: `The core mechanic behind frameworks' \`v-model\` / controlled-input **two-way data binding**: keep a real \`<input>\` element and an in-memory value in sync in both directions — calling a setter updates the input on screen, and the user typing into the input updates the value your code reads back.
 
 ## Your task
 
-Write \`createTwoWayBinding(inputEl, initialValue)\`, returning \`{ getValue(), setValue(v) }\`. Calling \`setValue\` must update the input's displayed value; the user typing into the input (an \`"input"\` event) must update what \`getValue()\` returns.`,
+Write \`createTwoWayBinding(inputEl, initialValue)\`, returning \`{ getValue(), setValue(v) }\`. \`setValue\` must update the input's displayed value; the user typing into the input (an "input" event) must update what \`getValue()\` returns.
+
+\`\`\`js
+const binding = createTwoWayBinding(inputEl, "hello");
+binding.setValue("new");
+inputEl.value
+// "new" — setValue() updates the actual DOM input too
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createTwoWayBinding(inputEl, initialValue) {
 }`,
@@ -10768,11 +11666,17 @@ Write \`createTwoWayBinding(inputEl, initialValue)\`, returning \`{ getValue(), 
     companies: ["Meta", "Google"],
     category: "javascript-runtime",
     title: "Get DOM tree height",
-    description: `A basic recursive-tree measurement: how many levels deep does the tree go? Same idea whether you're measuring a DOM subtree, a component tree, or any nested \`{ children }\` structure — the height follows whichever branch goes deepest, not the average.
+    description: `Computing how many levels deep a tree goes — its **height** — where a single leaf node counts as height 1 and an empty tree counts as height 0, following the deepest branch rather than the shallowest.
 
 ## Your task
 
-Write \`treeHeight(root)\`, where each node is \`{ id, children }\`. A single node with no children has height \`1\`; an empty tree (\`null\`) has height \`0\`; otherwise the height is \`1\` plus the tallest child's height.`,
+Write \`treeHeight(root)\`, where each node is \`{ id, children }\`. A single node with no children has height 1; an empty tree (\`null\`) has height 0.
+
+\`\`\`js
+// tree: a -> [b -> [c]]
+treeHeight(a)
+// 3 — three levels deep: a, b, c
+\`\`\``,
     difficulty: "medium",
     starterCode: `function treeHeight(root) {
 }`,
@@ -10796,11 +11700,17 @@ Write \`treeHeight(root)\`, where each node is \`{ id, children }\`. A single no
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Get DOM tags",
-    description: `A flattening exercise: walk a nested \`{ tag, children }\` tree — modeling a simplified DOM — and collect every tag name into a single flat array, **in preorder** (a node before any of its children, children visited left to right), duplicates and all.
+    description: `Flattening a tree into the **full list of every tag name it contains**, in preorder (a node, then each of its children in order), duplicates included — a preorder DFS is the whole trick.
 
 ## Your task
 
-Write \`getAllTags(root)\`, where each node is \`{ tag, children }\`, returning an array of every tag name in preorder. An empty tree (\`null\`) returns \`[]\`.`,
+Write \`getAllTags(root)\`, where each node is \`{ tag, children }\`. Return the tags in preorder, including duplicates.
+
+\`\`\`js
+// tree: div -> [span, span]
+getAllTags(root)
+// ["div", "span", "span"]
+\`\`\``,
     difficulty: "medium",
     starterCode: `function getAllTags(root) {
 }`,
@@ -10823,11 +11733,16 @@ Write \`getAllTags(root)\`, where each node is \`{ tag, children }\`, returning 
     companies: ["Meta", "Grammarly"],
     category: "javascript-runtime",
     title: "Highlight keywords in an HTML string",
-    description: `Search-result highlighting — think a docs site's search box, or Grammarly-style keyword flagging — usually boils down to wrapping every match of a set of terms in \`<mark>\` tags. The tricky part: matching case-insensitively (so searching "world" finds "WORLD") while still preserving each match's *original* casing in the output, rather than normalizing it.
+    description: `Wrapping every occurrence of a set of keywords in \`<mark>\` tags, **case-insensitively**, while preserving each match's original casing — the same highlighting behavior search results and find-in-page features use.
 
 ## Your task
 
-Write \`highlightKeywords(html, keywords)\`, wrapping every occurrence of any keyword in \`<mark>...</mark>\`. (This simplified version works directly on the string — matching inside existing tag names/attributes is out of scope.)`,
+Write \`highlightKeywords(html, keywords)\`. Match case-insensitively, but keep the matched text's original casing in the output. (This simplified version works directly on the string — matching inside existing tag names/attributes is out of scope.)
+
+\`\`\`js
+highlightKeywords("Hello WORLD", ["world"])
+// "Hello <mark>WORLD</mark>" — matched case-insensitively, casing preserved
+\`\`\``,
     difficulty: "medium",
     starterCode: `function highlightKeywords(html, keywords) {
 }`,
@@ -10852,11 +11767,16 @@ Write \`highlightKeywords(html, keywords)\`, wrapping every occurrence of any ke
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Extract all anchor elements from an HTML string",
-    description: `Scraping links out of a blob of HTML — say, extracting outbound links from an email body or a fetched page — means turning raw markup into a real, queryable document first, rather than reaching for regex on HTML (which breaks in all sorts of edge cases).
+    description: `Parsing a raw HTML string and pulling out every \`<a>\` tag's link and visible text — using the browser's own \`DOMParser\` instead of a fragile regex, so nested markup and attribute quoting are handled correctly.
 
 ## Your task
 
-Write \`extractAnchors(html)\`, using \`DOMParser\` to parse \`html\` into a document and return an array of \`{ href, text }\` objects — one per \`<a>\` element, in document order — where \`href\` is the anchor's \`href\` attribute and \`text\` is its visible text content.`,
+Write \`extractAnchors(html)\`, using \`DOMParser\` to return an array of \`{ href, text }\` objects, one per anchor, in document order.
+
+\`\`\`js
+extractAnchors("<a href='/x'>X</a><p>text</p><a href='/y'>Y</a>")
+// [{ href: "/x", text: "X" }, { href: "/y", text: "Y" }]
+\`\`\``,
     difficulty: "medium",
     starterCode: `function extractAnchors(html) {
 }`,
@@ -10882,11 +11802,19 @@ Write \`extractAnchors(html)\`, using \`DOMParser\` to parse \`html\` into a doc
     companies: ["Meta", "Amazon", "Microsoft"],
     category: "javascript-runtime",
     title: "Event delegation",
-    description: `Attaching a listener to every row of a table (or every item in a list you keep adding to) doesn't scale, and misses anything added later. **Event delegation** solves both problems at once: attach one listener to a shared container, and let it figure out — using event bubbling — whether the actual click target matches a selector you care about, including elements added to the container *after* the listener was set up.
+    description: `**Event delegation**: attach a single listener on a parent container that only reacts when the actual click target matches a given selector — including elements added to the container *after* the listener was set up, since the listener lives on the stable container rather than on each individual child.
 
 ## Your task
 
-Write \`createDelegatedListener(container, selector, eventType, handler)\`, returning an unsubscribe function that removes the listener. \`handler\` should be called with \`this\` set to the matched element (the nearest ancestor of the actual event target matching \`selector\`), not the container.`,
+Write \`createDelegatedListener(container, selector, eventType, handler)\`, returning an unsubscribe function. Use \`event.target.closest(selector)\` to find the matching ancestor-or-self, and call \`handler\` with \`this\` set to that matched element.
+
+\`\`\`js
+const off = createDelegatedListener(list, "li", "click", function () {
+  console.log(this.textContent);
+});
+// clicking any <li>, even one added to \`list\` after this call, logs its text
+off(); // removes the listener entirely
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createDelegatedListener(container, selector, eventType, handler) {
 }`,
@@ -10916,11 +11844,18 @@ Write \`createDelegatedListener(container, selector, eventType, handler)\`, retu
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Previous Left Sibling",
-    description: `The mirror image of **Next Right Sibling**: find whichever node sits immediately to the left of a target at the same depth, regardless of which parent either one belongs to.
+    description: `The mirror image of Next Right Sibling: given a tree and a target node, find whichever node sits immediately to its **left** at the exact same depth — regardless of which parent each one belongs to, via the same level-order (BFS) traversal.
 
 ## Your task
 
-Write \`findPreviousLeftSibling(root, targetId)\`, where each node is \`{ id, children }\`. Return the neighbor's \`id\`, or \`null\` if the target is the leftmost node at its level.`,
+Write \`findPreviousLeftSibling(root, targetId)\`, where each node is \`{ id, children }\`. Return the neighbor's \`id\`, or \`null\` if the target is the leftmost node at its level.
+
+\`\`\`js
+// tree: a -> [b -> [d, e], c -> [f]]
+// level 2 (left to right): d, e, f
+findPreviousLeftSibling(root, "f")
+// "e" — e and f are on the same level even though they have different parents
+\`\`\``,
     difficulty: "medium",
     starterCode: `function findPreviousLeftSibling(root, targetId) {
 }`,
@@ -10953,11 +11888,17 @@ Write \`findPreviousLeftSibling(root, targetId)\`, where each node is \`{ id, ch
     companies: ["Google"],
     category: "javascript-runtime",
     title: "Generate a CSS Selector for a target element",
-    description: `Build a CSS selector string that uniquely resolves back to a specific element — the same feature browser DevTools uses for "Copy selector". The simplest reliable selector is an \`#id\`; failing that, you need a path of tag-and-position segments walking up from the element to something stable.
+    description: `Building a CSS selector string that **uniquely resolves back to a specific element** — the same thing browser DevTools does for its "Copy selector" feature: prefer a short \`#id\` selector when available, otherwise recursively build a \`tag:nth-child(n)\` path all the way up to \`document.body\`.
 
 ## Your task
 
-Write \`generateSelector(el)\`. If the element has an \`id\`, return \`"#" + id\` directly. Otherwise, recursively build a path of \`tag:nth-child(n)\` segments (1-indexed position among siblings) from the element up through its ancestors to \`document.body\`, joined with \`" > "\`. \`document.querySelector(generateSelector(el))\` must resolve back to \`el\` exactly.`,
+Write \`generateSelector(el)\`. Prefer an \`#id\` selector when the element has one; otherwise, build a path of \`tag:nth-child(n)\` segments up to \`document.body\`.
+
+\`\`\`js
+// <div id="app"><ul><li>A</li><li>B</li></ul></div>
+generateSelector(secondLi)
+// "#app > ul:nth-child(1) > li:nth-child(2)" — no id on the <li> or <ul>, so a full path is built up to the #app anchor
+\`\`\``,
     difficulty: "medium",
     starterCode: `function generateSelector(el) {
 }`,
@@ -10985,11 +11926,18 @@ Write \`generateSelector(el)\`. If the element has an \`id\`, return \`"#" + id\
     companies: ["Amazon"],
     category: "javascript-runtime",
     title: "Create your own Cookie helper",
-    description: `Cookies are just a semicolon-delimited string of \`key=value\` pairs — parsing and building that format correctly (including URL-encoding values) is the whole exercise.
+    description: `Cookies are just a semicolon-delimited string of \`key=value\` pairs — parsing that format into a usable object, and building a single cookie string back (with proper URL-encoding of values), is the entire exercise behind implementing your own lightweight cookie helper.
 
 ## Your task
 
-Write \`parseCookies(cookieString)\`, returning a plain object of key/value pairs, and \`stringifyCookie(name, value, options)\`, building a single cookie's \`Set-Cookie\`-style string (supporting \`options.days\` for \`max-age\` and \`options.path\`).`,
+Write \`parseCookies(cookieString)\`, returning a plain object of key/value pairs, and \`stringifyCookie(name, value, options)\`, building a single cookie's \`Set-Cookie\`-style string (supporting \`options.days\` for \`max-age\` and \`options.path\`).
+
+\`\`\`js
+parseCookies("a=1; b=2; c=3")
+// { a: "1", b: "2", c: "3" }
+stringifyCookie("name", "a b", {})
+// "name=a%20b"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function parseCookies(cookieString) {
 }
@@ -11027,11 +11975,21 @@ function stringifyCookie(name, value, options = {}) {
     companies: ["Amazon", "Airbnb"],
     category: "javascript-runtime",
     title: "localStorage with expiration",
-    description: `Session tokens, cached API responses, rate-limit counters — a lot of key-value data is only valid for a limited time. This extends simple storage with a **time-to-live**: instead of running a background sweep to clean up stale entries, expiry is checked lazily — an expired entry just silently disappears the next time someone tries to read it.
+    description: `Extending simple key-value storage with a **time-to-live (TTL)**: an entry silently disappears once it's expired, checked lazily on read rather than needing a background sweep or timer — the same idea behind storage wrappers that auto-expire cached API responses.
 
 ## Your task
 
-Write \`createExpiringStorage()\`, returning \`{ set(key, value, ttlMs), get(key) }\`. \`set\` stores \`value\` under \`key\`, expiring after \`ttlMs\` milliseconds; omitting \`ttlMs\` means the entry never expires. \`get\` returns the stored value, or \`null\` if the key doesn't exist or has expired.`,
+Write \`createExpiringStorage()\`, returning \`{ set(key, value, ttlMs), get(key) }\`. Omitting \`ttlMs\` means the entry never expires; once \`ttlMs\` has elapsed since \`set()\`, \`get()\` returns \`null\`.
+
+\`\`\`js
+const cache = createExpiringStorage();
+cache.set("token", "abc123", 1000);
+cache.get("token")
+// "abc123" — immediately after set(), still valid
+// ...1000ms later:
+cache.get("token")
+// null — the ttl has elapsed
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createExpiringStorage() {
 }`,
@@ -11068,11 +12026,21 @@ Write \`createExpiringStorage()\`, returning \`{ set(key, value, ttlMs), get(key
     companies: ["Google"],
     category: "javascript-runtime",
     title: "LRU-style automatic eviction cache",
-    description: `A fixed-capacity cache needs some rule for what to throw away once it's full. **LRU (least-recently-used)** eviction is the classic choice — the same policy browsers use for the HTTP cache: when a new entry needs room, whichever entry hasn't been touched in the longest time is the one that goes.
+    description: `A classic **LRU (least-recently-used) cache implementation in JavaScript**: a fixed-capacity cache that automatically evicts its least-recently-used entry once full — the same eviction policy browsers use for the HTTP cache. A JS \`Map\` preserves insertion order, and re-inserting a key (delete then set) moves it to the end, which is the entire mechanism — no manual doubly-linked list required.
 
 ## Your task
 
-Write \`createLRUCache(capacity)\`, returning \`{ get(key), set(key, value) }\`. Both reading and writing an entry should count as "using" it, refreshing its recency. Once the cache is at \`capacity\` and a new key is set, evict the least-recently-used entry to make room.`,
+Write \`createLRUCache(capacity)\`, returning \`{ get(key), set(key, value) }\`. Both reading and writing an entry counts as "using" it, refreshing its recency.
+
+\`\`\`js
+const cache = createLRUCache(2);
+cache.set("a", 1);
+cache.set("b", 2);
+cache.get("a");        // touches "a", making "b" the least recently used
+cache.set("c", 3);     // capacity exceeded — evicts "b", not "a"
+cache.get("b")
+// undefined — "b" was evicted
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createLRUCache(capacity) {
 }`,
@@ -11111,11 +12079,20 @@ Write \`createLRUCache(capacity)\`, returning \`{ get(key), set(key, value) }\`.
     companies: ["Airbnb", "Pinterest", "TikTok"],
     category: "javascript-runtime",
     title: "Implement an infinite scroll / pagination loader",
-    description: `Infinite scroll looks simple on the surface, but the data layer behind it has a few real gotchas: accumulate items across pages, know when you've actually run out of data, and — critically — never let a fast scroller trigger two overlapping fetches for the same next page.
+    description: `The data layer behind **infinite scroll / pagination**: accumulate pages of results as the user scrolls, track whether more pages exist, and guard against firing a duplicate request while one is already in flight — the logic behind any "load more on scroll" hook, independent of any specific framework.
 
 ## Your task
 
-Write \`createInfiniteScrollLoader(fetchPage)\`, where \`fetchPage(cursor)\` returns a promise resolving to \`{ items, nextCursor }\`. Return \`{ getItems(), hasMore(), loadNext() }\`: \`getItems()\` returns everything accumulated so far, \`hasMore()\` reports whether another page exists, and \`loadNext()\` fetches and appends the next page — a no-op if a load is already in flight or there's nothing left to fetch.`,
+Write \`createInfiniteScrollLoader(fetchPage)\`, where \`fetchPage(cursor)\` returns a promise resolving to \`{ items, nextCursor }\`. Return \`{ getItems(), hasMore(), loadNext() }\`.
+
+\`\`\`js
+const loader = createInfiniteScrollLoader(fetchPage);
+await loader.loadNext();
+loader.getItems()
+// items from page 1
+loader.hasMore()
+// true, unless that page's nextCursor was null
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createInfiniteScrollLoader(fetchPage) {
 }`,
@@ -11157,11 +12134,17 @@ Write \`createInfiniteScrollLoader(fetchPage)\`, where \`fetchPage(cursor)\` ret
     companies: ["Meta", "Airbnb", "TikTok"],
     category: "javascript-runtime",
     title: "Implement a virtualized (windowed) list",
-    description: `Rendering thousands of rows the naive way creates thousands of DOM nodes. A virtualized list only ever renders the handful of rows actually visible in the viewport, sliced directly from the full data array.
+    description: `Rendering thousands of rows the naive way creates thousands of DOM nodes. A **virtualized (windowed) list** — the technique behind libraries like \`react-window\` — only ever renders the handful of rows actually visible in the viewport, sliced directly from the full data array as the user scrolls.
 
 ## Your task
 
-Write \`createVirtualList(items, itemHeight, containerHeight, overscan = 3)\`, returning \`{ getVisibleItems(scrollTop) }\` where the result is \`{ items, offsetY, startIndex }\` — the sliced visible items, the pixel offset to position them at, and their starting index.`,
+Write \`createVirtualList(items, itemHeight, containerHeight, overscan = 3)\`, returning \`{ getVisibleItems(scrollTop) }\` where the result is \`{ items, offsetY, startIndex }\` — the sliced visible items, the pixel offset to position them at, and their starting index.
+
+\`\`\`js
+const list = createVirtualList(items /* 1,000 rows */, 50, 300, 3);
+list.getVisibleItems(0);
+// { items: items.slice(0, 12), offsetY: 0, startIndex: 0 } — only 12 of 1,000 rows are ever sliced out
+\`\`\``,
     difficulty: "hard",
     starterCode: `function createVirtualList(items, itemHeight, containerHeight, overscan = 3) {
 }`,
@@ -11197,11 +12180,22 @@ Write \`createVirtualList(items, itemHeight, containerHeight, overscan = 3)\`, r
     companies: ["Meta", "Uber", "LinkedIn", "Amazon"],
     category: "javascript-runtime",
     title: "Create an Event Emitter",
-    description: `One of the most common front-end interview questions across the industry: build the **pub-sub** primitive — on/off/emit — that lets decoupled parts of an app talk to each other without holding direct references. Node's own \`EventEmitter\` and the DOM's own event system both work this way under the hood.
+    description: `One of the most common front-end interview questions across the industry — "implement a JavaScript event emitter": build the **pub-sub** primitive — on/off/emit — that lets decoupled parts of an app talk to each other without holding direct references. Node's own \`EventEmitter\` and the DOM's own event system both work this way under the hood.
 
 ## Your task
 
-Write an \`EventEmitter\` class with \`on(event, handler)\`, \`off(event, handler)\`, \`emit(event, ...args)\`, and \`once(event, handler)\` (fires at most one time, then auto-removes itself).`,
+Write an \`EventEmitter\` class with \`on(event, handler)\`, \`off(event, handler)\`, \`emit(event, ...args)\`, and \`once(event, handler)\` (fires at most one time, then auto-removes itself).
+
+\`\`\`js
+const emitter = new EventEmitter();
+emitter.on("data", (value) => console.log("got", value));
+emitter.emit("data", 42);
+// got 42
+
+emitter.once("ready", () => console.log("ready fired"));
+emitter.emit("ready"); // "ready fired"
+emitter.emit("ready"); // nothing — once() already auto-removed the handler
+\`\`\``,
     difficulty: "medium",
     starterCode: `class EventEmitter {
   on(event, handler) {
@@ -11259,7 +12253,16 @@ Write an \`EventEmitter\` class with \`on(event, handler)\`, \`off(event, handle
 
 ## Your task
 
-Write \`createPubSub()\`, returning \`{ publish(topic, data), subscribe(topic, fn) }\`, where \`subscribe\` returns an unsubscribe function.`,
+Write \`createPubSub()\`, returning \`{ publish(topic, data), subscribe(topic, fn) }\`, where \`subscribe\` returns an unsubscribe function.
+
+\`\`\`js
+const bus = createPubSub();
+const unsubscribe = bus.subscribe("order:created", (data) => console.log("new order", data));
+bus.publish("order:created", { id: 42 });
+// new order { id: 42 }
+unsubscribe();
+bus.publish("order:created", { id: 43 }); // nothing logged — this subscriber is gone
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createPubSub() {
 }`,
@@ -11296,7 +12299,14 @@ Write \`createPubSub()\`, returning \`{ publish(topic, data), subscribe(topic, f
 
 ## Your task
 
-Write \`interpolate(template, data)\`, replacing every \`{{path}}\` placeholder with the value found by walking \`path\` (e.g. \`"user.name"\`) into \`data\`. A placeholder whose path can't be resolved should be replaced with an empty string, not left as-is or throw.`,
+Write \`interpolate(template, data)\`, replacing every \`{{path}}\` placeholder with the value found by walking \`path\` (e.g. \`"user.name"\`) into \`data\`. A placeholder whose path can't be resolved should be replaced with an empty string, not left as-is or throw.
+
+\`\`\`js
+interpolate("Hi {{name}}, you work at {{user.company}}", { name: "Ada", user: { company: "Acme" } });
+// "Hi Ada, you work at Acme"
+interpolate("{{missing}}", {});
+// "" — an unresolvable path becomes an empty string, not left as "{{missing}}"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function interpolate(template, data) {
 }`,
@@ -11326,7 +12336,12 @@ Write \`interpolate(template, data)\`, replacing every \`{{path}}\` placeholder 
 
 ## Your task
 
-Write \`extractMentions(text)\`, returning an array of usernames (without the \`@\`), in the order they appear. An \`@\` immediately preceded by a word character (like the local part of an email address) must not be treated as the start of a mention.`,
+Write \`extractMentions(text)\`, returning an array of usernames (without the \`@\`), in the order they appear. An \`@\` immediately preceded by a word character (like the local part of an email address) must not be treated as the start of a mention.
+
+\`\`\`js
+extractMentions("cc @bob and @carol, email me at user@example.com");
+// ['bob', 'carol'] — the @ in the email address is not treated as a mention
+\`\`\``,
     difficulty: "medium",
     starterCode: `function extractMentions(text) {
 }`,
@@ -11353,7 +12368,16 @@ Write \`extractMentions(text)\`, returning an array of usernames (without the \`
 
 ## Your task
 
-Write \`createMiddlewarePipeline()\`, returning \`{ use(fn), run(context) }\`. Each middleware receives \`(context, next)\`; the chain only continues if a middleware calls \`next()\`.`,
+Write \`createMiddlewarePipeline()\`, returning \`{ use(fn), run(context) }\`. Each middleware receives \`(context, next)\`; the chain only continues if a middleware calls \`next()\`.
+
+\`\`\`js
+const pipeline = createMiddlewarePipeline();
+pipeline.use((ctx, next) => { ctx.log.push("first"); next(); });
+pipeline.use((ctx, next) => { ctx.log.push("second"); next(); });
+const ctx = { log: [] };
+pipeline.run(ctx);
+// ctx.log === ["first", "second"] — each middleware ran in registration order, sharing the same context
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createMiddlewarePipeline() {
 }`,
@@ -11396,7 +12420,15 @@ Write \`createMiddlewarePipeline()\`, returning \`{ use(fn), run(context) }\`. E
 
 ## Your task
 
-Write \`LazyMan(name)\`. It immediately logs \`"Hi I am " + name\`. Chained \`.eat(food)\` logs \`"Eat " + food\`; chained \`.sleep(seconds)\` delays every subsequent chained call by that many seconds before it runs. Both \`.eat()\` and \`.sleep()\` must be chainable off the same returned object.`,
+Write \`LazyMan(name)\`. It immediately logs \`"Hi I am " + name\`. Chained \`.eat(food)\` logs \`"Eat " + food\`; chained \`.sleep(seconds)\` delays every subsequent chained call by that many seconds before it runs. Both \`.eat()\` and \`.sleep()\` must be chainable off the same returned object.
+
+\`\`\`js
+LazyMan("Hank").eat("dinner").sleep(1).eat("supper");
+// "Hi I am Hank"
+// "Eat dinner"
+// ...waits 1 second...
+// "Eat supper"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function LazyMan(name) {
 }`,
@@ -11448,7 +12480,18 @@ Write \`LazyMan(name)\`. It immediately logs \`"Hi I am " + name\`. Chained \`.e
 
 ## Your task
 
-Write \`createHistory(initialState)\`, returning \`{ current(), push(state), undo(), redo() }\`.`,
+Write \`createHistory(initialState)\`, returning \`{ current(), push(state), undo(), redo() }\`.
+
+\`\`\`js
+const history = createHistory("home");
+history.push("about");
+history.push("contact");
+history.undo();
+// history.current() === "about"
+history.push("settings");
+history.redo();
+// still "settings" — pushing after undo() discarded the abandoned "contact" future
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createHistory(initialState) {
 }`,
@@ -11493,7 +12536,19 @@ Write \`createHistory(initialState)\`, returning \`{ current(), push(state), und
 
 ## Your task
 
-Write \`createRouter(routes)\`, returning \`{ navigate(path) }\`. \`routes\` maps path patterns (which may include \`:param\` segments) to handler functions, called with an object of extracted params. A \`"*"\` entry is the fallback for no match.`,
+Write \`createRouter(routes)\`, returning \`{ navigate(path) }\`. \`routes\` maps path patterns (which may include \`:param\` segments) to handler functions, called with an object of extracted params. A \`"*"\` entry is the fallback for no match.
+
+\`\`\`js
+const router = createRouter({
+  "/about": () => console.log("About page"),
+  "/user/:id": (params) => console.log("User", params.id),
+  "*": () => console.log("404"),
+});
+router.navigate("/user/42");
+// "User 42" — the :id segment is extracted into params.id
+router.navigate("/nowhere");
+// "404" — falls back to the wildcard handler
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createRouter(routes) {
 }`,
@@ -11535,11 +12590,24 @@ Write \`createRouter(routes)\`, returning \`{ navigate(path) }\`. \`routes\` map
     companies: ["Google", "Netflix"],
     category: "javascript-runtime",
     title: "Create an Observable",
-    description: `The foundational primitive behind RxJS: a **lazy**, re-runnable producer of values over time. Unlike a Promise — which starts running the moment it's created and settles exactly once — an Observable does nothing until something subscribes, and a fresh execution starts on every single subscription.
+    description: `The foundational primitive behind RxJS — this is what people mean by "implement an observable from scratch": a **lazy**, re-runnable producer of values over time. Unlike a Promise — which starts running the moment it's created and settles exactly once — an Observable does nothing until something subscribes, and a fresh execution starts on every single subscription.
 
 ## Your task
 
-Write an \`Observable\` class: \`new Observable(subscribeFn)\`, where \`subscribeFn(observer)\` is called fresh on every \`.subscribe(observer)\` and may return a cleanup function. \`.subscribe()\` returns \`{ unsubscribe() }\`.`,
+Write an \`Observable\` class: \`new Observable(subscribeFn)\`, where \`subscribeFn(observer)\` is called fresh on every \`.subscribe(observer)\` and may return a cleanup function. \`.subscribe()\` returns \`{ unsubscribe() }\`.
+
+\`\`\`js
+const observable = new Observable((observer) => {
+  observer.next(1);
+  observer.next(2);
+  return () => console.log("cleanup");
+});
+const subscription = observable.subscribe({ next: (v) => console.log(v) });
+// 1
+// 2
+subscription.unsubscribe();
+// "cleanup" — runs the cleanup function the producer returned
+\`\`\``,
     difficulty: "medium",
     starterCode: `class Observable {
   constructor(subscribeFn) {
@@ -11576,7 +12644,14 @@ Write an \`Observable\` class: \`new Observable(subscribeFn)\`, where \`subscrib
 
 ## Your task
 
-Write \`interval(ms)\`, returning an Observable that emits \`0, 1, 2, ...\` at that cadence (include a minimal \`Observable\` class in your solution). Calling \`unsubscribe()\` on the returned subscription must stop further emissions.`,
+Write \`interval(ms)\`, returning an Observable that emits \`0, 1, 2, ...\` at that cadence (include a minimal \`Observable\` class in your solution). Calling \`unsubscribe()\` on the returned subscription must stop further emissions.
+
+\`\`\`js
+const subscription = interval(1000).subscribe({ next: (n) => console.log(n) });
+// 0, then 1, then 2, ... once per second
+subscription.unsubscribe();
+// no further values are emitted
+\`\`\``,
     difficulty: "easy",
     starterCode: `function interval(ms) {
 }`,
@@ -11614,7 +12689,16 @@ function interval(ms) {
 
 ## Your task
 
-Write \`fromEvent(target, eventType)\`, returning an Observable that emits each event object as it fires (include a minimal \`Observable\` class in your solution). Unsubscribing must remove the underlying event listener from \`target\`.`,
+Write \`fromEvent(target, eventType)\`, returning an Observable that emits each event object as it fires (include a minimal \`Observable\` class in your solution). Unsubscribing must remove the underlying event listener from \`target\`.
+
+\`\`\`js
+const subscription = fromEvent(button, "click").subscribe({
+  next: (e) => console.log("clicked", e.target),
+});
+// fires on every click, same as addEventListener
+subscription.unsubscribe();
+// removes the underlying "click" listener from button — no further emissions
+\`\`\``,
     difficulty: "easy",
     starterCode: `function fromEvent(target, eventType) {
 }`,
@@ -11654,7 +12738,15 @@ function fromEvent(target, eventType) {
 
 ## Your task
 
-Write \`mapOperator(source, project)\`, emitting \`project(value)\` for every value the source emits, and \`filterOperator(source, predicate)\`, emitting only the values for which \`predicate(value)\` is truthy (include a minimal \`Observable\` class in your solution). Both operators must compose correctly when chained together.`,
+Write \`mapOperator(source, project)\`, emitting \`project(value)\` for every value the source emits, and \`filterOperator(source, predicate)\`, emitting only the values for which \`predicate(value)\` is truthy (include a minimal \`Observable\` class in your solution). Both operators must compose correctly when chained together.
+
+\`\`\`js
+// source emits 1, 2, 3
+mapOperator(source, (x) => x * 2);
+// emits 2, 4, 6 — every value doubled
+filterOperator(mapOperator(source, (x) => x + 1), (x) => x > 2);
+// source -> mapOperator produces 2, 3, 4 -> filterOperator keeps only 3, 4
+\`\`\``,
     difficulty: "easy",
     starterCode: `function mapOperator(source, project) {
 }
@@ -11704,7 +12796,18 @@ function filterOperator(source, predicate) {
 
 ## Your task
 
-Write \`from(iterable)\` (include a minimal \`Observable\` class in your solution). Every value in \`iterable\` should be emitted via \`observer.next()\`, in order, and \`observer.complete()\` called once all of them have been emitted — even for an empty iterable.`,
+Write \`from(iterable)\` (include a minimal \`Observable\` class in your solution). Every value in \`iterable\` should be emitted via \`observer.next()\`, in order, and \`observer.complete()\` called once all of them have been emitted — even for an empty iterable.
+
+\`\`\`js
+from([1, 2, 3]).subscribe({
+  next: (v) => console.log(v),
+  complete: () => console.log("done"),
+});
+// 1
+// 2
+// 3
+// done
+\`\`\``,
     difficulty: "medium",
     starterCode: `function from(iterable) {
 }`,
@@ -11742,7 +12845,17 @@ function from(iterable) {
 
 ## Your task
 
-Write a \`Subject\` class with \`subscribe(observer)\` (returning \`{ unsubscribe() }\`) and \`next(value)\`. Subscribers only receive values emitted *after* they subscribe — no replay of earlier ones.`,
+Write a \`Subject\` class with \`subscribe(observer)\` (returning \`{ unsubscribe() }\`) and \`next(value)\`. Subscribers only receive values emitted *after* they subscribe — no replay of earlier ones.
+
+\`\`\`js
+const subject = new Subject();
+subject.subscribe({ next: (v) => console.log("A:", v) });
+subject.next(1); // A: 1
+const subB = subject.subscribe({ next: (v) => console.log("B:", v) });
+subject.next(2); // A: 2   B: 2 — both current subscribers get the same value
+subB.unsubscribe();
+subject.next(3); // A: 3 — B already unsubscribed
+\`\`\``,
     difficulty: "medium",
     starterCode: `class Subject {
   subscribe(observer) {
@@ -11787,7 +12900,14 @@ Write a \`Subject\` class with \`subscribe(observer)\` (returning \`{ unsubscrib
 
 ## Your task
 
-Write \`myBtoa(str)\` for ASCII input, matching the real \`btoa\`'s output exactly, including \`=\` padding: one \`=\` for a 2-byte final group, two for a 1-byte final group.`,
+Write \`myBtoa(str)\` for ASCII input, matching the real \`btoa\`'s output exactly, including \`=\` padding: one \`=\` for a 2-byte final group, two for a 1-byte final group.
+
+\`\`\`js
+myBtoa("hello");
+// "aGVsbG8=" — matches the real btoa("hello")
+myBtoa("a");
+// "YQ==" — a 1-byte final group needs two '=' padding characters
+\`\`\``,
     difficulty: "easy",
     starterCode: `function myBtoa(str) {
 }`,
@@ -11827,7 +12947,14 @@ Write \`myBtoa(str)\` for ASCII input, matching the real \`btoa\`'s output exact
 
 ## Your task
 
-Write \`myAtob(str)\`, decoding a base64-encoded string \`str\` (as produced by the real \`btoa\`) back into its original text.`,
+Write \`myAtob(str)\`, decoding a base64-encoded string \`str\` (as produced by the real \`btoa\`) back into its original text.
+
+\`\`\`js
+myAtob("aGVsbG8=");
+// "hello" — decodes the base64 string produced by btoa("hello")
+myAtob("dGVzdDEyMw==");
+// "test123" — round-trips a longer alphanumeric string
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myAtob(str) {
 }`,
@@ -11867,7 +12994,14 @@ Write \`myAtob(str)\`, decoding a base64-encoded string \`str\` (as produced by 
 
 ## Your task
 
-Write \`myJSONParse(str)\`, parsing a JSON string into the equivalent JS value — objects, arrays, strings, numbers, booleans, and \`null\`, including nested combinations and surrounding/internal whitespace. (Escaped characters within strings, like \`\\"\`, are out of scope for this version — assume string values don't contain them.)`,
+Write \`myJSONParse(str)\`, parsing a JSON string into the equivalent JS value — objects, arrays, strings, numbers, booleans, and \`null\`, including nested combinations and surrounding/internal whitespace. (Escaped characters within strings, like \`\\"\`, are out of scope for this version — assume string values don't contain them.)
+
+\`\`\`js
+myJSONParse('{"a":1,"b":[1,2,3]}');
+// { a: 1, b: [1, 2, 3] }
+myJSONParse('  { "x" : 42 }  ');
+// { x: 42 } — surrounding and internal whitespace is handled correctly
+\`\`\``,
     difficulty: "medium",
     starterCode: `function myJSONParse(str) {
 }`,
@@ -11978,7 +13112,14 @@ Write \`myJSONParse(str)\`, parsing a JSON string into the equivalent JS value �
 
 ## Your task
 
-Write \`encode(value)\` and \`decode(str)\` using \`JSON.stringify\`'s replacer and \`JSON.parse\`'s reviver, correctly round-tripping \`Date\` and \`Map\` values anywhere in the structure.`,
+Write \`encode(value)\` and \`decode(str)\` using \`JSON.stringify\`'s replacer and \`JSON.parse\`'s reviver, correctly round-tripping \`Date\` and \`Map\` values anywhere in the structure.
+
+\`\`\`js
+const payload = { createdAt: new Date("2024-01-01"), tags: new Map([["a", 1]]) };
+const restored = decode(encode(payload));
+// restored.createdAt instanceof Date === true, same getTime() as the original
+// restored.tags instanceof Map === true, with the same entries — Map(1) { 'a' => 1 }
+\`\`\``,
     difficulty: "medium",
     starterCode: `function encode(value) {
 }
@@ -12018,7 +13159,16 @@ function decode(str) {
 
 ## Your task
 
-Write \`myJSONStringify(value)\`, supporting objects, arrays, strings, numbers, booleans, and \`null\`. Only a value's own enumerable properties (not inherited ones) should be included. (Escaping special characters within strings, like quotes, is out of scope for this version.)`,
+Write \`myJSONStringify(value)\`, supporting objects, arrays, strings, numbers, booleans, and \`null\`. Only a value's own enumerable properties (not inherited ones) should be included. (Escaping special characters within strings, like quotes, is out of scope for this version.)
+
+\`\`\`js
+myJSONStringify({ a: 1, b: "hi" });
+// '{"a":1,"b":"hi"}'
+myJSONStringify({ a: undefined, b: 1 });
+// '{"b":1}' — undefined properties are omitted entirely, not written as "a":null
+myJSONStringify(undefined);
+// undefined — the actual value, not the string "undefined"
+\`\`\``,
     difficulty: "hard",
     starterCode: `function myJSONStringify(value) {
 }`,
@@ -12068,7 +13218,23 @@ Write \`myJSONStringify(value)\`, supporting objects, arrays, strings, numbers, 
 
 ## Your task
 
-Write a \`MyURLSearchParams\` class: constructed from a query string (with or without a leading \`?\`), supporting \`get(key)\` (first value or \`null\`), \`getAll(key)\` (every value for that key), \`has(key)\`, \`set(key, value)\` (replaces every existing value for that key with one), \`append(key, value)\` (adds another value without removing existing ones), \`delete(key)\`, and \`toString()\` (re-serializes, percent-encoding keys and values).`,
+Write a \`MyURLSearchParams\` class: constructed from a query string (with or without a leading \`?\`), supporting \`get(key)\` (first value or \`null\`), \`getAll(key)\` (every value for that key), \`has(key)\`, \`set(key, value)\` (replaces every existing value for that key with one), \`append(key, value)\` (adds another value without removing existing ones), \`delete(key)\`, and \`toString()\` (re-serializes, percent-encoding keys and values).
+
+\`\`\`js
+const params = new MyURLSearchParams("a=1&b=2");
+params.append("tag", "a");
+params.append("tag", "b");
+params.getAll("tag");
+// ['a', 'b']
+params.set("a", "new");
+params.get("a");
+// "new" — set() replaces every prior value for a key with a single new one
+
+const q = new MyURLSearchParams();
+q.append("q", "hello world");
+q.toString();
+// "q=hello%20world" — toString() percent-encodes the value
+\`\`\``,
     difficulty: "hard",
     starterCode: `class MyURLSearchParams {
   constructor(init = "") {
@@ -12142,11 +13308,28 @@ Write a \`MyURLSearchParams\` class: constructed from a query string (with or wi
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Virtual DOM II — createElement",
-    description: `The foundational function every **virtual-DOM** library builds on: turn a type, some props, and a list of children into a plain object description of an element — a **"vnode"** — that a renderer can later turn into real DOM. This is exactly the shape JSX compiles down to under the hood.
+    description: `The foundational function every **virtual-DOM** library (React, Preact, Vue) builds on: turn a type, some props, and a list of children into a plain object description of an element — a **"vnode"** — that a renderer can later turn into real DOM.
+
+## The problem
+
+Directly creating and mutating real DOM nodes for every UI update is slow and verbose. Frameworks instead describe the desired UI as cheap, plain JavaScript objects first, and only touch the actual DOM once, after figuring out the minimal set of changes needed.
+
+## The idea
+
+\`createElement\` is the constructor for that plain object. This is exactly the shape JSX compiles down to under the hood — \`<button>Save</button>\` becomes \`createElement("button", null, "Save")\`. Its only real job is normalizing the trailing \`...children\` arguments into one consistent shape.
 
 ## Your task
 
-Write \`createElement(type, props, ...children)\`, returning \`{ type, props: { ...props, children } }\`. No children should produce an empty array; exactly one child should be stored directly (not wrapped in an array); more than one should be stored as an array.`,
+Write \`createElement(type, props, ...children)\`, returning \`{ type, props: { ...props, children } }\`. No children should produce an empty array; exactly one child should be stored directly (not wrapped in an array); more than one should be stored as an array.
+
+\`\`\`js
+createElement("div", null);
+// { type: 'div', props: { children: [] } }
+createElement("button", { className: "a" }, "Save");
+// { type: 'button', props: { className: 'a', children: 'Save' } } — a single child is stored directly, not wrapped
+createElement("ul", null, "a", "b");
+// { type: 'ul', props: { children: ['a', 'b'] } }
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createElement(type, props, ...children) {
 }`,
@@ -12174,11 +13357,18 @@ Write \`createElement(type, props, ...children)\`, returning \`{ type, props: { 
     companies: ["Google"],
     category: "javascript-runtime",
     title: "lit-html — tagged templates",
-    description: `lit-html's core trick: a tagged template literal keeps the static HTML strings separate from the dynamic values, instead of naively concatenating everything into one unsafe string.
+    description: `lit-html's core trick: a **tagged template literal** keeps the static HTML strings separate from the dynamic values, instead of naively concatenating everything into one unsafe string.
 
 ## Your task
 
-Write \`html\`\` \`\` (a tag function returning \`{ strings, values }\`) and \`render(template)\`, which joins them back into a final string — HTML-escaping every interpolated value along the way, so a value can never inject unintended markup.`,
+Write \`html\`\` \`\` (a tag function returning \`{ strings, values }\`) and \`render(template)\`, which joins them back into a final string — HTML-escaping every interpolated value along the way, so a value can never inject unintended markup.
+
+\`\`\`js
+render(html\`<p>\${'Ada'}</p>\`);
+// '<p>Ada</p>'
+render(html\`<p>\${'<script>bad</script>'}</p>\`);
+// '<p>&lt;script&gt;bad&lt;/script&gt;</p>' — interpolated values are HTML-escaped, never injected as raw markup
+\`\`\``,
     difficulty: "easy",
     starterCode: `function html(strings, ...values) {
 }
@@ -12215,9 +13405,25 @@ function render(template) {
     title: "Virtual DOM III — Functional Component",
     description: `A **functional component** is just a function that returns a vnode. Rendering one means calling it and recursively resolving whatever it returns — which might itself be another functional component — down to plain host elements like \`"div"\`.
 
+## The problem
+
+A vnode tree built with \`createElement\` can have \`type\` be either a string (\`"div"\`, a real DOM tag) or a function (a component). Before that tree can actually become DOM, every component call has to be resolved down to plain elements — recursively, since a component can return another component.
+
+## The idea
+
+Check \`typeof vnode.type\`: if it's a function, call it with \`vnode.props\` to get its rendered output, then recurse on that output. If it's already a plain element, leave it as an element and just recurse into its children instead.
+
 ## Your task
 
-Write \`renderComponent(vnode)\`, resolving \`vnode.type\` when it's a function (a component) down to a plain-element vnode, calling it with \`vnode.props\` and recursing on the result. Plain-element vnodes pass through as-is, with their children recursively processed the same way.`,
+Write \`renderComponent(vnode)\`, resolving \`vnode.type\` when it's a function (a component) down to a plain-element vnode, calling it with \`vnode.props\` and recursing on the result. Plain-element vnodes pass through as-is, with their children recursively processed the same way.
+
+\`\`\`js
+function Greeting(props) {
+  return { type: "span", props: { children: "Hi " + props.name } };
+}
+renderComponent({ type: Greeting, props: { name: "Ada" } });
+// { type: 'span', props: { children: 'Hi Ada' } } — the component function is resolved down to a plain element
+\`\`\``,
     difficulty: "easy",
     starterCode: `function renderComponent(vnode) {
 }`,
@@ -12256,7 +13462,12 @@ Write \`renderComponent(vnode)\`, resolving \`vnode.type\` when it's a function 
 
 ## Your task
 
-Write \`classNames(...args)\`, accepting any mix of strings, objects (include a key only if its value is truthy), arrays (flattened recursively, following the same rules), and falsy values (skipped entirely — \`null\`, \`undefined\`, \`false\`, \`0\`, \`''\`). Return the combined class names joined by a single space.`,
+Write \`classNames(...args)\`, accepting any mix of strings, objects (include a key only if its value is truthy), arrays (flattened recursively, following the same rules), and falsy values (skipped entirely — \`null\`, \`undefined\`, \`false\`, \`0\`, \`''\`). Return the combined class names joined by a single space.
+
+\`\`\`js
+classNames("btn", { active: true, disabled: false }, ["extra", null]);
+// "btn active extra" — the truthy "active" key is included, "disabled" and the null entry are skipped
+\`\`\``,
     difficulty: "medium",
     starterCode: `function classNames(...args) {
 }`,
@@ -12299,7 +13510,17 @@ Write \`classNames(...args)\`, accepting any mix of strings, objects (include a 
 
 ## Your task
 
-Write \`createClassNameUglifier()\`, returning a function that maps a class name to a short one: \`"a"\`, \`"b"\`, ..., \`"z"\`, \`"aa"\`, \`"ab"\`, ... in the order new names are first seen, reusing the same short name on every repeat call for a given original name.`,
+Write \`createClassNameUglifier()\`, returning a function that maps a class name to a short one: \`"a"\`, \`"b"\`, ..., \`"z"\`, \`"aa"\`, \`"ab"\`, ... in the order new names are first seen, reusing the same short name on every repeat call for a given original name.
+
+\`\`\`js
+const uglify = createClassNameUglifier();
+uglify("card-header-title");
+// "a" — the first distinct name seen gets the shortest code
+uglify("card-body");
+// "b"
+uglify("card-header-title");
+// "a" — a repeat call for the same original name returns the same short name
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createClassNameUglifier() {
 }`,
@@ -12339,11 +13560,31 @@ Write \`createClassNameUglifier()\`, returning a function that maps a class name
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Virtual DOM I (diff/patch basics)",
-    description: `The heart of every virtual-DOM library: compare an old vnode tree to a new one and describe the minimal change needed, rather than always tearing down and rebuilding everything.
+    description: `The heart of every virtual-DOM library — the algorithm people mean by "implement a virtual DOM diff/patch from scratch": compare an old vnode tree to a new one and describe the minimal change needed, rather than always tearing down and rebuilding everything.
+
+## The problem
+
+Re-rendering the whole real DOM subtree on every state change would be correct but painfully slow — real DOM nodes are expensive to create and expensive to touch. What's actually needed is the smallest possible instruction set: "just update this one prop" instead of "throw everything away and rebuild it."
+
+## The idea
+
+Diffing compares two vnodes level by level. Different element types (or a changed primitive) means nothing can be reused — the whole node has to be replaced. Same type just means walking the props to find which ones actually changed, producing a small, targeted patch instead.
 
 ## Your task
 
-Write \`diff(oldVNode, newVNode)\`, returning one of: \`{ type: "REPLACE", vnode }\` (different element type or a changed primitive), \`{ type: "UPDATE", props }\` (same type, changed prop values), or \`{ type: "NONE" }\` (nothing changed).`,
+Write \`diff(oldVNode, newVNode)\`, returning one of: \`{ type: "REPLACE", vnode }\` (different element type or a changed primitive), \`{ type: "UPDATE", props }\` (same type, changed prop values), or \`{ type: "NONE" }\` (nothing changed).
+
+\`\`\`js
+diff("hello", "hello");
+// { type: 'NONE' }
+diff(
+  { type: "div", props: { className: "a" } },
+  { type: "div", props: { className: "b" } },
+);
+// { type: 'UPDATE', props: { className: 'b' } } — same type, only the changed prop is reported
+diff({ type: "div", props: {} }, { type: "span", props: {} });
+// { type: 'REPLACE', vnode: { type: 'span', props: {} } } — a different element type forces a full replace
+\`\`\``,
     difficulty: "medium",
     starterCode: `function diff(oldVNode, newVNode) {
 }`,
@@ -12379,11 +13620,26 @@ Write \`diff(oldVNode, newVNode)\`, returning one of: \`{ type: "REPLACE", vnode
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Virtual DOM IV — JSX 1",
-    description: `JSX transpilers call a \`createElement\`-style pragma function under the hood, and give \`key\`/\`ref\` special treatment — they're pulled out of props entirely rather than left as regular attributes.
+    description: `JSX transpilers call a \`createElement\`-style **pragma** function under the hood — \`<li key="a" className="x" />\` becomes a call like this one — and give \`key\`/\`ref\` special treatment: they're pulled out of props entirely rather than left as regular attributes.
+
+## The problem
+
+\`key\` and \`ref\` look like ordinary JSX attributes, but a component must never actually receive them as props — \`key\` is reserved for the renderer's own reconciliation bookkeeping, and \`ref\` is handled by a separate mechanism entirely. If either leaked into \`props\`, they'd risk colliding with real DOM attributes or confusing whatever renders the vnode.
+
+## The idea
+
+The pragma function walks the incoming config object and special-cases exactly two names: \`key\` gets pulled out onto the vnode itself (not into props), and \`ref\` is dropped outright. Every other key passes straight through into \`props\` untouched.
 
 ## Your task
 
-Write \`jsxCreateElement(type, config, ...children)\`, returning \`{ type, key, props }\`. \`config.key\` becomes the returned \`key\` (not a prop); \`config.ref\` is dropped entirely (not a prop, not the key).`,
+Write \`jsxCreateElement(type, config, ...children)\`, returning \`{ type, key, props }\`. \`config.key\` becomes the returned \`key\` (not a prop); \`config.ref\` is dropped entirely (not a prop, not the key).
+
+\`\`\`js
+jsxCreateElement("li", { key: "a", className: "x" });
+// { type: 'li', key: 'a', props: { className: 'x', children: [] } }
+jsxCreateElement("input", { ref: someRef, value: "x" });
+// { type: 'input', key: null, props: { value: 'x', children: [] } } — no ref key anywhere in the result
+\`\`\``,
     difficulty: "medium",
     starterCode: `function jsxCreateElement(type, config, ...children) {
 }`,
@@ -12414,11 +13670,27 @@ Write \`jsxCreateElement(type, config, ...children)\`, returning \`{ type, key, 
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Virtual DOM V — JSX 2",
-    description: `Two more real JSX behaviors: a special \`Fragment\` type for grouping children without an extra wrapper element, and automatic flattening of nested children arrays (which happens constantly with \`.map()\`-generated lists).
+    description: `Two more real JSX behaviors: a special \`Fragment\` type for grouping children without an extra wrapper element, and automatic flattening of nested children arrays (which happens constantly with \`.map()\`-generated lists like \`<>{items.map(...)}</>\`).
+
+## The problem
+
+JSX sometimes needs to return multiple sibling elements without wrapping them in an extra \`<div>\` — that's what \`<>...</>\` (a Fragment) compiles to. Separately, mixing loose children with a \`.map()\`-generated list naturally produces a children array containing another array nested inside it, which downstream rendering code shouldn't have to know how to unwrap.
+
+## The idea
+
+\`Fragment\` doesn't need special logic in the pragma itself — it's just an ordinary marker value used as \`type\`, meaningful only to whatever renders the tree afterward. Flattening nested children is a small recursive helper: any array found among the children gets flattened one level further, until everything is one flat list.
 
 ## Your task
 
-Write \`Fragment\` (any unique marker value) and \`jsxCreateElementV2(type, config, ...children)\`, where \`children\` is recursively flattened one structure deep into a single flat array.`,
+Write \`Fragment\` (any unique marker value) and \`jsxCreateElementV2(type, config, ...children)\`, where \`children\` is recursively flattened one structure deep into a single flat array.
+
+\`\`\`js
+jsxCreateElementV2(Fragment, null, "a", "b");
+// { type: Fragment, props: { children: ['a', 'b'] } }
+const rows = [1, 2].map((n) => "row" + n);
+jsxCreateElementV2("ul", null, "header", rows);
+// props.children === ['header', 'row1', 'row2'] — the nested array from .map() is flattened into one list
+\`\`\``,
     difficulty: "medium",
     starterCode: `const Fragment = Symbol("Fragment");
 function jsxCreateElementV2(type, config, ...children) {
@@ -12452,11 +13724,33 @@ function jsxCreateElementV2(type, config, ...children) {
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Implement a minimal useState/useEffect (React hooks internals)",
-    description: `The famous "hooks are just an array" trick: React associates each \`useState\`/\`useEffect\` call with a slot based purely on **call order** within a render, which is exactly why hooks can never be called conditionally.
+    description: `The famous "hooks are just an array" trick behind React's \`useState\`/\`useEffect\` internals: React associates each hook call with a slot based purely on **call order** within a render, which is exactly why hooks can never be called conditionally.
+
+## The problem
+
+A function component re-runs from top to bottom on every render, with no instance or class fields to hold onto values between renders. So how does \`useState\` "remember" its value across calls, and how does React know which \`useState\` call — if a component has several — a given piece of state belongs to?
+
+## The idea
+
+The runtime keeps one persistent array of hook state, and a counter that resets to 0 at the start of every render. Each hook call grabs \`hookStates[hookIndex++]\` — so as long as hooks are always called in the same order every render, "the 3rd hook call" reliably means "slot 3" every single time. \`setState\` writes into that slot and triggers a fresh render; \`useEffect\` compares this render's dependency array against the one stored from last render to decide whether to re-run.
 
 ## Your task
 
-Write \`createHooksRuntime()\`, returning \`{ useState, useEffect, render(componentFn) }\`. State must persist across re-renders (not reset each render); calling \`setState\` must trigger an automatic re-render; \`useEffect\`'s callback should only run when its dependency array has actually changed since the last render.`,
+Write \`createHooksRuntime()\`, returning \`{ useState, useEffect, render(componentFn) }\`. State must persist across re-renders (not reset each render); calling \`setState\` must trigger an automatic re-render; \`useEffect\`'s callback should only run when its dependency array has actually changed since the last render.
+
+\`\`\`js
+const { useState, render } = createHooksRuntime();
+let setCount;
+function Counter() {
+  const [count, setter] = useState(0);
+  setCount = setter;
+  console.log(count);
+}
+render(Counter);
+// 0
+setCount((c) => c + 1);
+// automatically re-renders Counter, logging 1
+\`\`\``,
     difficulty: "hard",
     starterCode: `function createHooksRuntime() {
 }`,
@@ -12507,11 +13801,29 @@ Write \`createHooksRuntime()\`, returning \`{ useState, useEffect, render(compon
     companies: ["Meta"],
     category: "javascript-runtime",
     title: "Implement a Proxy-based reactive store (Vue 3-style)",
-    description: `Vue 3's reactivity system, in miniature: reading a reactive property inside a tracked "effect" remembers that dependency; writing to that property later automatically re-runs every effect that read it.
+    description: `Vue 3's reactivity system, in miniature — the mechanism behind "how does Vue know what to re-render without a virtual DOM diff": reading a reactive property inside a tracked "effect" remembers that dependency; writing to that property later automatically re-runs every effect that read it.
+
+## The problem
+
+Frameworks need to know exactly which parts of the UI depend on which piece of state, without the developer manually declaring a dependency list (the way a plain \`useEffect\` deps array requires). A \`Proxy\` makes this possible by intercepting every single property read and write on a reactive object.
+
+## The idea
+
+While an effect function is actively running, every property it *reads* gets recorded against it in a target → property → effects map (this is called **tracking**). Later, when that property is *written* to, every effect recorded against it gets re-run automatically (this is called **triggering**). A single "currently running effect" variable is what lets the \`Proxy\`'s \`get\` trap know which effect to credit a given read to.
 
 ## Your task
 
-Write \`createReactiveSystem()\`, returning \`{ reactive(target), effect(fn) }\`. \`reactive\` wraps an object in a \`Proxy\`; \`effect\` runs \`fn\` immediately and re-runs it automatically whenever a property it read (during its own most recent run) is later written to.`,
+Write \`createReactiveSystem()\`, returning \`{ reactive(target), effect(fn) }\`. \`reactive\` wraps an object in a \`Proxy\`; \`effect\` runs \`fn\` immediately and re-runs it automatically whenever a property it read (during its own most recent run) is later written to.
+
+\`\`\`js
+const { reactive, effect } = createReactiveSystem();
+const state = reactive({ count: 0 });
+effect(() => console.log("count is", state.count));
+// runs immediately: "count is 0"
+state.count = 1;
+// the effect automatically re-runs: "count is 1"
+state.other = "ignored"; // never read by the effect, so it doesn't trigger a re-run
+\`\`\``,
     difficulty: "hard",
     starterCode: `function createReactiveSystem() {
 }`,
@@ -12574,7 +13886,16 @@ Write \`createReactiveSystem()\`, returning \`{ reactive(target), effect(fn) }\`
 
 ## Your task
 
-Write \`countDecodeWays(s)\`. A leading \`"0"\` (or any digit group that doesn't form a valid 1-26 letter code) makes that path invalid.`,
+Write \`countDecodeWays(s)\`. A leading \`"0"\` (or any digit group that doesn't form a valid 1-26 letter code) makes that path invalid.
+
+\`\`\`js
+countDecodeWays("12");
+// 2 — "AB" (1, 2) or "L" (12)
+countDecodeWays("226");
+// 3 — "BZ", "VF", or "BBF"
+countDecodeWays("06");
+// 0 — a leading zero can never start a valid letter code
+\`\`\``,
     difficulty: "medium",
     starterCode: `function countDecodeWays(s) {
 }`,
@@ -12612,7 +13933,14 @@ Write \`countDecodeWays(s)\`. A leading \`"0"\` (or any digit group that doesn't
 
 ## Your task
 
-Write \`tokenize(expr)\`, returning an array of string tokens.`,
+Write \`tokenize(expr)\`, returning an array of string tokens.
+
+\`\`\`js
+tokenize("(1 + 2) * 3");
+// ['(', '1', '+', '2', ')', '*', '3'] — whitespace is skipped, each symbol is its own token
+tokenize("3.5-1");
+// ['3.5', '-', '1'] — a multi-character decimal number stays a single token
+\`\`\``,
     difficulty: "medium",
     starterCode: `function tokenize(expr) {
 }`,
@@ -12659,7 +13987,14 @@ Write \`tokenize(expr)\`, returning an array of string tokens.`,
 
 ## Your task
 
-Write \`evaluateExpression(str)\`, evaluating a string expression made of non-negative numbers, \`+\`, \`-\`, \`*\`, \`/\`, and parentheses, and returning the numeric result with correct precedence (\`*\`/\`/\` bind tighter than \`+\`/\`-\`) and left-to-right evaluation within the same precedence level.`,
+Write \`evaluateExpression(str)\`, evaluating a string expression made of non-negative numbers, \`+\`, \`-\`, \`*\`, \`/\`, and parentheses, and returning the numeric result with correct precedence (\`*\`/\`/\` bind tighter than \`+\`/\`-\`) and left-to-right evaluation within the same precedence level.
+
+\`\`\`js
+evaluateExpression("2+3*4");
+// 14 — multiplication happens before addition
+evaluateExpression("(2+3)*4");
+// 20 — parentheses override normal precedence
+\`\`\``,
     difficulty: "medium",
     starterCode: `function evaluateExpression(str) {
 }`,
@@ -12715,7 +14050,17 @@ Write \`evaluateExpression(str)\`, evaluating a string expression made of non-ne
 
 ## Your task
 
-Write \`placeItemsDense(items, columns)\`, where each item may have a \`span\` (default 1). Return each item with its assigned \`col\`/\`row\` (1-indexed).`,
+Write \`placeItemsDense(items, columns)\`, where each item may have a \`span\` (default 1). Return each item with its assigned \`col\`/\`row\` (1-indexed).
+
+\`\`\`js
+placeItemsDense(
+  [{ id: "a", span: 3 }, { id: "b", span: 2 }, { id: "c", span: 1 }],
+  4,
+);
+// a → col 1, row 1 (spans columns 1-3)
+// b → col 1, row 2 (the 1-column gap left in row 1 isn't wide enough for a span-2 item)
+// c → col 4, row 1 — dense packing fills that leftover gap instead of only placing forward
+\`\`\``,
     difficulty: "medium",
     starterCode: `function placeItemsDense(items, columns) {
 }`,
@@ -12769,7 +14114,17 @@ Write \`placeItemsDense(items, columns)\`, where each item may have a \`span\` (
 
 ## Your task
 
-Write \`placeItemsSparse(items, columns)\`, with the same signature and return shape as the dense version, but using a forward-only cursor instead of a full re-scan for every item.`,
+Write \`placeItemsSparse(items, columns)\`, with the same signature and return shape as the dense version, but using a forward-only cursor instead of a full re-scan for every item.
+
+\`\`\`js
+placeItemsSparse(
+  [{ id: "a", span: 3 }, { id: "b", span: 2 }, { id: "c", span: 1 }],
+  4,
+);
+// a → col 1, row 1 (spans columns 1-3)
+// b → col 1, row 2 (doesn't fit the remaining 1 column in row 1, so it wraps)
+// c → col 3, row 2 — the forward-only cursor continues from where b left off, never backtracking to row 1's leftover gap
+\`\`\``,
     difficulty: "hard",
     starterCode: `function placeItemsSparse(items, columns) {
 }`,
@@ -12823,11 +14178,20 @@ Write \`placeItemsSparse(items, columns)\`, with the same signature and return s
     companies: ["Uber", "Stripe", "Bloomberg"],
     category: "javascript-runtime",
     title: "Implement a rate limiter (token bucket algorithm)",
-    description: `The token bucket algorithm: a bucket holds up to \`capacity\` tokens, refilling continuously over time; each request consumes a token if one's available, and is rejected otherwise — allowing bursts up to capacity while capping the sustained rate.
+    description: `The **token bucket algorithm** — the same rate-limiting strategy used by APIs like Stripe's: a bucket holds up to \`capacity\` tokens, refilling continuously over time; each request consumes a token if one's available, and is rejected otherwise — allowing bursts up to capacity while capping the sustained rate.
 
 ## Your task
 
-Write \`createRateLimiter(capacity, refillRatePerSecond)\`, returning \`{ tryConsume(cost = 1) }\`, which returns \`true\`/\`false\` for whether the request was allowed.`,
+Write \`createRateLimiter(capacity, refillRatePerSecond)\`, returning \`{ tryConsume(cost = 1) }\`, which returns \`true\`/\`false\` for whether the request was allowed.
+
+\`\`\`js
+const limiter = createRateLimiter(2, 1); // capacity 2, refills 1 token/second
+limiter.tryConsume(); // true
+limiter.tryConsume(); // true
+limiter.tryConsume(); // false — the bucket is empty
+// ...after waiting roughly a second for a refill...
+limiter.tryConsume(); // true again
+\`\`\``,
     difficulty: "hard",
     starterCode: `function createRateLimiter(capacity, refillRatePerSecond) {
 }`,
@@ -12869,11 +14233,19 @@ Write \`createRateLimiter(capacity, refillRatePerSecond)\`, returning \`{ tryCon
     companies: [],
     category: "react",
     title: "The React Counter app",
-    description: `The classic first custom-hook interview question: a counter that increments, decrements, and resets. Framed here as the plain state-and-actions logic a \`Counter\` component's \`useState\` would drive — no JSX needed, just the state transitions themselves.
+    description: `The classic first custom-hook interview question — "build a counter hook" — a counter that increments, decrements, and resets. Framed here as the plain state-and-actions logic a \`Counter\` component's \`useState\` would drive — no JSX needed, just the state transitions themselves.
 
 ## Your task
 
-Write \`createCounterStore(initial = 0)\`, returning \`{ getValue(), increment(), decrement(), reset() }\`. \`increment\`/\`decrement\` change the value by 1; \`reset\` returns it to whatever \`initial\` was, not to 0.`,
+Write \`createCounterStore(initial = 0)\`, returning \`{ getValue(), increment(), decrement(), reset() }\`. \`increment\`/\`decrement\` change the value by 1; \`reset\` returns it to whatever \`initial\` was, not to 0.
+
+\`\`\`js
+const counter = createCounterStore(10);
+counter.increment();
+counter.getValue(); // 11
+counter.reset();
+counter.getValue(); // 10 — back to initial, not 0
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createCounterStore(initial = 0) {
 }`,
@@ -12913,7 +14285,15 @@ Write \`createCounterStore(initial = 0)\`, returning \`{ getValue(), increment()
 
 ## Your task
 
-Write two functions. \`createControlledInput(initialValue)\` returns \`{ getValue(), setValue(next) }\` — an external "state" that only ever changes through an explicit \`setValue\` call. \`readUncontrolledValue(inputEl)\` takes a real \`<input>\` element and simply returns its current \`.value\`, read live — with no state of its own.`,
+Write two functions. \`createControlledInput(initialValue)\` returns \`{ getValue(), setValue(next) }\` — an external "state" that only ever changes through an explicit \`setValue\` call. \`readUncontrolledValue(inputEl)\` takes a real \`<input>\` element and simply returns its current \`.value\`, read live — with no state of its own.
+
+\`\`\`js
+const controlled = createControlledInput("a");
+controlled.setValue("b");
+controlled.getValue(); // "b" — only setValue can move it
+
+readUncontrolledValue(inputEl); // whatever inputEl.value currently is, read live
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createControlledInput(initialValue) {
 }
@@ -12955,7 +14335,16 @@ function readUncontrolledValue(inputEl) {
 
 ## Your task
 
-Write \`todoReducer(state, action)\`, where \`state\` is an array of \`{ id, text, done }\` and \`action\` is one of \`{ type: "add", text }\`, \`{ type: "toggle", id }\`, or \`{ type: "delete", id }\`. Return a **new** array each time — never mutate \`state\` in place. New todos start with \`done: false\`, and get an \`id\` equal to the array's current length + 1 (simple, sequential, fine for this exercise).`,
+Write \`todoReducer(state, action)\`, where \`state\` is an array of \`{ id, text, done }\` and \`action\` is one of \`{ type: "add", text }\`, \`{ type: "toggle", id }\`, or \`{ type: "delete", id }\`. Return a **new** array each time — never mutate \`state\` in place. New todos start with \`done: false\`, and get an \`id\` equal to the array's current length + 1 (simple, sequential, fine for this exercise).
+
+\`\`\`js
+let state = todoReducer([], { type: "add", text: "Buy milk" });
+// [{ id: 1, text: "Buy milk", done: false }]
+state = todoReducer(state, { type: "toggle", id: 1 });
+// [{ id: 1, text: "Buy milk", done: true }]
+state = todoReducer(state, { type: "delete", id: 1 });
+// []
+\`\`\``,
     difficulty: "easy",
     starterCode: `function todoReducer(state, action) {
 }`,
@@ -12996,7 +14385,15 @@ Write \`todoReducer(state, action)\`, where \`state\` is an array of \`{ id, tex
 
 ## Your task
 
-Write \`createToggle(initial = false)\`, returning \`{ getValue(), toggle(), setOn(), setOff() }\`.`,
+Write \`createToggle(initial = false)\`, returning \`{ getValue(), toggle(), setOn(), setOff() }\`.
+
+\`\`\`js
+const toggle = createToggle(false);
+toggle.toggle();
+toggle.getValue(); // true
+toggle.setOff();
+toggle.getValue(); // false
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createToggle(initial = false) {
 }`,
@@ -13036,7 +14433,14 @@ Write \`createToggle(initial = false)\`, returning \`{ getValue(), toggle(), set
 
 ## Your task
 
-Write \`createIsFirstRenderTracker()\`, returning \`{ checkAndAdvance() }\`. Each call to \`checkAndAdvance()\` simulates checking on one render: it returns \`true\` the very first time it's called, and \`false\` on every call after that.`,
+Write \`createIsFirstRenderTracker()\`, returning \`{ checkAndAdvance() }\`. Each call to \`checkAndAdvance()\` simulates checking on one render: it returns \`true\` the very first time it's called, and \`false\` on every call after that.
+
+\`\`\`js
+const tracker = createIsFirstRenderTracker();
+tracker.checkAndAdvance(); // true
+tracker.checkAndAdvance(); // false
+tracker.checkAndAdvance(); // false
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createIsFirstRenderTracker() {
 }`,
@@ -13068,7 +14472,14 @@ Write \`createIsFirstRenderTracker()\`, returning \`{ checkAndAdvance() }\`. Eac
 
 ## Your task
 
-Write \`createPreviousTracker()\`, returning \`{ track(current) }\`. Call \`track\` once per simulated render with the current value; it returns whatever value was passed to the *previous* call (\`undefined\` on the very first call).`,
+Write \`createPreviousTracker()\`, returning \`{ track(current) }\`. Call \`track\` once per simulated render with the current value; it returns whatever value was passed to the *previous* call (\`undefined\` on the very first call).
+
+\`\`\`js
+const prev = createPreviousTracker();
+prev.track(1); // undefined — no previous value yet
+prev.track(2); // 1
+prev.track(3); // 2
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createPreviousTracker() {
 }`,
@@ -13101,7 +14512,16 @@ Write \`createPreviousTracker()\`, returning \`{ track(current) }\`. Call \`trac
 
 ## Your task
 
-Write \`createEffectOnce(effectFn)\`, returning a function \`run()\`. \`effectFn\` should execute the first time \`run()\` is called, and never again on any later call.`,
+Write \`createEffectOnce(effectFn)\`, returning a function \`run()\`. \`effectFn\` should execute the first time \`run()\` is called, and never again on any later call.
+
+\`\`\`js
+let calls = 0;
+const run = createEffectOnce(() => { calls++; });
+run();
+run();
+run();
+calls; // 1 — effectFn only ever ran once
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createEffectOnce(effectFn) {
 }`,
@@ -13131,7 +14551,16 @@ Write \`createEffectOnce(effectFn)\`, returning a function \`run()\`. \`effectFn
 
 ## Your task
 
-Write \`createIsMountedRef()\`, returning \`{ isMounted(), unmount() }\`. \`isMounted()\` returns \`true\` until \`unmount()\` has been called, after which it returns \`false\` forever.`,
+Write \`createIsMountedRef()\`, returning \`{ isMounted(), unmount() }\`. \`isMounted()\` returns \`true\` until \`unmount()\` has been called, after which it returns \`false\` forever.
+
+\`\`\`js
+const ref = createIsMountedRef();
+ref.isMounted(); // true
+ref.unmount();
+ref.isMounted(); // false
+ref.unmount();
+ref.isMounted(); // still false
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createIsMountedRef() {
 }`,
@@ -13165,7 +14594,16 @@ Write \`createIsMountedRef()\`, returning \`{ isMounted(), unmount() }\`. \`isMo
 
 ## Your task
 
-Write \`createCounter({ initial = 0, min = -Infinity, max = Infinity } = {})\`, returning \`{ getValue(), increment(), decrement(), reset() }\`. Every change must stay clamped within \`[min, max]\` — including the very first \`initial\` value itself.`,
+Write \`createCounter({ initial = 0, min = -Infinity, max = Infinity } = {})\`, returning \`{ getValue(), increment(), decrement(), reset() }\`. Every change must stay clamped within \`[min, max]\` — including the very first \`initial\` value itself.
+
+\`\`\`js
+const counter = createCounter({ initial: 4, max: 5 });
+counter.increment();
+counter.increment();
+counter.getValue(); // 5 — clamped, not 6
+
+createCounter({ initial: 10, max: 5 }).getValue(); // 5 — initial is clamped too
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createCounter({ initial = 0, min = -Infinity, max = Infinity } = {}) {
 }`,
@@ -13210,7 +14648,14 @@ Write \`createCounter({ initial = 0, min = -Infinity, max = Infinity } = {})\`, 
 
 ## Your task
 
-Write \`createClickOutsideWatcher(targetEl, callback)\`. It should call \`callback\` whenever a click happens anywhere in the document *outside* \`targetEl\` (and outside any of its children), and never when the click is inside it. Return \`{ destroy() }\` to remove the listener.`,
+Write \`createClickOutsideWatcher(targetEl, callback)\`. It should call \`callback\` whenever a click happens anywhere in the document *outside* \`targetEl\` (and outside any of its children), and never when the click is inside it. Return \`{ destroy() }\` to remove the listener.
+
+\`\`\`js
+const watcher = createClickOutsideWatcher(dropdownEl, () => console.log("closed"));
+// a click on document.body fires callback — "closed"
+// a click on dropdownEl itself does not
+watcher.destroy(); // no more callbacks after this
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createClickOutsideWatcher(targetEl, callback) {
 }`,
@@ -13246,7 +14691,15 @@ Write \`createClickOutsideWatcher(targetEl, callback)\`. It should call \`callba
 
 ## Your task
 
-Write \`createEventListenerHook(target, eventName, handler)\`, returning \`{ updateHandler(nextHandler), destroy() }\`. The listener should always invoke whichever handler was most recently passed to \`updateHandler\` (or the original one, if it's never been called) — not the one captured when the listener was first attached.`,
+Write \`createEventListenerHook(target, eventName, handler)\`, returning \`{ updateHandler(nextHandler), destroy() }\`. The listener should always invoke whichever handler was most recently passed to \`updateHandler\` (or the original one, if it's never been called) — not the one captured when the listener was first attached.
+
+\`\`\`js
+const listener = createEventListenerHook(button, "click", handlerA);
+// clicking button now calls handlerA
+listener.updateHandler(handlerB);
+// clicking button now calls handlerB, not the stale handlerA
+listener.destroy(); // no handler runs on further clicks
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createEventListenerHook(target, eventName, handler) {
 }`,
@@ -13284,7 +14737,15 @@ Write \`createEventListenerHook(target, eventName, handler)\`, returning \`{ upd
 
 ## Your task
 
-Write \`createHoverWatcher(el)\`, returning \`{ isHovered(), destroy() }\`.`,
+Write \`createHoverWatcher(el)\`, returning \`{ isHovered(), destroy() }\`.
+
+\`\`\`js
+const hover = createHoverWatcher(cardEl);
+// mouseenter fires on cardEl
+hover.isHovered(); // true
+// mouseleave fires on cardEl
+hover.isHovered(); // false
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createHoverWatcher(el) {
 }`,
@@ -13327,7 +14788,15 @@ Write \`createHoverWatcher(el)\`, returning \`{ isHovered(), destroy() }\`.`,
 
 ## Your task
 
-Write \`createFocusWatcher(el)\`, returning \`{ isFocused(), destroy() }\`.`,
+Write \`createFocusWatcher(el)\`, returning \`{ isFocused(), destroy() }\`.
+
+\`\`\`js
+const focus = createFocusWatcher(inputEl);
+// focus fires on inputEl
+focus.isFocused(); // true
+// blur fires on inputEl
+focus.isFocused(); // false
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createFocusWatcher(el) {
 }`,
@@ -13370,7 +14839,15 @@ Write \`createFocusWatcher(el)\`, returning \`{ isFocused(), destroy() }\`.`,
 
 ## Your task
 
-Write \`createOnScreenWatcher(el, createObserver)\`, returning \`{ isOnScreen(), destroy() }\`. \`createObserver(el, onChange)\` is called once; it's expected to return \`{ disconnect() }\`, and to call \`onChange({ isIntersecting })\` whenever the intersection state changes.`,
+Write \`createOnScreenWatcher(el, createObserver)\`, returning \`{ isOnScreen(), destroy() }\`. \`createObserver(el, onChange)\` is called once; it's expected to return \`{ disconnect() }\`, and to call \`onChange({ isIntersecting })\` whenever the intersection state changes.
+
+\`\`\`js
+const watcher = createOnScreenWatcher(imgEl, createObserver);
+watcher.isOnScreen(); // false — nothing's been reported yet
+// the injected observer calls onChange({ isIntersecting: true })
+watcher.isOnScreen(); // true
+watcher.destroy(); // calls the observer's disconnect()
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createOnScreenWatcher(el, createObserver) {
 }`,
@@ -13407,7 +14884,14 @@ Write \`createOnScreenWatcher(el, createObserver)\`, returning \`{ isOnScreen(),
 
 ## Your task
 
-Write \`createWindowSizeWatcher(win)\`, returning \`{ getSize(), destroy() }\`, where \`getSize()\` returns \`{ width, height }\` and stays in sync with \`win\`'s \`resize\` events.`,
+Write \`createWindowSizeWatcher(win)\`, returning \`{ getSize(), destroy() }\`, where \`getSize()\` returns \`{ width, height }\` and stays in sync with \`win\`'s \`resize\` events.
+
+\`\`\`js
+const watcher = createWindowSizeWatcher(win); // win.innerWidth = 1024, innerHeight = 768
+watcher.getSize(); // { width: 1024, height: 768 }
+// win resizes to 500x400 and fires "resize"
+watcher.getSize(); // { width: 500, height: 400 }
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createWindowSizeWatcher(win) {
 }`,
@@ -13447,7 +14931,16 @@ Write \`createWindowSizeWatcher(win)\`, returning \`{ getSize(), destroy() }\`, 
 
 ## Your task
 
-Write \`createDebouncedValue(initial, delayMs)\`, returning \`{ getValue(), setValue(next) }\`. Each \`setValue\` call restarts a \`delayMs\` timer; \`getValue()\` only reflects the latest \`setValue\` call once that timer finishes without being restarted again.`,
+Write \`createDebouncedValue(initial, delayMs)\`, returning \`{ getValue(), setValue(next) }\`. Each \`setValue\` call restarts a \`delayMs\` timer; \`getValue()\` only reflects the latest \`setValue\` call once that timer finishes without being restarted again.
+
+\`\`\`js
+const debounced = createDebouncedValue("", 300);
+debounced.setValue("i");
+debounced.setValue("in");
+debounced.setValue("ind");
+// 300ms after the last call:
+debounced.getValue(); // "ind"
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createDebouncedValue(initial, delayMs) {
 }`,
@@ -13486,7 +14979,16 @@ Write \`createDebouncedValue(initial, delayMs)\`, returning \`{ getValue(), setV
 
 ## Your task
 
-Write \`createThrottledValue(initial, intervalMs)\`, returning \`{ getValue(), setValue(next) }\`. A \`setValue\` call applies immediately if at least \`intervalMs\` has passed since the last applied update; otherwise it's dropped.`,
+Write \`createThrottledValue(initial, intervalMs)\`, returning \`{ getValue(), setValue(next) }\`. A \`setValue\` call applies immediately if at least \`intervalMs\` has passed since the last applied update; otherwise it's dropped.
+
+\`\`\`js
+const throttled = createThrottledValue(0, 200);
+throttled.setValue(1); // applies immediately
+throttled.setValue(2); // dropped — still inside the 200ms window
+throttled.getValue(); // 1
+// after 200ms pass:
+throttled.setValue(3); // applies
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createThrottledValue(initial, intervalMs) {
 }`,
@@ -13525,7 +15027,14 @@ Write \`createThrottledValue(initial, intervalMs)\`, returning \`{ getValue(), s
 
 ## Your task
 
-Write \`createTimeoutRunner(callback, delayMs)\`, returning \`{ reset(), clear() }\`. \`reset()\` cancels any pending timer and starts a fresh \`delayMs\` one; \`clear()\` cancels it without starting a new one.`,
+Write \`createTimeoutRunner(callback, delayMs)\`, returning \`{ reset(), clear() }\`. \`reset()\` cancels any pending timer and starts a fresh \`delayMs\` one; \`clear()\` cancels it without starting a new one.
+
+\`\`\`js
+const timeout = createTimeoutRunner(() => console.log("saved"), 1000);
+timeout.reset(); // restarts the full 1000ms wait from now
+// ...or:
+timeout.clear(); // cancels it — "saved" never logs
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createTimeoutRunner(callback, delayMs) {
 }`,
@@ -13560,7 +15069,15 @@ Write \`createTimeoutRunner(callback, delayMs)\`, returning \`{ reset(), clear()
 
 ## Your task
 
-Write \`createInterval(callback, delayMs)\`, returning \`{ updateCallback(nextCallback), stop() }\`. The underlying interval should tick every \`delayMs\` without ever restarting, but each tick must call whichever callback was most recently passed to \`updateCallback\` (or the original, if never updated).`,
+Write \`createInterval(callback, delayMs)\`, returning \`{ updateCallback(nextCallback), stop() }\`. The underlying interval should tick every \`delayMs\` without ever restarting, but each tick must call whichever callback was most recently passed to \`updateCallback\` (or the original, if never updated).
+
+\`\`\`js
+const interval = createInterval(callbackA, 1000);
+// ticks call callbackA
+interval.updateCallback(callbackB);
+// later ticks call callbackB — the same interval, never restarted
+interval.stop(); // no further ticks
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createInterval(callback, delayMs) {
 }`,
@@ -13597,7 +15114,16 @@ Write \`createInterval(callback, delayMs)\`, returning \`{ updateCallback(nextCa
 
 ## Your task
 
-Write \`createUpdateEffectRunner(effectFn)\`, returning a function \`run()\` meant to be called once per simulated render/update. \`effectFn\` must **not** run on the first call, but must run on every call after that.`,
+Write \`createUpdateEffectRunner(effectFn)\`, returning a function \`run()\` meant to be called once per simulated render/update. \`effectFn\` must **not** run on the first call, but must run on every call after that.
+
+\`\`\`js
+let calls = 0;
+const run = createUpdateEffectRunner(() => { calls++; });
+run(); // the mount — effectFn does not run
+run(); // effectFn runs
+run(); // effectFn runs
+calls; // 2
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createUpdateEffectRunner(effectFn) {
 }`,
@@ -13631,7 +15157,16 @@ Write \`createUpdateEffectRunner(effectFn)\`, returning a function \`run()\` mea
 
 ## Your task
 
-Write \`createLocalStorageState(key, initialValue, storage)\`, returning \`{ getValue(), setValue(next) }\`. On creation, it should read any existing value already in \`storage\` for \`key\` (JSON-decoded) instead of \`initialValue\`, if one exists — and every \`setValue\` call must write the new value back to \`storage\` (JSON-encoded) as well as updating the in-memory value.`,
+Write \`createLocalStorageState(key, initialValue, storage)\`, returning \`{ getValue(), setValue(next) }\`. On creation, it should read any existing value already in \`storage\` for \`key\` (JSON-decoded) instead of \`initialValue\`, if one exists — and every \`setValue\` call must write the new value back to \`storage\` (JSON-encoded) as well as updating the in-memory value.
+
+\`\`\`js
+const theme = createLocalStorageState("theme", "light", storage);
+theme.getValue(); // "light" — nothing in storage yet
+theme.setValue("dark"); // writes JSON.stringify("dark") into storage
+
+// a fresh instance against the same storage:
+createLocalStorageState("theme", "light", storage).getValue(); // "dark", not "light"
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createLocalStorageState(key, initialValue, storage) {
 }`,
@@ -13670,7 +15205,17 @@ Write \`createLocalStorageState(key, initialValue, storage)\`, returning \`{ get
 
 ## Your task
 
-Write \`createArrayState(initial = [])\`, returning \`{ getValue(), push(item), removeAt(index), updateAt(index, item), clear() }\`. Every operation must return a new array — never mutate the array \`getValue()\` last returned.`,
+Write \`createArrayState(initial = [])\`, returning \`{ getValue(), push(item), removeAt(index), updateAt(index, item), clear() }\`. Every operation must return a new array — never mutate the array \`getValue()\` last returned.
+
+\`\`\`js
+const list = createArrayState([1, 2]);
+list.push(3);
+list.getValue(); // [1, 2, 3]
+list.updateAt(1, 99);
+list.getValue(); // [1, 99, 3]
+list.removeAt(0);
+list.getValue(); // [99, 3]
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createArrayState(initial = []) {
 }`,
@@ -13714,7 +15259,15 @@ Write \`createArrayState(initial = [])\`, returning \`{ getValue(), push(item), 
 
 ## Your task
 
-Write \`formatPhoneNumberInput(raw)\`, which takes the raw characters typed so far (only digits count — ignore anything else, so pasted text like \`"(555) 123-4567"\` still works) and returns the progressively-formatted \`(XXX) XXX-XXXX\` string, capped at 10 digits.`,
+Write \`formatPhoneNumberInput(raw)\`, which takes the raw characters typed so far (only digits count — ignore anything else, so pasted text like \`"(555) 123-4567"\` still works) and returns the progressively-formatted \`(XXX) XXX-XXXX\` string, capped at 10 digits.
+
+\`\`\`js
+formatPhoneNumberInput("5"); // "(5"
+formatPhoneNumberInput("555"); // "(555"
+formatPhoneNumberInput("5551234"); // "(555) 123-4"
+formatPhoneNumberInput("(555) 123-4567"); // "(555) 123-4567" — pasted, non-digits stripped
+formatPhoneNumberInput("55512345678"); // "(555) 123-4567" — capped at 10 digits
+\`\`\``,
     difficulty: "medium",
     starterCode: `function formatPhoneNumberInput(raw) {
 }`,
@@ -13751,7 +15304,16 @@ Write \`formatPhoneNumberInput(raw)\`, which takes the raw characters typed so f
 
 ## Your task
 
-Write \`createFormState(initialValues, validators = {})\`, returning \`{ getValues(), getErrors(), setField(name, value), validateAll() }\`. \`validators\` maps a field name to a function \`(value) => errorMessage | null\`. Changing a field via \`setField\` should immediately re-validate just that field; \`validateAll()\` re-validates every field and returns whether the whole form is currently valid.`,
+Write \`createFormState(initialValues, validators = {})\`, returning \`{ getValues(), getErrors(), setField(name, value), validateAll() }\`. \`validators\` maps a field name to a function \`(value) => errorMessage | null\`. Changing a field via \`setField\` should immediately re-validate just that field; \`validateAll()\` re-validates every field and returns whether the whole form is currently valid.
+
+\`\`\`js
+const form = createFormState({ email: "" }, { email: (v) => (v ? null : "Required") });
+form.getErrors().email; // "Required" — validated up front, before any edit
+form.setField("email", "a@b.com");
+form.getErrors().email; // null
+form.setField("email", "");
+form.validateAll(); // false — getErrors().email is "Required" again
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createFormState(initialValues, validators = {}) {
 }`,
@@ -13802,7 +15364,16 @@ Write \`createFormState(initialValues, validators = {})\`, returning \`{ getValu
 
 ## Your task
 
-Write \`createAsyncResource(promiseFactory)\`, returning \`{ getState(), run() }\`. \`getState()\` returns \`{ status, data, error }\`, starting at \`{ status: "idle", data: null, error: null }\`. Calling \`run()\` sets status to \`"loading"\`, then resolves to either \`{ status: "success", data, error: null }\` or \`{ status: "error", data: null, error }\` once \`promiseFactory()\` settles.`,
+Write \`createAsyncResource(promiseFactory)\`, returning \`{ getState(), run() }\`. \`getState()\` returns \`{ status, data, error }\`, starting at \`{ status: "idle", data: null, error: null }\`. Calling \`run()\` sets status to \`"loading"\`, then resolves to either \`{ status: "success", data, error: null }\` or \`{ status: "error", data: null, error }\` once \`promiseFactory()\` settles.
+
+\`\`\`js
+const resource = createAsyncResource(() => fetch("/api/user").then((r) => r.json()));
+resource.getState(); // { status: "idle", data: null, error: null }
+const promise = resource.run();
+resource.getState().status; // "loading" — set synchronously, before the fetch resolves
+await promise;
+resource.getState(); // { status: "success", data: {...}, error: null }
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createAsyncResource(promiseFactory) {
 }`,
@@ -13844,7 +15415,16 @@ Write \`createAsyncResource(promiseFactory)\`, returning \`{ getState(), run() }
 
 ## Your task
 
-Write \`createSWRResource(key, fetcher, cache)\`, returning \`{ getData(), subscribe(listener), load() }\`. \`cache\` is a shared \`Map\`-like store (\`get\`/\`set\`) so multiple resources can share state. \`load()\` should return whatever was cached *before* the fetch started, while updating the cache (and notifying subscribers) once \`fetcher()\` resolves.`,
+Write \`createSWRResource(key, fetcher, cache)\`, returning \`{ getData(), subscribe(listener), load() }\`. \`cache\` is a shared \`Map\`-like store (\`get\`/\`set\`) so multiple resources can share state. \`load()\` should return whatever was cached *before* the fetch started, while updating the cache (and notifying subscribers) once \`fetcher()\` resolves.
+
+\`\`\`js
+cache.set("user", { name: "stale" });
+const resource = createSWRResource("user", fetcher, cache);
+resource.subscribe((data) => console.log("updated:", data));
+const stale = await resource.load(); // { name: "stale" } — the cache's old value
+resource.getData(); // { name: "fresh" } — now updated in the background
+// "updated: { name: 'fresh' }" was logged once fetcher() resolved
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createSWRResource(key, fetcher, cache) {
 }`,
@@ -13893,7 +15473,16 @@ Write \`createSWRResource(key, fetcher, cache)\`, returning \`{ getData(), subsc
 
 ## Your task
 
-Write \`createDedupedFetcher(fetcher)\`, returning a function \`fetchDeduped(key)\`. While a request for a given \`key\` is in flight, any further calls with that same \`key\` must return the *same* promise instead of calling \`fetcher\` again. Once that request settles, the next call with the same \`key\` should start a brand-new request.`,
+Write \`createDedupedFetcher(fetcher)\`, returning a function \`fetchDeduped(key)\`. While a request for a given \`key\` is in flight, any further calls with that same \`key\` must return the *same* promise instead of calling \`fetcher\` again. Once that request settles, the next call with the same \`key\` should start a brand-new request.
+
+\`\`\`js
+const fetchDeduped = createDedupedFetcher(fetcher);
+const p1 = fetchDeduped("/api/user/1");
+const p2 = fetchDeduped("/api/user/1");
+p1 === p2; // true — fetcher was only called once
+await p1;
+const p3 = fetchDeduped("/api/user/1"); // settled — this starts a fresh request
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createDedupedFetcher(fetcher) {
 }`,
@@ -13927,9 +15516,21 @@ Write \`createDedupedFetcher(fetcher)\`, returning a function \`fetchDeduped(key
     title: "Global Store with Context + useContext (Avoid Prop Drilling)",
     description: `Strip away the JSX and \`<Provider>\` boilerplate, and what \`Context\` actually gives every descendant is just this: a shared value, plus a way to be notified when it changes — which is exactly what a plain subscribable store provides too.
 
+## The idea
+
+A global store needs only three moving parts: a value held in closure, a \`setValue\` that updates it and notifies listeners, and a \`subscribe\` that registers (and can later remove) a listener. \`useContext\` wraps exactly this in JSX plumbing — the reactive core underneath is the pub/sub pattern below.
+
 ## Your task
 
-Write \`createGlobalStore(initialValue)\`, returning \`{ getValue(), setValue(next), subscribe(listener) }\`. \`setValue\` should notify every current subscriber with the new value; \`subscribe\` returns an unsubscribe function.`,
+Write \`createGlobalStore(initialValue)\`, returning \`{ getValue(), setValue(next), subscribe(listener) }\`. \`setValue\` should notify every current subscriber with the new value; \`subscribe\` returns an unsubscribe function.
+
+\`\`\`js
+const store = createGlobalStore({ theme: "light" });
+const unsubscribe = store.subscribe((value) => console.log("changed:", value));
+store.setValue({ theme: "dark" }); // logs "changed: { theme: 'dark' }"
+unsubscribe();
+store.setValue({ theme: "light" }); // the listener is no longer called
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createGlobalStore(initialValue) {
 }`,
@@ -13967,9 +15568,20 @@ Write \`createGlobalStore(initialValue)\`, returning \`{ getValue(), setValue(ne
     title: "Proxy-State (Valtio-Style Reactive Store)",
     description: `Valtio's pitch: mutate a plain object directly (\`store.count++\`) and subscribers still get notified — no reducer, no setter functions, just a \`Proxy\` intercepting every write. Simpler (and coarser-grained) than a full dependency-tracking system: every mutation notifies every subscriber, with no per-property filtering.
 
+## The idea
+
+A JavaScript \`Proxy\` can intercept property writes via its \`set\` trap. Route every assignment through that trap, perform the real write, then notify subscribers — and \`store.count++\` (which reads then writes) triggers it automatically, with no special-casing needed for that syntax.
+
 ## Your task
 
-Write \`createValtioStore(initialState)\`, returning \`{ store, subscribe(callback) }\`. \`store\` must be directly mutable (\`store.someKey = value\`), and every mutation should synchronously call every subscribed \`callback\` (with no arguments — subscribers just re-read \`store\` themselves).`,
+Write \`createValtioStore(initialState)\`, returning \`{ store, subscribe(callback) }\`. \`store\` must be directly mutable (\`store.someKey = value\`), and every mutation should synchronously call every subscribed \`callback\` (with no arguments — subscribers just re-read \`store\` themselves).
+
+\`\`\`js
+const { store, subscribe } = createValtioStore({ count: 0 });
+subscribe(() => console.log("changed, count is now:", store.count));
+store.count = 5; // logs "changed, count is now: 5"
+store.count; // 5 — store is directly mutable, no setter needed
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createValtioStore(initialState) {
 }`,
@@ -14010,9 +15622,22 @@ Write \`createValtioStore(initialState)\`, returning \`{ store, subscribe(callba
     title: "Minimal Redux-Like Store: createStore, useSelector, useDispatch",
     description: `The three pieces underneath every Redux app, stripped to their essentials: a store holding one piece of state, a \`dispatch\` that runs actions through a reducer to produce the next state, and subscribers notified after every change — \`useSelector\`/\`useDispatch\` are thin hooks layered on top of exactly this.
 
+## The idea
+
+Everything a Redux store does reduces to: hold \`state\` in closure, and on \`dispatch(action)\`, compute \`state = reducer(state, action)\`, then notify every subscriber with the new state. \`useSelector\` just reads a slice of that state; \`useDispatch\` just returns the store's \`dispatch\` function.
+
 ## Your task
 
-Write \`createReduxStore(reducer, initialState)\`, returning \`{ getState(), dispatch(action), subscribe(listener) }\`. \`dispatch(action)\` must compute the next state as \`reducer(currentState, action)\`, store it, and notify every subscriber — then return the action, matching real Redux's \`dispatch\`.`,
+Write \`createReduxStore(reducer, initialState)\`, returning \`{ getState(), dispatch(action), subscribe(listener) }\`. \`dispatch(action)\` must compute the next state as \`reducer(currentState, action)\`, store it, and notify every subscriber — then return the action, matching real Redux's \`dispatch\`.
+
+\`\`\`js
+const counterReducer = (state, action) => (action.type === "increment" ? state + 1 : state);
+const store = createReduxStore(counterReducer, 0);
+store.subscribe((state) => console.log("now:", state));
+store.dispatch({ type: "increment" }); // logs "now: 1"
+store.dispatch({ type: "increment" }); // logs "now: 2"
+store.getState(); // 2
+\`\`\``,
     difficulty: "hard",
     starterCode: `function createReduxStore(reducer, initialState) {
 }`,
@@ -14054,9 +15679,26 @@ Write \`createReduxStore(reducer, initialState)\`, returning \`{ getState(), dis
     title: "Implement useState From Scratch (Simplified, No Fiber)",
     description: `The trick behind every React hook: state doesn't live on the component function at all — it lives in a slots array outside it, indexed purely by **call order** within a render. That's exactly why hooks can never be called conditionally: skip a call on one render and every slot index after it shifts, pointing state at the wrong hook.
 
+## The idea
+
+Keep a module-level \`slots\` array and a \`cursor\` that resets to 0 at the start of every render. Each \`useState\` call reads \`slots[cursor]\` and then increments \`cursor\` — so as long as a component calls its hooks in the same order every time, "the Nth \`useState\` call" always lands on "slot N". \`setState\` just writes that slot and re-invokes \`render\`.
+
 ## Your task
 
-Write \`createStateRuntime()\`, returning \`{ useState, render(componentFn) }\`. \`useState(initial)\` returns \`[value, setState]\`; \`setState\` accepts either a plain value or an updater function \`(prev) => next\`, and must trigger \`render\` to be called again automatically with the same \`componentFn\`. State must persist correctly across multiple \`useState\` calls within one render (each gets its own slot, by order).`,
+Write \`createStateRuntime()\`, returning \`{ useState, render(componentFn) }\`. \`useState(initial)\` returns \`[value, setState]\`; \`setState\` accepts either a plain value or an updater function \`(prev) => next\`, and must trigger \`render\` to be called again automatically with the same \`componentFn\`. State must persist correctly across multiple \`useState\` calls within one render (each gets its own slot, by order).
+
+\`\`\`js
+const runtime = createStateRuntime();
+let setCount;
+runtime.render(() => {
+  const [count, setState] = runtime.useState(0);
+  setCount = setState;
+  console.log("rendered with count:", count);
+});
+// logs "rendered with count: 0"
+setCount((prev) => prev + 1);
+// automatically re-renders, logging "rendered with count: 1"
+\`\`\``,
     difficulty: "hard",
     starterCode: `function createStateRuntime() {
 }`,
@@ -14101,9 +15743,27 @@ Write \`createStateRuntime()\`, returning \`{ useState, render(componentFn) }\`.
     title: "Implement useReducer From Scratch",
     description: `\`useReducer\` uses the exact same slot mechanism as \`useState\` — the only difference is that updates go through a reducer function instead of being set directly, which is why \`useState\` itself can actually be implemented as \`useReducer\` with a trivial "replace" reducer.
 
+## The idea
+
+Reuse the identical slots-array-plus-cursor mechanism from \`useState\`: each \`useReducer\` call claims the next slot on first render. The only change is what writes to that slot — instead of \`setState\` assigning directly, \`dispatch\` computes \`reducer(slots[i], action)\` and stores *that*, then triggers a re-render exactly like \`setState\` does.
+
 ## Your task
 
-Write \`createReducerRuntime()\`, returning \`{ useReducer, render(componentFn) }\`. \`useReducer(reducer, initialState)\` returns \`[state, dispatch]\`; calling \`dispatch(action)\` must compute \`reducer(state, action)\`, store the result in that call's slot, and trigger a fresh render.`,
+Write \`createReducerRuntime()\`, returning \`{ useReducer, render(componentFn) }\`. \`useReducer(reducer, initialState)\` returns \`[state, dispatch]\`; calling \`dispatch(action)\` must compute \`reducer(state, action)\`, store the result in that call's slot, and trigger a fresh render.
+
+\`\`\`js
+const runtime = createReducerRuntime();
+const counterReducer = (state, action) => (action.type === "increment" ? state + 1 : state);
+let dispatch;
+runtime.render(() => {
+  const [state, d] = runtime.useReducer(counterReducer, 0);
+  dispatch = d;
+  console.log("state:", state);
+});
+dispatch({ type: "increment" });
+dispatch({ type: "increment" });
+// the next render reads state: 2
+\`\`\``,
     difficulty: "hard",
     starterCode: `function createReducerRuntime() {
 }`,
@@ -14147,9 +15807,26 @@ Write \`createReducerRuntime()\`, returning \`{ useReducer, render(componentFn) 
     title: "Implement useMemo / useCallback From Scratch",
     description: `Both hooks are the same idea: skip recomputation when nothing relevant changed. \`useCallback(fn, deps)\` is really nothing more than \`useMemo(() => fn, deps)\` — memoizing the function reference itself instead of a computed value.
 
+## The idea
+
+Each \`useMemo\` call claims a slot (same slots-plus-cursor mechanism as \`useState\`) holding \`{ value, deps }\`. On every render, compare the new \`deps\` against the stored ones element-by-element; only call \`factory()\` again — and overwrite the slot — if something actually differs. \`useCallback\` needs no separate logic at all: it's just \`useMemo(() => fn, deps)\`, memoizing the function reference as if it were the "value".
+
 ## Your task
 
-Write \`createMemoRuntime()\`, returning \`{ useMemo, useCallback, render(componentFn) }\`. \`useMemo(factory, deps)\` should only call \`factory()\` again when \`deps\` has changed (element-by-element) since the last render for that slot — otherwise it returns the previously memoized value without calling \`factory\` again.`,
+Write \`createMemoRuntime()\`, returning \`{ useMemo, useCallback, render(componentFn) }\`. \`useMemo(factory, deps)\` should only call \`factory()\` again when \`deps\` has changed (element-by-element) since the last render for that slot — otherwise it returns the previously memoized value without calling \`factory\` again.
+
+\`\`\`js
+const runtime = createMemoRuntime();
+let calls = 0;
+function render(a, b) {
+  runtime.render(() => {
+    runtime.useMemo(() => { calls++; return a + b; }, [a, b]);
+  });
+}
+render(1, 2); // calls factory — calls === 1
+render(1, 2); // deps unchanged — calls stays 1, memoized value reused
+render(1, 3); // a dep changed — calls factory again, calls === 2
+\`\`\``,
     difficulty: "hard",
     starterCode: `function createMemoRuntime() {
 }`,
@@ -14199,7 +15876,13 @@ Write \`createMemoRuntime()\`, returning \`{ useMemo, useCallback, render(compon
 
 ## Your task
 
-Write \`withLogger(Component, log)\`, returning a new function that: calls \`log(props)\` every time it's invoked, then calls \`Component(props)\` and returns its result unchanged.`,
+Write \`withLogger(Component, log)\`, returning a new function that: calls \`log(props)\` every time it's invoked, then calls \`Component(props)\` and returns its result unchanged.
+
+\`\`\`js
+const Greeting = (props) => "Hello, " + props.name;
+const LoggedGreeting = withLogger(Greeting, (props) => console.log("rendering with", props));
+LoggedGreeting({ name: "Ada" }); // logs "rendering with { name: 'Ada' }", returns "Hello, Ada"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function withLogger(Component, log) {
 }`,
@@ -14228,7 +15911,17 @@ Write \`withLogger(Component, log)\`, returning a new function that: calls \`log
 
 ## Your task
 
-Write \`createTabsController()\`, returning \`{ registerTab(), selectTab(index), getActiveIndex(), isActive(id) }\`. Each call to \`registerTab()\` simulates a \`Tabs.Item\` mounting, and returns a unique, sequentially-assigned id (0, 1, 2, ...). \`isActive(id)\` tells a given tab whether it's the currently selected one.`,
+Write \`createTabsController()\`, returning \`{ registerTab(), selectTab(index), getActiveIndex(), isActive(id) }\`. Each call to \`registerTab()\` simulates a \`Tabs.Item\` mounting, and returns a unique, sequentially-assigned id (0, 1, 2, ...). \`isActive(id)\` tells a given tab whether it's the currently selected one.
+
+\`\`\`js
+const tabs = createTabsController();
+const idA = tabs.registerTab(); // 0
+const idB = tabs.registerTab(); // 1
+tabs.getActiveIndex(); // 0 — the first tab is active by default
+tabs.selectTab(1);
+tabs.isActive(idB); // true
+tabs.isActive(idA); // false
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createTabsController() {
 }`,
@@ -14269,7 +15962,18 @@ Write \`createTabsController()\`, returning \`{ registerTab(), selectTab(index),
 
 ## Your task
 
-Write \`createErrorBoundary(renderFn, fallbackFn)\`, returning \`{ run(props), reset() }\`. \`run(props)\` calls \`renderFn(props)\`; if it throws, \`run\` catches the error and returns \`fallbackFn(error)\` instead — and once that's happened, every subsequent \`run()\` call must keep returning the fallback (without calling \`renderFn\` again) until \`reset()\` is called.`,
+Write \`createErrorBoundary(renderFn, fallbackFn)\`, returning \`{ run(props), reset() }\`. \`run(props)\` calls \`renderFn(props)\`; if it throws, \`run\` catches the error and returns \`fallbackFn(error)\` instead — and once that's happened, every subsequent \`run()\` call must keep returning the fallback (without calling \`renderFn\` again) until \`reset()\` is called.
+
+\`\`\`js
+const boundary = createErrorBoundary(
+  () => { throw new Error("boom"); },
+  (error) => "Something went wrong: " + error.message,
+);
+boundary.run(); // "Something went wrong: boom"
+boundary.run(); // still the fallback — renderFn is not retried
+boundary.reset();
+boundary.run(); // renderFn runs again from a clean state
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createErrorBoundary(renderFn, fallbackFn) {
 }`,
@@ -14314,7 +16018,14 @@ Write \`createErrorBoundary(renderFn, fallbackFn)\`, returning \`{ run(props), r
 
 ## Your task
 
-Write \`attachImperativeHandle(ref, createHandle)\`, where \`ref\` is a plain object with a \`.current\` property (standing in for a real ref object) and \`createHandle()\` returns the curated methods object. Set \`ref.current\` to exactly what \`createHandle()\` returns.`,
+Write \`attachImperativeHandle(ref, createHandle)\`, where \`ref\` is a plain object with a \`.current\` property (standing in for a real ref object) and \`createHandle()\` returns the curated methods object. Set \`ref.current\` to exactly what \`createHandle()\` returns.
+
+\`\`\`js
+const ref = { current: null };
+const focus = () => console.log("focused");
+attachImperativeHandle(ref, () => ({ focus }));
+ref.current.focus === focus; // true — exactly the curated methods, nothing extra
+\`\`\``,
     difficulty: "medium",
     starterCode: `function attachImperativeHandle(ref, createHandle) {
 }`,
@@ -14341,7 +16052,15 @@ Write \`attachImperativeHandle(ref, createHandle)\`, where \`ref\` is a plain ob
 
 ## Your task
 
-Write \`getVisibleRange({ scrollTop, containerHeight, itemHeight, totalItems, overscan = 0 })\`, returning \`{ startIndex, endIndex, offsetY }\`. \`offsetY\` is how far down (in pixels) the first rendered item should be positioned, so the visible slice lines up correctly within the full scrollable area.`,
+Write \`getVisibleRange({ scrollTop, containerHeight, itemHeight, totalItems, overscan = 0 })\`, returning \`{ startIndex, endIndex, offsetY }\`. \`offsetY\` is how far down (in pixels) the first rendered item should be positioned, so the visible slice lines up correctly within the full scrollable area.
+
+\`\`\`js
+getVisibleRange({ scrollTop: 0, containerHeight: 300, itemHeight: 50, totalItems: 100 });
+// { startIndex: 0, endIndex: 6, offsetY: 0 }
+
+getVisibleRange({ scrollTop: 500, containerHeight: 300, itemHeight: 50, totalItems: 100, overscan: 2 });
+// { startIndex: 8, endIndex: 18, offsetY: 400 }
+\`\`\``,
     difficulty: "hard",
     starterCode: `function getVisibleRange({ scrollTop, containerHeight, itemHeight, totalItems, overscan = 0 }) {
 }`,
@@ -14375,7 +16094,14 @@ Write \`getVisibleRange({ scrollTop, containerHeight, itemHeight, totalItems, ov
 
 ## Your task
 
-Write \`applyBoxSizing(el, mode)\`, which sets \`el\`'s \`box-sizing\` to \`mode\` (\`"content-box"\` or \`"border-box"\`).`,
+Write \`applyBoxSizing(el, mode)\`, which sets \`el\`'s \`box-sizing\` to \`mode\` (\`"content-box"\` or \`"border-box"\`).
+
+\`\`\`js
+applyBoxSizing(el, "border-box");
+// el.style.boxSizing === "border-box"
+// a 200px-wide element with 20px padding and a 5px border
+// now renders at exactly 200px wide — padding and border no longer add to it
+\`\`\``,
     difficulty: "easy",
     starterCode: `function applyBoxSizing(el, mode) {
 }`,
@@ -14400,7 +16126,14 @@ Write \`applyBoxSizing(el, mode)\`, which sets \`el\`'s \`box-sizing\` to \`mode
 
 ## Your task
 
-Write \`centerVertically(container)\`, which makes \`container\`'s children center vertically within it, regardless of the container's or child's height.`,
+Write \`centerVertically(container)\`, which makes \`container\`'s children center vertically within it, regardless of the container's or child's height.
+
+\`\`\`js
+centerVertically(container);
+// container's children are now centered vertically:
+// display: flex; align-items: center;
+// a 300px-tall container with a 50px-tall child centers it 125px from the top
+\`\`\``,
     difficulty: "easy",
     starterCode: `function centerVertically(container) {
 }`,
@@ -14426,7 +16159,14 @@ Write \`centerVertically(container)\`, which makes \`container\`'s children cent
 
 ## Your task
 
-Write \`centerBoth(container)\`, which centers \`container\`'s children both horizontally and vertically within it.`,
+Write \`centerBoth(container)\`, which centers \`container\`'s children both horizontally and vertically within it.
+
+\`\`\`js
+centerBoth(container);
+// container's children are now centered on both axes:
+// display: flex; align-items: center; justify-content: center;
+// a 300×300px container with a 50×80px child centers it at (125px, 110px)
+\`\`\``,
     difficulty: "easy",
     starterCode: `function centerBoth(container) {
 }`,
@@ -14454,7 +16194,15 @@ Write \`centerBoth(container)\`, which centers \`container\`'s children both hor
 
 ## Your task
 
-Write \`truncateSingleLine(el)\`, which sets up \`el\` so any text overflowing its width is clipped to a single line and ends in an ellipsis.`,
+Write \`truncateSingleLine(el)\`, which sets up \`el\` so any text overflowing its width is clipped to a single line and ends in an ellipsis.
+
+\`\`\`js
+truncateSingleLine(el);
+// el.style.whiteSpace === "nowrap"
+// el.style.overflow === "hidden"
+// el.style.textOverflow === "ellipsis"
+// long text now clips to one line, ending in "…" instead of wrapping or overflowing
+\`\`\``,
     difficulty: "easy",
     starterCode: `function truncateSingleLine(el) {
 }`,
@@ -14482,7 +16230,16 @@ Write \`truncateSingleLine(el)\`, which sets up \`el\` so any text overflowing i
 
 ## Your task
 
-Write \`truncateMultiLine(el, lines)\`, which clips \`el\`'s text to exactly \`lines\` lines, ending in an ellipsis.`,
+Write \`truncateMultiLine(el, lines)\`, which clips \`el\`'s text to exactly \`lines\` lines, ending in an ellipsis.
+
+\`\`\`js
+truncateMultiLine(el, 3);
+// el.style.display === "-webkit-box"
+// el.style.webkitBoxOrient === "vertical"
+// el.style.webkitLineClamp === "3"
+// el.style.overflow === "hidden"
+// text now wraps normally for 3 lines, then clips with a trailing "…"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function truncateMultiLine(el, lines) {
 }`,
@@ -14512,7 +16269,14 @@ Write \`truncateMultiLine(el, lines)\`, which clips \`el\`'s text to exactly \`l
 
 ## Your task
 
-Write \`setFluidFontSize(el, minPx, preferredVw, maxPx)\`, setting \`el\`'s \`font-size\` to \`clamp(minPx, preferredVw, maxPx)\` (with \`px\`/\`vw\` units attached).`,
+Write \`setFluidFontSize(el, minPx, preferredVw, maxPx)\`, setting \`el\`'s \`font-size\` to \`clamp(minPx, preferredVw, maxPx)\` (with \`px\`/\`vw\` units attached).
+
+\`\`\`js
+setFluidFontSize(el, 16, 4, 64);
+// el.style.fontSize === "clamp(16px, 4vw, 64px)"
+// resolves to 16px on narrow viewports, 64px on wide ones,
+// and scales with 4vw of the viewport width in between
+\`\`\``,
     difficulty: "medium",
     starterCode: `function setFluidFontSize(el, minPx, preferredVw, maxPx) {
 }`,
@@ -14538,7 +16302,13 @@ Write \`setFluidFontSize(el, minPx, preferredVw, maxPx)\`, setting \`el\`'s \`fo
 
 ## Your task
 
-Write \`setFluidFontSizeLegacy(el, vw)\`, setting \`el\`'s \`font-size\` to \`vw\` viewport-width units — no clamping, no fallback.`,
+Write \`setFluidFontSizeLegacy(el, vw)\`, setting \`el\`'s \`font-size\` to \`vw\` viewport-width units — no clamping, no fallback.
+
+\`\`\`js
+setFluidFontSizeLegacy(el, 5);
+// el.style.fontSize === "5vw"
+// resolved size is exactly 5% of the current viewport width — no min or max
+\`\`\``,
     difficulty: "medium",
     starterCode: `function setFluidFontSizeLegacy(el, vw) {
 }`,
@@ -14562,7 +16332,14 @@ Write \`setFluidFontSizeLegacy(el, vw)\`, setting \`el\`'s \`font-size\` to \`vw
 
 ## Your task
 
-Write \`applyGradientText(el, gradientCss)\`, applying \`gradientCss\` (e.g. \`"linear-gradient(90deg, red, blue)"\`) as a text-clipped gradient on \`el\`.`,
+Write \`applyGradientText(el, gradientCss)\`, applying \`gradientCss\` (e.g. \`"linear-gradient(90deg, red, blue)"\`) as a text-clipped gradient on \`el\`.
+
+\`\`\`js
+applyGradientText(el, "linear-gradient(90deg, red, blue)");
+// el.style.backgroundImage === "linear-gradient(90deg, red, blue)"
+// el.style.backgroundClip === "text"; el.style.webkitBackgroundClip === "text"
+// el.style.color === "transparent" — the gradient shows through the text glyphs
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyGradientText(el, gradientCss) {
 }`,
@@ -14593,7 +16370,14 @@ Write \`applyGradientText(el, gradientCss)\`, applying \`gradientCss\` (e.g. \`"
 
 ## Your task
 
-Write \`applyFlexLayoutOne(container)\`, where \`container\` has exactly 3 children. Make the 1st and 3rd children exactly 100px wide and never grow or shrink; make the 2nd child flexible, absorbing all remaining space.`,
+Write \`applyFlexLayoutOne(container)\`, where \`container\` has exactly 3 children. Make the 1st and 3rd children exactly 100px wide and never grow or shrink; make the 2nd child flexible, absorbing all remaining space.
+
+\`\`\`js
+applyFlexLayoutOne(container);
+// container.style.display === "flex"
+// children[0] and children[2] get flex: "0 0 100px" — fixed at 100px
+// children[1] gets flex: "1" — in a 500px-wide container, it renders 300px wide
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyFlexLayoutOne(container) {
 }`,
@@ -14622,7 +16406,14 @@ Write \`applyFlexLayoutOne(container)\`, where \`container\` has exactly 3 child
 
 ## Your task
 
-Write \`applyEqualHeightCards(container)\`, making \`container\`'s children wrap onto new rows as needed, with every card in a row stretched to match the tallest card in that row.`,
+Write \`applyEqualHeightCards(container)\`, making \`container\`'s children wrap onto new rows as needed, with every card in a row stretched to match the tallest card in that row.
+
+\`\`\`js
+applyEqualHeightCards(container);
+// container.style.display === "flex"
+// container.style.flexWrap === "wrap"
+// two cards with different content heights both render at the taller card's height
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyEqualHeightCards(container) {
 }`,
@@ -14648,7 +16439,14 @@ Write \`applyEqualHeightCards(container)\`, making \`container\`'s children wrap
 
 ## Your task
 
-Write \`applyTwoColumnLayout(container, sidebarWidth)\`, where \`container\` has exactly 2 children: a sidebar (1st) fixed at \`sidebarWidth\` pixels, and a main area (2nd) that fills the rest.`,
+Write \`applyTwoColumnLayout(container, sidebarWidth)\`, where \`container\` has exactly 2 children: a sidebar (1st) fixed at \`sidebarWidth\` pixels, and a main area (2nd) that fills the rest.
+
+\`\`\`js
+applyTwoColumnLayout(container, 150);
+// container.style.display === "flex"
+// children[0] gets flex: "0 0 150px" — in a 500px-wide container, sidebar is 150px
+// children[1] gets flex: "1" — main fills the remaining 350px
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyTwoColumnLayout(container, sidebarWidth) {
 }`,
@@ -14676,7 +16474,14 @@ Write \`applyTwoColumnLayout(container, sidebarWidth)\`, where \`container\` has
 
 ## Your task
 
-Write \`applyStickyFooterLayout(wrapper)\`, where \`wrapper\` has exactly 3 children in order: header, main, footer. However short the header/main/footer content is, the footer must stay pinned to \`wrapper\`'s bottom edge.`,
+Write \`applyStickyFooterLayout(wrapper)\`, where \`wrapper\` has exactly 3 children in order: header, main, footer. However short the header/main/footer content is, the footer must stay pinned to \`wrapper\`'s bottom edge.
+
+\`\`\`js
+applyStickyFooterLayout(wrapper);
+// wrapper.style.display === "flex"; wrapper.style.flexDirection === "column"
+// children[1] (main) gets flex: "1", absorbing all leftover vertical space
+// so the footer's bottom edge stays flush with wrapper's bottom edge
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyStickyFooterLayout(wrapper) {
 }`,
@@ -14704,7 +16509,14 @@ Write \`applyStickyFooterLayout(wrapper)\`, where \`wrapper\` has exactly 3 chil
 
 ## Your task
 
-Write \`fixFlexChildTruncation(flexChild)\`, which is the one missing property needed to let \`flexChild\`'s already-configured ellipsis truncation actually take effect.`,
+Write \`fixFlexChildTruncation(flexChild)\`, which is the one missing property needed to let \`flexChild\`'s already-configured ellipsis truncation actually take effect.
+
+\`\`\`js
+fixFlexChildTruncation(flexChild);
+// flexChild.style.minWidth === "0"
+// overrides the flex item's default min-width: auto, so it can finally
+// shrink below its text's natural width — the existing ellipsis styles now apply
+\`\`\``,
     difficulty: "medium",
     starterCode: `function fixFlexChildTruncation(flexChild) {
 }`,
@@ -14731,7 +16543,14 @@ Write \`fixFlexChildTruncation(flexChild)\`, which is the one missing property n
 
 ## Your task
 
-Write \`applyGridLayoutOne(container)\`, laying \`container\`'s children out in 3 equal-width columns.`,
+Write \`applyGridLayoutOne(container)\`, laying \`container\`'s children out in 3 equal-width columns.
+
+\`\`\`js
+applyGridLayoutOne(container);
+// container.style.display === "grid"
+// container.style.gridTemplateColumns === "repeat(3, 1fr)"
+// in a 300px-wide container, each of the 3 children renders exactly 100px wide
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyGridLayoutOne(container) {
 }`,
@@ -14757,7 +16576,14 @@ Write \`applyGridLayoutOne(container)\`, laying \`container\`'s children out in 
 
 ## Your task
 
-Write \`applyGridLayoutTwo(container, sidebarWidth)\`, giving \`container\` two columns: the 1st exactly \`sidebarWidth\` pixels wide, the 2nd filling the rest.`,
+Write \`applyGridLayoutTwo(container, sidebarWidth)\`, giving \`container\` two columns: the 1st exactly \`sidebarWidth\` pixels wide, the 2nd filling the rest.
+
+\`\`\`js
+applyGridLayoutTwo(container, 150);
+// container.style.display === "grid"
+// container.style.gridTemplateColumns === "150px 1fr"
+// in a 500px-wide container, column 1 renders 150px, column 2 renders 350px
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyGridLayoutTwo(container, sidebarWidth) {
 }`,
@@ -14783,7 +16609,14 @@ Write \`applyGridLayoutTwo(container, sidebarWidth)\`, giving \`container\` two 
 
 ## Your task
 
-Write \`applyResponsiveGrid(container, minItemWidth)\`, laying out \`container\`'s children in as many \`minItemWidth\`-or-wider columns as fit, wrapping the rest onto new rows.`,
+Write \`applyResponsiveGrid(container, minItemWidth)\`, laying out \`container\`'s children in as many \`minItemWidth\`-or-wider columns as fit, wrapping the rest onto new rows.
+
+\`\`\`js
+applyResponsiveGrid(container, 200);
+// container.style.gridTemplateColumns === "repeat(auto-fit, minmax(200px, 1fr))"
+// a 650px-wide container fits 3 columns per row; resized to 450px, only 2 fit —
+// the column count recalculates with no media query involved
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyResponsiveGrid(container, minItemWidth) {
 }`,
@@ -14811,7 +16644,13 @@ Write \`applyResponsiveGrid(container, minItemWidth)\`, laying out \`container\`
 
 ## Your task
 
-Write \`applyMultiColumnText(el, columnCount)\`, flowing \`el\`'s text content across \`columnCount\` columns.`,
+Write \`applyMultiColumnText(el, columnCount)\`, flowing \`el\`'s text content across \`columnCount\` columns.
+
+\`\`\`js
+applyMultiColumnText(el, 3);
+// el.style.columnCount === "3"
+// el's text now flows across 3 newspaper-style columns, reflowed automatically
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyMultiColumnText(el, columnCount) {
 }`,
@@ -14836,7 +16675,14 @@ Write \`applyMultiColumnText(el, columnCount)\`, flowing \`el\`'s text content a
 
 ## Your task
 
-Write \`applyThreeColumnFeedLayout(container, navWidth, sidebarWidth, mainMaxWidth)\`, where \`container\` has exactly 3 children: nav (1st, fixed at \`navWidth\`), feed (2nd, capped at \`mainMaxWidth\` but never growing past it), sidebar (3rd, fixed at \`sidebarWidth\`).`,
+Write \`applyThreeColumnFeedLayout(container, navWidth, sidebarWidth, mainMaxWidth)\`, where \`container\` has exactly 3 children: nav (1st, fixed at \`navWidth\`), feed (2nd, capped at \`mainMaxWidth\` but never growing past it), sidebar (3rd, fixed at \`sidebarWidth\`).
+
+\`\`\`js
+applyThreeColumnFeedLayout(container, 250, 300, 600);
+// container.style.display === "flex"; justifyContent === "center"
+// in a wide (1200px) container: nav renders 250px, feed caps at 600px
+// (flex: 0 1 600px + max-width: 600px), sidebar renders 300px
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyThreeColumnFeedLayout(container, navWidth, sidebarWidth, mainMaxWidth) {
 }`,
@@ -14866,7 +16712,15 @@ Write \`applyThreeColumnFeedLayout(container, navWidth, sidebarWidth, mainMaxWid
 
 ## Your task
 
-Write \`applyHolyGrailLayout(wrapper, navWidth, asideWidth)\`. \`wrapper\` has exactly 3 direct children: header, a middle row, and footer. The middle row itself has exactly 3 children: nav, main, aside. Header and footer should span the full width; nav and aside should be fixed at \`navWidth\`/\`asideWidth\`; main should fill whatever's left, sitting visually between them; the middle row should fill all vertical space left over between the header and footer.`,
+Write \`applyHolyGrailLayout(wrapper, navWidth, asideWidth)\`. \`wrapper\` has exactly 3 direct children: header, a middle row, and footer. The middle row itself has exactly 3 children: nav, main, aside. Header and footer should span the full width; nav and aside should be fixed at \`navWidth\`/\`asideWidth\`; main should fill whatever's left, sitting visually between them; the middle row should fill all vertical space left over between the header and footer.
+
+\`\`\`js
+applyHolyGrailLayout(wrapper, 150, 200);
+// wrapper: display: flex; flexDirection: column
+// middle row: flex: 1; display: flex (nav | main | aside)
+// in an 800px-wide wrapper: nav renders 150px, aside renders 200px,
+// main fills the remaining 450px, visually sitting between them
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyHolyGrailLayout(wrapper, navWidth, asideWidth) {
 }`,
@@ -14902,7 +16756,16 @@ Write \`applyHolyGrailLayout(wrapper, navWidth, asideWidth)\`. \`wrapper\` has e
 
 ## Your task
 
-Write \`applyProductGrid(container, columns, gapPx)\`, laying \`container\`'s children out in exactly \`columns\` equal-width columns with \`gapPx\` of spacing between both rows and columns.`,
+Write \`applyProductGrid(container, columns, gapPx)\`, laying \`container\`'s children out in exactly \`columns\` equal-width columns with \`gapPx\` of spacing between both rows and columns.
+
+\`\`\`js
+applyProductGrid(container, 3, 15);
+// container.style.display === "grid"
+// container.style.gridTemplateColumns === "repeat(3, 1fr)"
+// container.style.gap === "15px"
+// in a 630px-wide container, each card renders 200px wide — gaps are
+// subtracted from the width before it's split into equal columns
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyProductGrid(container, columns, gapPx) {
 }`,
@@ -14931,7 +16794,13 @@ Write \`applyProductGrid(container, columns, gapPx)\`, laying \`container\`'s ch
 
 ## Your task
 
-Write \`applyGoldenRatioRectangle(el, width)\`, setting \`el\`'s \`width\` to \`width\` pixels and its \`height\` so the width-to-height ratio is exactly 1.618.`,
+Write \`applyGoldenRatioRectangle(el, width)\`, setting \`el\`'s \`width\` to \`width\` pixels and its \`height\` so the width-to-height ratio is exactly 1.618.
+
+\`\`\`js
+applyGoldenRatioRectangle(el, 300);
+// el.style.width === "300px"
+// el.style.height === "185.4...px" (300 / 1.618, ≈185.4px)
+\`\`\``,
     difficulty: "easy",
     starterCode: `function applyGoldenRatioRectangle(el, width) {
 }`,
@@ -14957,7 +16826,15 @@ Write \`applyGoldenRatioRectangle(el, width)\`, setting \`el\`'s \`width\` to \`
 
 ## Your task
 
-Write \`applyCssTriangle(el, size, color)\`, turning \`el\` into an upward-pointing triangle of \`color\`, \`size\` pixels wide at its base.`,
+Write \`applyCssTriangle(el, size, color)\`, turning \`el\` into an upward-pointing triangle of \`color\`, \`size\` pixels wide at its base.
+
+\`\`\`js
+applyCssTriangle(el, 20, "red");
+// el.style.width === "0"; el.style.height === "0"
+// el.style.borderLeft/borderRight === "20px solid transparent"
+// el.style.borderBottom === "20px solid red"
+// renders as an upward-pointing red triangle, 40px wide at its base
+\`\`\``,
     difficulty: "easy",
     starterCode: `function applyCssTriangle(el, size, color) {
 }`,
@@ -14986,7 +16863,15 @@ Write \`applyCssTriangle(el, size, color)\`, turning \`el\` into an upward-point
 
 ## Your task
 
-Write \`applyCustomCheckbox(checkboxEl)\`, which strips \`checkboxEl\`'s native appearance and gives it a custom square look: a light border and white background unchecked, a dark background once checked.`,
+Write \`applyCustomCheckbox(checkboxEl)\`, which strips \`checkboxEl\`'s native appearance and gives it a custom square look: a light border and white background unchecked, a dark background once checked.
+
+\`\`\`js
+applyCustomCheckbox(checkboxEl);
+// checkboxEl gets class "custom-checkbox"; an injected stylesheet sets
+// appearance: none, a bordered box, and a white background unchecked
+// once checkboxEl.checked becomes true, the injected :checked rule
+// switches its background-color to the dark checked color — no JS style-swap needed
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyCustomCheckbox(checkboxEl) {
 }`,
@@ -15017,7 +16902,14 @@ Write \`applyCustomCheckbox(checkboxEl)\`, which strips \`checkboxEl\`'s native 
 
 ## Your task
 
-Write \`applyToggleSwitch(rootEl)\`, where \`rootEl\` contains a checkbox (\`.toggle-input\`) immediately followed by a slider element (\`.toggle-slider\`). Style the slider so it slides \`20px\` to the right exactly when the checkbox becomes checked.`,
+Write \`applyToggleSwitch(rootEl)\`, where \`rootEl\` contains a checkbox (\`.toggle-input\`) immediately followed by a slider element (\`.toggle-slider\`). Style the slider so it slides \`20px\` to the right exactly when the checkbox becomes checked.
+
+\`\`\`js
+applyToggleSwitch(rootEl);
+// injects a rule: .toggle-input:checked + .toggle-slider { transform: translateX(20px); }
+// while unchecked, the slider's transform is none
+// once the checkbox is checked, the slider slides 20px to the right automatically
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyToggleSwitch(rootEl) {
 }`,
@@ -15048,7 +16940,14 @@ Write \`applyToggleSwitch(rootEl)\`, where \`rootEl\` contains a checkbox (\`.to
 
 ## Your task
 
-Write \`applyCloseButtonX(el)\`, giving \`el\` two pseudo-element bars — one rotated 45°, the other -45° — that together form an X.`,
+Write \`applyCloseButtonX(el)\`, giving \`el\` two pseudo-element bars — one rotated 45°, the other -45° — that together form an X.
+
+\`\`\`js
+applyCloseButtonX(el);
+// el gets class "close-btn"; ::before and ::after are injected with content: ""
+// ::before gets transform: rotate(45deg); ::after gets transform: rotate(-45deg)
+// the two bars cross at the center, forming an "X" with zero extra markup
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyCloseButtonX(el) {
 }`,
@@ -15089,7 +16988,15 @@ Write \`applyCloseButtonX(el)\`, giving \`el\` two pseudo-element bars — one r
 
 ## Your task
 
-Write \`applyDoughnutChart(el, segments)\`, where \`segments\` is an array of \`{ color, percent }\` (percentages summing to 100). Paint \`el\` as a circular conic-gradient sliced according to \`segments\`, then punch a hole through the middle with a smaller centered circle.`,
+Write \`applyDoughnutChart(el, segments)\`, where \`segments\` is an array of \`{ color, percent }\` (percentages summing to 100). Paint \`el\` as a circular conic-gradient sliced according to \`segments\`, then punch a hole through the middle with a smaller centered circle.
+
+\`\`\`js
+applyDoughnutChart(el, [{ color: "red", percent: 40 }, { color: "blue", percent: 60 }]);
+// el.style.background === "conic-gradient(red 0% 40%, blue 40% 100%)"
+// el.style.borderRadius === "50%"
+// a smaller white circle is appended and centered on top of el,
+// punching a hole through the middle to form the doughnut ring
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyDoughnutChart(el, segments) {
 }`,
@@ -15135,7 +17042,14 @@ Write \`applyDoughnutChart(el, segments)\`, where \`segments\` is an array of \`
 
 ## Your task
 
-Write \`applyObjectFit(imgEl, containerWidth, containerHeight, fitMode)\`, sizing \`imgEl\` to exactly \`containerWidth\`×\`containerHeight\` and applying \`fitMode\` as its \`object-fit\`.`,
+Write \`applyObjectFit(imgEl, containerWidth, containerHeight, fitMode)\`, sizing \`imgEl\` to exactly \`containerWidth\`×\`containerHeight\` and applying \`fitMode\` as its \`object-fit\`.
+
+\`\`\`js
+applyObjectFit(imgEl, 300, 200, "cover");
+// imgEl.style.width === "300px"; imgEl.style.height === "200px"
+// imgEl.style.objectFit === "cover"
+// the image now crops to fill the 300×200 box without distorting it
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyObjectFit(imgEl, containerWidth, containerHeight, fitMode) {
 }`,
@@ -15162,7 +17076,13 @@ Write \`applyObjectFit(imgEl, containerWidth, containerHeight, fitMode)\`, sizin
 
 ## Your task
 
-Write \`applyAspectRatio(el, ratioWidth, ratioHeight)\`, making \`el\` always \`100%\` of its container's width, with its height locked to the \`ratioWidth\`:\`ratioHeight\` aspect ratio.`,
+Write \`applyAspectRatio(el, ratioWidth, ratioHeight)\`, making \`el\` always \`100%\` of its container's width, with its height locked to the \`ratioWidth\`:\`ratioHeight\` aspect ratio.
+
+\`\`\`js
+applyAspectRatio(el, 16, 9);
+// el.style.width === "100%"; el.style.aspectRatio === "16 / 9"
+// inside a 400px-wide container, el renders 400px × 225px (400 × 9/16)
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyAspectRatio(el, ratioWidth, ratioHeight) {
 }`,
@@ -15188,7 +17108,15 @@ Write \`applyAspectRatio(el, ratioWidth, ratioHeight)\`, making \`el\` always \`
 
 ## Your task
 
-Write \`applyBackgroundSize(el, mode)\`, setting \`el\`'s \`background-size\` to \`mode\`.`,
+Write \`applyBackgroundSize(el, mode)\`, setting \`el\`'s \`background-size\` to \`mode\`.
+
+\`\`\`js
+applyBackgroundSize(el, "cover");
+// el.style.backgroundSize === "cover" — scales up to fill the box, cropping overflow
+
+applyBackgroundSize(el, "contain");
+// el.style.backgroundSize === "contain" — scales down to fit inside, may letterbox
+\`\`\``,
     difficulty: "easy",
     starterCode: `function applyBackgroundSize(el, mode) {
 }`,
@@ -15215,7 +17143,14 @@ Write \`applyBackgroundSize(el, mode)\`, setting \`el\`'s \`background-size\` to
 
 ## Your task
 
-Write \`applyAccentColor(inputEl, color)\`, setting \`inputEl\`'s \`accent-color\` to \`color\`.`,
+Write \`applyAccentColor(inputEl, color)\`, setting \`inputEl\`'s \`accent-color\` to \`color\`.
+
+\`\`\`js
+applyAccentColor(inputEl, "red");
+// inputEl.style.accentColor resolves to rgb(255, 0, 0)
+// the checkbox/radio/range's own checked or filled color becomes red,
+// while its native focus ring and keyboard behavior stay untouched
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyAccentColor(inputEl, color) {
 }`,
@@ -15239,7 +17174,15 @@ Write \`applyAccentColor(inputEl, color)\`, setting \`inputEl\`'s \`accent-color
 
 ## Your task
 
-Write \`applyCustomCounter(listEl, counterName)\`, setting up \`listEl\` (and each of its direct children) so every child is automatically numbered via a CSS counter named \`counterName\`, with the number rendered before each child's content.`,
+Write \`applyCustomCounter(listEl, counterName)\`, setting up \`listEl\` (and each of its direct children) so every child is automatically numbered via a CSS counter named \`counterName\`, with the number rendered before each child's content.
+
+\`\`\`js
+applyCustomCounter(listEl, "item");
+// listEl.style.counterReset === "item 0"
+// each direct child gets class "item-item" with counter-increment: item
+// and an injected ::before rule with content: counter(item)
+// — children now render numbered "1. ", "2. ", "3. " automatically
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyCustomCounter(listEl, counterName) {
 }`,
@@ -15271,7 +17214,14 @@ Write \`applyCustomCounter(listEl, counterName)\`, setting up \`listEl\` (and ea
 
 ## Your task
 
-Write \`applyRowStriping(listEl, stripeColor)\`, giving every even-positioned direct child of \`listEl\` a \`stripeColor\` background.`,
+Write \`applyRowStriping(listEl, stripeColor)\`, giving every even-positioned direct child of \`listEl\` a \`stripeColor\` background.
+
+\`\`\`js
+applyRowStriping(listEl, "rgb(240, 240, 240)");
+// listEl gets class "striped-list"; injects
+// ".striped-list > *:nth-child(even) { background-color: rgb(240, 240, 240); }"
+// in a 4-child list, the 2nd and 4th children get the stripe, the 1st and 3rd don't
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applyRowStriping(listEl, stripeColor) {
 }`,
@@ -15298,7 +17248,13 @@ Write \`applyRowStriping(listEl, stripeColor)\`, giving every even-positioned di
 
 ## Your task
 
-Write \`applySelectionStyle(el, bgColor)\`, giving \`el\`'s selected-text highlight a \`bgColor\` background.`,
+Write \`applySelectionStyle(el, bgColor)\`, giving \`el\`'s selected-text highlight a \`bgColor\` background.
+
+\`\`\`js
+applySelectionStyle(el, "rgb(255, 200, 0)");
+// el gets class "selectable"; injects ".selectable::selection { background-color: rgb(255, 200, 0); }"
+// selecting el's text now highlights it in that color instead of the browser default
+\`\`\``,
     difficulty: "medium",
     starterCode: `function applySelectionStyle(el, bgColor) {
 }`,
@@ -15325,7 +17281,15 @@ Write \`applySelectionStyle(el, bgColor)\`, giving \`el\`'s selected-text highli
 
 ## Your task
 
-Write \`getCustomScrollbarCss()\`, returning a CSS text string (as it would appear in a stylesheet) for a \`.custom-scroll\` element with a thin, rounded, gray-thumbed scrollbar — covering both the WebKit pseudo-elements and the standard Firefox properties.`,
+Write \`getCustomScrollbarCss()\`, returning a CSS text string (as it would appear in a stylesheet) for a \`.custom-scroll\` element with a thin, rounded, gray-thumbed scrollbar — covering both the WebKit pseudo-elements and the standard Firefox properties.
+
+\`\`\`js
+getCustomScrollbarCss();
+// returns a string containing all of:
+// ".custom-scroll::-webkit-scrollbar { width: 10px; }"
+// ".custom-scroll::-webkit-scrollbar-thumb { background: #888; border-radius: 5px; }"
+// ".custom-scroll { scrollbar-color: #888 transparent; scrollbar-width: thin; }"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function getCustomScrollbarCss() {
 }`,
@@ -15351,11 +17315,22 @@ Write \`getCustomScrollbarCss()\`, returning a CSS text string (as it would appe
     companies: ["Google", "Meta", "Amazon"],
     category: "css",
     title: "CSS Specificity/Cascade Puzzle (Predict Which Rule Wins)",
-    description: `The most common "explain why this doesn't work" question: given several rules targeting the same element, which one actually wins? Specificity is compared as a tuple — (inline styles, IDs, classes/attributes/pseudo-classes, elements/pseudo-elements) — and only when two rules tie *exactly* does source order become the tiebreaker (the later rule wins).
+    description: `The most common "explain why this doesn't work" question in CSS: given several rules that target the same element, which declaration actually wins? The cascade decides it by **specificity**, not by which rule "looks" more important.
+
+## The problem
+
+Specificity is compared as a tuple, most-specific category first — (inline styles, IDs, classes/attributes/pseudo-classes, elements/pseudo-elements) — comparing one category at a time. Only when two rules tie *exactly* across every category does the cascade fall back to **source order**, where the later rule in the stylesheet wins.
 
 ## Your task
 
-Write \`sortBySpecificity(rules)\`, where \`rules\` is an array of \`[idCount, classCount, elementCount]\` specificity tuples, listed in their original source order. Return the original indices sorted from **lowest to highest** cascade precedence — ties (equal specificity) must keep their original relative order, so the winner of a tied pair is whichever one appears later in \`rules\`.`,
+Write \`sortBySpecificity(rules)\`, where \`rules\` is an array of \`[idCount, classCount, elementCount]\` specificity tuples, listed in their original source order. Return the original indices sorted from **lowest to highest** cascade precedence — ties (equal specificity) must keep their original relative order, so the winner of a tied pair is whichever one appears later in \`rules\`.
+
+\`\`\`js
+sortBySpecificity([[0, 1, 0], [1, 0, 0], [0, 0, 1]]);
+// => [2, 0, 1]
+// an element selector (index 2) loses to a class (index 0),
+// which loses to an ID (index 1) — lowest specificity first, winner last
+\`\`\``,
     difficulty: "medium",
     starterCode: `function sortBySpecificity(rules) {
 }`,
@@ -15385,11 +17360,27 @@ Write \`sortBySpecificity(rules)\`, where \`rules\` is an array of \`[idCount, c
     companies: ["Meta", "Airbnb"],
     category: "css",
     title: "0.5px Border (Sub-Pixel Border on High-DPI Screens)",
-    description: `A well-known trick question: browsers won't reliably render a literal \`0.5px\` border width, so getting a visually thinner border on high-DPI screens instead means drawing a full \`1px\` border on a pseudo-element twice the element's size, then shrinking that pseudo-element by half with \`transform: scale(0.5)\` — the border renders at 1px in its own coordinate space, but appears at half that width once scaled down.
+    description: `A well-known trick question: on a high-DPI (Retina) screen, a hairline **0.5px border** reads noticeably crisper than the usual 1px border — but browsers won't reliably render a literal \`0.5px\` border-width value.
+
+## The problem
+
+Setting \`border-width: 0.5px\` directly rounds inconsistently across browsers and device pixel ratios — sometimes down to 0 (no border at all), sometimes back up to a full 1px — so it can't be trusted to actually produce a half-pixel line.
+
+## The idea
+
+Draw a full, reliably-rendered \`1px\` border on a pseudo-element sized at 200% of the real element, then shrink that whole pseudo-element by half with \`transform: scale(0.5)\`. The border renders at a full 1px in its own coordinate space, but appears at exactly half that width once the transform scales it down.
 
 ## Your task
 
-Write \`applyHalfPixelBorder(el, color)\`, giving \`el\` a visually half-width border of \`color\` using the scale-transform technique — not a literal \`0.5px\` border width.`,
+Write \`applyHalfPixelBorder(el, color)\`, giving \`el\` a visually half-width border of \`color\` using the scale-transform technique — not a literal \`0.5px\` border width.
+
+\`\`\`js
+applyHalfPixelBorder(el, "red");
+// el.style.position === "relative"; el gets class "half-border-el"
+// an injected ::after rule draws a real 1px red border on a
+// 200%-sized pseudo-element, then transform: scale(0.5) shrinks it —
+// the border renders visually at half width, without a literal 0.5px value
+\`\`\``,
     difficulty: "hard",
     starterCode: `function applyHalfPixelBorder(el, color) {
 }`,
@@ -15421,7 +17412,16 @@ Write \`applyHalfPixelBorder(el, color)\`, giving \`el\` a visually half-width b
 
 ## Your task
 
-Write \`applyScrollableModal(overlay, modal)\`. \`overlay\` should cover the full viewport and center \`modal\` within it, both horizontally and vertically; \`modal\` itself should never exceed \`80vh\` tall, scrolling its own content internally past that.`,
+Write \`applyScrollableModal(overlay, modal)\`. \`overlay\` should cover the full viewport and center \`modal\` within it, both horizontally and vertically; \`modal\` itself should never exceed \`80vh\` tall, scrolling its own content internally past that.
+
+\`\`\`js
+applyScrollableModal(overlay, modal);
+// overlay: position: fixed; top/left/right/bottom: 0;
+// display: flex; align-items: center; justify-content: center;
+// modal: max-height: 80vh; overflow-y: auto;
+// the modal stays centered on screen and scrolls its own content
+// once that content exceeds 80% of the viewport height
+\`\`\``,
     difficulty: "hard",
     starterCode: `function applyScrollableModal(overlay, modal) {
 }`,
@@ -15459,7 +17459,12 @@ Write \`applyScrollableModal(overlay, modal)\`. \`overlay\` should cover the ful
 
 Write \`MyPartial<T>\`, a mapped type over \`keyof T\` that makes every property optional.
 
-This is graded by real TypeScript type-checking (via the actual compiler), not a runtime test — your answer needs to be a valid type alias, not JavaScript.`,
+\`\`\`ts
+type Result = MyPartial<{ title: string; done: boolean }>
+// { title?: string; done?: boolean }
+\`\`\`
+
+Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
     starterCode: `type MyPartial<T> = unknown;`,
     solutionCode: `type MyPartial<T> = { [P in keyof T]?: T[P] };`,
@@ -15482,6 +17487,11 @@ This is graded by real TypeScript type-checking (via the actual compiler), not a
 ## Your task
 
 Write \`MyRequired<T>\`, making every property of \`T\` required, even ones that were originally optional.
+
+\`\`\`ts
+type Result = MyRequired<{ title?: string; done?: boolean }>
+// { title: string; done: boolean }
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
@@ -15507,6 +17517,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`MyReadonly<T>\`, making every property of \`T\` readonly.
 
+\`\`\`ts
+type Result = MyReadonly<{ title: string }>
+// { readonly title: string }
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
     starterCode: `type MyReadonly<T> = unknown;`,
@@ -15529,6 +17544,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`MyPick<T, K extends keyof T>\`, keeping only the properties of \`T\` whose keys are in \`K\`.
+
+\`\`\`ts
+type Result = MyPick<{ title: string; description: string; completed: boolean }, "title">
+// { title: string }
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
@@ -15554,6 +17574,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`MyOmit<T, K extends keyof T>\`, dropping the properties of \`T\` whose keys are in \`K\`.
 
+\`\`\`ts
+type Result = MyOmit<{ title: string; description: string; completed: boolean }, "description">
+// { title: string; completed: boolean }
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
     starterCode: `type MyOmit<T, K extends keyof T> = unknown;`,
@@ -15578,6 +17603,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`MyRecord<K extends keyof any, V>\`, an object type whose keys are exactly \`K\`, each with value type \`V\`.
 
+\`\`\`ts
+type Result = MyRecord<"a" | "b", number>
+// { a: number; b: number }
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
     starterCode: `type MyRecord<K extends keyof any, V> = unknown;`,
@@ -15600,6 +17630,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`DeepPartial<T>\`, recursively making every property — at every nesting depth — optional.
+
+\`\`\`ts
+type Result = DeepPartial<{ a: { b: { c: string } } }>
+// { a?: { b?: { c?: string } } }
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -15624,6 +17659,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`DeepReadonly<T>\`, recursively marking every property — at every nesting depth — readonly.
+
+\`\`\`ts
+type Result = DeepReadonly<{ a: { b: string } }>
+// { readonly a: { readonly b: string } }
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -15651,6 +17691,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`MyNonNullable<T>\`, removing \`null\` and \`undefined\` from \`T\`.
 
+\`\`\`ts
+type Result = MyNonNullable<string | null | undefined>
+// string
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
     starterCode: `type MyNonNullable<T> = unknown;`,
@@ -15674,6 +17719,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`UndefinedToNull<T>\`, replacing \`undefined\` with \`null\` anywhere it appears in \`T\` (leaving everything else unchanged).
+
+\`\`\`ts
+type Result = UndefinedToNull<string | undefined>
+// string | null
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
@@ -15699,6 +17749,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`MyExclude<T, E>\`, removing every member of \`T\` that's assignable to \`E\`.
 
+\`\`\`ts
+type Result = MyExclude<"a" | "b" | "c", "a">
+// "b" | "c"
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
     starterCode: `type MyExclude<T, E> = unknown;`,
@@ -15722,6 +17777,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`MyExtract<T, U>\`, keeping only the members of \`T\` that are assignable to \`U\`.
+
+\`\`\`ts
+type Result = MyExtract<"a" | "b" | "c", "a" | "c">
+// "a" | "c"
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
@@ -15749,6 +17809,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`MyParameters<T extends (...args: any) => any>\`, extracting \`T\`'s parameter types as a tuple.
 
+\`\`\`ts
+type Result = MyParameters<(a: string, b: number) => void>
+// [string, number]
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
     starterCode: `type MyParameters<T extends (...args: any) => any> = unknown;`,
@@ -15772,6 +17837,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`MyReturnType<T extends (...args: any) => any>\`, extracting \`T\`'s return type.
+
+\`\`\`ts
+type Result = MyReturnType<() => string>
+// string
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -15797,6 +17867,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`MyConstructorParameters<T extends abstract new (...args: any) => any>\`, extracting the constructor's parameter types as a tuple.
 
+\`\`\`ts
+type Result = MyConstructorParameters<new (title: string, done: boolean) => object>
+// [string, boolean]
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
     starterCode: `type MyConstructorParameters<T extends abstract new (...args: any) => any> = unknown;`,
@@ -15820,6 +17895,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`MyInstanceType<T extends abstract new (...args: any) => any>\`, extracting the type of an instance constructed by \`T\`.
 
+\`\`\`ts
+type Result = MyInstanceType<new () => { id: number }>
+// { id: number }
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
     starterCode: `type MyInstanceType<T extends abstract new (...args: any) => any> = unknown;`,
@@ -15842,6 +17922,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`MyThisParameterType<T>\`, extracting the \`this\` type from \`T\`'s signature (or \`unknown\` if it has none).
+
+\`\`\`ts
+type Result = MyThisParameterType<(this: { a: number }, x: string) => void>
+// { a: number }
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -15867,6 +17952,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`MyOmitThisParameter<T>\`, removing \`T\`'s \`this\` parameter (if it has one).
 
+\`\`\`ts
+type Result = MyOmitThisParameter<(this: { a: number }, x: string) => boolean>
+// (x: string) => boolean
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
     starterCode: `type MyOmitThisParameter<T> = unknown;`,
@@ -15889,6 +17979,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`UnwrapPromise<T>\`, extracting \`Promise\`'s inner type — or returning \`T\` unchanged if it isn't a \`Promise\` at all.
+
+\`\`\`ts
+type Result = UnwrapPromise<Promise<string>>
+// string
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -15913,6 +18008,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`MyAwaited<T>\`, recursively unwrapping nested Promises down to the final resolved value.
+
+\`\`\`ts
+type Result = MyAwaited<Promise<Promise<string>>>
+// string
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -15940,6 +18040,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`FirstChar<T extends string>\`, extracting the first character of \`T\` (or \`""\` if \`T\` is empty).
 
+\`\`\`ts
+type Result = FirstChar<"hello">
+// "h"
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
     starterCode: `type FirstChar<T extends string> = unknown;`,
@@ -15963,6 +18068,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`LastChar<T extends string>\`, extracting the last character of \`T\`.
+
+\`\`\`ts
+type Result = LastChar<"hello">
+// "o"
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -15990,6 +18100,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`LengthOfString<S extends string>\`, returning \`S\`'s character count as a numeric literal type.
 
+\`\`\`ts
+type Result = LengthOfString<"hello">
+// 5
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
     starterCode: `type LengthOfString<S extends string> = unknown;`,
@@ -16014,6 +18129,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`Trim<S extends string>\`, removing leading and trailing spaces from \`S\`.
+
+\`\`\`ts
+type Result = Trim<"  hello  ">
+// "hello"
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16041,6 +18161,11 @@ type Trim<S extends string> = TrimLeft<TrimRight<S>>;`,
 
 Write \`MyCapitalize<S extends string>\`, uppercasing \`S\`'s first character.
 
+\`\`\`ts
+type Result = MyCapitalize<"hello">
+// "Hello"
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
     starterCode: `type MyCapitalize<S extends string> = unknown;`,
@@ -16064,6 +18189,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`Split<S extends string, D extends string>\`, splitting \`S\` on every occurrence of \`D\` into a tuple.
+
+\`\`\`ts
+type Result = Split<"a,b,c", ",">
+// ["a", "b", "c"]
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16092,6 +18222,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`StringToTuple<S extends string>\`, turning \`S\` into a tuple of its individual characters.
 
+\`\`\`ts
+type Result = StringToTuple<"abc">
+// ["a", "b", "c"]
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
     starterCode: `type StringToTuple<S extends string> = unknown;`,
@@ -16115,6 +18250,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`ReplaceAll<S extends string, F extends string, T extends string>\`, replacing every occurrence of \`F\` in \`S\` with \`T\`.
+
+\`\`\`ts
+type Result = ReplaceAll<"foo-bar-foo", "foo", "baz">
+// "baz-bar-baz"
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16144,6 +18284,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`Join<T extends readonly string[], D extends string>\`, joining every element of \`T\` with \`D\` between them.
 
+\`\`\`ts
+type Result = Join<["a", "b", "c"], ",">
+// "a,b,c"
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
     starterCode: `type Join<T extends readonly string[], D extends string> = unknown;`,
@@ -16171,6 +18316,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`Prefix<T extends string, P extends string>\`, prepending \`P\` to \`T\`.
 
+\`\`\`ts
+type Result = Prefix<"foo", "pre-">
+// "pre-foo"
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
     starterCode: `type Prefix<T extends string, P extends string> = unknown;`,
@@ -16194,6 +18344,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 ## Your task
 
 Write \`SnakeCase<S extends string>\`, converting \`camelCase\` to \`snake_case\`.
+
+\`\`\`ts
+type Result = SnakeCase<"helloWorld">
+// "hello_world"
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16225,6 +18380,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`CamelCase<S extends string>\`, converting \`snake_case\` to \`camelCase\`.
 
+\`\`\`ts
+type Result = CamelCase<"hello_world">
+// "helloWorld"
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
     starterCode: `type CamelCase<S extends string> = unknown;`,
@@ -16253,6 +18413,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`FirstItem<T extends unknown[]>\`, extracting the first element of \`T\` (or \`never\` if it's empty).
 
+\`\`\`ts
+type Result = FirstItem<[1, 2, 3]>
+// 1
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
     starterCode: `type FirstItem<T extends unknown[]> = unknown;`,
@@ -16277,6 +18442,11 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 Write \`LastItem<T extends unknown[]>\`, extracting the last element of \`T\` (or \`never\` if it's empty).
 
+\`\`\`ts
+type Result = LastItem<[1, 2, 3]>
+// 3
+\`\`\`
+
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
     starterCode: `type LastItem<T extends unknown[]> = unknown;`,
@@ -16295,11 +18465,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Amazon"],
     category: "typescript",
     title: "Implement LengthOfTuple<T>",
-    description: `Unlike \`LengthOfString\`, a tuple's length is directly readable — no recursive counting needed, since \`["length"]\` is itself a real numeric literal type on any tuple.
+    description: `\`LengthOfTuple\` reads a tuple's arity as a numeric literal type — unlike a plain array, whose \`.length\` TypeScript can only type as \`number\`, a tuple tracks its exact length so it can be read directly off \`T["length"]\`, no counting or recursion needed.
 
 ## Your task
 
 Write \`LengthOfTuple<T extends readonly unknown[]>\`, returning \`T\`'s length as a numeric literal type.
+
+\`\`\`ts
+type Result = LengthOfTuple<[1, 2, 3]>
+// 3
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
@@ -16319,11 +18494,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Microsoft", "Airbnb"],
     category: "typescript",
     title: "Implement TupleToUnion<T>",
-    description: `Collapses a tuple's element types into a single union — indexing a tuple type by \`number\` (rather than a specific literal index) returns the union of every element type at once.
+    description: `\`TupleToUnion\` collapses a tuple's element types into a single union type — a common step when you have a readonly tuple of allowed values (say, from an \`as const\` array) and want a union type derived from it instead of maintaining both by hand.
 
 ## Your task
 
 Write \`TupleToUnion<T extends readonly unknown[]>\`, turning \`T\`'s element types into a union.
+
+\`\`\`ts
+type Result = TupleToUnion<[1, 2, 3]>
+// 1 | 2 | 3
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
@@ -16342,11 +18522,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Amazon"],
     category: "typescript",
     title: "Implement Shift<T>",
-    description: `The type-level version of \`Array.prototype.shift\` — returns \`T\` with its first element removed (the type system's version doesn't mutate anything, of course; it just describes the resulting shape).
+    description: `\`Shift\` is the type-level counterpart to \`Array.prototype.shift\` — it describes the tuple you'd get back with the first element removed, without mutating anything (types can't mutate).
 
 ## Your task
 
 Write \`Shift<T extends unknown[]>\`, returning \`T\` without its first element.
+
+\`\`\`ts
+type Result = Shift<[1, 2, 3]>
+// [2, 3]
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16366,11 +18551,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Amazon"],
     category: "typescript",
     title: "Implement Push<T, I>",
-    description: `Appends a new element type to the end of a tuple — the spread operator works inside tuple type literals exactly the way it does at runtime.
+    description: `\`Push\` appends a new element type to the end of a tuple — the same spread syntax you'd use to append at runtime (\`[...arr, item]\`) works identically inside a tuple type literal.
 
 ## Your task
 
 Write \`Push<T extends unknown[], I>\`, returning a new tuple with \`I\` appended to the end of \`T\`.
+
+\`\`\`ts
+type Result = Push<[1, 2], 3>
+// [1, 2, 3]
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
@@ -16390,11 +18580,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Amazon"],
     category: "typescript",
     title: "Implement ReverseTuple<T>",
-    description: `Reverses a tuple's element order — peel off the first element on each recursive step, and place it at the *end* of the already-reversed remainder.
+    description: `\`ReverseTuple\` reverses a tuple's element order at the type level — peel the first element off on each recursive step and place it at the end of the already-reversed remainder.
 
 ## Your task
 
 Write \`ReverseTuple<T extends unknown[]>\`, returning \`T\` with its elements in reverse order.
+
+\`\`\`ts
+type Result = ReverseTuple<[1, 2, 3]>
+// [3, 2, 1]
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16414,11 +18609,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Amazon"],
     category: "typescript",
     title: "Implement Slice<A, S, E>",
-    description: `The type-level version of \`Array.prototype.slice\` — the trick is avoiding needing real arithmetic (subtraction hasn't been built yet at this point in the roadmap): take the first \`E\` elements, then drop the first \`S\` of *those*, and what's left is exactly \`A[S:E]\`.
+    description: `\`Slice\` is the type-level version of \`Array.prototype.slice\` — since there's no direct subtraction at the type level yet, it's built by taking the first \`E\` elements of \`A\`, then dropping the first \`S\` of those.
 
 ## Your task
 
 Write \`Slice<A extends unknown[], S extends number, E extends number>\`, returning the elements of \`A\` from index \`S\` up to (not including) index \`E\`.
+
+\`\`\`ts
+type Result = Slice<[1, 2, 3, 4, 5], 1, 3>
+// [2, 3]
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
@@ -16444,11 +18644,16 @@ type Slice<A extends unknown[], S extends number, E extends number> = Drop<Take<
     companies: ["Meta", "Amazon"],
     category: "typescript",
     title: "Implement Flat<T> (Deep Flatten)",
-    description: `Recursively flattens arbitrarily nested arrays into a single flat tuple — every element gets checked: if it's itself an array, recurse into it and splice the result in; otherwise, keep it as-is.
+    description: `\`Flat\` recursively flattens arbitrarily nested tuples into a single flat tuple, at any depth — the type-level equivalent of \`Array.prototype.flat(Infinity)\`.
 
 ## Your task
 
 Write \`Flat<T extends unknown[]>\`, fully flattening any nested arrays inside \`T\`, at any depth.
+
+\`\`\`ts
+type Result = Flat<[1, [2, [3, 4]], 5]>
+// [1, 2, 3, 4, 5]
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16472,11 +18677,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Amazon"],
     category: "typescript",
     title: "Implement Includes<T, U>",
-    description: `A tuple membership check — walk the tuple element by element, comparing each one against \`U\` for an exact type match. The exact-match \`Equal\` helper is already in scope from this platform's own test harness, the same way it would be if you pulled it in from the real type-challenges test utilities.
+    description: `\`Includes\` checks whether a tuple contains an element that exactly matches a given type — like \`Array.prototype.includes\`, but resolved entirely at compile time using exact type equality rather than \`===\`. The exact-match \`Equal\` helper is already in scope from this platform's own test harness.
 
 ## Your task
 
 Write \`Includes<T extends readonly unknown[], U>\`, returning \`true\` if any element of \`T\` exactly matches \`U\`, \`false\` otherwise.
+
+\`\`\`ts
+type Result = Includes<[1, 2, 3], 2>
+// true
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16498,11 +18708,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Amazon", "Airbnb"],
     category: "typescript",
     title: "Implement Filter<T, A>",
-    description: `The type-level version of \`Array.prototype.filter\` — keeps only the elements of \`T\` that are assignable to \`A\`, dropping the rest, while preserving the order of the ones that remain.
+    description: `\`Filter\` is the type-level version of \`Array.prototype.filter\` — it keeps only the elements of a tuple assignable to a given type, preserving the order of the ones that remain.
 
 ## Your task
 
 Write \`Filter<T extends readonly unknown[], A>\`, keeping only the elements of \`T\` assignable to \`A\`.
+
+\`\`\`ts
+type Result = Filter<[1, 'a', 2, 'b'], number>
+// [1, 2]
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16524,11 +18739,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: [],
     category: "typescript",
     title: "Implement Repeat<T, C>",
-    description: `Builds a tuple of length \`C\` where every element is \`T\` — an accumulator pattern, growing one element per recursive call until it reaches the target length.
+    description: `\`Repeat\` builds a tuple of length \`C\` where every element is the same type \`T\` — an accumulator pattern, growing one element per recursive call until it reaches the target length.
 
 ## Your task
 
 Write \`Repeat<T, C extends number>\`, returning a \`C\`-length tuple where every element is \`T\`.
+
+\`\`\`ts
+type Result = Repeat<'x', 3>
+// ['x', 'x', 'x']
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16549,11 +18769,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: [],
     category: "typescript",
     title: "Implement RepeatString<S, C>",
-    description: `The string counterpart to \`Repeat\` — builds a single string type by concatenating \`S\` onto itself \`C\` times, using the same accumulator-and-counter recursion shape.
+    description: `\`RepeatString\` is the string counterpart to \`Repeat\` — it builds a single string literal type by concatenating \`S\` onto itself \`C\` times, using the same accumulator-and-counter recursion shape.
 
 ## Your task
 
 Write \`RepeatString<S extends string, C extends number>\`, returning \`S\` repeated \`C\` times.
+
+\`\`\`ts
+type Result = RepeatString<'ab', 3>
+// 'ababab'
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16574,11 +18799,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: [],
     category: "typescript",
     title: "Implement TupleToString<T>",
-    description: `The inverse of \`StringToTuple\` — joins a tuple of individual characters back into a single string type, character by character.
+    description: `\`TupleToString\` is the inverse of \`StringToTuple\` — it joins a tuple of individual character (or string) types back into a single concatenated string literal type, character by character.
 
 ## Your task
 
 Write \`TupleToString<T extends readonly string[]>\`, concatenating every element of \`T\` into a single string.
+
+\`\`\`ts
+type Result = TupleToString<['a', 'b', 'c']>
+// 'abc'
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16602,11 +18832,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Microsoft"],
     category: "typescript",
     title: "Implement IsNever<T>",
-    description: `A genuine gotcha: a naked \`T extends never ? true : false\` doesn't work when \`T\` actually *is* \`never\` — a conditional type over a bare type parameter distributes over unions, and \`never\` is the empty union, so it distributes into nothing and the whole expression evaluates to \`never\` instead of a boolean. Wrapping both sides in a tuple (\`[T] extends [never]\`) suppresses that distribution.
+    description: `\`IsNever\` checks whether a type is exactly \`never\` — a genuine gotcha, since a naked \`T extends never ? true : false\` distributes over unions, and \`never\` is the empty union, so it silently evaluates to \`never\` instead of a boolean when \`T\` actually is \`never\`.
 
 ## Your task
 
-Write \`IsNever<T>\`, returning \`true\` only when \`T\` is exactly \`never\`.
+Write \`IsNever<T>\`, returning \`true\` only when \`T\` is exactly \`never\`. Wrap both sides in a tuple (\`[T] extends [never]\`) to suppress the distribution that breaks the naked check.
+
+\`\`\`ts
+type Result = IsNever<never>
+// true
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16626,11 +18861,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Microsoft"],
     category: "typescript",
     title: "Implement IsAny<T>",
-    description: `Another genuine "trick" type: \`any\` is unique in that it's both assignable to, and assignable from, every other type — including types that shouldn't normally overlap. Intersecting it with a literal type exploits that: \`1 & T\` stays \`1\` for any normal \`T\`, but collapses to \`any\` itself when \`T\` is \`any\`.
+    description: `\`IsAny\` checks whether a type is exactly \`any\` — \`any\` is unique in being both assignable to and assignable from every other type, so the trick intersects it with a literal: \`1 & T\` stays \`1\` for any normal \`T\`, but collapses to \`any\` itself when \`T\` is \`any\`.
 
 ## Your task
 
 Write \`IsAny<T>\`, returning \`true\` only when \`T\` is exactly \`any\`.
+
+\`\`\`ts
+type Result = IsAny<any>
+// true
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
@@ -16650,11 +18890,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: [],
     category: "typescript",
     title: "Implement IsEmptyType<T>",
-    description: `Checks whether an object type has zero properties — a short, self-contained building block for later, harder recursive types.
+    description: `\`IsEmptyType\` checks whether an object type has zero properties — a short, self-contained building block used inside later, harder recursive types.
 
 ## Your task
 
 Write \`IsEmptyType<T>\`, returning \`true\` only when \`T\` has no keys at all.
+
+\`\`\`ts
+type Result = IsEmptyType<{}>
+// true
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
@@ -16674,13 +18919,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Microsoft", "Airbnb"],
     category: "typescript",
     title: "Implement Equal<A, B>",
-    description: `The exact-type-equality check used as a testing utility throughout real type-challenge test suites (including this platform's own grading harness) — a plain \`A extends B ? true : false\` is too loose, since it also matches when \`A\` is merely a *subtype* of \`B\`. The real trick compares both types' behavior as constraints on a generic function instead, which is sensitive to the exact type, not just assignability.
+    description: `\`Equal\` is the exact-type-equality check used as a testing utility throughout real type-challenge test suites (including this platform's own grading harness) — a plain \`A extends B ? true : false\` is too loose, since it also matches when \`A\` is merely a *subtype* of \`B\`. The real trick compares both types' behavior as constraints on a generic function instead, which is sensitive to the exact type, not just assignability.
 
 ## Your task
 
-Write \`MyEqual<X, Y>\`, returning \`true\` only when \`X\` and \`Y\` are *exactly* the same type (not just mutually assignable).
+Write \`MyEqual<X, Y>\`, returning \`true\` only when \`X\` and \`Y\` are *exactly* the same type (not just mutually assignable). Name it \`MyEqual\`, not \`Equal\` — this platform's own \`Equal\` (used to grade every other question) is already in scope, and a same-named alias would collide with it.
 
-Note: this platform's own \`Equal\` (used to grade every other question) is already in scope — name your answer \`MyEqual\` so it doesn't collide with it.
+\`\`\`ts
+type Result = MyEqual<{ a: string }, { a: string }>
+// true
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
@@ -16701,13 +18949,20 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Microsoft", "Airbnb", "Stripe"],
     category: "typescript",
     title: "Implement assertNever (Exhaustiveness Checking)",
-    description: `Less flashy than the type-challenge puzzles, but the pattern you'll actually reach for constantly in real code review: a \`switch\` statement's \`default\` branch calls \`assertNever(value)\`, where \`value\`'s type has already been narrowed to \`never\` by every other case — so if a new variant is ever added to the union without a matching \`case\`, the \`default\` branch's argument is no longer \`never\`, and the whole file fails to compile until you handle it.
+    description: `\`assertNever\` is the standard TypeScript exhaustiveness-checking pattern — less flashy than the pure type-challenge puzzles, but the one you'll actually reach for constantly in real code review: a \`switch\` statement's \`default\` branch calls \`assertNever(value)\`, where \`value\`'s type has already been narrowed to \`never\` by every other case. If a new variant is ever added to the union without a matching \`case\`, the \`default\` branch's argument is no longer \`never\`, and the whole file fails to compile until you handle it.
 
 ## Your task
 
 Write \`function assertNever(value: never): never\`, throwing at runtime but — more importantly — only accepting \`never\` as its parameter type.
 
-Graded by real TypeScript type-checking — write a real function declaration, matching the exact signature described above.`,
+\`\`\`ts
+function assertNever(value: never): never {
+  throw new Error("unreachable")
+}
+// type: (value: never) => never
+\`\`\`
+
+Graded by real TypeScript type-checking — write a real function declaration, matching the exact signature described above, not a type alias.`,
     difficulty: "medium",
     starterCode: `function assertNever(value: never): never {
   throw new Error("unreachable");
@@ -16730,11 +18985,16 @@ Graded by real TypeScript type-checking — write a real function declaration, m
     companies: [],
     category: "typescript",
     title: "Implement ToNumber<T>",
-    description: `The foundational trick behind every type-level arithmetic question in this stage: since there's no direct string-to-number conversion, you count up from 0 using a growing tuple, and stop the moment the tuple's stringified length matches the input.
+    description: `\`ToNumber\` converts a numeric string literal type into a real numeric literal type — the foundational trick behind every type-level arithmetic challenge, since there's no direct string-to-number conversion: count up from 0 using a growing tuple, and stop the moment the tuple's stringified length matches the input.
 
 ## Your task
 
 Write \`ToNumber<T extends string>\`, converting a numeric string type into a real numeric literal type.
+
+\`\`\`ts
+type Result = ToNumber<'5'>
+// 5
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16755,11 +19015,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: [],
     category: "typescript",
     title: "Implement StringToNumber<S>",
-    description: `The same numeric-string-to-literal conversion as \`ToNumber\`, under a different name — reported separately in enough prep guides that it's worth recognizing under both.
+    description: `\`StringToNumber\` is the same numeric-string-to-literal conversion as \`ToNumber\`, under a different name — it comes up often enough under both names in interview prep that it's worth recognizing as the identical trick.
 
 ## Your task
 
 Write \`StringToNumber<S extends string>\`, converting a numeric string type into a real numeric literal type.
+
+\`\`\`ts
+type Result = StringToNumber<'12'>
+// 12
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16780,11 +19045,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: [],
     category: "typescript",
     title: "Implement Abs<N>",
-    description: `The absolute value of a numeric literal type — check whether its stringified form starts with a \`-\`, and if so, convert the digits after it back into a number.
+    description: `\`Abs\` returns a numeric literal type's absolute value — since numeric types can't be pattern-matched directly, it stringifies \`N\` first, checks whether that string starts with \`-\`, and converts the digits after it back into a number.
 
 ## Your task
 
 Write \`Abs<N extends number>\`, returning \`N\`'s absolute value.
+
+\`\`\`ts
+type Result = Abs<-5>
+// 5
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16807,11 +19077,16 @@ type Abs<N extends number> = \`\${N}\` extends \`-\${infer Rest}\` ? StrToNum<Re
     companies: [],
     category: "typescript",
     title: "Implement LargerThan<A, B>",
-    description: `Type-level number comparison — since there's no \`>\` operator for types, you count up from 0 with a shared counter, and see which of \`A\` or \`B\` the counter's length reaches first.
+    description: `\`LargerThan\` compares two numeric literal types — since there's no \`>\` operator at the type level, it counts up from 0 with a shared tuple counter and checks which of \`A\` or \`B\` the counter's length reaches first.
 
 ## Your task
 
 Write \`LargerThan<A extends number, B extends number>\`, returning \`true\` if \`A > B\`.
+
+\`\`\`ts
+type Result = LargerThan<5, 3>
+// true
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16836,11 +19111,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: [],
     category: "typescript",
     title: "Implement SmallerThan<A, B>",
-    description: `The mirror image of \`LargerThan\` — same counting technique, with the two roles swapped.
+    description: `\`SmallerThan\` is the mirror image of \`LargerThan\` — the same counting technique, with the two operands' roles swapped.
 
 ## Your task
 
 Write \`SmallerThan<A extends number, B extends number>\`, returning \`true\` if \`A < B\`.
+
+\`\`\`ts
+type Result = SmallerThan<3, 5>
+// true
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16865,11 +19145,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Microsoft"],
     category: "typescript",
     title: "Implement Add<A, B>",
-    description: `The type-challenges classic: real addition, done by building two tuples of lengths \`A\` and \`B\`, concatenating them, and reading the combined tuple's length.
+    description: `\`Add\` performs real addition on numeric literal types — the type-challenges classic technique: build two tuples of lengths \`A\` and \`B\`, concatenate them, and read the combined tuple's length back out.
 
 ## Your task
 
 Write \`Add<A extends number, B extends number>\`, returning \`A + B\`.
+
+\`\`\`ts
+type Result = Add<3, 4>
+// 7
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16891,11 +19176,16 @@ type Add<A extends number, B extends number> = [...BuildTuple<A>, ...BuildTuple<
     companies: ["Microsoft"],
     category: "typescript",
     title: "Implement Subtract<A, B>",
-    description: `The inverse of \`Add\`: build a tuple of length \`A\`, then pattern-match a \`B\`-length prefix off the front of it — whatever's left over is \`A - B\`.
+    description: `\`Subtract\` is the inverse of \`Add\` — build a tuple of length \`A\`, pattern-match a \`B\`-length prefix off the front of it, and whatever's left over is \`A - B\`.
 
 ## Your task
 
 Write \`Subtract<A extends number, B extends number>\`, returning \`A - B\` (assume \`A >= B\`).
+
+\`\`\`ts
+type Result = Subtract<7, 3>
+// 4
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -16917,11 +19207,16 @@ type Subtract<A extends number, B extends number> = BuildTuple<A> extends [...Bu
     companies: ["Microsoft"],
     category: "typescript",
     title: "Implement Multiply<A, B>",
-    description: `Repeated addition, done with two accumulators: one growing by \`B\` elements every step (the running product), and a plain counter tracking how many of the \`A\` steps have happened so far.
+    description: `\`Multiply\` implements multiplication as repeated addition, using two accumulators: one growing by \`B\` elements on every step (the running product), and a plain counter tracking how many of the \`A\` steps have happened so far.
 
 ## Your task
 
 Write \`Multiply<A extends number, B extends number>\`, returning \`A * B\`.
+
+\`\`\`ts
+type Result = Multiply<3, 4>
+// 12
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
@@ -16944,11 +19239,16 @@ type Multiply<A extends number, B extends number, Acc extends unknown[] = [], Co
     companies: ["Microsoft"],
     category: "typescript",
     title: "Implement Divide<A, B>",
-    description: `Repeated subtraction: peel a \`B\`-length chunk off the front of a shrinking \`A\`-length tuple on every recursive step, counting how many chunks it takes until nothing's left.
+    description: `\`Divide\` implements division as repeated subtraction — peel a \`B\`-length chunk off the front of a shrinking \`A\`-length tuple on every recursive step, counting how many chunks it takes until nothing's left.
 
 ## Your task
 
 Write \`Divide<A extends number, B extends number>\`, returning \`A / B\` (assume it divides evenly).
+
+\`\`\`ts
+type Result = Divide<12, 4>
+// 3
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
@@ -16975,11 +19275,16 @@ type Divide<A extends number, B extends number, Count extends unknown[] = []> =
     companies: ["Amazon"],
     category: "typescript",
     title: "Implement FindIndex<T, E>",
-    description: `Combines two techniques from earlier stages — the exact-match \`Equal\` check from \`Includes\`, and the counting-accumulator pattern from the arithmetic stage — to locate *where* a match is, not just whether one exists.
+    description: `\`FindIndex\` locates the index of the first element that exactly matches a given type — combining the exact-match \`Equal\` check from \`Includes\` with the counting-accumulator pattern from type-level arithmetic, to find *where* a match is, not just whether one exists.
 
 ## Your task
 
 Write \`FindIndex<T extends readonly unknown[], E>\`, returning the index of the first element exactly matching \`E\`, or \`-1\` if none does.
+
+\`\`\`ts
+type Result = FindIndex<[1, 2, 3], 2>
+// 1
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -17002,11 +19307,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Airbnb", "Amazon"],
     category: "typescript",
     title: "Implement Diff<A, B>",
-    description: `The symmetric difference between two object types — every key that appears in exactly one of \`A\` or \`B\`, but not both (a key present in both is considered 'shared,' not part of the diff).
+    description: `\`Diff\` computes the symmetric difference between two object types — every key that appears in exactly one of \`A\` or \`B\`, but not both (a key present in both is considered "shared" and excluded from the result).
 
 ## Your task
 
 Write \`Diff<A, B>\`, returning an object type of the keys that appear in only one of \`A\` or \`B\`.
+
+\`\`\`ts
+type Result = Diff<{ a: string; b: number }, { b: number; c: boolean }>
+// { a: string; c: boolean }
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -17025,11 +19335,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Airbnb", "Shopify"],
     category: "typescript",
     title: "Implement ObjectPaths<O>",
-    description: `A genuinely common senior question: generating every valid dot-notation path through a nested object type — the foundation for typed form fields and typed state-update paths (\`"user.address.city"\` as a real, checkable type, not just a string).
+    description: `\`ObjectPaths\` generates every valid dot-notation path through a nested object type — the type-level foundation for typed form fields and typed state-update paths, so a path like \`"user.address.city"\` is a real, checkable string literal type instead of just a plain \`string\`.
 
 ## Your task
 
 Write \`ObjectPaths<T>\`, returning a union of every dot-notation path through \`T\`, at every nesting depth.
+
+\`\`\`ts
+type Result = ObjectPaths<{ a: string; b: { c: number } }>
+// 'a' | 'b' | 'b.c'
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
@@ -17055,11 +19370,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Shopify"],
     category: "typescript",
     title: "Implement MapStringUnionToObjectUnion<U>",
-    description: `Converts a plain union of string literals into a union of single-property objects — the shape you'd want as a starting point for building out a discriminated union from a simpler string enum.
+    description: `\`MapStringUnionToObjectUnion\` converts a plain union of string literals into a union of single-property objects — the shape you'd want as a starting point for building a discriminated union out of a simpler string enum, using distributive conditional types so each member becomes its own object rather than one object with a unioned field.
 
 ## Your task
 
 Write \`MapStringUnionToObjectUnion<U extends string>\`, mapping each member of \`U\` to its own \`{ type: U }\` object, joined back into a union.
+
+\`\`\`ts
+type Result = MapStringUnionToObjectUnion<'circle' | 'square'>
+// { type: 'circle' } | { type: 'square' }
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -17078,11 +19398,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Airbnb", "Shopify", "Vercel"],
     category: "typescript",
     title: "Implement ExtractRouteParams<T>",
-    description: `A very common real-world question, not just a puzzle: typed routers parse a path pattern like \`"/users/:id/posts/:postId"\` into a params object shape (\`{ id: string; postId: string }\`) purely at the type level, so a router's \`params\` object is fully typed with zero manual annotation.
+    description: `\`ExtractRouteParams\` parses a route pattern like \`"/users/:id/posts/:postId"\` into a typed params object, purely at the type level — the technique real typed routers use so a router's \`params\` object is fully typed with zero manual annotation.
 
 ## Your task
 
 Write \`ExtractRouteParams<T extends string>\`, extracting every \`:paramName\` segment from a route pattern into an object type with those names as keys (each typed \`string\`).
+
+\`\`\`ts
+type Result = ExtractRouteParams<'/users/:id/posts/:postId'>
+// { id: string; postId: string }
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
@@ -17107,11 +19432,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: ["Microsoft", "Airbnb"],
     category: "typescript",
     title: "Implement UnionToIntersection<T>",
-    description: `The signature "hard" type-challenge, and a genuinely non-obvious trick: there's no direct union-to-intersection operator, so this exploits function parameter **contravariance** instead — distributing a union into a union of function parameter positions, which TypeScript then has to intersect to find a single type assignable to all of them.
+    description: `\`UnionToIntersection\` converts a union type into the intersection of all its members — a genuinely non-obvious trick that exploits function parameter **contravariance**: distributing a union into a union of function parameter positions forces TypeScript to intersect them to find a single type assignable to all of them.
 
 ## Your task
 
 Write \`UnionToIntersection<U>\`, converting a union type into the intersection of all its members.
+
+\`\`\`ts
+type Result = UnionToIntersection<{ a: string } | { b: number }>
+// { a: string } & { b: number }
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
@@ -17131,11 +19461,16 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
     companies: [],
     category: "typescript",
     title: "Implement Sort<T> (Numeric Tuple Sort)",
-    description: `A rare but strong-signal question: sort a tuple of number literal types into ascending order, purely at the type level — real insertion sort, built from the same numeric-comparison technique as \`LargerThan\`.
+    description: `\`Sort\` sorts a tuple of number literal types into ascending order, purely at the type level — real insertion sort, built from the same numeric-comparison technique as \`LargerThan\`.
 
 ## Your task
 
 Write \`Sort<T extends number[]>\`, returning \`T\`'s elements sorted into ascending order.
+
+\`\`\`ts
+type Result = Sort<[3, 1, 2]>
+// [1, 2, 3]
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
@@ -17171,11 +19506,16 @@ type Sort<T extends number[]> =
     companies: [],
     category: "typescript",
     title: "Implement Unique<T>",
-    description: `Removes duplicate values from a tuple, keeping the first occurrence of each and preserving order — tracking what's already been "seen" in its own accumulator, checked via exact-match equality on every step.
+    description: `\`Unique\` removes duplicate values from a tuple, keeping the first occurrence of each and preserving order — it tracks what's already been "seen" in its own accumulator, checked via the same exact-match equality used by \`Includes\`.
 
 ## Your task
 
 Write \`Unique<T extends readonly unknown[]>\`, returning \`T\` with duplicate elements removed.
+
+\`\`\`ts
+type Result = Unique<[1, 1, 2, 3, 3, 3]>
+// [1, 2, 3]
+\`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
@@ -17210,7 +19550,21 @@ type Unique<T extends readonly unknown[], Seen extends unknown[] = []> =
 
 ## Your task
 
-Write \`toggleNode(root, targetId)\`, where \`root\` is a tree of \`{ id, checked, indeterminate, children }\` nodes. Toggling a node must: flip that node and *every descendant* to the new checked state (clearing indeterminate on all of them), then recompute \`checked\`/\`indeterminate\` on every ancestor based on its children's states. Return a new tree — don't mutate the input.`,
+Write \`toggleNode(root, targetId)\`, where \`root\` is a tree of \`{ id, checked, indeterminate, children }\` nodes. Toggling a node must: flip that node and *every descendant* to the new checked state (clearing indeterminate on all of them), then recompute \`checked\`/\`indeterminate\` on every ancestor based on its children's states. Return a new tree — don't mutate the input.
+
+\`\`\`js
+const root = {
+  id: "root", checked: false, indeterminate: false,
+  children: [
+    { id: "a", checked: false, indeterminate: false, children: [] },
+    { id: "b", checked: false, indeterminate: false, children: [] },
+  ],
+}
+const t1 = toggleNode(root, "a")
+// t1.children[0].checked === true, t1.indeterminate === true
+const t2 = toggleNode(t1, "b")
+// t2.checked === true, t2.indeterminate === false
+\`\`\``,
     difficulty: "hard",
     starterCode: `function toggleNode(root, targetId) {
 }`,
@@ -17259,7 +19613,18 @@ Write \`toggleNode(root, targetId)\`, where \`root\` is a tree of \`{ id, checke
 
 ## Your task
 
-Write \`createStarRating(max, initial)\`, returning \`{ getDisplayValue(), hover(n), clearHover(), select(n), getValue() }\`. \`getDisplayValue()\` reflects the hover preview when one is active, falling back to the real committed value otherwise; \`select(n)\` commits and clamps to \`[0, max]\`.`,
+Write \`createStarRating(max, initial)\`, returning \`{ getDisplayValue(), hover(n), clearHover(), select(n), getValue() }\`. \`getDisplayValue()\` reflects the hover preview when one is active, falling back to the real committed value otherwise; \`select(n)\` commits and clamps to \`[0, max]\`.
+
+\`\`\`js
+const rating = createStarRating(5, 2)
+rating.hover(4)
+rating.getDisplayValue() // 4 (preview only)
+rating.getValue() // 2 (still uncommitted)
+rating.clearHover()
+rating.getDisplayValue() // 2
+rating.select(7)
+rating.getValue() // 5 (clamped to max)
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createStarRating(max, initial) {
 }`,
@@ -17304,7 +19669,16 @@ Write \`createStarRating(max, initial)\`, returning \`{ getDisplayValue(), hover
 
 ## Your task
 
-Write \`createTicTacToe()\`, returning \`{ play(index), getBoard(), getWinner(), getTurn() }\`. \`play\` should reject moves on an already-occupied cell or after the game has a winner, and switch turns after every legal move.`,
+Write \`createTicTacToe()\`, returning \`{ play(index), getBoard(), getWinner(), getTurn() }\`. \`play\` should reject moves on an already-occupied cell or after the game has a winner, and switch turns after every legal move.
+
+\`\`\`js
+const game = createTicTacToe()
+game.play(0) // true — board[0] = "X", turn becomes "O"
+game.play(0) // false — cell 0 is already occupied
+game.play(4); game.play(1); game.play(5); game.play(2)
+// X has now played the full top row: 0, 1, 2
+game.getWinner() // "X"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createTicTacToe() {
 }`,
@@ -17361,7 +19735,16 @@ Write \`createTicTacToe()\`, returning \`{ play(index), getBoard(), getWinner(),
 
 ## Your task
 
-Write \`createToastQueue(maxVisible)\`, returning \`{ show(message, durationMs), dismiss(id), getVisible() }\`. Beyond \`maxVisible\` visible toasts, new ones should queue; dismissing (manually or via \`durationMs\` auto-dismiss) should promote the next queued toast into view.`,
+Write \`createToastQueue(maxVisible)\`, returning \`{ show(message, durationMs), dismiss(id), getVisible() }\`. Beyond \`maxVisible\` visible toasts, new ones should queue; dismissing (manually or via \`durationMs\` auto-dismiss) should promote the next queued toast into view.
+
+\`\`\`js
+const toasts = createToastQueue(2)
+toasts.show("Saved", 5000) // id 1, visible
+toasts.show("Uploaded", 5000) // id 2, visible
+toasts.show("Synced", 5000) // id 3, queued — 2 are already visible
+toasts.dismiss(1)
+toasts.getVisible() // [{ id: 2, ... }, { id: 3, ... }] — id 3 gets promoted
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createToastQueue(maxVisible) {
 }`,
@@ -17411,7 +19794,18 @@ Write \`createToastQueue(maxVisible)\`, returning \`{ show(message, durationMs),
 
 ## Your task
 
-Write \`createPoll(options)\`, returning \`{ vote(userId, option), getResults() }\`. Each user may vote once; \`getResults()\` returns each option's percentage of the total votes, rounded to the nearest whole number.`,
+Write \`createPoll(options)\`, returning \`{ vote(userId, option), getResults() }\`. Each user may vote once; \`getResults()\` returns each option's percentage of the total votes, rounded to the nearest whole number.
+
+\`\`\`js
+const poll = createPoll(["a", "b"])
+poll.vote("user1", "a")
+poll.getResults() // { a: 100, b: 0 }
+poll.vote("user1", "b") // false — user1 already voted
+poll.vote("user2", "a")
+poll.vote("user3", "a")
+poll.vote("user4", "b")
+poll.getResults() // { a: 75, b: 25 }
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createPoll(options) {
 }`,
@@ -17451,7 +19845,14 @@ Write \`createPoll(options)\`, returning \`{ vote(userId, option), getResults() 
 
 ## Your task
 
-Write \`getSliderValueFromPosition({ pointerX, trackLeft, trackWidth, min, max, step })\`, returning the value the slider should show for that pointer position — clamped to \`[min, max]\` and snapped to the nearest \`step\`.`,
+Write \`getSliderValueFromPosition({ pointerX, trackLeft, trackWidth, min, max, step })\`, returning the value the slider should show for that pointer position — clamped to \`[min, max]\` and snapped to the nearest \`step\`.
+
+\`\`\`js
+getSliderValueFromPosition({ pointerX: 0, trackLeft: 0, trackWidth: 200, min: 0, max: 100, step: 10 })
+// 0 — pointer at the track's start
+getSliderValueFromPosition({ pointerX: 260, trackLeft: 0, trackWidth: 200, min: 0, max: 100, step: 10 })
+// 100 — clamped, even though the pointer is past the track's end
+\`\`\``,
     difficulty: "medium",
     starterCode: `function getSliderValueFromPosition({ pointerX, trackLeft, trackWidth, min, max, step }) {
 }`,
@@ -17481,7 +19882,16 @@ Write \`getSliderValueFromPosition({ pointerX, trackLeft, trackWidth, min, max, 
 
 ## Your task
 
-Write \`createCarousel(slideCount, intervalMs)\`, returning \`{ getIndex(), advance(), prev(), pause(), resume(), stop() }\`. \`advance\`/\`prev\` must wrap around at both ends; autoplay must stop advancing while paused, and resume from wherever it left off.`,
+Write \`createCarousel(slideCount, intervalMs)\`, returning \`{ getIndex(), advance(), prev(), pause(), resume(), stop() }\`. \`advance\`/\`prev\` must wrap around at both ends; autoplay must stop advancing while paused, and resume from wherever it left off.
+
+\`\`\`js
+const carousel = createCarousel(3, 3000)
+carousel.advance(); carousel.advance()
+carousel.getIndex() // 2
+carousel.advance()
+carousel.getIndex() // 0 — wraps back around
+carousel.pause() // autoplay's own interval stops advancing the index
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createCarousel(slideCount, intervalMs) {
 }`,
@@ -17527,7 +19937,14 @@ Write \`createCarousel(slideCount, intervalMs)\`, returning \`{ getIndex(), adva
 
 ## Your task
 
-Write \`fuzzySearch(query, items)\`, returning \`items\` filtered to only those containing every character of \`query\` in order, sorted with the best matches (more consecutive-character runs) first.`,
+Write \`fuzzySearch(query, items)\`, returning \`items\` filtered to only those containing every character of \`query\` in order, sorted with the best matches (more consecutive-character runs) first.
+
+\`\`\`js
+fuzzySearch("gp", ["Go to Profile", "Settings"]) // ["Go to Profile"]
+fuzzySearch("xyz", ["Go to Profile"]) // [] — not all characters appear in order
+fuzzySearch("set", ["Settings", "Reset Everything"])
+// ["Settings", "Reset Everything"] — the consecutive match ranks first
+\`\`\``,
     difficulty: "medium",
     starterCode: `function fuzzySearch(query, items) {
 }`,
@@ -17575,7 +19992,16 @@ function fuzzySearch(query, items) {
 
 ## Your task
 
-Write \`createTypeahead(fetcher, debounceMs)\`, returning \`{ search(query, onResults) }\`. Rapid \`search\` calls within \`debounceMs\` of each other should coalesce into a single \`fetcher\` call; if an earlier request's response arrives after a later request has already started, it must be discarded, not passed to \`onResults\`.`,
+Write \`createTypeahead(fetcher, debounceMs)\`, returning \`{ search(query, onResults) }\`. Rapid \`search\` calls within \`debounceMs\` of each other should coalesce into a single \`fetcher\` call; if an earlier request's response arrives after a later request has already started, it must be discarded, not passed to \`onResults\`.
+
+\`\`\`js
+const typeahead = createTypeahead(fetchSuggestions, 300)
+typeahead.search("a", onResults)
+typeahead.search("ab", onResults)
+typeahead.search("abc", onResults)
+// fetchSuggestions is called only once, 300ms later, with "abc"
+// if a stale response for an earlier query resolves late, onResults never sees it
+\`\`\``,
     difficulty: "hard",
     starterCode: `function createTypeahead(fetcher, debounceMs) {
 }`,
@@ -17612,7 +20038,15 @@ Write \`createTypeahead(fetcher, debounceMs)\`, returning \`{ search(query, onRe
 
 ## Your task
 
-Write \`createInfiniteScroll(loadPage, createObserver)\`, returning \`{ isLoading(), isDone(), getPage() }\`. \`createObserver(onIntersect)\` is called once and is expected to invoke \`onIntersect(isIntersecting)\` whenever the sentinel's visibility changes; \`loadPage(pageNumber)\` resolves to a boolean — whether there's more data after this page.`,
+Write \`createInfiniteScroll(loadPage, createObserver)\`, returning \`{ isLoading(), isDone(), getPage() }\`. \`createObserver(onIntersect)\` is called once and is expected to invoke \`onIntersect(isIntersecting)\` whenever the sentinel's visibility changes; \`loadPage(pageNumber)\` resolves to a boolean — whether there's more data after this page.
+
+\`\`\`js
+const scroller = createInfiniteScroll(loadPage, createObserver)
+// sentinel becomes intersecting -> loadPage(0) fires, scroller.isLoading() is true
+// a second intersection while page 0 is still loading is ignored
+// once loadPage resolves false (no more data):
+scroller.isDone() // true — further intersections no longer trigger loadPage
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createInfiniteScroll(loadPage, createObserver) {
 }`,
@@ -17649,7 +20083,15 @@ Write \`createInfiniteScroll(loadPage, createObserver)\`, returning \`{ isLoadin
 
 ## Your task
 
-Write \`createProgressTracker()\`, returning \`{ start(id, totalBytes), update(id, loadedBytes), finish(id), getOverallPercent() }\`. The overall percentage should be *bytes loaded across all active requests* divided by *total bytes across all active requests* — not a simple average of each request's own percentage.`,
+Write \`createProgressTracker()\`, returning \`{ start(id, totalBytes), update(id, loadedBytes), finish(id), getOverallPercent() }\`. The overall percentage should be *bytes loaded across all active requests* divided by *total bytes across all active requests* — not a simple average of each request's own percentage.
+
+\`\`\`js
+const tracker = createProgressTracker()
+tracker.start("upload-a", 100)
+tracker.update("upload-a", 100) // fully loaded
+tracker.start("upload-b", 100) // just started, 0 bytes loaded
+tracker.getOverallPercent() // 50 — weighted by bytes, not averaged per request
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createProgressTracker() {
 }`,
@@ -17696,7 +20138,14 @@ Write \`createProgressTracker()\`, returning \`{ start(id, totalBytes), update(i
 
 ## Your task
 
-Write \`createChunkedUploader(uploadChunk, maxRetries)\`, returning \`{ uploadFile(chunks) }\`. Each chunk should retry up to \`maxRetries\` times on failure before the whole upload rejects; a chunk that eventually succeeds (within the retry budget) should let the upload continue normally to the next chunk.`,
+Write \`createChunkedUploader(uploadChunk, maxRetries)\`, returning \`{ uploadFile(chunks) }\`. Each chunk should retry up to \`maxRetries\` times on failure before the whole upload rejects; a chunk that eventually succeeds (within the retry budget) should let the upload continue normally to the next chunk.
+
+\`\`\`js
+const uploader = createChunkedUploader(uploadChunk, 3)
+await uploader.uploadFile([chunk0, chunk1, chunk2])
+// chunk1 fails twice, then succeeds on its 3rd attempt — uploadFile still resolves true
+// a chunk that keeps failing past maxRetries makes uploadFile() reject entirely
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createChunkedUploader(uploadChunk, maxRetries) {
 }`,
@@ -17740,7 +20189,16 @@ Write \`createChunkedUploader(uploadChunk, maxRetries)\`, returning \`{ uploadFi
 
 ## Your task
 
-Write \`createEventBatcher(flushFn, { maxBatchSize, flushIntervalMs })\`, returning \`{ track(event), flush(), stop() }\`. Flush automatically once the batch reaches \`maxBatchSize\`, or every \`flushIntervalMs\` regardless of size; \`stop()\` should flush whatever's left before stopping.`,
+Write \`createEventBatcher(flushFn, { maxBatchSize, flushIntervalMs })\`, returning \`{ track(event), flush(), stop() }\`. Flush automatically once the batch reaches \`maxBatchSize\`, or every \`flushIntervalMs\` regardless of size; \`stop()\` should flush whatever's left before stopping.
+
+\`\`\`js
+const batcher = createEventBatcher(sendToServer, { maxBatchSize: 3, flushIntervalMs: 5000 })
+batcher.track({ name: "click" })
+batcher.track({ name: "scroll" })
+batcher.track({ name: "click" }) // the 3rd event hits maxBatchSize -> flushes immediately
+// sendToServer is called once, with all 3 events
+batcher.stop() // flushes any remaining events before stopping the timer
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createEventBatcher(flushFn, { maxBatchSize, flushIntervalMs }) {
 }`,
@@ -17781,7 +20239,16 @@ Write \`createEventBatcher(flushFn, { maxBatchSize, flushIntervalMs })\`, return
 
 ## Your task
 
-Write \`createQrLoginPoller(checkStatus, { intervalMs, timeoutMs })\`, returning \`{ getStatus(), stop() }\`. Status starts \`"pending"\`, becomes \`"approved"\` the moment \`checkStatus()\` resolves \`"approved"\`, and becomes \`"expired"\` if that never happens before \`timeoutMs\` elapses — stopping the polling either way once resolved.`,
+Write \`createQrLoginPoller(checkStatus, { intervalMs, timeoutMs })\`, returning \`{ getStatus(), stop() }\`. Status starts \`"pending"\`, becomes \`"approved"\` the moment \`checkStatus()\` resolves \`"approved"\`, and becomes \`"expired"\` if that never happens before \`timeoutMs\` elapses — stopping the polling either way once resolved.
+
+\`\`\`js
+const poller = createQrLoginPoller(checkStatus, { intervalMs: 2000, timeoutMs: 60000 })
+poller.getStatus() // "pending"
+// checkStatus() resolves "approved" on a later poll:
+poller.getStatus() // "approved" — polling has already stopped
+// or, if checkStatus() never resolves "approved" before timeoutMs elapses:
+poller.getStatus() // "expired"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createQrLoginPoller(checkStatus, { intervalMs, timeoutMs }) {
 }`,
@@ -17822,7 +20289,15 @@ Write \`createQrLoginPoller(checkStatus, { intervalMs, timeoutMs })\`, returning
 
 ## Your task
 
-Write \`createResilientNotifier(connectWebSocket, pollFallback, onMessage)\`, returning \`{ isUsingFallback(), stop() }\`. \`connectWebSocket({ onMessage, onError })\` attempts the primary transport; on \`onError\`, switch to polling \`pollFallback()\` on an interval, delivering each message it returns to \`onMessage\`.`,
+Write \`createResilientNotifier(connectWebSocket, pollFallback, onMessage)\`, returning \`{ isUsingFallback(), stop() }\`. \`connectWebSocket({ onMessage, onError })\` attempts the primary transport; on \`onError\`, switch to polling \`pollFallback()\` on an interval, delivering each message it returns to \`onMessage\`.
+
+\`\`\`js
+const notifier = createResilientNotifier(connectWebSocket, pollFallback, onMessage)
+notifier.isUsingFallback() // false — the websocket connected fine
+// the websocket's onError fires:
+notifier.isUsingFallback() // true — now polling pollFallback() on an interval
+// each message pollFallback() returns is delivered to onMessage
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createResilientNotifier(connectWebSocket, pollFallback, onMessage) {
 }`,
@@ -17869,7 +20344,21 @@ Write \`createResilientNotifier(connectWebSocket, pollFallback, onMessage)\`, re
 
 ## Your task
 
-Write \`createUndoRedoStack(initialState)\`, returning \`{ commit(newState), undo(), redo(), getState() }\`. \`commit\` after one or more \`undo\` calls must discard the now-abandoned redo branch, not just append past it.`,
+Write \`createUndoRedoStack(initialState)\`, returning \`{ commit(newState), undo(), redo(), getState() }\`. \`commit\` after one or more \`undo\` calls must discard the now-abandoned redo branch, not just append past it.
+
+\`\`\`js
+const history = createUndoRedoStack("start")
+history.commit("a")
+history.commit("b")
+history.undo()
+history.getState() // "a" — reverted to the state before "b"
+history.redo()
+history.getState() // "b" — re-applied
+history.undo()
+history.commit("c") // discards the abandoned "b" redo branch
+history.redo()
+history.getState() // still "c" — "b" is gone for good
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createUndoRedoStack(initialState) {
 }`,
@@ -17913,7 +20402,13 @@ Write \`createUndoRedoStack(initialState)\`, returning \`{ commit(newState), und
 
 ## Your task
 
-Write \`moveCard(board, { fromColumn, fromIndex, toColumn, toIndex })\`, where \`board\` is \`{ columnName: [cards...] }\`. Return a new board with the card moved to its new position — this must work whether \`fromColumn\` and \`toColumn\` are the same or different.`,
+Write \`moveCard(board, { fromColumn, fromIndex, toColumn, toIndex })\`, where \`board\` is \`{ columnName: [cards...] }\`. Return a new board with the card moved to its new position — this must work whether \`fromColumn\` and \`toColumn\` are the same or different.
+
+\`\`\`js
+const board = { todo: [{ id: 1, text: "Fix bug" }], done: [] }
+moveCard(board, { fromColumn: "todo", fromIndex: 0, toColumn: "done", toIndex: 0 })
+// { todo: [], done: [{ id: 1, text: "Fix bug" }] }
+\`\`\``,
     difficulty: "medium",
     starterCode: `function moveCard(board, { fromColumn, fromIndex, toColumn, toIndex }) {
 }`,
@@ -17944,7 +20439,18 @@ Write \`moveCard(board, { fromColumn, fromIndex, toColumn, toIndex })\`, where \
 
 ## Your task
 
-Write \`getVisibleTodos(state)\`, where \`state\` is \`{ todos: [{ id, text, done }], filter: "all" | "active" | "completed" }\`. Return exactly the todos that should be visible under the current filter.`,
+Write \`getVisibleTodos(state)\`, where \`state\` is \`{ todos: [{ id, text, done }], filter: "all" | "active" | "completed" }\`. Return exactly the todos that should be visible under the current filter.
+
+\`\`\`js
+const state = {
+  todos: [
+    { id: 1, text: "Buy milk", done: false },
+    { id: 2, text: "Walk dog", done: true },
+  ],
+  filter: "active",
+}
+getVisibleTodos(state) // [{ id: 1, text: "Buy milk", done: false }]
+\`\`\``,
     difficulty: "easy",
     starterCode: `function getVisibleTodos(state) {
 }`,
@@ -17972,7 +20478,15 @@ Write \`getVisibleTodos(state)\`, where \`state\` is \`{ todos: [{ id, text, don
 
 ## Your task
 
-Write \`calculateCourseProgress(concepts)\`, where \`concepts\` is an array of \`{ id, tabs: { [tabName]: boolean } }\`. Return the percentage of tabs marked \`true\` across every concept, rounded to the nearest whole number.`,
+Write \`calculateCourseProgress(concepts)\`, where \`concepts\` is an array of \`{ id, tabs: { [tabName]: boolean } }\`. Return the percentage of tabs marked \`true\` across every concept, rounded to the nearest whole number.
+
+\`\`\`js
+calculateCourseProgress([
+  { id: "closures", tabs: { understand: true, build: true, challenge: false, interview: false } },
+])
+// 50
+calculateCourseProgress([]) // 0, not NaN
+\`\`\``,
     difficulty: "easy",
     starterCode: `function calculateCourseProgress(concepts) {
 }`,
@@ -18006,7 +20520,17 @@ Write \`calculateCourseProgress(concepts)\`, where \`concepts\` is an array of \
 
 ## Your task
 
-Write \`createWizard(steps)\`, where each step is \`{ id, validate(data), next(data) }\` (\`next\` returns the next step's \`id\`, or falls through to the following step in the array if omitted). Return \`{ getCurrentStep(), goNext(stepData), goBack(), getData() }\`. \`goNext\` should reject (return \`false\`, stay on the current step) if \`validate\` fails on the merged data.`,
+Write \`createWizard(steps)\`, where each step is \`{ id, validate(data), next(data) }\` (\`next\` returns the next step's \`id\`, or falls through to the following step in the array if omitted). Return \`{ getCurrentStep(), goNext(stepData), goBack(), getData() }\`. \`goNext\` should reject (return \`false\`, stay on the current step) if \`validate\` fails on the merged data.
+
+\`\`\`js
+const wizard = createWizard([
+  { id: "email", validate: (d) => !!d.email, next: () => "password" },
+  { id: "password", validate: (d) => (d.password || "").length >= 8 },
+])
+wizard.goNext({ email: "" }) // false — validate() fails, stays on "email"
+wizard.goNext({ email: "a@b.com" }) // true — advances via next()
+wizard.getCurrentStep().id // "password"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createWizard(steps) {
 }`,
@@ -18053,7 +20577,16 @@ Write \`createWizard(steps)\`, where each step is \`{ id, validate(data), next(d
 
 ## Your task
 
-Write \`createMessageSender(sendToServer)\`, returning \`{ sendMessage(text), getMessages() }\`. \`sendMessage\` should immediately add the message with a temporary id and \`"sending"\` status; on success, swap in the server's real id and \`"sent"\` status; on failure, keep the message visible with \`"failed"\` status.`,
+Write \`createMessageSender(sendToServer)\`, returning \`{ sendMessage(text), getMessages() }\`. \`sendMessage\` should immediately add the message with a temporary id and \`"sending"\` status; on success, swap in the server's real id and \`"sent"\` status; on failure, keep the message visible with \`"failed"\` status.
+
+\`\`\`js
+const messenger = createMessageSender(sendToServer)
+messenger.sendMessage("hi") // doesn't await
+messenger.getMessages() // [{ id: "temp-1", text: "hi", status: "sending" }] — visible already
+// once sendToServer resolves { id: "real-42" }:
+messenger.getMessages() // [{ id: "real-42", text: "hi", status: "sent" }]
+// if sendToServer rejects instead, the message stays with status "failed"
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createMessageSender(sendToServer) {
 }`,
@@ -18091,7 +20624,13 @@ Write \`createMessageSender(sendToServer)\`, returning \`{ sendMessage(text), ge
 
 ## Your task
 
-Write \`getGridLayout(participantCount)\`, returning \`{ rows, cols }\` — a grid with enough cells for every participant, with the column count no more than the row count would require (favor a wider-than-tall grid, which is how most gallery views actually lay out).`,
+Write \`getGridLayout(participantCount)\`, returning \`{ rows, cols }\` — a grid with enough cells for every participant, with the column count no more than the row count would require (favor a wider-than-tall grid, which is how most gallery views actually lay out).
+
+\`\`\`js
+getGridLayout(1) // { rows: 1, cols: 1 }
+getGridLayout(4) // { rows: 2, cols: 2 }
+getGridLayout(5) // { rows: 2, cols: 3 } — wider than tall, still fits everyone
+\`\`\``,
     difficulty: "easy",
     starterCode: `function getGridLayout(participantCount) {
 }`,
@@ -18120,7 +20659,13 @@ Write \`getGridLayout(participantCount)\`, returning \`{ rows, cols }\` — a gr
 
 ## Your task
 
-Write \`transformPosition(opPosition, concurrentOp)\`, where \`concurrentOp\` is \`{ type: "insert", position, text }\` or \`{ type: "delete", position, length }\`. Return the adjusted position \`opPosition\` should now point to, accounting for the concurrent edit.`,
+Write \`transformPosition(opPosition, concurrentOp)\`, where \`concurrentOp\` is \`{ type: "insert", position, text }\` or \`{ type: "delete", position, length }\`. Return the adjusted position \`opPosition\` should now point to, accounting for the concurrent edit.
+
+\`\`\`js
+transformPosition(10, { type: "insert", position: 3, text: "hello" }) // 15
+transformPosition(10, { type: "delete", position: 2, length: 3 }) // 7
+transformPosition(5, { type: "insert", position: 8, text: "x" }) // 5 — edit happened after, unaffected
+\`\`\``,
     difficulty: "hard",
     starterCode: `function transformPosition(opPosition, concurrentOp) {
 }`,
@@ -18154,7 +20699,17 @@ Write \`transformPosition(opPosition, concurrentOp)\`, where \`concurrentOp\` is
 
 ## Your task
 
-Write \`createLikeToggler(sendToServer)\`, returning \`{ toggleLike(), getLiked(), getCount() }\`. \`toggleLike\` should update \`liked\`/\`count\` immediately, then revert both to their exact prior values if \`sendToServer\` rejects.`,
+Write \`createLikeToggler(sendToServer)\`, returning \`{ toggleLike(), getLiked(), getCount() }\`. \`toggleLike\` should update \`liked\`/\`count\` immediately, then revert both to their exact prior values if \`sendToServer\` rejects.
+
+\`\`\`js
+const like = createLikeToggler(sendToServer)
+like.toggleLike() // doesn't await
+like.getLiked() // true — updated before the server responds
+like.getCount() // 1
+// if sendToServer rejects:
+like.getLiked() // false — rolled back to the exact prior value
+like.getCount() // 0
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createLikeToggler(sendToServer) {
 }`,
@@ -18194,7 +20749,19 @@ Write \`createLikeToggler(sendToServer)\`, returning \`{ toggleLike(), getLiked(
 
 ## Your task
 
-Write \`groupNotifications(notifications)\`, where each is \`{ type, targetId, actor }\`. Group notifications sharing the same \`type\` and \`targetId\` into a single entry with an \`actors\` array, in the order they were first grouped.`,
+Write \`groupNotifications(notifications)\`, where each is \`{ type, targetId, actor }\`. Group notifications sharing the same \`type\` and \`targetId\` into a single entry with an \`actors\` array, in the order they were first grouped.
+
+\`\`\`js
+groupNotifications([
+  { type: "like", targetId: "post1", actor: "Alice" },
+  { type: "like", targetId: "post1", actor: "Bob" },
+  { type: "comment", targetId: "post1", actor: "Carol" },
+])
+// [
+//   { type: "like", targetId: "post1", actors: ["Alice", "Bob"] },
+//   { type: "comment", targetId: "post1", actors: ["Carol"] },
+// ]
+\`\`\``,
     difficulty: "medium",
     starterCode: `function groupNotifications(notifications) {
 }`,
@@ -18226,7 +20793,17 @@ Write \`groupNotifications(notifications)\`, where each is \`{ type, targetId, a
 
 ## Your task
 
-Write \`createStoriesTracker()\`, returning \`{ markSeen(userId, storyId), hasUnseenStories(userId, storyIds) }\`. \`hasUnseenStories\` should return \`true\` if any of the given \`storyIds\` haven't been marked seen by that specific \`userId\`.`,
+Write \`createStoriesTracker()\`, returning \`{ markSeen(userId, storyId), hasUnseenStories(userId, storyIds) }\`. \`hasUnseenStories\` should return \`true\` if any of the given \`storyIds\` haven't been marked seen by that specific \`userId\`.
+
+\`\`\`js
+const tracker = createStoriesTracker()
+tracker.hasUnseenStories("user1", ["s1", "s2", "s3"]) // true — nothing seen yet
+tracker.markSeen("user1", "s1")
+tracker.markSeen("user1", "s2")
+tracker.markSeen("user1", "s3")
+tracker.hasUnseenStories("user1", ["s1", "s2", "s3"]) // false
+tracker.hasUnseenStories("user2", ["s1"]) // true — a different user's own history
+\`\`\``,
     difficulty: "easy",
     starterCode: `function createStoriesTracker() {
 }`,
@@ -18261,7 +20838,17 @@ Write \`createStoriesTracker()\`, returning \`{ markSeen(userId, storyId), hasUn
 
 ## Your task
 
-Write \`selectBitrate(bandwidthKbps, qualityLevels)\`, where \`qualityLevels\` is \`[{ label, requiredKbps }]\` sorted ascending by \`requiredKbps\`. Return the \`label\` of the highest quality level whose \`requiredKbps\` fits within 80% of \`bandwidthKbps\` (the safety margin), falling back to the lowest level if even that doesn't fit.`,
+Write \`selectBitrate(bandwidthKbps, qualityLevels)\`, where \`qualityLevels\` is \`[{ label, requiredKbps }]\` sorted ascending by \`requiredKbps\`. Return the \`label\` of the highest quality level whose \`requiredKbps\` fits within 80% of \`bandwidthKbps\` (the safety margin), falling back to the lowest level if even that doesn't fit.
+
+\`\`\`js
+selectBitrate(5000, [
+  { label: "240p", requiredKbps: 400 },
+  { label: "1080p", requiredKbps: 4000 },
+])
+// "1080p" — comfortably fits within the 80% safety margin
+selectBitrate(500, [{ label: "240p", requiredKbps: 400 }])
+// "240p" — the lowest available level, even though it's a tight fit
+\`\`\``,
     difficulty: "medium",
     starterCode: `function selectBitrate(bandwidthKbps, qualityLevels) {
 }`,
@@ -18291,7 +20878,16 @@ Write \`selectBitrate(bandwidthKbps, qualityLevels)\`, where \`qualityLevels\` i
 
 ## Your task
 
-Write \`createFileTree()\`, returning \`{ createFile(path), deleteFile(path), getTree() }\`. Paths are slash-separated (e.g. \`"src/utils/helpers.js"\`); \`createFile\` should create any intermediate folders that don't already exist... actually, assume all intermediate folders already exist and just insert the new file into its immediate parent.`,
+Write \`createFileTree()\`, returning \`{ createFile(path), deleteFile(path), getTree() }\`. Paths are slash-separated (e.g. \`"src/utils/helpers.js"\`); \`createFile\` should create any intermediate folders that don't already exist... actually, assume all intermediate folders already exist and just insert the new file into its immediate parent.
+
+\`\`\`js
+const fs = createFileTree()
+fs.createFile("index.js") // top-level file
+fs.createFile("src", "folder")
+fs.createFile("src/app.js") // nested inside "src", not at the root
+fs.deleteFile("index.js")
+// getTree() now has src/app.js, but no top-level index.js
+\`\`\``,
     difficulty: "medium",
     starterCode: `function createFileTree() {
 }`,
@@ -18336,7 +20932,14 @@ Write \`createFileTree()\`, returning \`{ createFile(path), deleteFile(path), ge
 
 ## Your task
 
-Write \`getRecalculationOrder(dependencies)\`, where \`dependencies\` is \`{ cellId: [cellIds it directly depends on] }\`. Return an array of every cell ID, ordered so that a cell always appears *after* every cell it depends on.`,
+Write \`getRecalculationOrder(dependencies)\`, where \`dependencies\` is \`{ cellId: [cellIds it directly depends on] }\`. Return an array of every cell ID, ordered so that a cell always appears *after* every cell it depends on.
+
+\`\`\`js
+getRecalculationOrder({ A: [], B: ["A"], C: ["B"] })
+// ["A", "B", "C"] — each cell only recalculates after its own dependencies
+getRecalculationOrder({ A: [], B: ["A"], C: ["A"] })
+// A appears exactly once, before both B and C
+\`\`\``,
     difficulty: "hard",
     starterCode: `function getRecalculationOrder(dependencies) {
 }`,
@@ -18371,7 +20974,19 @@ Write \`getRecalculationOrder(dependencies)\`, where \`dependencies\` is \`{ cel
 
 ## Your task
 
-Write \`bucketDataPoints(points, bucketSizeMs)\`, where \`points\` is \`[{ timestamp, value }]\`. Group points into \`bucketSizeMs\`-wide time windows and return \`[{ timestamp, average }]\` — one entry per bucket, in chronological order, where \`timestamp\` is the start of that bucket's window.`,
+Write \`bucketDataPoints(points, bucketSizeMs)\`, where \`points\` is \`[{ timestamp, value }]\`. Group points into \`bucketSizeMs\`-wide time windows and return \`[{ timestamp, average }]\` — one entry per bucket, in chronological order, where \`timestamp\` is the start of that bucket's window.
+
+\`\`\`js
+bucketDataPoints(
+  [
+    { timestamp: 0, value: 10 },
+    { timestamp: 500, value: 20 },
+    { timestamp: 1000, value: 30 },
+  ],
+  1000,
+)
+// [{ timestamp: 0, average: 15 }, { timestamp: 1000, average: 30 }]
+\`\`\``,
     difficulty: "medium",
     starterCode: `function bucketDataPoints(points, bucketSizeMs) {
 }`,
