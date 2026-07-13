@@ -28487,7 +28487,7 @@ formatValue({ a: 1, b: "x" })  // '{ a: 1, b: "x" }'
     orderIndex: 47,
   },
   {
-    slug: "discriminated-union-redux-store",
+    slug: "mini-redux-store",
     conceptSlug: "discriminated-unions",
     title: "Build a Mini Redux-Style Store",
     description: `Wire a discriminated-union reducer into a real, minimal store — \`getState\`, \`dispatch\`, and \`subscribe\`, the same three-method core every Redux-style store is built from.
