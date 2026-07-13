@@ -5658,6 +5658,12 @@ Write \`myNew(Ctor, ...args)\` that:
 \`\`\`js
 function Person(name) { this.name = name; }
 myNew(Person, "Ada") // Person { name: "Ada" }, instanceof Person
+
+function ReturnsObject() { return { custom: true }; }
+myNew(ReturnsObject) // { custom: true } — an object return value overrides the new instance
+
+function ReturnsPrimitive() { this.x = 1; return "ignored"; }
+myNew(ReturnsPrimitive) // { x: 1 } — a primitive return value is ignored
 \`\`\``,
     difficulty: "easy",
     starterCode: `function myNew(Ctor, ...args) {
@@ -5699,6 +5705,7 @@ const obj = { add: (a, b) => a + b };
 const spy = mySpyOn(obj, "add");
 obj.add(2, 3) // 5 — real behavior still runs
 spy.calls // [[2, 3]] — arguments recorded
+spy.restore(); // obj.add is now the original, unwrapped function again
 \`\`\``,
     difficulty: "easy",
     starterCode: `function mySpyOn(obj, methodName) {
@@ -5818,6 +5825,9 @@ Add \`myApply(context, argsArray)\` to \`Function.prototype\`. \`argsArray\` may
 \`\`\`js
 function getName(greeting) { return greeting + ", " + this.name; }
 getName.myApply({ name: "Ada" }, ["Hello"]) // "Hello, Ada"
+
+function noArgs() { return arguments.length; }
+noArgs.myApply({}) // 0 — a missing args array calls the function with no arguments
 \`\`\``,
     difficulty: "medium",
     starterCode: `Function.prototype.myApply = function (context, argsArray) {
@@ -5860,6 +5870,10 @@ Add \`myBind(context, ...boundArgs)\` to \`Function.prototype\`, returning a new
 \`\`\`js
 function greet(greeting, punct) { return greeting + ", " + this.name + punct; }
 greet.myBind({ name: "Ada" }, "Hello")("!") // "Hello, Ada!"
+
+function Point(x, y) { this.x = x; this.y = y; }
+const BoundPoint = Point.myBind({}, 10);
+new BoundPoint(20) // Point { x: 10, y: 20 } — called with new, the bound context is ignored
 \`\`\``,
     difficulty: "medium",
     starterCode: `Function.prototype.myBind = function (context, ...boundArgs) {
@@ -5984,6 +5998,7 @@ Write \`expect(actual)\`, returning an object with:
 expect(1).toBe(1) // passes silently
 expect(1).toBe(2) // throws
 expect(NaN).toBe(NaN) // passes — uses Object.is, not ===
+expect(1).not.toBe(2) // passes silently — the values differ
 \`\`\``,
     difficulty: "medium",
     starterCode: `function expect(actual) {
@@ -6114,6 +6129,7 @@ Write \`pipe(...fns)\`, returning a single function that runs \`fns\` left to ri
 const addOne = (x) => x + 1;
 const double = (x) => x * 2;
 pipe(addOne, double)(3) // (3 + 1) * 2 = 8
+pipe()(5) // 5 — no functions acts as the identity
 \`\`\``,
     difficulty: "easy",
     starterCode: `function pipe(...fns) {
@@ -6227,6 +6243,7 @@ Write \`curryWithPlaceholder(fn)\`, exposing its placeholder marker as \`curryWi
 const _ = curryWithPlaceholder.PLACEHOLDER;
 const curried = curryWithPlaceholder((a, b, c) => a * 100 + b * 10 + c);
 curried(1, _, 3)(2) // 123 — the placeholder is filled by 2
+curried(_, 2)(1, 3) // 123 — a leading placeholder is filled first, extra args are appended after
 \`\`\``,
     difficulty: "medium",
     starterCode: `function curryWithPlaceholder(fn) {
@@ -7007,6 +7024,8 @@ Any other key in \`spec\` is treated as a path to recurse into.
 
 \`\`\`js
 update({ a: { b: 1 } }, { a: { b: { $set: 2 } } }) // { a: { b: 2 } }
+update([1, 2, 3], { $push: [4] }) // [1, 2, 3, 4]
+update({ a: 1, b: 2 }, { $merge: { b: 3, c: 4 } }) // { a: 1, b: 3, c: 4 }
 \`\`\``,
     difficulty: "medium",
     starterCode: `function update(value, spec) {
@@ -7967,6 +7986,10 @@ fn("b"); // within the window — scheduled for the trailing edge
 const onlyLeading = throttle(log, 100, { leading: true, trailing: false });
 onlyLeading("x"); onlyLeading("y"); onlyLeading("z");
 // fires exactly once, immediately, with "x"
+
+const onlyTrailing = throttle(log, 100, { leading: false, trailing: true });
+onlyTrailing("x"); onlyTrailing("y"); onlyTrailing("z");
+// nothing fires immediately — fires once, ~100ms later, with "z" (the most recent arguments)
 \`\`\``,
     difficulty: "medium",
     starterCode: `function throttle(fn, interval, options = {}) {
@@ -8263,7 +8286,7 @@ readFile("a.txt").then((contents) => console.log(contents));
 
 ## Your task
 
-Write \`myPromiseRace(promises)\`, mirroring the native \`Promise.race\`.
+Write \`myPromiseRace(promises)\`, mirroring the native \`Promise.race\`. A plain (non-promise) value in the array counts as already settled, so it can win the race immediately.
 
 \`\`\`js
 const fast = new Promise((res) => setTimeout(() => res("fast"), 50));
@@ -8273,6 +8296,9 @@ myPromiseRace([slow, fast]).then(console.log);
 
 myPromiseRace([slow, Promise.reject("early error")]).catch(console.log);
 // "early error" — a fast rejection wins the race too
+
+myPromiseRace([slow, "instant"]).then(console.log);
+// "instant" — a plain value is already settled, so it beats any pending promise
 \`\`\``,
     difficulty: "easy",
     starterCode: `function myPromiseRace(promises) {
@@ -9022,6 +9048,9 @@ a.next = b;
 b.next = a; // the tail loops back into the list
 hasCycle(a);
 // true
+
+hasCycle({ value: 1, next: { value: 2, next: null } });
+// false — a normal, non-circular list
 \`\`\``,
     difficulty: "easy",
     starterCode: `function hasCycle(head) {
@@ -9255,6 +9284,12 @@ Write \`findTopK(nums, k)\`, returning an array of the \`k\` largest values from
 \`\`\`js
 findTopK([3, 1, 4, 1, 5, 9, 2, 6], 3)
 // [9, 6, 5]
+
+findTopK([1, 2], 5)
+// [2, 1] — k larger than the array just returns everything, sorted descending
+
+findTopK([1, 2, 3], 0)
+// [] — k = 0 returns an empty array
 \`\`\``,
     difficulty: "medium",
     starterCode: `function findTopK(nums, k) {
@@ -9406,6 +9441,14 @@ const root = {
 };
 verticalTraversal(root)
 // [[2], [1], [3]] — left child's column, then root's column, then right child's column
+
+const withTie = {
+  value: 1,
+  left: { value: 2, left: null, right: { value: 4, left: null, right: null } },
+  right: { value: 3, left: { value: 5, left: null, right: null }, right: null },
+};
+verticalTraversal(withTie)
+// [[2], [1, 4, 5], [3]] — 4 and 5 land at the same row AND column, so ascending value (4 before 5) breaks the tie
 \`\`\``,
     difficulty: "hard",
     starterCode: `function verticalTraversal(root) {
@@ -9616,6 +9659,10 @@ Write \`quickSort(arr)\`, returning a new sorted array (ascending).
 \`\`\`js
 quickSort([5, 3, 8, 1, 2])
 // [1, 2, 3, 5, 8]
+quickSort([])
+// [] — an empty array is already sorted
+quickSort([1, 1, 1])
+// [1, 1, 1] — duplicate values are kept, not deduplicated
 \`\`\``,
     difficulty: "medium",
     starterCode: `function quickSort(arr) {
@@ -9654,6 +9701,8 @@ binarySearch([1, 3, 5, 7, 9], 7)
 // 3
 binarySearch([1, 3, 5, 7, 9], 4)
 // -1 — not present in the array
+binarySearch([], 4)
+// -1 — an empty array has nothing to find
 \`\`\``,
     difficulty: "easy",
     starterCode: `function binarySearch(arr, target) {
@@ -9692,6 +9741,8 @@ Write \`searchFirstIndex(arr, target)\`, returning the index of the first (leftm
 \`\`\`js
 searchFirstIndex([1, 2, 2, 2, 3], 2)
 // 1 — the leftmost of the three 2s
+searchFirstIndex([1, 2, 3], 5)
+// -1 — not present in the array
 \`\`\``,
     difficulty: "easy",
     starterCode: `function searchFirstIndex(arr, target) {
@@ -9736,6 +9787,8 @@ Write \`searchLastIndex(arr, target)\`.
 \`\`\`js
 searchLastIndex([1, 2, 2, 2, 3], 2)
 // 3 — the rightmost of the three 2s
+searchLastIndex([1, 2, 3], 5)
+// -1 — not present in the array
 \`\`\``,
     difficulty: "easy",
     starterCode: `function searchLastIndex(arr, target) {
@@ -9780,6 +9833,8 @@ Write \`findElementBefore(arr, target)\`, returning that value, or \`undefined\`
 \`\`\`js
 findElementBefore([1, 3, 5, 7, 9], 6)
 // 5 — the largest value strictly less than 6
+findElementBefore([1, 3, 5, 7, 9], 1)
+// undefined — nothing in the array is smaller than the smallest value
 \`\`\``,
     difficulty: "easy",
     starterCode: `function findElementBefore(arr, target) {
@@ -9822,6 +9877,8 @@ Write \`findElementAfter(arr, target)\`, returning that value, or \`undefined\` 
 \`\`\`js
 findElementAfter([1, 3, 5, 7, 9], 6)
 // 7 — the smallest value strictly greater than 6
+findElementAfter([1, 3, 5, 7, 9], 9)
+// undefined — nothing in the array is larger than the largest value
 \`\`\``,
     difficulty: "easy",
     starterCode: `function findElementAfter(arr, target) {
@@ -9905,6 +9962,8 @@ findMedianSortedArrays([1, 3], [2])
 // 2 — the middle value of the merged [1, 2, 3]
 findMedianSortedArrays([1, 2], [3, 4])
 // 2.5 — the average of the two middle values in [1, 2, 3, 4]
+findMedianSortedArrays([], [1])
+// 1 — one input array may be empty; the median comes entirely from the other
 \`\`\``,
     difficulty: "medium",
     starterCode: `function findMedianSortedArrays(nums1, nums2) {
@@ -10133,11 +10192,13 @@ findZeroSumPair([4, -4, 2])
 
 ## Your task
 
-Write \`largestDifference(nums)\` in a single O(n) pass, tracking the minimum value seen so far and the best difference found using it. An array with fewer than 2 elements has no valid pair — return \`undefined\`.
+Write \`largestDifference(nums)\` in a single O(n) pass, tracking the minimum value seen so far and the best difference found using it. An array with fewer than 2 elements has no valid pair — return \`undefined\`. If the array is strictly decreasing, there's no profitable pair, but the function still returns the best (least negative) difference it can find rather than 0.
 
 \`\`\`js
 largestDifference([7, 1, 5, 3, 6, 4])
 // 5 — buy at 1, sell at 6
+largestDifference([7, 6, 4, 3, 1])
+// -1 — a strictly decreasing array has no profitable pair, so the least-bad difference wins
 \`\`\``,
     difficulty: "easy",
     starterCode: `function largestDifference(nums) {
@@ -10564,7 +10625,7 @@ countPalindromicSubstrings("aaa")
 
 ## Your task
 
-Write \`angleBetweenHands(hours, minutes)\`, returning the angle in degrees, always the smaller of the two possible angles (0-180).
+Write \`angleBetweenHands(hours, minutes)\`, returning the angle in degrees, always the smaller of the two possible angles (0-180). \`hours\` may be given in either 12-hour (1-12) or 24-hour (0-23) form — either way, it's taken mod 12 to find the hour hand's position on the dial.
 
 \`\`\`js
 angleBetweenHands(3, 0)
@@ -10669,11 +10730,13 @@ myPow(2, -2)
 
 ## Your task
 
-Write \`mySqrt(x)\`, converging to a precise floating-point result via Newton's method.
+Write \`mySqrt(x)\`, converging to a precise floating-point result via Newton's method. Negative \`x\` has no real square root — return \`NaN\` in that case.
 
 \`\`\`js
 mySqrt(16)
 // 4
+mySqrt(-4)
+// NaN — negative numbers have no real square root
 \`\`\``,
     difficulty: "medium",
     starterCode: `function mySqrt(x) {
@@ -11062,11 +11125,13 @@ bigIntMultiply("123", "456")
 
 ## Your task
 
-Write \`bigIntDivide(a, b)\`.
+Write \`bigIntDivide(a, b)\`. Dividing by \`"0"\` should throw an error, just like dividing by zero is undefined for real integers.
 
 \`\`\`js
 bigIntDivide("7", "2")
 // "3" — the result is floored, not fractional
+bigIntDivide("7", "0")
+// throws an error — division by zero
 \`\`\``,
     difficulty: "medium",
     starterCode: `function bigIntDivide(a, b) {
@@ -11441,7 +11506,7 @@ findNextRightSibling(root, "e")
 
 ## Your task
 
-Write \`levelOrderTraversal(root)\`, where each node is \`{ id, children }\`. Return an array of arrays of ids, one inner array per level, top to bottom.
+Write \`levelOrderTraversal(root)\`, where each node is \`{ id, children }\`. Return an array of arrays of ids, one inner array per level, top to bottom. A \`null\` root (an empty tree) has no levels at all — return \`[]\`.
 
 \`\`\`js
 // tree: a -> [b, c], b -> [d]
@@ -11576,7 +11641,7 @@ store.get(el)
 
 ## Your task
 
-Write \`findCorrespondingNode(rootA, rootB, target)\`, where \`target\` is a real descendant element of \`rootA\`. Record the path of child indices from \`rootA\` down to \`target\`, then replay that same path of indices starting from \`rootB\`.
+Write \`findCorrespondingNode(rootA, rootB, target)\`, where \`target\` is a descendant element of \`rootA\`, or \`rootA\` itself. Record the path of child indices from \`rootA\` down to \`target\` (an empty path when \`target === rootA\`), then replay that same path of indices starting from \`rootB\`.
 
 \`\`\`js
 // rootA and rootB are identical <ul><li>A</li><li>B</li></ul> trees
@@ -11937,6 +12002,8 @@ parseCookies("a=1; b=2; c=3")
 // { a: "1", b: "2", c: "3" }
 stringifyCookie("name", "a b", {})
 // "name=a%20b"
+stringifyCookie("name", "v", { days: 1, path: "/" })
+// "name=v; max-age=86400; path=/" — options.days converts to max-age in seconds, options.path is appended after
 \`\`\``,
     difficulty: "medium",
     starterCode: `function parseCookies(cookieString) {
@@ -12138,7 +12205,7 @@ loader.hasMore()
 
 ## Your task
 
-Write \`createVirtualList(items, itemHeight, containerHeight, overscan = 3)\`, returning \`{ getVisibleItems(scrollTop) }\` where the result is \`{ items, offsetY, startIndex }\` — the sliced visible items, the pixel offset to position them at, and their starting index.
+Write \`createVirtualList(items, itemHeight, containerHeight, overscan = 3)\`, returning \`{ getVisibleItems(scrollTop) }\` where the result is \`{ items, offsetY, startIndex }\` — the sliced visible items, the pixel offset to position them at, and their starting index. \`overscan\` is the number of extra rows to render just past each edge of the visible viewport, as a buffer so fast scrolling doesn't flash blank space before new rows render.
 
 \`\`\`js
 const list = createVirtualList(items /* 1,000 rows */, 50, 300, 3);
@@ -15215,6 +15282,8 @@ list.updateAt(1, 99);
 list.getValue(); // [1, 99, 3]
 list.removeAt(0);
 list.getValue(); // [99, 3]
+list.clear();
+list.getValue(); // []
 \`\`\``,
     difficulty: "medium",
     starterCode: `function createArrayState(initial = []) {
@@ -15373,6 +15442,11 @@ const promise = resource.run();
 resource.getState().status; // "loading" — set synchronously, before the fetch resolves
 await promise;
 resource.getState(); // { status: "success", data: {...}, error: null }
+
+// if promiseFactory() rejects instead:
+const failing = createAsyncResource(() => Promise.reject(new Error("network down")));
+await failing.run();
+failing.getState(); // { status: "error", data: null, error: Error("network down") }
 \`\`\``,
     difficulty: "medium",
     starterCode: `function createAsyncResource(promiseFactory) {
@@ -15415,15 +15489,16 @@ resource.getState(); // { status: "success", data: {...}, error: null }
 
 ## Your task
 
-Write \`createSWRResource(key, fetcher, cache)\`, returning \`{ getData(), subscribe(listener), load() }\`. \`cache\` is a shared \`Map\`-like store (\`get\`/\`set\`) so multiple resources can share state. \`load()\` should return whatever was cached *before* the fetch started, while updating the cache (and notifying subscribers) once \`fetcher()\` resolves.
+Write \`createSWRResource(key, fetcher, cache)\`, returning \`{ getData(), subscribe(listener), load() }\`. \`cache\` is a shared \`Map\`-like store (\`get\`/\`set\`) so multiple resources can share state. \`load()\` should return whatever was cached *before* the fetch started, while updating the cache (and notifying subscribers) once \`fetcher()\` resolves. \`subscribe(listener)\` returns an unsubscribe function — calling it detaches that listener so it stops receiving future updates.
 
 \`\`\`js
 cache.set("user", { name: "stale" });
 const resource = createSWRResource("user", fetcher, cache);
-resource.subscribe((data) => console.log("updated:", data));
+const unsubscribe = resource.subscribe((data) => console.log("updated:", data));
 const stale = await resource.load(); // { name: "stale" } — the cache's old value
 resource.getData(); // { name: "fresh" } — now updated in the background
 // "updated: { name: 'fresh' }" was logged once fetcher() resolved
+unsubscribe(); // this listener won't be called on any future load()
 \`\`\``,
     difficulty: "medium",
     starterCode: `function createSWRResource(key, fetcher, cache) {
@@ -15698,6 +15773,13 @@ runtime.render(() => {
 // logs "rendered with count: 0"
 setCount((prev) => prev + 1);
 // automatically re-renders, logging "rendered with count: 1"
+
+// two useState calls in the same render each keep their own slot, by call order:
+runtime.render(() => {
+  const [name] = runtime.useState("Ada");
+  const [age] = runtime.useState(30);
+  console.log(name, age); // "Ada" 30 — each call's value survives independently
+});
 \`\`\``,
     difficulty: "hard",
     starterCode: `function createStateRuntime() {
@@ -16984,7 +17066,7 @@ applyCloseButtonX(el);
     companies: ["Stripe", "Bloomberg"],
     category: "css",
     title: "Doughnut Chart (Pure CSS, No SVG/Canvas)",
-    description: `A conic-gradient sliced into colored segments, with a smaller circle layered on top to punch a hole through the middle — the entire chart built from two \`border-radius: 50%\` circles and zero drawing APIs.
+    description: `A \`conic-gradient\` — a gradient that sweeps colors around a center point like a clock face, instead of across a straight line the way \`linear-gradient\` does — sliced into colored segments, with a smaller circle layered on top to punch a hole through the middle: the entire chart built from two \`border-radius: 50%\` circles and zero drawing APIs.
 
 ## Your task
 
@@ -17548,6 +17630,9 @@ Write \`MyPick<T, K extends keyof T>\`, keeping only the properties of \`T\` who
 \`\`\`ts
 type Result = MyPick<{ title: string; description: string; completed: boolean }, "title">
 // { title: string }
+
+type Result2 = MyPick<{ title: string; description: string; completed: boolean }, "title" | "completed">
+// { title: string; completed: boolean }
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -17577,6 +17662,9 @@ Write \`MyOmit<T, K extends keyof T>\`, dropping the properties of \`T\` whose k
 \`\`\`ts
 type Result = MyOmit<{ title: string; description: string; completed: boolean }, "description">
 // { title: string; completed: boolean }
+
+type Result2 = MyOmit<{ title: string; description: string; completed: boolean }, "description" | "completed">
+// { title: string }
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -17634,6 +17722,9 @@ Write \`DeepPartial<T>\`, recursively making every property — at every nesting
 \`\`\`ts
 type Result = DeepPartial<{ a: { b: { c: string } } }>
 // { a?: { b?: { c?: string } } }
+
+type Result2 = DeepPartial<{ a: string }>
+// { a?: string } — still behaves like plain Partial when there's no nesting
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -17663,6 +17754,9 @@ Write \`DeepReadonly<T>\`, recursively marking every property — at every nesti
 \`\`\`ts
 type Result = DeepReadonly<{ a: { b: string } }>
 // { readonly a: { readonly b: string } }
+
+type Result2 = DeepReadonly<{ a: string }>
+// { readonly a: string } — still behaves like plain Readonly when there's no nesting
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -17694,6 +17788,9 @@ Write \`MyNonNullable<T>\`, removing \`null\` and \`undefined\` from \`T\`.
 \`\`\`ts
 type Result = MyNonNullable<string | null | undefined>
 // string
+
+type Result2 = MyNonNullable<number>
+// number — a type with no null/undefined passes through unchanged
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -17723,6 +17820,9 @@ Write \`UndefinedToNull<T>\`, replacing \`undefined\` with \`null\` anywhere it 
 \`\`\`ts
 type Result = UndefinedToNull<string | undefined>
 // string | null
+
+type Result2 = UndefinedToNull<string>
+// string — a type with no undefined passes through unchanged
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -17752,6 +17852,9 @@ Write \`MyExclude<T, E>\`, removing every member of \`T\` that's assignable to \
 \`\`\`ts
 type Result = MyExclude<"a" | "b" | "c", "a">
 // "b" | "c"
+
+type Result2 = MyExclude<string | number | boolean, boolean>
+// string | number — E can be any type, not just a literal union member
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -17781,6 +17884,9 @@ Write \`MyExtract<T, U>\`, keeping only the members of \`T\` that are assignable
 \`\`\`ts
 type Result = MyExtract<"a" | "b" | "c", "a" | "c">
 // "a" | "c"
+
+type Result2 = MyExtract<string | number | boolean, boolean>
+// boolean — U can be any type, not just a literal union member
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -17812,6 +17918,9 @@ Write \`MyParameters<T extends (...args: any) => any>\`, extracting \`T\`'s para
 \`\`\`ts
 type Result = MyParameters<(a: string, b: number) => void>
 // [string, number]
+
+type Result2 = MyParameters<() => void>
+// [] — a function with no parameters produces an empty tuple
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -17926,6 +18035,9 @@ Write \`MyThisParameterType<T>\`, extracting the \`this\` type from \`T\`'s sign
 \`\`\`ts
 type Result = MyThisParameterType<(this: { a: number }, x: string) => void>
 // { a: number }
+
+type Result2 = MyThisParameterType<(x: string) => void>
+// unknown — falls back to unknown when there's no explicit this parameter
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -17983,6 +18095,9 @@ Write \`UnwrapPromise<T>\`, extracting \`Promise\`'s inner type — or returning
 \`\`\`ts
 type Result = UnwrapPromise<Promise<string>>
 // string
+
+type Result2 = UnwrapPromise<number>
+// number — a non-Promise type passes through unchanged
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18043,6 +18158,9 @@ Write \`FirstChar<T extends string>\`, extracting the first character of \`T\` (
 \`\`\`ts
 type Result = FirstChar<"hello">
 // "h"
+
+type Result2 = FirstChar<"">
+// "" — an empty string has no first character
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18072,6 +18190,9 @@ Write \`LastChar<T extends string>\`, extracting the last character of \`T\`.
 \`\`\`ts
 type Result = LastChar<"hello">
 // "o"
+
+type Result2 = LastChar<"a">
+// "a" — a single-character string is its own last character
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18103,6 +18224,9 @@ Write \`LengthOfString<S extends string>\`, returning \`S\`'s character count as
 \`\`\`ts
 type Result = LengthOfString<"hello">
 // 5
+
+type Result2 = LengthOfString<"">
+// 0
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18133,6 +18257,9 @@ Write \`Trim<S extends string>\`, removing leading and trailing spaces from \`S\
 \`\`\`ts
 type Result = Trim<"  hello  ">
 // "hello"
+
+type Result2 = Trim<"hello">
+// "hello" — a string with no surrounding spaces is left unchanged
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18164,6 +18291,9 @@ Write \`MyCapitalize<S extends string>\`, uppercasing \`S\`'s first character.
 \`\`\`ts
 type Result = MyCapitalize<"hello">
 // "Hello"
+
+type Result2 = MyCapitalize<"">
+// "" — an empty string has no character to uppercase
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18193,6 +18323,9 @@ Write \`Split<S extends string, D extends string>\`, splitting \`S\` on every oc
 \`\`\`ts
 type Result = Split<"a,b,c", ",">
 // ["a", "b", "c"]
+
+type Result2 = Split<"hello", ",">
+// ["hello"] — when the delimiter never appears, you get a single-element tuple
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18225,6 +18358,9 @@ Write \`StringToTuple<S extends string>\`, turning \`S\` into a tuple of its ind
 \`\`\`ts
 type Result = StringToTuple<"abc">
 // ["a", "b", "c"]
+
+type Result2 = StringToTuple<"">
+// [] — an empty string produces an empty tuple
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18254,6 +18390,9 @@ Write \`ReplaceAll<S extends string, F extends string, T extends string>\`, repl
 \`\`\`ts
 type Result = ReplaceAll<"foo-bar-foo", "foo", "baz">
 // "baz-bar-baz"
+
+type Result2 = ReplaceAll<"abc", "x", "y">
+// "abc" — left unchanged when F never appears in S
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18287,6 +18426,9 @@ Write \`Join<T extends readonly string[], D extends string>\`, joining every ele
 \`\`\`ts
 type Result = Join<["a", "b", "c"], ",">
 // "a,b,c"
+
+type Result2 = Join<["hello"], ",">
+// "hello" — a single-element tuple needs no delimiter at all
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18319,6 +18461,9 @@ Write \`Prefix<T extends string, P extends string>\`, prepending \`P\` to \`T\`.
 \`\`\`ts
 type Result = Prefix<"foo", "pre-">
 // "pre-foo"
+
+type Result2 = Prefix<"a" | "b", "x">
+// "xa" | "xb" — distributes over a union automatically, prefixing every member
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18348,6 +18493,9 @@ Write \`SnakeCase<S extends string>\`, converting \`camelCase\` to \`snake_case\
 \`\`\`ts
 type Result = SnakeCase<"helloWorld">
 // "hello_world"
+
+type Result2 = SnakeCase<"foo">
+// "foo" — an already-lowercase string is left unchanged
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18383,6 +18531,9 @@ Write \`CamelCase<S extends string>\`, converting \`snake_case\` to \`camelCase\
 \`\`\`ts
 type Result = CamelCase<"hello_world">
 // "helloWorld"
+
+type Result2 = CamelCase<"foo">
+// "foo" — a string with no underscores is left unchanged
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18416,6 +18567,9 @@ Write \`FirstItem<T extends unknown[]>\`, extracting the first element of \`T\` 
 \`\`\`ts
 type Result = FirstItem<[1, 2, 3]>
 // 1
+
+type Result2 = FirstItem<[]>
+// never — an empty tuple has no first element
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18445,6 +18599,9 @@ Write \`LastItem<T extends unknown[]>\`, extracting the last element of \`T\` (o
 \`\`\`ts
 type Result = LastItem<[1, 2, 3]>
 // 3
+
+type Result2 = LastItem<[]>
+// never — an empty tuple has no last element
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18748,6 +18905,9 @@ Write \`Repeat<T, C extends number>\`, returning a \`C\`-length tuple where ever
 \`\`\`ts
 type Result = Repeat<'x', 3>
 // ['x', 'x', 'x']
+
+type Empty = Repeat<0, 0>
+// []
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18778,6 +18938,9 @@ Write \`RepeatString<S extends string, C extends number>\`, returning \`S\` repe
 \`\`\`ts
 type Result = RepeatString<'ab', 3>
 // 'ababab'
+
+type Empty = RepeatString<'x', 0>
+// ''
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -18841,6 +19004,9 @@ Write \`IsNever<T>\`, returning \`true\` only when \`T\` is exactly \`never\`. W
 \`\`\`ts
 type Result = IsNever<never>
 // true
+
+type NotNever = IsNever<string>
+// false
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -19054,6 +19220,9 @@ Write \`Abs<N extends number>\`, returning \`N\`'s absolute value.
 \`\`\`ts
 type Result = Abs<-5>
 // 5
+
+type AlreadyPositive = Abs<5>
+// 5
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -19086,6 +19255,9 @@ Write \`LargerThan<A extends number, B extends number>\`, returning \`true\` if 
 \`\`\`ts
 type Result = LargerThan<5, 3>
 // true
+
+type SameValue = LargerThan<3, 3>
+// false
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -19120,6 +19292,9 @@ Write \`SmallerThan<A extends number, B extends number>\`, returning \`true\` if
 \`\`\`ts
 type Result = SmallerThan<3, 5>
 // true
+
+type SameValue = SmallerThan<3, 3>
+// false
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -19185,6 +19360,9 @@ Write \`Subtract<A extends number, B extends number>\`, returning \`A - B\` (ass
 \`\`\`ts
 type Result = Subtract<7, 3>
 // 4
+
+type SameValue = Subtract<5, 5>
+// 0
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -19284,6 +19462,9 @@ Write \`FindIndex<T extends readonly unknown[], E>\`, returning the index of the
 \`\`\`ts
 type Result = FindIndex<[1, 2, 3], 2>
 // 1
+
+type NotFound = FindIndex<[1, 2, 3], 5>
+// -1
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -19402,11 +19583,14 @@ Graded by real TypeScript type-checking — write a type alias, not JavaScript.`
 
 ## Your task
 
-Write \`ExtractRouteParams<T extends string>\`, extracting every \`:paramName\` segment from a route pattern into an object type with those names as keys (each typed \`string\`).
+Write \`ExtractRouteParams<T extends string>\`, extracting every \`:paramName\` segment from a route pattern into an object type with those names as keys (each typed \`string\`). A pattern with no \`:param\` segments at all extracts to an empty object, \`{}\`.
 
 \`\`\`ts
 type Result = ExtractRouteParams<'/users/:id/posts/:postId'>
 // { id: string; postId: string }
+
+type NoParams = ExtractRouteParams<'/about'>
+// {}
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -19441,6 +19625,9 @@ Write \`UnionToIntersection<U>\`, converting a union type into the intersection 
 \`\`\`ts
 type Result = UnionToIntersection<{ a: string } | { b: number }>
 // { a: string } & { b: number }
+
+type Primitives = UnionToIntersection<string | number>
+// string & number
 \`\`\`
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
@@ -19890,6 +20077,8 @@ carousel.advance(); carousel.advance()
 carousel.getIndex() // 2
 carousel.advance()
 carousel.getIndex() // 0 — wraps back around
+carousel.prev()
+carousel.getIndex() // 2 — prev() wraps the other way too, back to the last slide
 carousel.pause() // autoplay's own interval stops advancing the index
 \`\`\``,
     difficulty: "medium",
@@ -20091,6 +20280,8 @@ tracker.start("upload-a", 100)
 tracker.update("upload-a", 100) // fully loaded
 tracker.start("upload-b", 100) // just started, 0 bytes loaded
 tracker.getOverallPercent() // 50 — weighted by bytes, not averaged per request
+tracker.finish("upload-a"); tracker.finish("upload-b")
+tracker.getOverallPercent() // 100 — nothing in flight, not 0 or NaN
 \`\`\``,
     difficulty: "medium",
     starterCode: `function createProgressTracker() {
@@ -20655,7 +20846,7 @@ getGridLayout(5) // { rows: 2, cols: 3 } — wider than tall, still fits everyon
     companies: ["Google", "Notion", "Figma"],
     category: "system-design",
     title: "Collaborative Document Editor (Operational Transform Core)",
-    description: `**RADIO framing:** consistently rated among the hardest frontend system design questions — real-time multi-user editing needs every client to converge on the same document even when edits happen concurrently. The foundational building block (behind both OT and, differently, CRDTs) is transforming one operation's position against a concurrent one that already landed first.
+    description: `**RADIO framing:** consistently rated among the hardest frontend system design questions — real-time multi-user editing needs every client to converge on the same document even when edits happen concurrently. The foundational building block behind Operational Transform (OT) — and, via a different mechanism, CRDTs (Conflict-free Replicated Data Types, the other major approach to multi-user sync) — is transforming one operation's position against a concurrent one that already landed first.
 
 ## Your task
 
@@ -20878,7 +21069,7 @@ selectBitrate(500, [{ label: "240p", requiredKbps: 400 }])
 
 ## Your task
 
-Write \`createFileTree()\`, returning \`{ createFile(path), deleteFile(path), getTree() }\`. Paths are slash-separated (e.g. \`"src/utils/helpers.js"\`); \`createFile\` should create any intermediate folders that don't already exist... actually, assume all intermediate folders already exist and just insert the new file into its immediate parent.
+Write \`createFileTree()\`, returning \`{ createFile(path, type), deleteFile(path), getTree() }\`. Paths are slash-separated (e.g. \`"src/utils/helpers.js"\`) and \`type\` is \`"file"\` (the default) or \`"folder"\`. Assume every intermediate folder in \`path\` already exists — \`createFile\` just inserts the new file (or folder) into its immediate parent; it doesn't need to create any missing ancestor folders.
 
 \`\`\`js
 const fs = createFileTree()
