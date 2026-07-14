@@ -16,6 +16,7 @@ import {
   CONCEPT_DIFFICULTIES,
   CHALLENGE_DIFFICULTIES,
   INTERVIEW_COLLECTIONS,
+  COLLECTION_QUESTION_COLLECTIONS,
 } from "@/lib/constants";
 
 // Every table below is .enableRLS()'d — this has no bearing on the app itself
@@ -149,6 +150,62 @@ export const interviewQuestions = pgTable(
     ),
     check(
       "interview_questions_difficulty_check",
+      sql`${table.difficulty} IN (${sql.join(
+        CHALLENGE_DIFFICULTIES.map((d) => sql.raw(`'${d}'`)),
+        sql`, `,
+      )})`,
+    ),
+  ],
+).enableRLS();
+
+// ── collection_questions ──────────────────────────────────────────────────────
+// Feature 30/31's Interview Prep collections (FF JavaScript/React/Next.js) —
+// a new, dedicated table rather than a reuse of interview_questions above.
+// interview_questions is concept-scoped (conceptId-linked, already live on
+// Learn's Interview tabs); this feature's content is collection-scoped, not
+// concept-scoped, and every attempt to force it into interview_questions'
+// shape kept colliding with that table's existing "ff-75" collection value
+// and concept-linking assumptions (see progress-tracker.md, Pre-Feature-30
+// entry). "ff-75" isn't a collection value here — it's the isFf75 flag,
+// since a question can't belong to two collections at once. "ff-system-design"
+// isn't here at all — its content is long-form MDX guides (Feature 49), a
+// different shape entirely.
+
+export const collectionQuestions = pgTable(
+  "collection_questions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    collection: text("collection").notNull(),
+    slug: text("slug").notNull().unique(),
+    question: text("question").notNull(),
+    answer: text("answer").notNull(),
+    difficulty: text("difficulty").notNull(),
+    companies: text("companies").array().notNull().default([]),
+    isFf75: boolean("is_ff75").notNull().default(false),
+    isPremium: boolean("is_premium").notNull().default(false),
+    orderIndex: integer("order_index").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index("collection_questions_collection_idx").on(table.collection),
+    index("collection_questions_is_ff75_idx").on(table.isFf75),
+    unique("collection_questions_collection_order_unique").on(
+      table.collection,
+      table.orderIndex,
+    ),
+    check(
+      "collection_questions_collection_check",
+      sql`${table.collection} IN (${sql.join(
+        COLLECTION_QUESTION_COLLECTIONS.map((c) => sql.raw(`'${c}'`)),
+        sql`, `,
+      )})`,
+    ),
+    check(
+      "collection_questions_difficulty_check",
       sql`${table.difficulty} IN (${sql.join(
         CHALLENGE_DIFFICULTIES.map((d) => sql.raw(`'${d}'`)),
         sql`, `,
