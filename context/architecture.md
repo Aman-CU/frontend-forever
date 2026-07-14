@@ -52,6 +52,7 @@
 │       ├── performance/
 │       └── system-design/
 ├── src/
+│   ├── proxy.ts                          ← Auth session guard on protected routes (Next 16 renames middleware.ts → proxy.ts; must live inside src/ alongside app/ — see Decisions Made in progress-tracker.md)
 │   ├── app/                             ← Next.js routes ONLY — no business logic here
 │   │   ├── layout.tsx                   ← Root layout, theme provider, fonts
 │   │   ├── page.tsx                     ← Homepage
@@ -168,7 +169,6 @@
 │   └── types/
 │       └── index.ts                     ← Global TypeScript types
 │
-├── proxy.ts                              ← Auth session guard on protected routes (Next 16 renames middleware.ts → proxy.ts; see Decisions Made in progress-tracker.md)
 └── public/
     └── logos/                           ← Company logo SVGs for homepage
 ```
@@ -508,10 +508,11 @@ Never query any user-owned table without an explicit `user_id` filter in the que
 
 - Provider: Better-Auth (self-hosted, direct Postgres connection — see `lib/auth/server.ts`)
 - Methods: Google OAuth, GitHub OAuth — no email/password
-- Protected routes: `/learn/**`, `/practice/**`, `/interview-prep/**`, `/leaderboard`, `/settings`
-- Public routes: `/`, `/login`, `/explore`, `/roadmaps`, `/roadmaps/[slug]`
-- `proxy.ts` (Next 16's renamed `middleware.ts`) does an optimistic session-cookie check on every request to a protected route via Better-Auth's `getSessionCookie()` helper — cookie presence only, not full verification
-- Every protected Server Component / API route additionally calls `auth.api.getSession()` for real, server-verified session validation — the proxy redirect is UX, not the security boundary (same principle the old Supabase setup already documented: middleware/proxy alone is never sufficient)
+- Publicly browsable, no login required: `/`, `/login`, `/explore`, `/roadmaps`, `/roadmaps/[slug]`, `/learn/**`, `/practice/**`, `/interview-prep/**` — login only gates *personalization* within these (progress tracking, Practice discussion viewing/posting, Review Queue), enforced per-route via `auth.api.getSession()`, not by `proxy.ts`
+- Login-required (`proxy.ts`-matched): `/leaderboard`, `/settings/**`, `/profile/**`
+- Premium is a fully independent third axis (gated regardless of login state) — not handled by `proxy.ts` at all
+- `proxy.ts` (Next 16's renamed `middleware.ts`; must live at `src/proxy.ts`, not the repo root, given this project's `--src-dir` scaffold — a repo-root `proxy.ts` is silently never picked up) does an optimistic session-cookie check on every request matched by its `config.matcher` via Better-Auth's `getSessionCookie()` helper — cookie presence only, not full verification
+- Every login-required Server Component / API route additionally calls `auth.api.getSession()` for real, server-verified session validation — the proxy redirect is UX, not the security boundary (same principle the old Supabase setup already documented: middleware/proxy alone is never sufficient)
 - After login → redirect to `/learn`
 
 ---

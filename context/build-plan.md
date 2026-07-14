@@ -301,8 +301,8 @@ Wire the 4 hero tabs to their respective simulators with animated transitions.
 - `lib/auth/client.ts` — `createAuthClient()` from `better-auth/react`, the browser-side client (`signIn.social`, `signOut`, `useSession`)
 - `app/api/auth/[...all]/route.ts` — Better-Auth's Next.js catch-all route handler (`toNextJsHandler(auth)`) — this single route handles sign-in, the OAuth callback, sign-out, and session reads; there is no separate callback page
 - Run `npx @better-auth/cli generate` once (configured for the Drizzle adapter) to generate its `user` / `session` / `account` / `verification` table definitions into `lib/schema/`, then `npx drizzle-kit migrate` against `DATABASE_URL` to create them (and every app table from Feature 18) in the same Postgres database
-- `proxy.ts` (Next 16's renamed `middleware.ts`) — optimistic session-cookie check via Better-Auth's `getSessionCookie()` on protected routes (cookie presence only; real verification happens per-route via `auth.api.getSession()`)
-- Protected routes list in `proxy.ts`: `/learn/**`, `/practice/**`, `/interview-prep/**`, `/leaderboard`, `/settings`
+- `src/proxy.ts` (Next 16's renamed `middleware.ts`; must live inside `src/`, not the repo root, given this project's `--src-dir` scaffold) — optimistic session-cookie check via Better-Auth's `getSessionCookie()` on its matched routes (cookie presence only; real verification happens per-route via `auth.api.getSession()`)
+- `proxy.ts` matcher list (login-required routes only): `/leaderboard`, `/settings/**`, `/profile/**`. `/learn`, `/practice`, and `/interview-prep` are publicly browsable — login only gates personalization within them, enforced per-route, not via the proxy matcher. (Fixed 2026-07-14 in `fix/proxy-route-protection`: the file originally shipped at the repo root, which Next.js never picks up given the `--src-dir` scaffold, so this guard silently never ran for any route.)
 
 ---
 
