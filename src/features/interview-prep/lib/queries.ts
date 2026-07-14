@@ -1,11 +1,16 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, asc, eq, lte, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { collectionQuestions, interviewQuestions, userInterviewReviews } from "@/lib/schema";
-import { COLLECTION_QUESTION_COLLECTIONS, type CollectionQuestionCollection } from "@/lib/constants";
+import {
+  COLLECTION_QUESTION_COLLECTIONS,
+  type ChallengeDifficulty,
+  type CollectionQuestionCollection,
+} from "@/lib/constants";
 import type { InterviewPrepCollectionKey } from "@/features/interview-prep/lib/collectionMeta";
+import { FF_75_KEY, type InterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
 
 export type CollectionSummary = {
   collection: InterviewPrepCollectionKey;
@@ -88,5 +93,137 @@ export const getReviewQueuePreview = cache(
       )
       .orderBy(userInterviewReviews.nextReviewAt)
       .limit(limit);
+  },
+);
+
+// ── Feature 31: FF Collections list/detail pages ─────────────────────────────
+
+type CollectionQuestionRow = {
+  collection: CollectionQuestionCollection;
+  slug: string;
+  question: string;
+  answer: string;
+  difficulty: ChallengeDifficulty;
+  companies: string[];
+  isFf75: boolean;
+};
+
+// All collection_questions rows, cached like getCollectionQuestionCounts above
+// (same "concepts" tag — a content-authoring upsert invalidates both).
+// Small enough today (6 pilot rows, ~299 once the full run lands) to load in
+// full and filter/sort in memory, same approach as Practice's getPracticeCatalog.
+const getCollectionQuestionCatalog = unstable_cache(
+  async (): Promise<CollectionQuestionRow[]> => {
+    const rows = await db
+      .select({
+        collection: collectionQuestions.collection,
+        slug: collectionQuestions.slug,
+        question: collectionQuestions.question,
+        answer: collectionQuestions.answer,
+        difficulty: collectionQuestions.difficulty,
+        companies: collectionQuestions.companies,
+        isFf75: collectionQuestions.isFf75,
+      })
+      .from(collectionQuestions)
+      .orderBy(asc(collectionQuestions.collection), asc(collectionQuestions.orderIndex));
+
+    return rows.map((r) => ({
+      ...r,
+      collection: r.collection as CollectionQuestionCollection,
+      difficulty: r.difficulty as ChallengeDifficulty,
+    }));
+  },
+  ["collection-question-catalog"],
+  { tags: ["concepts"], revalidate: 3600 },
+);
+
+// "ff-75" is a virtual collection (isFf75 across all 3 real collections, see
+// collectionRoutes.ts) — every other route collection is a literal DB value.
+function filterByRouteCollection(
+  rows: CollectionQuestionRow[],
+  routeCollection: InterviewPrepRouteCollection,
+): CollectionQuestionRow[] {
+  if (routeCollection === FF_75_KEY) return rows.filter((r) => r.isFf75);
+  return rows.filter((r) => r.collection === routeCollection);
+}
+
+export type CollectionQuestionListItem = {
+  slug: string;
+  question: string;
+  difficulty: ChallengeDifficulty;
+  companies: string[];
+  // Always false — collection_questions has no per-user completion tracking at
+  // all yet (unlike Practice/Learn, no feature currently scopes to build one).
+  // Honest zero, not mocked, same precedent as getCollectionSummaries above.
+  completed: boolean;
+};
+
+export const getCollectionQuestionList = cache(
+  async (routeCollection: InterviewPrepRouteCollection): Promise<CollectionQuestionListItem[]> => {
+    const catalog = await getCollectionQuestionCatalog();
+    return filterByRouteCollection(catalog, routeCollection).map((q) => ({
+      slug: q.slug,
+      question: q.question,
+      difficulty: q.difficulty,
+      companies: q.companies,
+      completed: false,
+    }));
+  },
+);
+
+export type CollectionQuestionDetail = {
+  slug: string;
+  question: string;
+  answer: string;
+  difficulty: ChallengeDifficulty;
+  companies: string[];
+  // 1-based position within its route collection's ordered list — same
+  // "questionNumber" convention as Practice's ChallengeDetail.
+  questionNumber: number;
+};
+
+export const getCollectionQuestionBySlug = cache(
+  async (
+    routeCollection: InterviewPrepRouteCollection,
+    slug: string,
+  ): Promise<CollectionQuestionDetail | null> => {
+    const catalog = await getCollectionQuestionCatalog();
+    const items = filterByRouteCollection(catalog, routeCollection);
+    const index = items.findIndex((q) => q.slug === slug);
+    if (index === -1) return null;
+
+    const item = items[index];
+    return {
+      slug: item.slug,
+      question: item.question,
+      answer: item.answer,
+      difficulty: item.difficulty,
+      companies: item.companies,
+      questionNumber: index + 1,
+    };
+  },
+);
+
+export type CollectionQuestionNavItem = { slug: string; question: string; questionNumber: number };
+
+export const getAdjacentCollectionQuestions = cache(
+  async (
+    routeCollection: InterviewPrepRouteCollection,
+    slug: string,
+  ): Promise<{ prev: CollectionQuestionNavItem | null; next: CollectionQuestionNavItem | null }> => {
+    const catalog = await getCollectionQuestionCatalog();
+    const items = filterByRouteCollection(catalog, routeCollection);
+    const index = items.findIndex((q) => q.slug === slug);
+    if (index === -1) return { prev: null, next: null };
+
+    const prevItem = index > 0 ? items[index - 1] : null;
+    const nextItem = index < items.length - 1 ? items[index + 1] : null;
+
+    return {
+      prev: prevItem ? { slug: prevItem.slug, question: prevItem.question, questionNumber: index } : null,
+      next: nextItem
+        ? { slug: nextItem.slug, question: nextItem.question, questionNumber: index + 2 }
+        : null,
+    };
   },
 );

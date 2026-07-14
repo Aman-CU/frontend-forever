@@ -18,6 +18,7 @@ import {
   concepts,
   challenges,
   interviewQuestions,
+  collectionQuestions,
   projectBriefs,
   roadmaps,
   roadmapSteps,
@@ -25,6 +26,7 @@ import {
 import { CONCEPTS } from "./seed/concepts";
 import { CHALLENGES } from "./seed/challenges";
 import { INTERVIEW_QUESTIONS } from "./seed/interviewQuestions";
+import { COLLECTION_QUESTIONS } from "./seed/collectionQuestions";
 import { PROJECT_BRIEFS } from "./seed/projectBriefs";
 import { ROADMAPS } from "./seed/roadmaps";
 
@@ -155,6 +157,36 @@ async function seed() {
     })
     .returning({ id: interviewQuestions.id });
   console.log(`[seed] ${insertedQuestions.length} question(s) upserted`);
+
+  console.log("[seed] Inserting collection questions...");
+  // Keyed on slug (unique in the schema), not (collection, orderIndex) — avoids
+  // the reorder-upserts-onto-wrong-row caveat documented above for
+  // interview_questions, which has no stable per-row key.
+  const insertedCollectionQuestions = await db
+    .insert(collectionQuestions)
+    .values(
+      COLLECTION_QUESTIONS.map((q) => ({
+        ...q,
+        companies: q.companies ?? [],
+        isFf75: q.isFf75 ?? false,
+        isPremium: q.isPremium ?? false,
+      })),
+    )
+    .onConflictDoUpdate({
+      target: collectionQuestions.slug,
+      set: {
+        collection: sql`excluded.collection`,
+        question: sql`excluded.question`,
+        answer: sql`excluded.answer`,
+        difficulty: sql`excluded.difficulty`,
+        companies: sql`excluded.companies`,
+        isFf75: sql`excluded.is_ff75`,
+        isPremium: sql`excluded.is_premium`,
+        orderIndex: sql`excluded.order_index`,
+      },
+    })
+    .returning({ slug: collectionQuestions.slug });
+  console.log(`[seed] ${insertedCollectionQuestions.length} collection question(s) upserted`);
 
   console.log("[seed] Inserting project briefs...");
   const projectBriefValues = PROJECT_BRIEFS.map(({ conceptSlug, ...pb }) => {

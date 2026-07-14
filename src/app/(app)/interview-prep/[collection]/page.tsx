@@ -1,0 +1,106 @@
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+
+import { isInterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
+import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
+import { getCollectionQuestionList } from "@/features/interview-prep/lib/queries";
+import { safeJsonLd } from "@/lib/seo";
+import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
+import { CollectionQuestionListClient } from "@/features/interview-prep/components/CollectionQuestionListClient";
+
+type Params = { collection: string };
+
+// Same "derive from the incoming request" pattern as Practice's Editor page —
+// no NEXT_PUBLIC_SITE_URL exists in this project (AGENTS.md's env list).
+async function getBaseUrl(): Promise<string> {
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<Params>;
+}): Promise<Metadata> {
+  const { collection } = await params;
+  if (!isInterviewPrepRouteCollection(collection)) return {};
+
+  const meta = COLLECTION_META[collection];
+  const baseUrl = await getBaseUrl();
+  const pageUrl = `${baseUrl}/interview-prep/${collection}`;
+  const title = `${meta.label} Interview Questions | Frontend Forever`;
+  const description = meta.description;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: pageUrl },
+    robots: { index: true, follow: true },
+    openGraph: { title, description, url: pageUrl, type: "website", siteName: "Frontend Forever" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
+
+export default async function CollectionQuestionListPage({
+  params,
+}: {
+  params: Promise<Params>;
+}) {
+  const { collection } = await params;
+
+  if (!isInterviewPrepRouteCollection(collection)) {
+    notFound();
+  }
+
+  const meta = COLLECTION_META[collection];
+  const questions = await getCollectionQuestionList(collection);
+  const baseUrl = await getBaseUrl();
+  const pageUrl = `${baseUrl}/interview-prep/${collection}`;
+
+  // FAQPage JSON-LD (Feature 31's GEO/SEO spec) — every question on this list
+  // becomes a citable Q&A entry for AI answer engines and rich search results,
+  // not just a link. Answers are truncated to a clean plain-text summary; the
+  // full answer lives on each question's own page.
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: questions.map((q) => ({
+      "@type": "Question",
+      name: q.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: `${baseUrl}/interview-prep/${collection}/${q.slug}`,
+      },
+    })),
+  };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Interview Prep", item: `${baseUrl}/interview-prep` },
+      { "@type": "ListItem", position: 2, name: meta.label, item: pageUrl },
+    ],
+  };
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
+      <script type="application/ld+json">{safeJsonLd(faqJsonLd)}</script>
+      <script type="application/ld+json">{safeJsonLd(breadcrumbJsonLd)}</script>
+
+      <InterviewPrepBreadcrumb
+        backHref="/interview-prep"
+        crumbs={[{ label: "Interview Prep", href: "/interview-prep" }, { label: meta.label }]}
+      />
+
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-text-primary">{meta.label}</h1>
+        <p className="mt-1.5 text-sm text-text-secondary">{meta.description}</p>
+      </div>
+
+      <CollectionQuestionListClient routeCollection={collection} questions={questions} />
+    </div>
+  );
+}

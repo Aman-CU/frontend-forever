@@ -3,6 +3,7 @@ import type {
   ConceptDifficulty,
   ChallengeDifficulty,
   InterviewCollection,
+  CollectionQuestionCollection,
 } from "../../src/lib/constants";
 import type { PracticeCategory } from "../../src/features/practice/lib/practiceCategories";
 
@@ -51,6 +52,21 @@ export type InterviewQuestionSeed = {
   answer: string;
   difficulty: ChallengeDifficulty;
   companies: string[];
+  isPremium?: boolean;
+  orderIndex: number;
+};
+
+// Feature 31's collection_questions table — distinct from InterviewQuestionSeed
+// above (which targets the older, concept-linked interview_questions table).
+// No conceptSlug: these are standalone Q&A, not tied to a Learn concept.
+export type CollectionQuestionSeed = {
+  collection: CollectionQuestionCollection;
+  slug: string;
+  question: string;
+  answer: string;
+  difficulty: ChallengeDifficulty;
+  companies?: string[];
+  isFf75?: boolean;
   isPremium?: boolean;
   orderIndex: number;
 };

@@ -6,7 +6,7 @@ import { getCachedSession } from "@/lib/auth/server";
 import { isPracticeCategory, PRACTICE_CATEGORY_LABELS } from "@/features/practice/lib/practiceCategories";
 import { getAdjacentChallenges, getChallengeBySlug, hasPassedChallenge } from "@/features/practice/lib/queries";
 import { getDiscussionPosts } from "@/features/practice/lib/discussionQueries";
-import { toPlainTextSummary, safeJsonLd } from "@/features/practice/lib/seo";
+import { toPlainTextSummary, safeJsonLd } from "@/lib/seo";
 import { ChallengeEditorHeader } from "@/features/practice/components/editor/ChallengeEditorHeader";
 import { ChallengeEditorWorkspace } from "@/features/practice/components/editor/ChallengeEditorWorkspace";
 
