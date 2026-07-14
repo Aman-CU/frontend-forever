@@ -37,6 +37,16 @@ export const INTERVIEW_COLLECTIONS = [
 ] as const;
 export type InterviewCollection = (typeof INTERVIEW_COLLECTIONS)[number];
 
+// Feature 30/31's own standalone Q&A content (collection_questions table) —
+// distinct from INTERVIEW_COLLECTIONS above, which belongs to the older,
+// concept-scoped interview_questions table already live on Learn's Interview
+// tabs. "ff-75" isn't a value here — it's the isFf75 flag on this table
+// instead (see build-plan.md, Feature 31). "ff-system-design" isn't here
+// either — its content lives on a different page template (Feature 49),
+// not in this table at all.
+export const COLLECTION_QUESTION_COLLECTIONS = ["ff-javascript", "ff-react", "ff-nextjs"] as const;
+export type CollectionQuestionCollection = (typeof COLLECTION_QUESTION_COLLECTIONS)[number];
+
 export const XP_EVENT_TYPES = [
   "concept_understand",
   "concept_simulate",

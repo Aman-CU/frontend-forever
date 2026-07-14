@@ -8,6 +8,8 @@ Build order: **Homepage first → Auth → Database → Learn → Practice → I
 
 **Sequencing note (added after Feature 25):** Phase 10 — Concept Curriculum Expansion is numbered last (features are append-only so existing numbers/branches never shift) but is *scheduled* to run right after Features 26 and 27 finish Phase 4 (Build Tab, then Progress API + XP System), before Phase 5 (Practice) resumes — see `progress-tracker.md` → Decisions Made and the Phase 10 section below for why.
 
+**Sequencing note (added pre-Feature-30):** Phase 6 — Interview Prep hit the same append-only numbering constraint. Pre-build planning (a deep structural analysis of GreatFrontEnd's `/prepare` page and AlgoMaster's system-design practice format, both user-directed) grew Phase 6 from 3 features to 6. Features 49–51 are numbered at the end but are *scheduled* to run as part of Phase 6, alongside/after Features 30–32, before Phase 7 resumes — see `progress-tracker.md` → Decisions Made, Pre-Feature-30 entry, for the full reasoning and decision trail.
+
 ---
 
 ## Phase 0 — Foundation
@@ -555,23 +557,88 @@ Each simulator tracks `simulate_completed` when the user plays through all steps
 
 ## Phase 6 — Interview Prep
 
+**Restructured during pre-build planning, before Feature 30 started** — see `progress-tracker.md` → Decisions Made, Pre-Feature-30 entry, for the full reasoning and decision trail. Originally a simple 4-collection hub + collection pages + a spaced-repetition session (3 features). After a deep structural analysis of GreatFrontEnd's `/prepare` page and AlgoMaster's `/practice/system-design` format (both explicitly requested by the user, both fetched and analyzed live), Phase 6 grew to 6 features: a sidebar-driven hub, dedicated Q&A collection content, a new Playbook section, a fully redesigned System Design practice format, and a Study Plans + Company Guides section. Numbered 30–32 plus 49–51 (append-only branch numbering, same constraint Phase 10 hit — see the Sequencing note above) but all six ship together as this phase.
+
 ### 30 Interview Prep Hub
 
-**UI:**
+**UI — persistent sidebar** (own layout scoped to `/interview-prep/**`, not a reuse of `LearnSidebar` — different nav shape):
 
-- 4 collection cards: FF 75, FF JavaScript, FF React, FF System Design
-- Each card: title, question count, completion percentage, premium badge if applicable
-- "Your Review Queue" section: questions due for spaced repetition review
+```
+Get Started                    ← default page
+FF Collections                 ← auto-expands when a child route is active
+  ├─ FF 75
+  ├─ FF JavaScript
+  ├─ FF React
+  ├─ FF Next.js
+  └─ FF System Design
+Playbook                       ← auto-expands when a child route is active
+  ├─ Frontend Interview Playbook
+  ├─ React Interview Playbook
+  ├─ Behavioural Interview Playbook
+  ├─ Frontend System Design Playbook
+  └─ Frontend Resume Playbook
+Lightning Prep                 ← auto-expands when a child route is active
+  ├─ Study Plans
+  └─ Company Guides
+```
+
+Auto-expand behavior: `usePathname()`-driven, same active-state pattern as `LearnSidebar` — a parent section expands automatically when the current route matches one of its children, and the active child gets the standard active-link treatment (`text-accent border-b-2 border-accent`, per `AGENTS.md`).
+
+**UI — Get Started page** (`/interview-prep`), top to bottom:
+
+- **Your Review Queue** — conditional section, rendered only when real due spaced-repetition questions exist (`user_interview_reviews`); hidden entirely otherwise, same "honest empty state, don't fake it" rule Practice Hub established when it dropped its "Continue where you left off" card (Feature 28) before real data existed. No sidebar entry of its own — Feature 32 (the actual review session page) is what it links into. Built as a real query against the spaced-repetition data from the start (returns empty/zero until Feature 32 ships the review-session logic, then lights up automatically) — not a static placeholder.
+- **FF Collections** — heading + 5 rows (FF 75 / FF JavaScript / FF React / FF Next.js / FF System Design). Row pattern, reused for every list in this phase: icon square → title (+ premium badge if applicable) → one-line description → question count + `h-1.5` progress bar (reuses `LearnSidebar`'s existing bar styling — `bg-border` track, `bg-accent` fill, `role="progressbar"`) → chevron. Clicking a row navigates into that collection (Feature 31 or 49) and auto-expands "FF Collections" in the sidebar.
+- **Playbook** preview — 5 rows (one per playbook), same row pattern, no progress data yet (Feature 50 hasn't shipped). "View all" isn't a separate link here — each row itself is the entry point, same as the sidebar's flat 5-item Playbook list.
+- **Study Plans** preview — 3 cards (1 Week / 1 Month / 3 Months), "View all" → Feature 51
+- **Company Guides** preview — grid of company logos + question counts, "View all" → Feature 51
+
+Visual reference: GreatFrontEnd's own "Dashboard" page (screenshots reviewed 2026-07-14) — its Recommended Preparation numbered-list-with-progress-bar pattern and card/grid layout for Study Plans and Company Guides informed the row/card patterns above. GFE's Dashboard also has Focus Areas and a Practice Questions section (Question Formats + Frameworks/Languages breakdowns) — **deliberately not adopted**; those are a separate topic/format taxonomy FF has no data model for and is out of scope for this page. The screenshots were reference for visual/layout pattern only, confirmed with the user.
+
+**Logic:**
+
+- Progress bars are real, not mocked — they will read genuine 0% until Feature 31/49 exist and a user can actually answer a question, same precedent as Practice Hub's bars pre-Feature-29.
+- Study Plans / Company Guides preview rows are lightweight static teasers (hardcoded titles/counts, no live schema or logo assets) — those are Feature 51's job. Links out to `/interview-prep/study-plans` and `/interview-prep/company-guides`, which 404 until Feature 51 ships.
 
 ---
 
-### 31 Collection Pages (FF 75, FF JS, FF React)
+### 31 FF Collections Content (FF 75, FF JavaScript, FF React, FF Next.js)
 
-**UI:**
+**Renamed and narrowed from "Collection Pages (FF 75, FF JS, FF React)"** — now covers 4 collections (FF Next.js added), and FF System Design is split out to Feature 49 since its content model is a different shape entirely (long-form guides, not short Q&A — see below). The 4 collections here share one content shape: a question with a written answer, each individually addressable.
 
-- Question list with difficulty, topic tags, completion state
-- Filter by difficulty, topic, status (completed/due/not started)
-- Click question → expands in place or opens drawer
+**UI — Collection list page** (`/interview-prep/[collection]`):
+
+- Question list: difficulty badge, one-line preview, completion state
+- Filter by difficulty, status (completed / not started)
+- **Each question is its own crawlable page** (`/interview-prep/[collection]/[question-slug]`), not an in-place expand or drawer — required by the GEO/SEO approach below (individually indexable, individually citable by AI answer engines)
+
+**UI — Question page** (`/interview-prep/[collection]/[question-slug]`):
+
+- Question as the page `<h1>`
+- **Answer-first paragraph** directly under the heading — one self-contained, quotable sentence that answers the question before any elaboration (GEO requirement, see below)
+- Full explanation broken into short, self-contained sections/subheadings, not one undifferentiated block
+- Code example(s) where relevant, via the existing platform-wide syntax-highlighted code block renderer (Feature 29)
+- Comparison table where the question is inherently comparative (e.g. `var` vs `let` vs `const`)
+- Hand-authored SVG diagram for the subset of questions that are genuinely a flow/process concept (event loop, hydration, reconciliation, SSR/CSR/SSG, ISR, prototypal inheritance, virtual DOM diffing — an estimated 40–50 of the 299 seeded questions) — theme-aware via CSS variables (no hardcoded colors, per `AGENTS.md` rule 2), authored as real markup, not raster images
+- Company chips (reuses the existing `companies: text[]` column/pattern)
+- Related-question and related-Playbook-chapter links (internal linking, see GEO/SEO below)
+
+**Logic:**
+
+- **New, dedicated table: `collection_questions`** — not a reuse of `interview_questions`. That table is concept-scoped (`conceptId`-linked, one question set per concept, already live on every Learn concept's Interview tab via `getInterviewQuestionsByConceptId`) and already carries a conflicting `"ff-75"` `collection` value from earlier seed data; every new decision for this feature kept colliding with that shape. `collection_questions` is purpose-built for this feature's actual content model — 299 standalone questions scoped to a collection, not a concept: `id`, `collection` (CHECK IN `'ff-javascript'`, `'ff-react'`, `'ff-nextjs'`), `slug`, `question`, `answer`, `difficulty`, `companies: text[]`, `isFf75: boolean`, `isPremium`, `orderIndex`, `createdAt`, `updatedAt`. Migration only adds this new table — `interview_questions` and every Learn Interview tab it feeds stay completely untouched.
+- **FF 75 mechanism:** `isFf75: boolean` on `collection_questions`. FF 75 is a curated subset of FF JavaScript/React/Next.js, not a separate pool of rows — a question can't belong to two `collection` values at once (that field stays single-valued), so FF 75's page queries `WHERE is_ff75 = true` across all three collections, while FF JavaScript/React/Next.js each query by their own `collection` value regardless of the flag.
+- `ff-system-design` is **not** a `collection_questions` value — its content lives on a different page template entirely (Feature 49, MDX-based guides, no relation to this table).
+- **Content authoring is tracked separately from this feature's code build** — same precedent as the Practice challenge description rewrite (`content/practice-challenge-descriptions` branch, kept off `feature/29-challenge-editor-page`). The 299 raw questions (101 JavaScript / 99 React / 99 Next.js) are user-supplied; answers are researched and written in the SEO/GEO format below as a parallel content-authoring initiative. **The full format spec + 6 approved pilot answers live in `context/interview-prep-content-guide.md`** — read that before authoring any question content; it also documents two real accuracy corrections (React Compiler's effect on `useMemo` guidance, `getStaticProps` being Pages-Router-only) worth applying to every version-sensitive answer in the run.
+
+**GEO/SEO — applies platform-wide to every question page in Features 31 and 49, a deeper approach than Feature 29's simpler single-page pattern:**
+
+- Individual crawlable URL per question, never accordion-only content
+- `FAQPage` JSON-LD on collection list pages (multiple Q&As); `Article`/`TechArticle` + `mainEntity` Q&A schema on individual question pages
+- Answer-first writing enforced as an authoring rule, not just metadata — the first sentence under the question must stand alone as a citable answer
+- Self-contained paragraphs — no "as mentioned above"; assume any section may be extracted independently by a crawler or RAG chunker
+- `dateModified` / `datePublished` on every answer — a real freshness signal, especially for React/Next.js version-sensitive content
+- Dense internal linking: related questions, the matching Learn concept (where one exists), the relevant Playbook chapter
+- Tables/bulleted comparisons preferred over prose wherever the content is inherently comparative
+- **`llms.txt`** at the site root — a curated, clean markdown index of key content for LLM crawlers, new to this codebase, added alongside the existing `sitemap.xml`
 
 ---
 
@@ -847,6 +914,90 @@ Every concept eventually gets a hand-built Simulate experience, but each one is 
 
 ---
 
+## Phase 6 (continued) — Interview Prep Extensions
+
+**Numbered 49–51 per the append-only constraint (see the Sequencing note at the top of this document) but scheduled as part of Phase 6, not a later phase.** Grew out of the same pre-Feature-30 planning pass as Features 30–31 above — see `progress-tracker.md` → Decisions Made, Pre-Feature-30 entry.
+
+### 49 FF System Design — AlgoMaster-Style Practice
+
+**Split out from Feature 31** — System Design's content model (long-form guides with diagrams) doesn't fit the other 4 collections' short-Q&A pattern. Structurally modeled on algomaster.io's `/practice/system-design` list and individual guide pages (explicitly requested, fetched and analyzed live against the running site), adapted from AlgoMaster's backend-systems focus to FF's frontend-only positioning (`project-overview.md`: "Not LeetCode-style algorithms" — FF's existing System Design questions are already frontend-specific: Infinite-Scroll Feed, Real-Time Collaborative Editor).
+
+**UI — List page** (`/interview-prep/ff-system-design`):
+
+- Table columns: **Section/Problem, Difficulty, Action** only — AlgoMaster's Learn/Simulation/History columns dropped per explicit instruction
+- Problems grouped into frontend-relevant sections (draft, to finalize against the real question list): Data-Heavy Interfaces, Real-Time & Collaborative, Media & Rich Content, Offline & Sync, Performance-Critical
+- "Action" column → "Start" button → guide page
+
+**UI — Guide page** (`/interview-prep/ff-system-design/[slug]`), section structure keeps AlgoMaster's pacing but every section is retargeted at the client, not the backend:
+
+1. Requirements Gathering (functional/non-functional, UI-scoped — e.g. "must render 10k rows at 60fps," not "10M writes/day")
+2. Constraints & Estimation (bundle size budget, device/network constraints, DOM node ceilings — not QPS/storage math)
+3. Data Contract Design (the shape of data the frontend consumes/sends — REST/GraphQL/WebSocket — not the backend service itself)
+4. High-Level Component Architecture (component tree, data flow, state ownership — diagram-heavy)
+5. State Management Design (where state lives, sync strategy, optimistic updates)
+6. Deep Dives — the largest section, the real frontend-specific subproblems per topic (e.g. for infinite scroll: virtualization strategy, scroll-position restoration, prefetching; for a collaborative editor: client-side conflict resolution, cursor presence, offline queueing)
+7. Performance & UX Tradeoffs
+8. Follow-ups (interviewer curveballs, e.g. "what if the network drops mid-edit?")
+
+**Logic:**
+
+- Content authored as MDX in repo (`content/interview-prep/system-design/[slug].mdx`), not DB text columns — same architecture as Learn's Understand tab, appropriate for long-form structured content with diagrams
+- **Diagram component** — small `rough.js`-based rendering primitives (box, arrow, flow-step) for a hand-sketched visual style. This is *not* a freeform whiteboard/canvas tool (not an Excalidraw rebuild) — author-defined fixed diagrams per guide, same "hand-built simulator" pattern already proven in Features 09–12, just a sketchy visual skin instead of the clean SaaS-dashboard look those 4 use. First concrete step toward the long-term direction already logged in Phase 11 below (same paperdraw.dev inspiration), scoped narrowly to System Design's guide pages only.
+- Same GEO/SEO treatment as Feature 31: individual URL, `Article`/`mainEntity` schema, answer-first summary paragraph even for long-form content, internal links to related Playbook chapters
+
+---
+
+### 50 Playbook Section
+
+**New section, not in the original spec** — 5 guided articles teaching interview strategy, distinct in kind from the Q&A collections. Content responsibility user-delegated; draft chapter outlines below, to be authored as MDX (`content/interview-prep/playbook/[playbook-slug]/[chapter-slug].mdx`).
+
+**UI:**
+
+- Playbook index page per guide (`/interview-prep/playbook/[playbook-slug]`) — chapter list, `X/N articles read` progress. Nested under its own `/playbook/` segment rather than flattened alongside FF Collections — briefly considered flattening it to match Feature 31's `/interview-prep/[collection]` taxonomy, but that would force Features 31 and 50 to share one dynamic route (`/interview-prep/[slug]/page.tsx` dispatching by content type) instead of two independent route trees; kept nested to preserve that independence (decided 2026-07-14). **`playbook-slug` values include the `-playbook` suffix** — `frontend-interview-playbook`, `react-interview-playbook`, `behavioural-interview-playbook`, `frontend-system-design-playbook`, `frontend-resume-playbook` (e.g. `/interview-prep/playbook/frontend-interview-playbook`).
+- Chapter reader page (`/interview-prep/playbook/[playbook-slug]/[chapter-slug]`) — prev/next chapter nav
+
+**The 5 playbooks (draft chapter outlines):**
+
+1. **Frontend Interview Playbook** — how interviews are structured, the 5 interview formats you'll face, how to use FF's own Learn → Practice → Interview Prep → Roadmaps flow to prepare, what interviewers actually score, common mistakes, a pre-interview checklist, day-of logistics, post-interview follow-up/negotiation
+2. **React Interview Playbook** — what React interviews really test, the question taxonomy (fundamentals/hooks/performance/architecture/ecosystem), what interviewers watch for during live coding, classic "gotcha" questions explained, talking about performance like a senior engineer, whiteboarding architecture without code, portfolio projects that land
+3. **Behavioural Interview Playbook** — why behavioral rounds exist, the STAR method done properly with frontend-specific examples, building a personal story bank, the prompts that come up every time (conflict/failure/leadership/ambiguity), showing impact without a title, culture-fit questions decoded
+4. **Frontend System Design Playbook** — why frontend system design differs from backend, a repeatable framework (requirements → data model → component architecture → performance → tradeoffs), state management at scale, data-fetching strategy, performance under constraints, fully-solved classic prompts (ties into Feature 49's seeded problems), what separates a mid-level answer from a staff-level one
+5. **Frontend Resume Playbook** — what recruiters scan for in 8 seconds, frontend-specific resume structure, impact-driven bullet points, which projects to feature (including turning FF's own Build tab projects into resume material), tailoring per company fast, common filtering mistakes, cleaning up GitHub/portfolio before applying
+
+**Logic:**
+
+- **Free for all users** (default call — guide content drives the SEO/GEO discoverability strategy from Feature 31; gating it would undercut the citation strategy since a paywalled page loses crawl/citation value. Flag for override if premium is wanted instead.)
+- Read-tracking: lightweight, no new spaced-repetition-style machinery — a simple per-user read-state (exact table/pattern TBD at build time)
+
+---
+
+### 51 Lightning Prep — Study Plans + Company Guides
+
+**UI — Study Plans** (`/interview-prep/study-plans` list + `/interview-prep/study-plans/[slug]` detail):
+
+- 3 plans: 1 Week / 1 Month / 3 Months — each: question count, time commitment, description
+- Detail page: a day-by-day (1 Week) or week-by-week (1 Month / 3 Months) curated sequence pulling across Learn, Practice, FF Collections, and Playbook — not interview questions alone (this is a real FF differentiator GFE-style plans can't match, since GFE has no separate Learn/Practice/Simulator systems to draw from)
+
+**Draft plan structure (user-delegated, to refine once real content exists):**
+
+- **1 Week** (cramming): Days 1–2 FF 75 rapid review, flag weak spots; Days 3–4 deep dive into the collection matching the target role; Day 5 System Design Playbook + guides; Day 6 Behavioural Playbook + story bank; Day 7 target Company Guide + mock run-through
+- **1 Month** (balanced): Week 1 Learn tab in the weakest category; Week 2 Practice challenges in that category + FF Collections review; Week 3 React/System Design deep dive + relevant Playbooks; Week 4 Company Guide + Behavioural + Resume Playbook polish
+- **3 Months** (mastery): a systematic pass through the full Learn curriculum, category by category (Understand → Simulate → Challenge → Build), with real weekly Practice reps; Month 3 shifts into "interview mode" — FF Collections + all 5 Playbooks + Company Guide
+
+**UI — Company Guides** (`/interview-prep/company-guides` list + `/interview-prep/company-guides/[company]` detail):
+
+- Grid of 32 companies (logo + question count) — final list: OpenAI, Anthropic, Google, Meta, Amazon, TikTok, ByteDance, Netflix, Apple, Microsoft, Adobe, Atlassian, PayPal, Canva, Pinterest, Shopify, Stripe, Airbnb, Discord, Coinbase, Figma, Uber, Lyft, Snap, LinkedIn, Snowflake, Databricks, Robinhood, Dropbox, Roblox, Palantir, Rippling — supersedes the 5-company list in `project-overview.md`'s original Monetization section
+- Detail page: that company's questions, pulled via an array-contains query (`companies @> ARRAY[...]`) across `interview_questions` — no new schema needed
+
+**Logic:**
+
+- `study_plans` (new table): `slug`, `title`, `duration_label`, `hours_commitment`, `is_premium`, `order_index`
+- `study_plan_items` (new join table): `study_plan_id` + a reference to the content item (an `interview_questions` row, a concept, or a challenge — polymorphic, since plans pull across multiple content types, not just questions; needs a real design pass at build time)
+- **~26 new hand-inlined logo components** (`components/shared/logos/`) — 6 of the 32 companies already have one from Feature 04/homepage (Google, Meta, Amazon, Microsoft, Stripe, Anthropic); the remaining 26 (OpenAI, TikTok, ByteDance, Netflix, Apple, Adobe, Atlassian, PayPal, Canva, Pinterest, Shopify, Airbnb, Discord, Coinbase, Figma, Uber, Lyft, Snap, LinkedIn, Snowflake, Databricks, Robinhood, Dropbox, Roblox, Palantir, Rippling) need building, same hand-inlined-SVG pattern as the existing 7 (no logo CDN dependency).
+- Premium: Study Plans premium (per `project-overview.md`, unchanged). Company Guides premium status carries over from the original doc, though the company *list* it names is now stale (5 companies → 32) — actual enforcement stays deferred to Feature 38 either way, per the standing platform-wide gating decision.
+
+---
+
 ## Phase 11 — Simulator Reimagining (Long-Term Vision)
 
 **Not scheduled. No numbered features yet — this is a direction to pick up later, not a build queue.** Added 2026-07-09 after a product-direction discussion (see `progress-tracker.md` → Decisions Made for the full context). Explicitly long-term, not a redirect of current work — Phase 10 (Features 40–48) and the Simulator Backlog continue as planned in the meantime.
@@ -873,10 +1024,10 @@ Every concept eventually gets a hand-built Simulate experience, but each one is 
 | Phase 3 — Database                            | 2        |
 | Phase 4 — Learn                               | 8        |
 | Phase 5 — Practice                            | 2        |
-| Phase 6 — Interview Prep                      | 3        |
+| Phase 6 — Interview Prep                      | 6        |
 | Phase 7 — Explore + Roadmaps                  | 3        |
 | Phase 8 — Leaderboard                         | 2        |
 | Phase 9 — Premium                             | 2        |
 | Phase 10 — Concept Curriculum                 | 9        |
 | Phase 11 — Simulator Reimagining (long-term)  | TBD — unscheduled, not counted below |
-| **Total**                                     | **48**   |
+| **Total**                                     | **51**   |

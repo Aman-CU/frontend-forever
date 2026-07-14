@@ -81,8 +81,17 @@ The simulator should feel like: "The concept is happening in front of me."
 /practice/[slug]               → Individual challenge with Monaco editor
 /roadmaps                      → Roadmaps list (public)
 /roadmaps/[slug]               → Individual roadmap (curated learning path)
-/interview-prep                → Interview Prep hub
-/interview-prep/[collection]   → Question collection page
+/interview-prep                → Interview Prep hub ("Get Started" page, sidebar-driven — see Interview Prep section below)
+/interview-prep/[collection]   → FF 75 / FF JavaScript / FF React / FF Next.js question list
+/interview-prep/[collection]/[question-slug] → Individual question page (own URL, per Feature 31's GEO/SEO approach)
+/interview-prep/ff-system-design → System Design problem list (AlgoMaster-style, Feature 49)
+/interview-prep/ff-system-design/[slug] → System Design guide page
+/interview-prep/playbook/[playbook-slug] → Playbook chapter list (Feature 50)
+/interview-prep/playbook/[playbook-slug]/[chapter-slug] → Playbook chapter reader
+/interview-prep/study-plans    → Study Plans list (Feature 51)
+/interview-prep/study-plans/[slug] → Study Plan detail (day/week-by-week sequence)
+/interview-prep/company-guides → Company Guides list (Feature 51)
+/interview-prep/company-guides/[company] → Company's questions
 /leaderboard                   → Global XP leaderboard
 /settings                      → User settings
 ```
@@ -154,7 +163,8 @@ Categories evolve as the platform grows. Current set:
 **Free (70% of content):**
 - All concept Understand + Simulate tabs
 - Basic challenges per concept
-- FF 75, FF JavaScript, FF React (most questions)
+- FF 75, FF JavaScript, FF React, FF Next.js (most questions)
+- The full Playbook section (5 guides) — kept free deliberately, drives SEO/GEO discoverability; a paywalled guide loses crawl/citation value
 - Roadmaps (browse and follow)
 
 **Premium (30% of content):**
@@ -162,7 +172,7 @@ Categories evolve as the platform grows. Current set:
 - Advanced challenges
 - Most Build tab projects (Monaco editor projects) — one free flagship project per category demonstrates the tab before the paywall (Feature 26), same pattern as Challenge/Interview's free flagship content
 - Study Plans
-- Company Collections (Google, Meta, Amazon, Microsoft, Stripe)
+- Company Guides — **32 companies** (OpenAI, Anthropic, Google, Meta, Amazon, TikTok, ByteDance, Netflix, Apple, Microsoft, Adobe, Atlassian, PayPal, Canva, Pinterest, Shopify, Stripe, Airbnb, Discord, Coinbase, Figma, Uber, Lyft, Snap, LinkedIn, Snowflake, Databricks, Robinhood, Dropbox, Roblox, Palantir, Rippling — expanded from an earlier 5-company scope, see `build-plan.md` Feature 51)
 - Priority spaced repetition scheduling
 
 No aggressive paywalls. Users discover value before hitting a gate.
@@ -181,17 +191,25 @@ No aggressive paywalls. Users discover value before hitting a gate.
 
 ## Interview Prep
 
-Collections:
-- **FF 75** — 75 essential frontend questions every developer should know
-- **FF JavaScript** — Deep JavaScript runtime and language questions
-- **FF React** — React-specific architecture and implementation questions
-- **FF System Design** — Frontend system design (mostly premium)
+**Restructured during pre-build planning, before Feature 30 started** — see `build-plan.md` Phase 6 and `progress-tracker.md` → Decisions Made, Pre-Feature-30 entry, for the full reasoning. Sidebar-driven, modeled structurally on GreatFrontEnd's `/prepare` page and AlgoMaster's system-design practice format (both analyzed live), adapted to FF's own product identity and content model.
 
-Features:
+**FF Collections** (theoretical Q&A, each question its own page):
+- **FF 75** — 75 hand-picked, most-frequently-asked questions curated from FF JavaScript/React/Next.js (via an `is_ff75` flag, not a separate question pool)
+- **FF JavaScript** — ~100 questions, deep JavaScript runtime and language coverage
+- **FF React** — ~100 questions, React-specific architecture and implementation
+- **FF Next.js** — ~100 questions, free — the first Interview Prep collection with no corresponding Learn concept category behind it
+- **FF System Design** — a different content shape entirely: AlgoMaster-style problem list (Section/Problem/Difficulty/Action) → rich step-by-step guide pages with diagrams, frontend-retargeted (not backend infra). Mostly premium.
+
+**Playbook** — 5 free guided articles on interview strategy (distinct from Q&A): Frontend Interview Playbook, React Interview Playbook, Behavioural Interview Playbook, Frontend System Design Playbook, Frontend Resume Playbook.
+
+**Lightning Prep:**
+- **Study Plans** (premium) — 1 Week / 1 Month / 3 Months, each a curated day/week-by-week sequence pulling across Learn, Practice, FF Collections, and Playbook, not questions alone
+- **Company Guides** (premium) — 32 companies, questions filtered by company
+
+**Also:**
 - Spaced repetition review system (SM-2 algorithm)
 - Bookmark individual questions
-- Study Plans: guided question sequences (premium)
-- Company Collections: questions by company (premium)
+- GEO/SEO-first content model: every question and guide has its own crawlable URL, `FAQPage`/`Article` structured data, answer-first writing — see `build-plan.md` Feature 31 for the full approach
 
 ---
 

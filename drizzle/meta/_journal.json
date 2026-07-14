@@ -92,6 +92,13 @@
       "when": 1783855495534,
       "tag": "0012_rapid_weapon_omega",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1784047273211,
+      "tag": "0013_daffy_xavin",
+      "breakpoints": true
     }
   ]
 }
