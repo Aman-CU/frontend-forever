@@ -34,6 +34,17 @@ function renderBlocks(src: string): ReactNode[] {
   const UNORDERED_ITEM = /^\s*[-*]\s+/;
   const TABLE_ROW = /^\s*\|(.+)\|\s*$/;
 
+  // A "|...|"-shaped line only actually starts a table when a valid
+  // separator row follows it — otherwise it's a stray pipe in ordinary prose
+  // (e.g. a quoted shell pipeline) and must be treated as paragraph content.
+  // Guards the "no next line" case explicitly rather than relying on
+  // short-circuiting, so it's never ambiguous at the very end of the input.
+  function isTableStart(idx: number): boolean {
+    if (!TABLE_ROW.test(lines[idx])) return false;
+    if (idx + 1 >= lines.length) return false;
+    return isTableSeparatorRow(lines[idx + 1]);
+  }
+
   while (i < lines.length) {
     const line = lines[i];
 
@@ -81,7 +92,7 @@ function renderBlocks(src: string): ReactNode[] {
 
     // Table (pipe syntax): a header row, then a required "---|---" separator
     // row, then body rows — standard GFM table shape.
-    if (TABLE_ROW.test(line) && i + 1 < lines.length && isTableSeparatorRow(lines[i + 1])) {
+    if (isTableStart(i)) {
       const headerCells = splitTableRow(line);
       i += 2; // skip header + separator rows
       const bodyRows: string[][] = [];
@@ -189,7 +200,7 @@ function renderBlocks(src: string): ReactNode[] {
       !lines[i].trimStart().startsWith(">") &&
       !ORDERED_ITEM.test(lines[i]) &&
       !UNORDERED_ITEM.test(lines[i]) &&
-      !TABLE_ROW.test(lines[i])
+      !isTableStart(i)
     ) {
       para.push(lines[i]);
       i++;
@@ -204,11 +215,18 @@ function renderBlocks(src: string): ReactNode[] {
   return blocks;
 }
 
+// Splits on an unescaped "|" only — built via the RegExp constructor (like
+// TOKEN_RE/the link regex above), not a regex literal, for consistency: a
+// lookbehind in a literal isn't actually blocked by this project's ES2017
+// target (unlike named groups), but building it the same way keeps every
+// advanced-regex-feature case in this file handled identically.
+const UNESCAPED_PIPE = new RegExp("(?<!\\\\)\\|");
+
 // Splits a pipe-delimited table row into trimmed cells, dropping the leading/
 // trailing pipe and unescaping "\|" back into a literal "|" within a cell.
 function splitTableRow(line: string): string[] {
   const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
-  return trimmed.split(/(?<!\\)\|/).map((cell) => cell.trim().replace(/\\\|/g, "|"));
+  return trimmed.split(UNESCAPED_PIPE).map((cell) => cell.trim().replace(/\\\|/g, "|"));
 }
 
 // A separator row ("|---|:---:|---:|") has one or more pipe-delimited cells
