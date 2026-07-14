@@ -1,0 +1,183 @@
+import type { ComponentType } from "react";
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+
+import { cn } from "@/lib/utils";
+import type { ChallengeDifficulty } from "@/lib/constants";
+import { toPlainTextSummary, safeJsonLd } from "@/lib/seo";
+import { Markdown } from "@/components/shared/Markdown";
+import { isInterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
+import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
+import {
+  getAdjacentCollectionQuestions,
+  getCollectionQuestionBySlug,
+} from "@/features/interview-prep/lib/queries";
+import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
+import { CollectionQuestionPrevNextNav } from "@/features/interview-prep/components/CollectionQuestionPrevNextNav";
+import { EventLoopFlowDiagram } from "@/features/interview-prep/components/diagrams/EventLoopFlowDiagram";
+import { IsrTimelineDiagram } from "@/features/interview-prep/components/diagrams/IsrTimelineDiagram";
+
+type Params = { collection: string; slug: string };
+
+// Hand-authored SVG diagrams exist only for the subset of questions that are
+// genuinely a flow/process concept (build-plan.md, Feature 31 spec) — an
+// estimated 40-50 of the eventual ~299 questions. Keyed by slug, added one at
+// a time as each question's diagram is authored (not deferred to a single
+// pass after all 299 questions are written); a slug with no entry here simply
+// renders no diagram, same as every other un-diagrammed question today.
+const DIAGRAM_BY_SLUG: Partial<Record<string, ComponentType>> = {
+  "what-is-the-event-loop": EventLoopFlowDiagram,
+  "incremental-static-regeneration": IsrTimelineDiagram,
+};
+
+const DIFFICULTY_STYLES: Record<ChallengeDifficulty, string> = {
+  easy: "bg-success-muted text-success",
+  medium: "bg-accent-muted text-accent-dark",
+  hard: "bg-error-muted text-error",
+};
+
+// Same "derive from the incoming request" pattern as Practice's Editor page —
+// no NEXT_PUBLIC_SITE_URL exists in this project (AGENTS.md's env list).
+async function getBaseUrl(): Promise<string> {
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<Params>;
+}): Promise<Metadata> {
+  const { collection, slug } = await params;
+  if (!isInterviewPrepRouteCollection(collection)) return {};
+
+  const detail = await getCollectionQuestionBySlug(collection, slug);
+  if (!detail) return {};
+
+  const baseUrl = await getBaseUrl();
+  const pageUrl = `${baseUrl}/interview-prep/${collection}/${slug}`;
+  const title = `${detail.question} | Frontend Forever`;
+  const description = toPlainTextSummary(detail.answer);
+
+  return {
+    title,
+    description,
+    alternates: { canonical: pageUrl },
+    robots: { index: true, follow: true },
+    openGraph: { title, description, url: pageUrl, type: "article", siteName: "Frontend Forever" },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
+
+export default async function CollectionQuestionPage({
+  params,
+}: {
+  params: Promise<Params>;
+}) {
+  const { collection, slug } = await params;
+
+  if (!isInterviewPrepRouteCollection(collection)) {
+    notFound();
+  }
+
+  const detail = await getCollectionQuestionBySlug(collection, slug);
+  if (!detail) {
+    notFound();
+  }
+
+  const [{ prev, next }, baseUrl] = await Promise.all([
+    getAdjacentCollectionQuestions(collection, slug),
+    getBaseUrl(),
+  ]);
+
+  const DiagramComponent = DIAGRAM_BY_SLUG[slug];
+
+  const meta = COLLECTION_META[collection];
+  const pageUrl = `${baseUrl}/interview-prep/${collection}/${slug}`;
+
+  // Article + mainEntity Q&A JSON-LD (Feature 31's GEO/SEO spec) — a deeper
+  // structured-data shape than Feature 29's LearningResource, since this page
+  // is a standalone, individually-citable Q&A answer, not a coding challenge.
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    headline: detail.question,
+    description: toPlainTextSummary(detail.answer, 300),
+    inLanguage: "en",
+    isAccessibleForFree: true,
+    url: pageUrl,
+    about: meta.label,
+    mainEntity: {
+      "@type": "Question",
+      name: detail.question,
+      acceptedAnswer: { "@type": "Answer", text: toPlainTextSummary(detail.answer, 500) },
+    },
+    author: { "@type": "Organization", name: "Frontend Forever", url: baseUrl },
+  };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Interview Prep", item: `${baseUrl}/interview-prep` },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: meta.label,
+        item: `${baseUrl}/interview-prep/${collection}`,
+      },
+      { "@type": "ListItem", position: 3, name: detail.question, item: pageUrl },
+    ],
+  };
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
+      <script type="application/ld+json">{safeJsonLd(articleJsonLd)}</script>
+      <script type="application/ld+json">{safeJsonLd(breadcrumbJsonLd)}</script>
+
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <InterviewPrepBreadcrumb
+            backHref={`/interview-prep/${collection}`}
+            crumbs={[
+              { label: "Interview Prep", href: "/interview-prep" },
+              { label: meta.label, href: `/interview-prep/${collection}` },
+              { label: detail.question },
+            ]}
+          />
+        </div>
+        <CollectionQuestionPrevNextNav routeCollection={collection} prev={prev} next={next} />
+      </div>
+
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium tabular-nums text-text-muted">
+          Question #{detail.questionNumber}
+        </span>
+        <span
+          className={cn(
+            "rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize",
+            DIFFICULTY_STYLES[detail.difficulty],
+          )}
+        >
+          {detail.difficulty}
+        </span>
+        {detail.companies.map((company) => (
+          <span
+            key={company}
+            className="rounded-full bg-surface-secondary px-2.5 py-0.5 text-xs font-medium text-text-muted"
+          >
+            {company}
+          </span>
+        ))}
+      </div>
+
+      <h1 className="mb-4 text-2xl font-bold text-text-primary">{detail.question}</h1>
+
+      <Markdown markdown={detail.answer} />
+
+      {DiagramComponent && <DiagramComponent />}
+    </div>
+  );
+}
