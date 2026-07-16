@@ -17,6 +17,22 @@ import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/In
 import { CollectionQuestionPrevNextNav } from "@/features/interview-prep/components/CollectionQuestionPrevNextNav";
 import { EventLoopFlowDiagram } from "@/features/interview-prep/components/diagrams/EventLoopFlowDiagram";
 import { IsrTimelineDiagram } from "@/features/interview-prep/components/diagrams/IsrTimelineDiagram";
+import { VirtualDomDiffDiagram } from "@/features/interview-prep/components/diagrams/VirtualDomDiffDiagram";
+import { LayoutEffectVsEffectTimingDiagram } from "@/features/interview-prep/components/diagrams/LayoutEffectVsEffectTimingDiagram";
+import { ReduxDataFlowDiagram } from "@/features/interview-prep/components/diagrams/ReduxDataFlowDiagram";
+import { AutomaticBatchingDiagram } from "@/features/interview-prep/components/diagrams/AutomaticBatchingDiagram";
+import { FiberArchitectureDiagram } from "@/features/interview-prep/components/diagrams/FiberArchitectureDiagram";
+import { HydrationFlowDiagram } from "@/features/interview-prep/components/diagrams/HydrationFlowDiagram";
+import { OptimisticVsPessimisticDiagram } from "@/features/interview-prep/components/diagrams/OptimisticVsPessimisticDiagram";
+import { PortalDiagram } from "@/features/interview-prep/components/diagrams/PortalDiagram";
+import { VirtualizedListDiagram } from "@/features/interview-prep/components/diagrams/VirtualizedListDiagram";
+import { LiftingStateUpDiagram } from "@/features/interview-prep/components/diagrams/LiftingStateUpDiagram";
+import { UndoRedoDiagram } from "@/features/interview-prep/components/diagrams/UndoRedoDiagram";
+import { SsrCsrSsgDiagram } from "@/features/interview-prep/components/diagrams/SsrCsrSsgDiagram";
+import { ReactServerComponentsDiagram } from "@/features/interview-prep/components/diagrams/ReactServerComponentsDiagram";
+import { PushVsReplaceDiagram } from "@/features/interview-prep/components/diagrams/PushVsReplaceDiagram";
+import { SyntheticEventDelegationDiagram } from "@/features/interview-prep/components/diagrams/SyntheticEventDelegationDiagram";
+import { CustomRendererArchitectureDiagram } from "@/features/interview-prep/components/diagrams/CustomRendererArchitectureDiagram";
 
 type Params = { collection: string; slug: string };
 
@@ -29,6 +45,28 @@ type Params = { collection: string; slug: string };
 const DIAGRAM_BY_SLUG: Partial<Record<string, ComponentType>> = {
   "what-is-the-event-loop": EventLoopFlowDiagram,
   "incremental-static-regeneration": IsrTimelineDiagram,
+  "what-is-react-and-virtual-dom": VirtualDomDiffDiagram,
+  // Same node-by-node diffing mechanism as what-is-react-and-virtual-dom
+  // above — reconciliation is the general name for that same algorithm.
+  "what-is-reconciliation-in-react": VirtualDomDiffDiagram,
+  "uselayouteffect-vs-useeffect": LayoutEffectVsEffectTimingDiagram,
+  "redux-explained-when-to-use": ReduxDataFlowDiagram,
+  "batching-in-react-18": AutomaticBatchingDiagram,
+  "react-fiber-architecture-explained": FiberArchitectureDiagram,
+  "hydration-in-react-explained": HydrationFlowDiagram,
+  "optimistic-vs-pessimistic-ui-updates": OptimisticVsPessimisticDiagram,
+  "react-portal-explained": PortalDiagram,
+  "virtualized-list-in-react": VirtualizedListDiagram,
+  "sharing-state-between-siblings": LiftingStateUpDiagram,
+  // Same shared-ancestor mechanism as sharing-state-between-siblings above —
+  // lifting state up is the general name for that same pattern.
+  "lifting-state-up-in-react": LiftingStateUpDiagram,
+  "undo-redo-in-react": UndoRedoDiagram,
+  "ssr-vs-csr-vs-ssg": SsrCsrSsgDiagram,
+  "react-server-components-explained": ReactServerComponentsDiagram,
+  "push-vs-replace-in-routing": PushVsReplaceDiagram,
+  "synthetic-events-in-react": SyntheticEventDelegationDiagram,
+  "writing-a-custom-renderer-in-react": CustomRendererArchitectureDiagram,
 };
 
 const DIFFICULTY_STYLES: Record<ChallengeDifficulty, string> = {
