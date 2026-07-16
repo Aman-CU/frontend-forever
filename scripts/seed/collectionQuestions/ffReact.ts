@@ -11,8 +11,9 @@ import type { CollectionQuestionSeed } from "../types";
 // answered from training data alone — current stable is React 19.2 (October
 // 2025); there is no "React 20" (an error caught and fixed in the pilot's
 // useMemo answer during this batch). React Compiler v1.0 went stable in
-// October 2025, part of the 19.x line. Batch 2 caught two more facts worth
-// stating precisely: React.forwardRef and PropTypes are both on a
+// October 2025 — independently versioned from React itself, officially
+// supporting React 17+, not tied to any specific React version line. Batch 2
+// caught two more facts worth stating precisely: React.forwardRef and PropTypes are both on a
 // deprecation path as of React 19 (ref is now a plain prop; propTypes/
 // defaultProps checks on function components are silently ignored), and
 // "Concurrent Mode" was dropped as a named concept before React 18 shipped
@@ -106,7 +107,7 @@ Most real forms end up controlled for validation UX, but file inputs are always 
     collection: "ff-react",
     slug: "usememo-when-to-use",
     question: "What is `useMemo` and when should you use it?",
-    answer: `\`useMemo(fn, deps)\` caches the return value of an expensive computation across renders, only recomputing it when one of the values in \`deps\` changes. **As of the React Compiler (stable since v1.0, October 2025 — part of the React 19.x line; there is no "React 20"), this is worth answering carefully** — the compiler now auto-memoizes most component output, so manual \`useMemo\` has shifted from routine practice to a targeted escape hatch.
+    answer: `\`useMemo(fn, deps)\` caches the return value of an expensive computation across renders, only recomputing it when one of the values in \`deps\` changes. **As of the React Compiler (stable since v1.0, October 2025 — independently versioned from React itself, officially supporting React 17+; there is no "React 20"), this is worth answering carefully** — the compiler now auto-memoizes most component output, so manual \`useMemo\` has shifted from routine practice to a targeted escape hatch.
 
 ### The classic pre-compiler use case
 
@@ -2458,7 +2459,7 @@ A Promise passed to \`use()\` must be the **same Promise instance** across re-re
     collection: "ff-react",
     slug: "react-compiler-react-forget-explained",
     question: "What is the React Compiler (React Forget)?",
-    answer: `The React Compiler — codenamed "React Forget" during its development, now shipped simply as "React Compiler" — is a build-time tool that statically analyzes component code and automatically inserts the equivalent of \`useMemo\`/\`useCallback\`/\`React.memo\` wherever it can prove doing so is safe. It went stable at v1.0 in October 2025, part of the React 19.x line (there is no "React 20").
+    answer: `The React Compiler — codenamed "React Forget" during its development, now shipped simply as "React Compiler" — is a build-time tool that statically analyzes component code and automatically inserts the equivalent of \`useMemo\`/\`useCallback\`/\`React.memo\` wherever it can prove doing so is safe. It went stable at v1.0 in October 2025 — independently versioned from React itself, and officially supports React 17+ (there is no "React 20", and the compiler isn't tied to the React 19.x line specifically).
 
 \`\`\`jsx
 // You write plain code — no manual memoization
