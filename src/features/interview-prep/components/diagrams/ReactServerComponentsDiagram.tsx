@@ -7,14 +7,14 @@
 // payload describing the server-rendered parts, with "holes" for where
 // client components need to mount and become interactive.
 //
-// This file is intentionally duplicated identically on both
+// This file was intentionally duplicated identically on both
 // content/ff-react-questions (where it was originally authored, for the
 // React collection's react-server-components-explained question) and this
 // content/ff-nextjs-questions branch (reused as-is for
 // server-components-in-nextjs-app-router, since it's the same underlying
-// mechanism just in the Next.js App Router context) — keeps each branch
-// independently buildable without one depending on the other's commits.
-// The two copies are identical and will trivially reconcile on merge.
+// mechanism just in the Next.js App Router context), to keep each branch
+// independently buildable pre-merge. Both copies were identical, so this
+// merge reconciles trivially to the one copy below.
 export function ReactServerComponentsDiagram() {
   const textColor = "var(--color-text-secondary)";
   const labelColor = "var(--color-text-primary)";

@@ -27,6 +27,27 @@ import { ParallelRoutesDiagram } from "@/features/interview-prep/components/diag
 import { InterceptingRoutesDiagram } from "@/features/interview-prep/components/diagrams/InterceptingRoutesDiagram";
 import { RscPayloadDiagram } from "@/features/interview-prep/components/diagrams/RscPayloadDiagram";
 import { MultiZoneDiagram } from "@/features/interview-prep/components/diagrams/MultiZoneDiagram";
+import { VirtualDomDiffDiagram } from "@/features/interview-prep/components/diagrams/VirtualDomDiffDiagram";
+import { LayoutEffectVsEffectTimingDiagram } from "@/features/interview-prep/components/diagrams/LayoutEffectVsEffectTimingDiagram";
+import { ReduxDataFlowDiagram } from "@/features/interview-prep/components/diagrams/ReduxDataFlowDiagram";
+import { AutomaticBatchingDiagram } from "@/features/interview-prep/components/diagrams/AutomaticBatchingDiagram";
+import { FiberArchitectureDiagram } from "@/features/interview-prep/components/diagrams/FiberArchitectureDiagram";
+import { HydrationFlowDiagram } from "@/features/interview-prep/components/diagrams/HydrationFlowDiagram";
+import { OptimisticVsPessimisticDiagram } from "@/features/interview-prep/components/diagrams/OptimisticVsPessimisticDiagram";
+import { PortalDiagram } from "@/features/interview-prep/components/diagrams/PortalDiagram";
+import { VirtualizedListDiagram } from "@/features/interview-prep/components/diagrams/VirtualizedListDiagram";
+import { LiftingStateUpDiagram } from "@/features/interview-prep/components/diagrams/LiftingStateUpDiagram";
+import { UndoRedoDiagram } from "@/features/interview-prep/components/diagrams/UndoRedoDiagram";
+import { SsrCsrSsgDiagram } from "@/features/interview-prep/components/diagrams/SsrCsrSsgDiagram";
+import { PushVsReplaceDiagram } from "@/features/interview-prep/components/diagrams/PushVsReplaceDiagram";
+import { SyntheticEventDelegationDiagram } from "@/features/interview-prep/components/diagrams/SyntheticEventDelegationDiagram";
+import { CustomRendererArchitectureDiagram } from "@/features/interview-prep/components/diagrams/CustomRendererArchitectureDiagram";
+import { PrototypeChainDiagram } from "@/features/interview-prep/components/diagrams/PrototypeChainDiagram";
+import { EventBubblingCapturingDiagram } from "@/features/interview-prep/components/diagrams/EventBubblingCapturingDiagram";
+import { GarbageCollectionDiagram } from "@/features/interview-prep/components/diagrams/GarbageCollectionDiagram";
+import { MicrotaskMacrotaskDiagram } from "@/features/interview-prep/components/diagrams/MicrotaskMacrotaskDiagram";
+import { TailCallOptimizationDiagram } from "@/features/interview-prep/components/diagrams/TailCallOptimizationDiagram";
+import { ObserverPatternDiagram } from "@/features/interview-prep/components/diagrams/ObserverPatternDiagram";
 
 type Params = { collection: string; slug: string };
 
@@ -63,6 +84,39 @@ const DIAGRAM_BY_SLUG: Partial<Record<string, ComponentType>> = {
   // angle, so the flow diagram is reused rather than re-illustrated.
   "how-app-router-handles-data-mutations": ServerActionsFlowDiagram,
   "multi-zone-architecture-in-nextjs": MultiZoneDiagram,
+  "what-is-react-and-virtual-dom": VirtualDomDiffDiagram,
+  // Same node-by-node diffing mechanism as what-is-react-and-virtual-dom
+  // above — reconciliation is the general name for that same algorithm.
+  "what-is-reconciliation-in-react": VirtualDomDiffDiagram,
+  "uselayouteffect-vs-useeffect": LayoutEffectVsEffectTimingDiagram,
+  "redux-explained-when-to-use": ReduxDataFlowDiagram,
+  "batching-in-react-18": AutomaticBatchingDiagram,
+  "react-fiber-architecture-explained": FiberArchitectureDiagram,
+  "hydration-in-react-explained": HydrationFlowDiagram,
+  "optimistic-vs-pessimistic-ui-updates": OptimisticVsPessimisticDiagram,
+  "react-portal-explained": PortalDiagram,
+  "virtualized-list-in-react": VirtualizedListDiagram,
+  "sharing-state-between-siblings": LiftingStateUpDiagram,
+  // Same shared-ancestor mechanism as sharing-state-between-siblings above —
+  // lifting state up is the general name for that same pattern.
+  "lifting-state-up-in-react": LiftingStateUpDiagram,
+  "undo-redo-in-react": UndoRedoDiagram,
+  "ssr-vs-csr-vs-ssg": SsrCsrSsgDiagram,
+  "react-server-components-explained": ReactServerComponentsDiagram,
+  "push-vs-replace-in-routing": PushVsReplaceDiagram,
+  "synthetic-events-in-react": SyntheticEventDelegationDiagram,
+  "writing-a-custom-renderer-in-react": CustomRendererArchitectureDiagram,
+  "prototypal-inheritance-explained": PrototypeChainDiagram,
+  // Same prototype-chain-walk concept as prototypal-inheritance-explained
+  // above — this question walks the identical mechanism (own property miss,
+  // walk [[Prototype]] up to Object.prototype, then null), just via a plain
+  // array instead of Object.create(), so the existing diagram applies as-is.
+  "how-the-prototype-chain-works": PrototypeChainDiagram,
+  "event-bubbling-and-capturing": EventBubblingCapturingDiagram,
+  "how-garbage-collection-works": GarbageCollectionDiagram,
+  "microtask-vs-macrotask-queue": MicrotaskMacrotaskDiagram,
+  "tail-call-optimization": TailCallOptimizationDiagram,
+  "observer-pattern-explained": ObserverPatternDiagram,
 };
 
 const DIFFICULTY_STYLES: Record<ChallengeDifficulty, string> = {
