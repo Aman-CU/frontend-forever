@@ -1024,18 +1024,20 @@ Compound components rely on implicit context, not explicit props — so they sil
     collection: "ff-react",
     slug: "state-vs-props",
     question: "What is the difference between state and props?",
-    answer: `Props are read-only data a component receives from its parent — the component using them can't change them, only the parent that passed them down can. State is data a component owns and manages itself, via \`useState\`/\`useReducer\`, and can change over the component's lifetime, triggering a re-render whenever it does.
+    answer: `Props are read-only data a component receives from its parent — the component using them can't change them, only the parent that passed them down can. State is data a component owns and manages itself, via \`useState\`/\`useReducer\`; calling its setter **schedules** a re-render rather than updating anything immediately.
 
 | | Props | State |
 |---|---|---|
 | Owned by | The parent | The component itself |
 | Mutable by the component holding it? | No — read-only | Yes — via its own setter |
 | Direction of flow | Passed down, one way | Local, unless lifted up |
-| Triggers a re-render on change? | Yes, when the parent re-renders with new values | Yes, immediately when set |
+| Triggers a re-render on change? | Yes, when the parent re-renders with new values | Scheduled, not immediate — and skipped entirely if the new value is the same as the old one |
 
 ### Classic interview gotcha
 
 Mutating a prop directly (\`props.value = "new"\`) doesn't just fail silently to update the UI — it's a genuine violation of React's data flow, since a component must always treat its props as read-only. If a child needs to change something its parent passed down, the correct pattern is lifting the state up: the parent owns the state and passes both the value *and* a callback prop down, and the child calls that callback instead of mutating anything itself.
+
+A second, separate gotcha: calling a setter doesn't re-render synchronously, and React **batches** multiple setter calls in the same event handler into a single re-render — plus, if the new value is \`Object.is\`-equal to the current value, React bails out of re-rendering that component entirely. Code that reads \`state\` immediately after calling its setter, expecting the updated value, is a common real bug that stems from assuming "immediately when set."
 
 **Related:** [How do you share state between sibling components?](/interview-prep/ff-react/sharing-state-between-siblings) · [What is lifting state up in React?](/interview-prep/ff-react/lifting-state-up-in-react) · [What is the difference between controlled and uncontrolled components?](/interview-prep/ff-react/controlled-vs-uncontrolled-components)`,
     difficulty: "easy",
@@ -1099,21 +1101,21 @@ Two state setters called back-to-back inside the same \`setTimeout\` callback: b
     collection: "ff-react",
     slug: "react-18-concurrent-mode",
     question: "What is React 18's concurrent mode?",
-    answer: `**"Concurrent Mode" isn't a real, current concept — the React team dropped that name and the all-or-nothing "mode" idea before React 18 even shipped.** What actually shipped is a set of individually opt-in concurrent *features* (\`startTransition\`, \`useDeferredValue\`, improved \`Suspense\`) that only change any behavior once you call \`createRoot\` and actually use one of them — there's no single switch that turns "concurrent mode" on for a whole app.
+    answer: `**"Concurrent Mode" isn't a real, current concept — the React team dropped that name and the all-or-nothing "mode" idea before React 18 even shipped.** What actually shipped is a mix of one behavior \`createRoot\` enables on its own (automatic batching, for *every* state update — not just inside React event handlers) plus a set of individually opt-in concurrent *features* (\`startTransition\`, \`useDeferredValue\`, improved \`Suspense\`) that only change anything further once you actually use one — there's no single switch that turns on a full "concurrent mode" for the whole app.
 
 \`\`\`jsx
 import { createRoot } from "react-dom/client";
-createRoot(document.getElementById("root")).render(<App />); // enables the *option* to use concurrent features — nothing changes until you actually use one
+createRoot(document.getElementById("root")).render(<App />); // automatic batching is already active here — this alone is a real behavior change from React 17
 
 function SearchResults() {
   const [isPending, startTransition] = useTransition();
-  // using startTransition here is what actually opts this update into concurrent rendering
+  // using startTransition here is what additionally opts this specific update into concurrent rendering
 }
 \`\`\`
 
 ### Classic interview gotcha
 
-A common wrong answer treats "Concurrent Mode" as if it were still a real, nameable thing to switch on — the accurate mental model is "concurrent rendering capability is available via \`createRoot\`, but nothing behaves differently until you deliberately use a concurrent feature." This gradual, opt-in strategy was a deliberate response to community feedback on the original all-or-nothing "mode" proposal, specifically so existing apps could upgrade to React 18 with zero behavior changes and adopt concurrent features incrementally, one call site at a time.
+A common wrong answer treats "Concurrent Mode" as if it were still a real, nameable thing to switch on — the accurate mental model is "\`createRoot\` alone already changes real behavior (automatic batching), while genuinely concurrent rendering behavior only kicks in once you deliberately use a feature like \`startTransition\`." Conflating these two — claiming *nothing* changes with \`createRoot\` alone — is its own common overcorrection. This gradual, opt-in strategy for the concurrent-specific features was a deliberate response to community feedback on the original all-or-nothing "mode" proposal, specifically so existing apps could upgrade to React 18 with minimal behavior changes and adopt concurrent features incrementally, one call site at a time.
 
 **Related:** [What are transitions in React 18 (useTransition)?](/interview-prep/ff-react/usetransition-and-react-18-transitions) · [What is useDeferredValue?](/interview-prep/ff-react/usedeferredvalue-explained) · [Concurrent React & Suspense](/learn/react/concurrent-react-suspense) (Learn concept)
 
@@ -1131,19 +1133,23 @@ A common wrong answer treats "Concurrent Mode" as if it were still a real, namea
 \`\`\`jsx
 function SearchPage() {
   const [query, setQuery] = useState("");
+  const [deferredQuery, setDeferredQuery] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const handleChange = (e) => {
     setQuery(e.target.value); // urgent — the input stays responsive
     startTransition(() => {
-      setResults(computeExpensiveResults(e.target.value)); // low-priority, can be interrupted
+      setDeferredQuery(e.target.value); // low-priority — the re-render this triggers can be interrupted
     });
   };
+
+  const results = computeExpensiveResults(deferredQuery); // runs during the interruptible, low-priority render
 
   return (
     <>
       <input value={query} onChange={handleChange} />
       {isPending && <Spinner />}
+      <Results data={results} />
     </>
   );
 }
@@ -1151,7 +1157,9 @@ function SearchPage() {
 
 ### Classic interview gotcha
 
-\`startTransition\` doesn't make an update run *faster* — it can genuinely finish *later* than an un-transitioned update would, since it's explicitly deprioritized behind urgent work. The real value is keeping the *interface* responsive while an expensive update happens in the background, not speeding up the update itself; describing it as a general performance optimization, rather than a responsiveness/prioritization tool, is a common imprecision worth avoiding.
+\`startTransition\`'s callback runs **synchronously** — it doesn't make code inside it non-blocking or chunk expensive work for you. Calling an expensive function directly inside \`startTransition(() => { ... })\` still blocks the main thread exactly as long as it would anywhere else; what actually becomes interruptible is the **re-render** triggered by the state update inside that callback. This is why the expensive computation belongs during render (derived from a state value set inside the transition), not executed directly inside the transition callback itself — a subtle but common source of "I used startTransition and it's still janky" confusion.
+
+\`startTransition\` also doesn't make an update run *faster* — it can genuinely finish *later* than an un-transitioned update would, since it's explicitly deprioritized behind urgent work. The real value is keeping the *interface* responsive while an expensive re-render happens in the background, not speeding up the work itself; describing it as a general performance optimization, rather than a responsiveness/prioritization tool, is a common imprecision worth avoiding.
 
 **Related:** [What is useDeferredValue?](/interview-prep/ff-react/usedeferredvalue-explained) · [What is React 18's concurrent mode?](/interview-prep/ff-react/react-18-concurrent-mode) · [Concurrent React & Suspense](/learn/react/concurrent-react-suspense) (Learn concept)`,
     difficulty: "hard",
@@ -1330,7 +1338,7 @@ class Pure extends React.PureComponent {
     collection: "ff-react",
     slug: "componentdidmount-equivalent-in-hooks",
     question: "What is componentDidMount equivalent in hooks?",
-    answer: `\`useEffect(fn, [])\` — an effect with an empty dependency array runs its setup function exactly once, immediately after the first render commits, matching the timing \`componentDidMount\` guarantees in a class component.
+    answer: `\`useEffect(fn, [])\` — an effect with an empty dependency array runs its setup function once per mount in production, immediately after the first render commits, matching the timing \`componentDidMount\` guarantees in a class component. (In development, under \`StrictMode\`, React 18+ deliberately runs an extra setup-then-cleanup cycle before the "real" one, specifically to surface effects that don't clean up after themselves properly — this doesn't happen in production.)
 
 \`\`\`jsx
 class Example extends React.Component {
@@ -1402,7 +1410,7 @@ function UserProfile({ userId }) {
 
 ### Classic interview gotcha
 
-A fetch started inside \`useEffect\` can resolve *after* the component unmounts, or after \`userId\` changed and a newer fetch already started — updating state from that stale response either logs a "can't update state on an unmounted component" warning, or worse, silently overwrites fresh data with outdated data that just happened to resolve later. The fix is an \`AbortController\` aborted in the cleanup function (shown above), or a local "ignore" flag set in cleanup and checked before the state setter runs.
+A fetch started inside \`useEffect\` can resolve *after* the component unmounts, or after \`userId\` changed and a newer fetch already started — updating state from that stale response silently overwrites fresh data with outdated data that just happened to resolve later, a real race-condition bug with no console warning to catch it (React 18 removed the old "can't update state on an unmounted component" warning, since most of what it flagged wasn't an actual leak). The fix is an \`AbortController\` aborted in the cleanup function (shown above), or a local "ignore" flag set in cleanup and checked before the state setter runs.
 
 **Related:** [What is the stale closure problem in hooks?](/interview-prep/ff-react/stale-closure-problem-in-hooks) · [What is React Query (TanStack Query)?](/interview-prep/ff-react/react-query-tanstack-query-explained) · [What is Suspense in React?](/interview-prep/ff-react/what-is-suspense-in-react)`,
     difficulty: "medium",
@@ -1707,7 +1715,7 @@ function UserProfile({ userId }) {
 
 ### Classic interview gotcha
 
-SWR intentionally ships a much smaller API surface than TanStack Query — no built-in mutation state machine, fewer configuration knobs — and that's a genuine tradeoff, not a missing feature: it's faster to learn and smaller in bundle size, but a complex mutation flow (an optimistic update with structured rollback, for instance) requires more manual wiring than TanStack Query's \`useMutation\` provides out of the box.
+SWR does ship its own mutation tools — \`useSWRMutation\` for triggering a mutation, and the \`mutate\` function's \`optimisticData\`/\`rollbackOnError\` options for optimistic updates with automatic rollback — so "SWR has no mutation support" is an overstatement worth avoiding. The real, accurate tradeoff is that this surface is intentionally smaller and less feature-rich than TanStack Query's \`useMutation\` (fewer configuration knobs, less built-in retry/state-machine sophistication around the mutation lifecycle itself), not that it's missing entirely: SWR stays faster to learn and smaller in bundle size, at the cost of more manual wiring for a genuinely complex mutation flow.
 
 **Related:** [What is React Query (TanStack Query)?](/interview-prep/ff-react/react-query-tanstack-query-explained)`,
     difficulty: "medium",
@@ -1812,11 +1820,13 @@ Pairing infinite scroll with a very long, ever-growing list *without* virtualiza
 Of a list with thousands of rows, only the ones inside the visible viewport (plus a small buffer) are actually mounted as DOM nodes; everything above and below is empty, correctly-sized space with no corresponding DOM node until it scrolls into view.
 
 \`\`\`jsx
-import { FixedSizeList } from "react-window";
+import { List } from "react-window"; // v2's API — a rowComponent/rowCount/rowHeight shape
 
-<FixedSizeList height={400} itemCount={100000} itemSize={35} width="100%">
-  {({ index, style }) => <div style={style}>Row {index}</div>}
-</FixedSizeList>
+function Row({ index, style }) {
+  return <div style={style}>Row {index}</div>;
+}
+
+<List rowComponent={Row} rowCount={100000} rowHeight={35} />
 \`\`\`
 
 ### Classic interview gotcha
@@ -1832,22 +1842,22 @@ Virtualization requires knowing (or estimating) each row's height up front to co
     collection: "ff-react",
     slug: "react-window-vs-react-virtualized",
     question: "What is react-window vs react-virtualized?",
-    answer: `Both are virtualization libraries from the same author. \`react-virtualized\` came first and is feature-rich (grids, tables, multiple built-in layouts) but heavier; \`react-window\` is a from-scratch rewrite focused on a much smaller bundle size and simpler API, at the cost of some of \`react-virtualized\`'s built-in features. **Neither is under significant active development today** — \`react-window\` is described by its own ecosystem as mature but effectively feature-frozen, and new projects increasingly reach for \`@tanstack/react-virtual\` (headless, minimal, part of the TanStack ecosystem) or \`react-virtuoso\` instead.
+    answer: `Both are virtualization libraries from the same author. \`react-virtualized\` came first and is feature-rich (grids, tables, multiple built-in layouts) but heavier and largely in maintenance mode today; \`react-window\` is a from-scratch rewrite focused on a much smaller bundle size and simpler API, and remains actively maintained — it shipped a v2 (a new \`List\`/\`Grid\` API, \`rowComponent\`/\`rowCount\`/\`rowHeight\`-shaped props) rather than sitting frozen. Even so, new projects increasingly reach for \`@tanstack/react-virtual\` (headless, minimal, part of the TanStack ecosystem) or \`react-virtuoso\` instead, mainly for their more modern, fully-headless API design rather than because react-window is unmaintained.
 
 | | react-virtualized | react-window | @tanstack/react-virtual |
 |---|---|---|---|
 | Bundle size | Larger | Smaller | Smallest (fully headless) |
 | Built-in components (Grid, Table, etc.) | Yes | No — list/grid primitives only | No — you build the markup |
-| Active development (2026) | Minimal | Minimal | Active, TanStack ecosystem |
-| Best fit | Legacy codebases already using it | Simple, fixed-size lists in maintained codebases | New projects, custom scroll behavior |
+| Active development (2026) | Largely maintenance mode | Actively maintained (v2 shipped) | Active, TanStack ecosystem |
+| Best fit | Legacy codebases already using it | Simple, fixed-size lists — still a reasonable current pick | New projects, custom scroll behavior |
 
 ### Classic interview gotcha
 
-This question is often asked expecting a simple "react-window is the newer, better version of react-virtualized" answer — the more precise, current one is that **both are mature-to-legacy at this point**, and choosing either for a brand-new project in 2026 is worth questioning first. \`@tanstack/react-virtual\` or \`react-virtuoso\` are what's actually recommended for new work today; \`react-window\` remains a reasonable, low-risk choice mainly for already-existing codebases that already depend on it.
+This question is often asked expecting a simple "react-window is the newer, better version of react-virtualized" answer, which is directionally right but incomplete — \`react-virtualized\` is the one genuinely in maintenance mode; \`react-window\` is still actively developed, just with a smaller, more opinionated API surface than newer headless alternatives. Describing \`react-window\` itself as abandoned or frozen is a common overstatement worth avoiding — the more accurate framing is that \`@tanstack/react-virtual\`/\`react-virtuoso\` are the more modern *design* for new work, not that \`react-window\` is unmaintained.
 
 **Related:** [How do you implement a virtualized list in React?](/interview-prep/ff-react/virtualized-list-in-react)
 
-**Sources checked:** github.com/TanStack/virtual discussion #459, npm trends (@tanstack/react-virtual vs react-window vs react-virtualized)`,
+**Sources checked:** github.com/TanStack/virtual discussion #459, npm trends (@tanstack/react-virtual vs react-window vs react-virtualized), github.com/bvaughn/react-window (v2 release, active maintenance)`,
     difficulty: "hard",
     companies: ["Google", "Airbnb"],
     orderIndex: 60,
@@ -1856,25 +1866,28 @@ This question is often asked expecting a simple "react-window is the newer, bett
     collection: "ff-react",
     slug: "usestate-vs-useref-for-values",
     question: "What is the difference between useState and useRef for storing values?",
-    answer: `\`useState\` triggers a re-render every time its setter is called, and the value you read during render is a snapshot as of that specific render — never "more current" than that. \`useRef\`'s \`.current\` mutates silently with no re-render at all, and always reflects the true, live latest value the instant it's set, even mid-render.
+    answer: `\`useState\` triggers a re-render every time its setter is called, and the value you read during render is a snapshot as of that specific render — never "more current" than that. \`useRef\`'s \`.current\` mutates silently with no re-render at all, and holds a genuinely mutable box that survives across renders — but it should only be read or written from an effect or event handler, not during render itself (aside from one-time lazy initialization).
 
 | | \`useState\` | \`useRef\` |
 |---|---|---|
 | Triggers a re-render on change | Yes | No |
-| Value read during render | Snapshot as of that render | Always the true, live current value |
+| Safe to read/write during render? | Yes — that's the whole point | No — reserved for effects/event handlers (except one-time lazy init) |
 | Use for | Anything that needs to appear in the rendered UI | Values a component tracks across renders that shouldn't affect the UI by themselves |
 
 \`\`\`jsx
 function Example() {
   const [count, setCount] = useState(0); // changes trigger a re-render
   const renderCountRef = useRef(0);       // changes do NOT trigger a re-render
-  renderCountRef.current += 1;            // silently tracks how many times this rendered
+
+  useEffect(() => {
+    renderCountRef.current += 1; // updated from an effect, not during render itself
+  });
 }
 \`\`\`
 
 ### Classic interview gotcha
 
-A common mistake is using a ref to hold a value that should actually drive the UI — since mutating \`ref.current\` never triggers a re-render, the screen simply won't update even though the underlying value genuinely changed, silently diverging from what's displayed. The opposite mistake is just as real: storing something in \`useState\` purely to avoid a stale closure, when the value never actually needs to appear in rendered output, causes unnecessary re-renders on every update that a ref would have avoided entirely.
+A common mistake is using a ref to hold a value that should actually drive the UI — since mutating \`ref.current\` never triggers a re-render, the screen simply won't update even though the underlying value genuinely changed, silently diverging from what's displayed. A second, subtler mistake: mutating \`ref.current\` **directly inside the render body** (not an effect or event handler) — React's own docs call this out explicitly as something to avoid, since render is meant to be pure, and a component can genuinely render more than once for a single commit (Strict Mode's double-render in development being the most common case), which would silently double-count or corrupt a ref mutated this way. The opposite mistake is just as real: storing something in \`useState\` purely to avoid a stale closure, when the value never actually needs to appear in rendered output, causes unnecessary re-renders on every update that a ref would have avoided entirely.
 
 **Related:** [What is useRef and when would you use it?](/interview-prep/ff-react/what-is-useref-and-when-to-use-it) · [What is the stale closure problem in hooks?](/interview-prep/ff-react/stale-closure-problem-in-hooks)`,
     difficulty: "hard",
@@ -2885,7 +2898,7 @@ A genuinely common mistake is assuming a slow interaction must be a React render
     collection: "ff-react",
     slug: "profiler-api-in-react",
     question: "What is the Profiler API in React?",
-    answer: `\`<Profiler id="..." onRender={callback}>\` wraps part of a component tree and calls \`onRender\` after every commit within it, receiving timing data — actual render duration, the phase ("mount" or "update"), and more — programmatically. It's the same underlying data React DevTools' Profiler tab visualizes, but usable directly in code, for automated performance-regression tracking or logging real-user render timings in production.
+    answer: `\`<Profiler id="..." onRender={callback}>\` wraps part of a component tree and calls \`onRender\` after every commit within it, receiving timing data — actual render duration, the phase ("mount" or "update"), and more — programmatically. It's the same underlying data React DevTools' Profiler tab visualizes, but usable directly in code, for automated performance-regression tracking or logging real-user render timings. **A real, easy-to-miss caveat: the standard production build disables this timing instrumentation entirely by default** (profiling adds overhead, so it's stripped out) — collecting real-user timings in production specifically requires swapping in the special profiling-enabled production bundle (\`react-dom/profiling\`), not just adding \`<Profiler>\` to an app built normally.
 
 \`\`\`jsx
 function onRenderCallback(id, phase, actualDuration) {
