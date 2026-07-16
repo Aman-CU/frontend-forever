@@ -11,8 +11,9 @@ import type { CollectionQuestionSeed } from "../types";
 // that branch, needed here too so this branch's own seed run doesn't hit a
 // `(collection, order_index)` unique-constraint collision. Also carries the
 // same React-20 factual fix already made on that branch (there is no
-// "React 20" — React Compiler went stable at v1.0, October 2025, part of
-// the React 19.x line).
+// "React 20" — React Compiler went stable at v1.0, October 2025; it's
+// independently versioned from React itself, and officially supports
+// React 17+, not just React 19).
 export const FF_REACT_COLLECTION_QUESTIONS: CollectionQuestionSeed[] = [
   {
     collection: "ff-react",
@@ -64,7 +65,7 @@ Most real forms end up controlled for validation UX, but file inputs are always 
     collection: "ff-react",
     slug: "usememo-when-to-use",
     question: "What is `useMemo` and when should you use it?",
-    answer: `\`useMemo(fn, deps)\` caches the return value of an expensive computation across renders, only recomputing it when one of the values in \`deps\` changes. **As of the React Compiler (stable since v1.0, October 2025 — part of the React 19.x line; there is no "React 20"), this is worth answering carefully** — the compiler now auto-memoizes most component output, so manual \`useMemo\` has shifted from routine practice to a targeted escape hatch.
+    answer: `\`useMemo(fn, deps)\` caches the return value of an expensive computation across renders, only recomputing it when one of the values in \`deps\` changes. **As of the React Compiler (stable since v1.0, October 2025 — independently versioned from React itself, officially supporting React 17+; there is no "React 20"), this is worth answering carefully** — the compiler now auto-memoizes most component output, so manual \`useMemo\` has shifted from routine practice to a targeted escape hatch.
 
 ### The classic pre-compiler use case
 

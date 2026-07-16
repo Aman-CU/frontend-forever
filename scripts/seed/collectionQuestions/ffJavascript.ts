@@ -551,9 +551,11 @@ Arrow functions have no \`this\` of their own — they capture \`this\` from the
 
 \`\`\`js
 // Instead of one listener per <li> (expensive, and misses items added later)
-document.querySelector("ul").addEventListener("click", (event) => {
-  if (event.target.matches("li")) {
-    console.log("Clicked:", event.target.textContent);
+const list = document.querySelector("ul");
+list.addEventListener("click", (event) => {
+  const item = event.target.closest("li"); // walks up in case the click landed on nested markup
+  if (item && list.contains(item)) {
+    console.log("Clicked:", item.textContent);
   }
 });
 \`\`\`
@@ -586,22 +588,26 @@ Delegation relies on bubbling, so it doesn't work for events that don't bubble (
 | | Regular function | Arrow function |
 |---|---|---|
 | \`this\` | Determined by how it's called (see the \`this\` question) | Inherited lexically from the enclosing scope |
-| \`arguments\` object | Has its own | None — use rest params (\`...args\`) instead |
+| \`arguments\` object | Has its own | None of its own — inherits the enclosing function's lexically, or use rest params (\`...args\`) |
 | Usable with \`new\`? | Yes | No — throws \`TypeError\` |
 | Has a \`.prototype\`? | Yes | No |
 | Hoisting (as a declaration) | Function declarations hoist fully | N/A — arrow functions are always expressions, only the binding hoists (if \`var\`/\`let\`/\`const\`) |
 
 \`\`\`js
 function regular() {
-  console.log(arguments); // works
+  console.log(arguments); // works — regular functions have their own arguments object
 }
 
-const arrow = () => {
-  console.log(arguments); // ReferenceError — no arguments object here
-};
+function outer() {
+  const arrow = () => {
+    console.log(arguments); // logs outer's arguments — arrow functions inherit it lexically, same as this
+  };
+  arrow();
+}
+outer(1, 2, 3); // Arguments(3) [1, 2, 3] — outer's own arguments, borrowed by the nested arrow
 
 const arrowWithRest = (...args) => {
-  console.log(args); // this is how arrow functions receive "all the arguments"
+  console.log(args); // how a standalone arrow function (no enclosing function to inherit from) receives its arguments
 };
 \`\`\`
 
@@ -688,7 +694,7 @@ It's a deliberate design choice, not an accident: before \`let\`/\`const\`, \`va
 
 \`\`\`js
 function example(a = b, b = 2) {
-  // TypeError — b is still in its own TDZ when used as a's default
+  // ReferenceError — b is still in its own TDZ when used as a's default
   return [a, b];
 }
 \`\`\`
@@ -757,13 +763,13 @@ Generators make lazy, on-demand sequences straightforward — values are compute
     collection: "ff-javascript",
     slug: "weakmap-and-weakset",
     question: "What is a `WeakMap` and `WeakSet`? When would you use them?",
-    answer: `\`WeakMap\` and \`WeakSet\` are collections whose keys (WeakMap) or values (WeakSet) must be objects, held with a *weak* reference — meaning if nothing else in the program still references that object, the garbage collector is free to reclaim it, and the entry silently disappears along with it.
+    answer: `\`WeakMap\` and \`WeakSet\` are collections whose keys (WeakMap) or values (WeakSet) must be objects or non-registered symbols (as of ES2023), held with a *weak* reference — meaning if nothing else in the program still references that object, the garbage collector is free to reclaim it, and the entry silently disappears along with it.
 
 ### How they differ from \`Map\`/\`Set\`
 
 | | \`Map\` / \`Set\` | \`WeakMap\` / \`WeakSet\` |
 |---|---|---|
-| Key/value types | Any value | Objects only |
+| Key/value types | Any value | Objects or non-registered symbols only (not primitives, not \`Symbol.for()\` symbols) |
 | Prevents garbage collection of keys? | Yes — a strong reference | No — a weak reference |
 | Iterable (\`.forEach\`, \`for...of\`, \`.size\`)? | Yes | No — intentionally, for GC reasons below |
 
@@ -1472,7 +1478,7 @@ const logged = new Proxy(user, {
   set(target, prop, value) {
     console.log(\`setting "\${prop}" to\`, value);
     target[prop] = value;
-    return true; // must return true, or the assignment silently "fails" in strict mode
+    return true; // must return true, or the assignment fails silently (non-strict) / throws a TypeError (strict mode)
   },
 });
 
@@ -2302,12 +2308,13 @@ for (const value of obj) {
 const fibonacciUpTo = {
   max: 50,
   [Symbol.iterator]() {
-    let [prev, curr] = [0, 1];
+    let [prev, curr] = [1, 1];
     return {
       next: () => {
         if (prev > this.max) return { value: undefined, done: true };
+        const value = prev;
         [prev, curr] = [curr, prev + curr];
-        return { value: prev - curr, done: false };
+        return { value, done: false };
       },
     };
   },
@@ -2323,7 +2330,7 @@ for (const n of fibonacciUpTo) console.log(n); // also works directly
 const fibonacciGen = {
   max: 50,
   *[Symbol.iterator]() {
-    let [prev, curr] = [0, 1];
+    let [prev, curr] = [1, 1];
     while (prev <= this.max) {
       yield prev;
       [prev, curr] = [curr, prev + curr];
@@ -2707,7 +2714,7 @@ arr2; // ["a", "x", "y", "b", "c"]
     collection: "ff-javascript",
     slug: "truthy-and-falsy-values",
     question: "What are truthy and falsy values in JavaScript?",
-    answer: `Every value in JavaScript is either truthy or falsy when evaluated in a boolean context (an \`if\`, \`&&\`, \`||\`, a ternary) — there are exactly 8 falsy values, and literally everything else, including every object and every array, is truthy.
+    answer: `Every value in JavaScript is either truthy or falsy when evaluated in a boolean context (an \`if\`, \`&&\`, \`||\`, a ternary) — there are exactly 8 falsy values among ordinary values, and literally everything else, including every ordinary object and every array, is truthy. (The one documented, deliberate exception is the browser-only \`document.all\`: spec'd as falsy — and as \`typeof document.all === "undefined"\` — purely for backward compatibility with old sites that used it to detect non-IE browsers.)
 
 ### The 8 falsy values, in full
 
@@ -3768,7 +3775,9 @@ observer.observe(document.querySelector(".sidebar"));
 \`\`\`js
 if (!Array.prototype.includes) {
   Array.prototype.includes = function (searchElement, fromIndex = 0) {
-    for (let i = fromIndex; i < this.length; i++) {
+    // A negative fromIndex counts back from the end, clamped at 0 — easy to miss
+    const start = fromIndex < 0 ? Math.max(this.length + fromIndex, 0) : fromIndex;
+    for (let i = start; i < this.length; i++) {
       if (this[i] === searchElement || (Number.isNaN(this[i]) && Number.isNaN(searchElement))) {
         return true;
       }
@@ -3802,7 +3811,7 @@ function sayHi() {
   return "hi";
 }
 
-sayBye(); // TypeError — sayBye is undefined at this point
+sayBye(); // ReferenceError — sayBye is in its own TDZ (const), not just undefined
 const sayBye = function () {
   return "bye";
 };
