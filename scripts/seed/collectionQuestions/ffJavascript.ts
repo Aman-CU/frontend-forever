@@ -3,6 +3,14 @@ import type { CollectionQuestionSeed } from "../types";
 // 2 of the 6 approved pilot answers (interview-prep-content-guide.md, approved
 // 2026-07-14) — the remaining ~99 FF JavaScript questions are a separate
 // content-authoring pass, tracked in that same file's Status section.
+//
+// `what-is-the-event-loop`'s orderIndex is kept at 4 (not the pilot's
+// original 2) to stay consistent with the full JS collection's already-
+// seeded DB state from content/ff-javascript-questions, since the Supabase
+// database is shared across local branches (not branch-scoped) — this
+// avoids a `(collection, order_index)` unique-constraint collision on seed.
+// Same fix already applied on content/ff-react-questions for the same
+// reason.
 export const FF_JAVASCRIPT_COLLECTION_QUESTIONS: CollectionQuestionSeed[] = [
   {
     collection: "ff-javascript",
@@ -85,6 +93,6 @@ Blocking the call stack for even a few hundred milliseconds freezes the entire p
 **Related:** [Promises & Async/Await](/learn/javascript-runtime/promises-async-await) · What is microtask queue vs macrotask queue? · [Event Loop](/learn/javascript-runtime/event-loop) (Learn concept + full simulator) · [Debouncing & Throttling](/learn/javascript-runtime/debouncing-throttling)`,
     difficulty: "hard",
     companies: ["Google", "Amazon", "Netflix"],
-    orderIndex: 2,
+    orderIndex: 4,
   },
 ];
