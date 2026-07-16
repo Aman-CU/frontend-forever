@@ -58,7 +58,7 @@ async function Post({ params }) {
 
 Plenty of production codebases are still on the Pages Router, and interviewers use this question to check whether a candidate actually understands the caching model underneath — not just which function name to type.
 
-**Related:** [What is getServerSideProps and when do you use it?](/interview-prep/ff-nextjs/getserversideprops-when-to-use) · [What is getStaticPaths?](/interview-prep/ff-nextjs/getstaticpaths-explained) · [What is Incremental Static Regeneration (ISR)?](/interview-prep/ff-nextjs/incremental-static-regeneration) · What is the difference between static and dynamic rendering in Next.js?
+**Related:** [What is getServerSideProps and when do you use it?](/interview-prep/ff-nextjs/getserversideprops-when-to-use) · [What is getStaticPaths?](/interview-prep/ff-nextjs/getstaticpaths-explained) · [What is Incremental Static Regeneration (ISR)?](/interview-prep/ff-nextjs/incremental-static-regeneration) · [What is the difference between static and dynamic rendering in Next.js?](/interview-prep/ff-nextjs/static-vs-dynamic-rendering-in-nextjs)
 
 **Sources checked:** Next.js — Migrating to App Router docs, Next.js — getStaticProps docs`,
     difficulty: "medium",
@@ -97,13 +97,13 @@ export async function POST(request) {
 }
 \`\`\`
 
-This regenerates a specific page immediately instead of waiting for its \`revalidate\` window — near-instant freshness with far less compute than rebuilding the whole site.
+This doesn't regenerate the page inline — it marks that path's cache entry stale, so the **next** visit triggers the regeneration (the same stale-while-revalidate model as time-based ISR, just triggered on demand instead of by a timer). Freshness lands on the next request rather than the current one, at far less compute than rebuilding the whole site.
 
 ### Real constraints worth knowing
 
 ISR requires the Node.js runtime (the default) — it's not supported with \`output: 'export'\` (a static export has no server to regenerate anything on). This is a common gotcha: teams deploying a fully static export lose ISR entirely and need to pick one or the other.
 
-**Related:** [What is getStaticProps and when do you use it?](/interview-prep/ff-nextjs/getstaticprops-when-to-use) · What is the revalidatePath and revalidateTag function? · What is Partial Prerendering (PPR)? · What is the difference between static and dynamic rendering in Next.js?
+**Related:** [What is getStaticProps and when do you use it?](/interview-prep/ff-nextjs/getstaticprops-when-to-use) · [What is the revalidatePath and revalidateTag function?](/interview-prep/ff-nextjs/revalidatepath-and-revalidatetag-function) · [What is Partial Prerendering (PPR)?](/interview-prep/ff-nextjs/partial-prerendering-ppr) · [What is the difference between static and dynamic rendering in Next.js?](/interview-prep/ff-nextjs/static-vs-dynamic-rendering-in-nextjs)
 
 **Sources checked:** Next.js — ISR guide, Vercel — ISR docs`,
     difficulty: "hard",
@@ -130,7 +130,7 @@ export default async function BlogPost({ params }) {
 
 ### Classic interview gotcha
 
-"Next.js is just React with extra features" undersells a genuinely meaningful distinction: plain React has no concept of a server at all — it's a client-side rendering library by default, even with SSR bolted on via a separate setup. Next.js's App Router is built around **Server Components as the default**, meaning most components in a Next.js app never ship any JavaScript to the browser at all unless explicitly marked \`"use client"\` — a fundamentally different default, not just a convenience layer on top of the same rendering model.
+"Next.js is just React with extra features" undersells a genuinely meaningful distinction. React itself isn't purely client-side — it's had a server-rendering API (\`react-dom/server\`) for years, and Server Components are a React feature, not a Next.js one. The real distinction is that React is the UI layer only, with no built-in opinion on routing, bundling, or deployment, while Next.js is the framework wrapping React that decides those things for you — file-based routing, a default rendering strategy per route, a build pipeline, and a deployment story. Next.js's App Router is also built around **Server Components as the default**, meaning most components in a Next.js app never ship any JavaScript to the browser at all unless explicitly marked \`"use client"\` — a fundamentally different default from a typical plain-React SPA, not just a convenience layer on top of the same rendering model.
 
 **Related:** [What is the difference between Pages Router and App Router?](/interview-prep/ff-nextjs/pages-router-vs-app-router) · [What are Server Components in Next.js App Router?](/interview-prep/ff-nextjs/server-components-in-nextjs-app-router)
 
@@ -457,7 +457,7 @@ export default async function Post({ params }) {
 
 ### Classic interview gotcha
 
-Calling \`notFound()\` doesn't just render fallback UI in place — it actually stops rendering the rest of that page entirely and returns an HTTP 404 status code, the same as a URL that genuinely doesn't exist. A common mistake is expecting \`notFound()\` to behave like returning early with some UI, when it more closely behaves like throwing, unwinding up to the nearest \`not-found.js\`.
+Calling \`notFound()\` doesn't just render fallback UI in place — it stops rendering the rest of that page entirely and unwinds up to the nearest \`not-found.js\`, the same as throwing. **For a non-streamed response, that also sets a real HTTP 404 status** — but if streaming has already started (a \`loading.js\` or a \`Suspense\` boundary already flushed some HTML before \`notFound()\` was called), the status code is already locked in at 200 and can't retroactively become a 404. A common mistake is assuming \`notFound()\` unconditionally returns HTTP 404; whether it does depends on where in the render it's called relative to any streaming that's already begun.
 
 **Related:** [How do you handle 404 and 500 errors in Next.js?](/interview-prep/ff-nextjs/handling-404-and-500-errors-in-nextjs)
 
@@ -1185,7 +1185,7 @@ export default function DashboardLayout({
 
 ### Classic interview gotcha
 
-A slot without its own \`default.js\` will 404 on any URL it can't match during client-side navigation, even if the rest of the layout is perfectly fine — since Next.js can't always determine what a slot should render for an arbitrary sub-navigation it wasn't explicitly given content for. Defining \`@analytics/default.js\` as a fallback (often just rendering \`null\` or the slot's own top-level page) is the fix, and forgetting it is a very common source of "why does part of my dashboard disappear on navigation" bugs.
+A slot's \`default.js\` is what renders when Next.js **can't recover the slot's active state on a hard navigation or full-page refresh** — since there's no client-side history to fall back to, Next.js needs an explicit default for what that slot should show. Soft (client-side) navigation is unaffected by this: the slot simply keeps its last-rendered state as the rest of the layout changes around it. Forgetting \`@analytics/default.js\` is still a very common bug, but the trigger is a hard navigation or reload landing on a route the slot has no active state for, not routine client-side navigation.
 
 **Sources checked:** nextjs.org/docs/app/api-reference/file-conventions/parallel-routes`,
     difficulty: "hard",
@@ -1541,7 +1541,7 @@ Optimization happens **per unique size actually requested by a real device**, no
     collection: "ff-nextjs",
     slug: "vercel-image-optimization-api",
     question: "What is the Vercel Image Optimization API?",
-    answer: `When a Next.js app is deployed on Vercel, \`next/image\`'s optimization requests are handled by Vercel's own Image Optimization service — it performs the resize/format-conversion/caching work and serves the result from Vercel's CDN, with transformed images cached for up to 31 days. It's usage-metered: the free tier includes 1,000 source image optimizations per month, with paid tiers covering more before additional per-image charges apply.
+    answer: `When a Next.js app is deployed on Vercel, \`next/image\`'s optimization requests are handled by Vercel's own Image Optimization service — it performs the resize/format-conversion/caching work and serves the result from Vercel's CDN. It's usage-metered on three separate line items: **Image Transformations** (a new image variant is generated), **Image Cache Reads**, and **Image Cache Writes** — each tier (Hobby/Pro/Enterprise) includes a monthly allotment of each before additional usage is billed.
 
 \`\`\`ts
 // next.config.ts — remote images still need explicit allowlisting
@@ -1552,11 +1552,11 @@ const nextConfig = {
 
 ### Classic interview gotcha
 
-The billed unit is **unique source images optimized**, not total image requests or page views — a single popular image viewed by a million visitors, at a handful of common responsive sizes, counts as only a few "source image optimizations" (one per distinct size/format actually generated and cached), not a million. A common cost surprise instead comes from **many unique, rarely-repeated images** (e.g. user-uploaded avatars) each needing their own first-time optimization, not from raw traffic volume to already-cached images.
+A **transformation** is only billed on a cache **miss or stale** entry — a distinct size/format actually being generated — not on every request; a cache **hit** serves the already-transformed image at no transformation cost. A single popular image viewed by a million visitors, at a handful of common responsive sizes, generates only a handful of transformations total, not a million. A common cost surprise instead comes from **many unique, rarely-repeated images** (e.g. user-uploaded avatars) each needing their own first-time transformation, not from raw traffic volume to already-cached images.
 
 **Related:** [How does Next.js optimize images automatically?](/interview-prep/ff-nextjs/how-nextjs-optimizes-images-automatically)
 
-**Sources checked:** vercel.com/docs/image-optimization/managing-image-optimization-costs`,
+**Sources checked:** vercel.com/docs/image-optimization/limits-and-pricing`,
     difficulty: "medium",
     companies: ["Vercel", "Shopify"],
     orderIndex: 55,
@@ -1582,7 +1582,7 @@ CMD ["node", "server.js"]
 
 ### Classic interview gotcha
 
-Self-hosting means giving up features that depend on Vercel's specific infrastructure — most notably, ISR/on-demand revalidation and the managed Image Optimization API rely on Vercel's edge network and caching layer by default; self-hosting requires configuring an equivalent (a custom cache handler, \`sharp\` for image optimization, which Next.js uses automatically without manual install since Next.js 15) to get the same behavior. "Self-hosting works exactly like Vercel with zero setup" is a common, incorrect assumption.
+\`next start\` actually supports both ISR and \`next/image\` optimization out of the box for a single instance — ISR works via the same on-disk/in-memory cache mechanism, and Image Optimization uses \`sharp\` automatically (Next.js installs and uses it without any manual setup since Next.js 15). The real gotcha shows up when scaling to **multiple instances**: each instance has its own local ISR cache and image cache by default, so one instance can serve stale content or re-generate an image another instance already optimized, unless they're pointed at a shared cache (a custom cache handler backed by Redis/S3, or a shared filesystem). "Self-hosting can't do ISR or Image Optimization at all" is the common, incorrect assumption — the real caveat is cache *consistency* across instances, not missing functionality on one.
 
 **Related:** [What is output: 'standalone' mode?](/interview-prep/ff-nextjs/output-standalone-mode)
 
@@ -1892,14 +1892,17 @@ Answering with only \`useFormState\` and no mention of \`useActionState\` is a s
 
 \`\`\`tsx
 "use client";
-import { useOptimistic } from "react";
+import { useOptimistic, useTransition } from "react";
 
 function LikeButton({ likes, addLike }: { likes: number; addLike: () => Promise<number> }) {
   const [optimisticLikes, setOptimisticLikes] = useOptimistic(likes, (state) => state + 1);
+  const [, startTransition] = useTransition();
 
-  async function handleLike() {
-    setOptimisticLikes(optimisticLikes + 1); // shown instantly
-    await addLike();                          // real mutation + revalidation catches up after
+  function handleLike() {
+    startTransition(async () => {
+      setOptimisticLikes(optimisticLikes + 1); // shown instantly
+      await addLike();                          // real mutation + revalidation catches up after
+    });
   }
 
   return <button onClick={handleLike}>{optimisticLikes} likes</button>;
@@ -1908,7 +1911,7 @@ function LikeButton({ likes, addLike }: { likes: number; addLike: () => Promise<
 
 ### Classic interview gotcha
 
-The optimistic value isn't a separate piece of state you manage yourself — it's automatically discarded and replaced by the real value the moment the underlying action's promise settles, whether it resolves or rejects. A common mistake is trying to manually reset the optimistic state in a \`.catch\` block; \`useOptimistic\` already handles the revert-on-error case internally, and adding your own reset logic on top is redundant at best and can cause a visible double-flicker at worst.
+The optimistic setter must be called inside a **Transition** — either \`startTransition\` (as above, needed for a plain \`onClick\`) or a form's \`action\` — not called directly in an event handler. Skip the transition and the optimistic value flashes on screen for a moment, then immediately snaps back, since there's no transition holding it in place while the real update runs. Separately, the optimistic value isn't a piece of state you manage yourself — it's automatically discarded and replaced by the real value the moment the underlying action settles, whether it resolves or rejects. A common mistake is trying to manually reset it in a \`.catch\` block; \`useOptimistic\` already handles the revert-on-error case internally, and adding your own reset logic on top is redundant at best and can cause a visible double-flicker at worst.
 
 **Related:** [What are useFormState and useFormStatus?](/interview-prep/ff-nextjs/useformstate-and-useformstatus) · [What is the optimistic vs. pessimistic UI pattern?](/interview-prep/ff-react/optimistic-vs-pessimistic-ui) (React collection)
 
@@ -2016,7 +2019,9 @@ export function proxy(request: Request) {
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
 
-  return NextResponse.next({ request: { headers: requestHeaders } });
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("Content-Security-Policy", csp); // must also be set on the response — the browser enforces it
+  return response;
 }
 \`\`\`
 

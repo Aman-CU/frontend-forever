@@ -48,10 +48,10 @@ export function RscPayloadDiagram() {
 
         <foreignObject x={20} y={130} width={620} height={70}>
           <div className="text-xs leading-snug" style={{ color: textColor }}>
-            The payload is what a `fetch` to an RSC-enabled route actually returns, and what React DevTools' network
+            The payload is what a `fetch` to an RSC-enabled route actually returns, and what React DevTools&apos; network
             panel shows for a Server Component navigation — distinct from the fully-formed HTML document, and distinct
-            from a REST API's JSON, since it can represent references, promises, and streamed chunks a plain JSON
-            response can't.
+            from a REST API&apos;s JSON, since it can represent references, promises, and streamed chunks a plain JSON
+            response can&apos;t.
           </div>
         </foreignObject>
 

@@ -43,7 +43,7 @@ export function MultiZoneDiagram() {
 
         <foreignObject x={20} y={165} width={620} height={45}>
           <div className="text-xs leading-snug" style={{ color: textColor }}>
-            Stitched together via <code>rewrites</code> in the marketing zone's <code>next.config.js</code>. Navigating
+            Stitched together via <code>rewrites</code> in the marketing zone&apos;s <code>next.config.js</code>. Navigating
             between zones (e.g. / to /dashboard) is a full, hard page navigation — only navigation within a single
             zone stays a fast client-side transition.
           </div>
