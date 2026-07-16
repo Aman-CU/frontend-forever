@@ -3,6 +3,13 @@ import type { CollectionQuestionSeed } from "../types";
 // 2 of the 6 approved pilot answers (interview-prep-content-guide.md, approved
 // 2026-07-14) — the remaining ~97 FF Next.js questions are a separate
 // content-authoring pass, tracked in that same file's Status section.
+//
+// orderIndex corrected to 4 and 7 (not the pilot's original 1 and 2) to
+// match the source PDF's own numbering, same convention as the JS/React
+// collections — needed here so this branch's own seed run doesn't collide
+// with the full Next.js collection's already-seeded DB state from
+// content/ff-nextjs-questions, since the Supabase database is shared across
+// local branches (not branch-scoped).
 export const FF_NEXTJS_COLLECTION_QUESTIONS: CollectionQuestionSeed[] = [
   {
     collection: "ff-nextjs",
@@ -50,7 +57,7 @@ Plenty of production codebases are still on the Pages Router, and interviewers u
 **Sources checked:** Next.js — Migrating to App Router docs, Next.js — getStaticProps docs`,
     difficulty: "medium",
     companies: ["Vercel"],
-    orderIndex: 1,
+    orderIndex: 4,
   },
   {
     collection: "ff-nextjs",
@@ -95,6 +102,6 @@ ISR requires the Node.js runtime (the default) — it's not supported with \`out
 **Sources checked:** Next.js — ISR guide, Vercel — ISR docs`,
     difficulty: "hard",
     companies: ["Vercel", "Netflix"],
-    orderIndex: 2,
+    orderIndex: 7,
   },
 ];
