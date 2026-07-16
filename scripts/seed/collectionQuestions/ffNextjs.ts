@@ -63,6 +63,7 @@ Plenty of production codebases are still on the Pages Router, and interviewers u
 **Sources checked:** Next.js — Migrating to App Router docs, Next.js — getStaticProps docs`,
     difficulty: "medium",
     companies: ["Vercel"],
+    isFf75: true,
     orderIndex: 4,
   },
   {
@@ -108,6 +109,7 @@ ISR requires the Node.js runtime (the default) — it's not supported with \`out
 **Sources checked:** Next.js — ISR guide, Vercel — ISR docs`,
     difficulty: "hard",
     companies: ["Vercel", "Netflix"],
+    isFf75: true,
     orderIndex: 7,
   },
   {
@@ -137,6 +139,7 @@ export default async function BlogPost({ params }) {
 **Sources checked:** nextjs.org/blog/next-16, nextjs.org/docs (Server Components as the App Router default)`,
     difficulty: "easy",
     companies: ["Vercel", "Meta"],
+    isFf75: true,
     orderIndex: 1,
   },
   {
@@ -161,6 +164,7 @@ This question is often answered as a neutral "here are the differences, pick whi
 **Related:** [What is Next.js and how does it differ from plain React?](/interview-prep/ff-nextjs/what-is-nextjs-and-how-it-differs-from-react) · [What is file-based routing in Next.js?](/interview-prep/ff-nextjs/file-based-routing-in-nextjs)`,
     difficulty: "medium",
     companies: ["Vercel", "Airbnb"],
+    isFf75: true,
     orderIndex: 2,
   },
   {
@@ -183,6 +187,7 @@ In the App Router, a folder alone does **not** create a route — a segment only
 **Related:** [What are dynamic routes in Next.js?](/interview-prep/ff-nextjs/dynamic-routes-in-nextjs) · [What are catch-all routes ([...slug])?](/interview-prep/ff-nextjs/catch-all-routes-in-nextjs)`,
     difficulty: "easy",
     companies: ["Meta", "Shopify"],
+    isFf75: true,
     orderIndex: 3,
   },
   {
@@ -212,6 +217,7 @@ Reaching for \`getServerSideProps\` (or its App Router \`fetch\` equivalent) for
 **Related:** [What is getStaticProps and when do you use it?](/interview-prep/ff-nextjs/getstaticprops-when-to-use) · [What is Incremental Static Regeneration (ISR)?](/interview-prep/ff-nextjs/incremental-static-regeneration)`,
     difficulty: "medium",
     companies: ["Vercel", "Netflix"],
+    isFf75: true,
     orderIndex: 5,
   },
   {
@@ -272,6 +278,7 @@ Because Server Components are the default, it's **Client Components** that requi
 **Sources checked:** nextjs.org/docs (Server Components as the App Router's default rendering model)`,
     difficulty: "hard",
     companies: ["Vercel", "Meta"],
+    isFf75: true,
     orderIndex: 8,
   },
   {
@@ -296,6 +303,7 @@ function LikeButton() {
 **Related:** [What are Server Components in Next.js App Router?](/interview-prep/ff-nextjs/server-components-in-nextjs-app-router) · [What is the difference between 'use client' and 'use server' directives?](/interview-prep/ff-nextjs/difference-between-use-client-and-use-server)`,
     difficulty: "medium",
     companies: ["Vercel", "Netflix"],
+    isFf75: true,
     orderIndex: 9,
   },
   {
@@ -351,6 +359,7 @@ A Server Action doesn't automatically refresh any UI that displayed the data it 
 **Sources checked:** nextjs.org/docs/app/guides/server-actions, nextjs.org/docs/app/guides/forms`,
     difficulty: "hard",
     companies: ["Vercel", "Stripe"],
+    isFf75: true,
     orderIndex: 11,
   },
   {
@@ -406,6 +415,7 @@ export default function Loading() {
 **Sources checked:** nextjs.org/docs/app/api-reference/file-conventions/loading`,
     difficulty: "hard",
     companies: ["Vercel", "Meta"],
+    isFf75: true,
     orderIndex: 13,
   },
   {
@@ -544,6 +554,7 @@ import Image from "next/image";
 **Related:** [How does Next.js optimize images automatically?](/interview-prep/ff-nextjs/how-nextjs-optimizes-images-automatically) · [What is the Vercel Image Optimization API?](/interview-prep/ff-nextjs/vercel-image-optimization-api)`,
     difficulty: "medium",
     companies: ["Vercel", "Airbnb"],
+    isFf75: true,
     orderIndex: 18,
   },
   {
@@ -787,6 +798,7 @@ Despite the rename hint, \`proxy.ts\` is explicitly **not** meant for authentica
 **Sources checked:** nextjs.org/blog/next-16 (middleware.ts → proxy.ts rename), nextjs.org/docs/messages/middleware-to-proxy, nextjs.org/docs/app/api-reference/file-conventions/proxy`,
     difficulty: "hard",
     companies: ["Vercel", "Cloudflare"],
+    isFf75: true,
     orderIndex: 27,
   },
   {
@@ -867,6 +879,7 @@ A route doesn't need an explicit flag to become dynamic — using **any** reques
 **Sources checked:** nextjs.org/docs/app/getting-started/partial-prerendering, nextjs.org/learn/dashboard-app/static-and-dynamic-rendering`,
     difficulty: "hard",
     companies: ["Vercel", "Meta"],
+    isFf75: true,
     orderIndex: 30,
   },
   {

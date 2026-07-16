@@ -9,6 +9,16 @@ import {
   type ChallengeDifficulty,
   type CollectionQuestionCollection,
 } from "@/lib/constants";
+
+// COLLECTION_QUESTION_COLLECTIONS's declared order (javascript, react, nextjs)
+// is the intended IA order (build-plan.md's sidebar order) — not alphabetical.
+// Sorting by `asc(collectionQuestions.collection)` in SQL would sort
+// alphabetically ("ff-nextjs" < "ff-react"), putting Next.js questions before
+// React ones in the ff-75 virtual collection. This map lets the catalog sort
+// by the real IA order instead.
+const COLLECTION_SORT_RANK: Record<CollectionQuestionCollection, number> = Object.fromEntries(
+  COLLECTION_QUESTION_COLLECTIONS.map((c, i) => [c, i]),
+) as Record<CollectionQuestionCollection, number>;
 import type { InterviewPrepCollectionKey } from "@/features/interview-prep/lib/collectionMeta";
 import { FF_75_KEY, type InterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
 
@@ -125,13 +135,18 @@ const getCollectionQuestionCatalog = unstable_cache(
         isFf75: collectionQuestions.isFf75,
       })
       .from(collectionQuestions)
-      .orderBy(asc(collectionQuestions.collection), asc(collectionQuestions.orderIndex));
+      .orderBy(asc(collectionQuestions.orderIndex));
 
-    return rows.map((r) => ({
-      ...r,
-      collection: r.collection as CollectionQuestionCollection,
-      difficulty: r.difficulty as ChallengeDifficulty,
-    }));
+    // Stable-sort by the real IA order (see COLLECTION_SORT_RANK above) —
+    // rows within the same collection keep the orderIndex order from the
+    // query above, since Array.prototype.sort is a stable sort.
+    return rows
+      .map((r) => ({
+        ...r,
+        collection: r.collection as CollectionQuestionCollection,
+        difficulty: r.difficulty as ChallengeDifficulty,
+      }))
+      .sort((a, b) => COLLECTION_SORT_RANK[a.collection] - COLLECTION_SORT_RANK[b.collection]);
   },
   ["collection-question-catalog"],
   { tags: ["concepts"], revalidate: 3600 },
