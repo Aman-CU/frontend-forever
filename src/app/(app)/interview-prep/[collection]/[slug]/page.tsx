@@ -17,6 +17,16 @@ import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/In
 import { CollectionQuestionPrevNextNav } from "@/features/interview-prep/components/CollectionQuestionPrevNextNav";
 import { EventLoopFlowDiagram } from "@/features/interview-prep/components/diagrams/EventLoopFlowDiagram";
 import { IsrTimelineDiagram } from "@/features/interview-prep/components/diagrams/IsrTimelineDiagram";
+import { ReactServerComponentsDiagram } from "@/features/interview-prep/components/diagrams/ReactServerComponentsDiagram";
+import { ServerActionsFlowDiagram } from "@/features/interview-prep/components/diagrams/ServerActionsFlowDiagram";
+import { StreamingDiagram } from "@/features/interview-prep/components/diagrams/StreamingDiagram";
+import { AppRouterFileHierarchyDiagram } from "@/features/interview-prep/components/diagrams/AppRouterFileHierarchyDiagram";
+import { MiddlewareFlowDiagram } from "@/features/interview-prep/components/diagrams/MiddlewareFlowDiagram";
+import { PartialPrerenderingDiagram } from "@/features/interview-prep/components/diagrams/PartialPrerenderingDiagram";
+import { ParallelRoutesDiagram } from "@/features/interview-prep/components/diagrams/ParallelRoutesDiagram";
+import { InterceptingRoutesDiagram } from "@/features/interview-prep/components/diagrams/InterceptingRoutesDiagram";
+import { RscPayloadDiagram } from "@/features/interview-prep/components/diagrams/RscPayloadDiagram";
+import { MultiZoneDiagram } from "@/features/interview-prep/components/diagrams/MultiZoneDiagram";
 import { VirtualDomDiffDiagram } from "@/features/interview-prep/components/diagrams/VirtualDomDiffDiagram";
 import { LayoutEffectVsEffectTimingDiagram } from "@/features/interview-prep/components/diagrams/LayoutEffectVsEffectTimingDiagram";
 import { ReduxDataFlowDiagram } from "@/features/interview-prep/components/diagrams/ReduxDataFlowDiagram";
@@ -29,7 +39,6 @@ import { VirtualizedListDiagram } from "@/features/interview-prep/components/dia
 import { LiftingStateUpDiagram } from "@/features/interview-prep/components/diagrams/LiftingStateUpDiagram";
 import { UndoRedoDiagram } from "@/features/interview-prep/components/diagrams/UndoRedoDiagram";
 import { SsrCsrSsgDiagram } from "@/features/interview-prep/components/diagrams/SsrCsrSsgDiagram";
-import { ReactServerComponentsDiagram } from "@/features/interview-prep/components/diagrams/ReactServerComponentsDiagram";
 import { PushVsReplaceDiagram } from "@/features/interview-prep/components/diagrams/PushVsReplaceDiagram";
 import { SyntheticEventDelegationDiagram } from "@/features/interview-prep/components/diagrams/SyntheticEventDelegationDiagram";
 import { CustomRendererArchitectureDiagram } from "@/features/interview-prep/components/diagrams/CustomRendererArchitectureDiagram";
@@ -51,6 +60,30 @@ type Params = { collection: string; slug: string };
 const DIAGRAM_BY_SLUG: Partial<Record<string, ComponentType>> = {
   "what-is-the-event-loop": EventLoopFlowDiagram,
   "incremental-static-regeneration": IsrTimelineDiagram,
+  // Same server/client tree-split mechanism as the React collection's own
+  // react-server-components-explained question (content/ff-react-questions)
+  // — reused rather than re-illustrated, since it's the identical concept
+  // in the Next.js context. This component file is duplicated identically
+  // on both branches so each stays independently buildable.
+  "server-components-in-nextjs-app-router": ReactServerComponentsDiagram,
+  "server-actions-in-nextjs": ServerActionsFlowDiagram,
+  "loadingjs-and-streaming": StreamingDiagram,
+  "templatejs-file-explained": AppRouterFileHierarchyDiagram,
+  "middleware-in-nextjs": MiddlewareFlowDiagram,
+  "partial-prerendering-ppr": PartialPrerenderingDiagram,
+  // Same underlying Suspense/streaming mechanism as loadingjs-and-streaming
+  // above, reused rather than re-illustrated — this question just asks
+  // about it from the Suspense-boundary angle instead of the file-convention
+  // angle.
+  "streaming-in-nextjs-and-suspense": StreamingDiagram,
+  "parallel-routes-in-nextjs": ParallelRoutesDiagram,
+  "intercepting-routes-in-nextjs": InterceptingRoutesDiagram,
+  "react-server-component-payload": RscPayloadDiagram,
+  // Same Server Action mechanism as server-actions-in-nextjs (Batch 1) —
+  // this question just asks about it from the broader "data mutations"
+  // angle, so the flow diagram is reused rather than re-illustrated.
+  "how-app-router-handles-data-mutations": ServerActionsFlowDiagram,
+  "multi-zone-architecture-in-nextjs": MultiZoneDiagram,
   "what-is-react-and-virtual-dom": VirtualDomDiffDiagram,
   // Same node-by-node diffing mechanism as what-is-react-and-virtual-dom
   // above — reconciliation is the general name for that same algorithm.
