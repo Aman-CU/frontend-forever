@@ -17,6 +17,12 @@ import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/In
 import { CollectionQuestionPrevNextNav } from "@/features/interview-prep/components/CollectionQuestionPrevNextNav";
 import { EventLoopFlowDiagram } from "@/features/interview-prep/components/diagrams/EventLoopFlowDiagram";
 import { IsrTimelineDiagram } from "@/features/interview-prep/components/diagrams/IsrTimelineDiagram";
+import { PrototypeChainDiagram } from "@/features/interview-prep/components/diagrams/PrototypeChainDiagram";
+import { EventBubblingCapturingDiagram } from "@/features/interview-prep/components/diagrams/EventBubblingCapturingDiagram";
+import { GarbageCollectionDiagram } from "@/features/interview-prep/components/diagrams/GarbageCollectionDiagram";
+import { MicrotaskMacrotaskDiagram } from "@/features/interview-prep/components/diagrams/MicrotaskMacrotaskDiagram";
+import { TailCallOptimizationDiagram } from "@/features/interview-prep/components/diagrams/TailCallOptimizationDiagram";
+import { ObserverPatternDiagram } from "@/features/interview-prep/components/diagrams/ObserverPatternDiagram";
 
 type Params = { collection: string; slug: string };
 
@@ -29,6 +35,17 @@ type Params = { collection: string; slug: string };
 const DIAGRAM_BY_SLUG: Partial<Record<string, ComponentType>> = {
   "what-is-the-event-loop": EventLoopFlowDiagram,
   "incremental-static-regeneration": IsrTimelineDiagram,
+  "prototypal-inheritance-explained": PrototypeChainDiagram,
+  // Same prototype-chain-walk concept as prototypal-inheritance-explained
+  // above — this question walks the identical mechanism (own property miss,
+  // walk [[Prototype]] up to Object.prototype, then null), just via a plain
+  // array instead of Object.create(), so the existing diagram applies as-is.
+  "how-the-prototype-chain-works": PrototypeChainDiagram,
+  "event-bubbling-and-capturing": EventBubblingCapturingDiagram,
+  "how-garbage-collection-works": GarbageCollectionDiagram,
+  "microtask-vs-macrotask-queue": MicrotaskMacrotaskDiagram,
+  "tail-call-optimization": TailCallOptimizationDiagram,
+  "observer-pattern-explained": ObserverPatternDiagram,
 };
 
 const DIFFICULTY_STYLES: Record<ChallengeDifficulty, string> = {
