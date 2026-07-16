@@ -1752,7 +1752,7 @@ function Comments({ commentsPromise }: { commentsPromise: Promise<Comment[]> }) 
 
 \`cache()\`'s deduplication window is **per-request only** — it does not persist data across separate requests or separate users the way \`unstable_cache\`/\`"use cache"\` do. Reaching for \`cache()\` expecting it to reduce database load across multiple users' requests is a common misunderstanding; it only prevents the *same* request from querying the same thing twice, not from querying it again on the next request.
 
-**Related:** [What is the fetch() caching behavior in Next.js App Router?](/interview-prep/ff-nextjs/fetch-caching-behavior-in-nextjs) · [What is use() in React?](/interview-prep/ff-react/use-hook-in-react) (React collection)
+**Related:** [What is the fetch() caching behavior in Next.js App Router?](/interview-prep/ff-nextjs/fetch-caching-behavior-in-nextjs) · [What is use() in React?](/interview-prep/ff-react/use-hook-in-react-19) (React collection)
 
 **Sources checked:** react.dev/reference/react/cache, react.dev/reference/react/use`,
     difficulty: "hard",
@@ -1913,7 +1913,7 @@ function LikeButton({ likes, addLike }: { likes: number; addLike: () => Promise<
 
 The optimistic setter must be called inside a **Transition** — either \`startTransition\` (as above, needed for a plain \`onClick\`) or a form's \`action\` — not called directly in an event handler. Skip the transition and the optimistic value flashes on screen for a moment, then immediately snaps back, since there's no transition holding it in place while the real update runs. Separately, the optimistic value isn't a piece of state you manage yourself — it's automatically discarded and replaced by the real value the moment the underlying action settles, whether it resolves or rejects. A common mistake is trying to manually reset it in a \`.catch\` block; \`useOptimistic\` already handles the revert-on-error case internally, and adding your own reset logic on top is redundant at best and can cause a visible double-flicker at worst.
 
-**Related:** [What are useFormState and useFormStatus?](/interview-prep/ff-nextjs/useformstate-and-useformstatus) · [What is the optimistic vs. pessimistic UI pattern?](/interview-prep/ff-react/optimistic-vs-pessimistic-ui) (React collection)
+**Related:** [What are useFormState and useFormStatus?](/interview-prep/ff-nextjs/useformstate-and-useformstatus) · [What is the optimistic vs. pessimistic UI pattern?](/interview-prep/ff-react/optimistic-vs-pessimistic-ui-updates) (React collection)
 
 **Sources checked:** react.dev/reference/react/useOptimistic, nextjs.org/docs/app/guides/forms`,
     difficulty: "hard",
