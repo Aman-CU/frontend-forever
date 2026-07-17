@@ -88,3 +88,12 @@ export const STREAK_BONUS_XP = 5;
 // (25) — Practice has ~620 standalone challenges vs. ~76 Learn concepts, so
 // paying the same rate would let grinding badly out-earn the Learn track.
 export const CHALLENGE_SOLVED_XP = 10;
+
+// Awarded on every rating made inside Feature 32's dedicated spaced-repetition
+// review session (features/interview-prep/spaced-repetition) — not gated to
+// a first answer, since repeat review is the point of spaced repetition.
+// Ratings made from Learn's Interview tab (Feature 25, /api/interview-rating)
+// deliberately do NOT award this — that tab already has its own separate
+// 20 XP tab-completion reward (TAB_XP_REWARDS.interview), so awarding this too
+// would double-reward the same rating action two different ways.
+export const INTERVIEW_ANSWERED_XP = 10;
