@@ -51,25 +51,27 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid questionId or quality" }, { status: 400 });
   }
 
-  // 4. Premium entitlement — a locked question's answer is never shown to a
-  // non-premium user (see page.tsx), so this route must refuse to process a
-  // rating for one too, even if called directly rather than through the UI.
-  const [question] = await db
-    .select({ isPremium: interviewQuestions.isPremium })
-    .from(interviewQuestions)
-    .where(eq(interviewQuestions.id, questionId));
-  if (!question) {
-    return Response.json({ error: "Question not found" }, { status: 404 });
-  }
-  if (question.isPremium && !(await getIsPremiumUser(session.user.id))) {
-    return Response.json({ error: "This question is part of Premium" }, { status: 403 });
-  }
-
-  // 5. SM-2 update + XP + streak, all-or-nothing. applyInterviewReview
-  // itself is the authoritative check that this question is actually due
-  // for this user — see QuestionNotDueError.
+  // 4. Premium entitlement + 5. SM-2 update/XP/streak — one try block so a
+  // DB failure from either the lookup or the transaction returns this
+  // route's own consistent JSON error shape instead of an unhandled
+  // exception. applyInterviewReview itself is the authoritative check that
+  // this question is actually due for this user — see QuestionNotDueError.
   let xpAwarded = 0;
   try {
+    // A locked question's answer is never shown to a non-premium user (see
+    // page.tsx), so this route must refuse to process a rating for one too,
+    // even if called directly rather than through the UI.
+    const [question] = await db
+      .select({ isPremium: interviewQuestions.isPremium })
+      .from(interviewQuestions)
+      .where(eq(interviewQuestions.id, questionId));
+    if (!question) {
+      return Response.json({ error: "Question not found" }, { status: 404 });
+    }
+    if (question.isPremium && !(await getIsPremiumUser(session.user.id))) {
+      return Response.json({ error: "This question is part of Premium" }, { status: 403 });
+    }
+
     ({ xpAwarded } = await db.transaction((tx) =>
       applyInterviewReview(tx, session.user.id, questionId, quality, true),
     ));
