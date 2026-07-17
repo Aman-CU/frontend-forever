@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { and, asc, eq, lte, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { collectionQuestions, interviewQuestions, userInterviewReviews } from "@/lib/schema";
+import { collectionQuestions, interviewQuestions, profiles, userInterviewReviews } from "@/lib/schema";
 import {
   COLLECTION_QUESTION_COLLECTIONS,
   type ChallengeDifficulty,
@@ -79,6 +79,19 @@ export type ReviewQueueItem = {
   difficulty: string;
 };
 
+// Feature 32's review session needs the full answer/companies/isPremium
+// shape, not just the homepage preview's id/question/difficulty — a
+// separate type rather than widening ReviewQueueItem, so the preview query
+// below stays untouched.
+export type ReviewSessionQuestion = {
+  id: string;
+  question: string;
+  answer: string;
+  difficulty: string;
+  companies: string[];
+  isPremium: boolean;
+};
+
 // Real query from day one (Feature 30's own sign-off decision), not a
 // placeholder — returns empty for every user until Feature 32 ships the
 // review session and starts writing to user_interview_reviews, then lights
@@ -105,6 +118,46 @@ export const getReviewQueuePreview = cache(
       .limit(limit);
   },
 );
+
+// Feature 32's review session — the *entire* due set (no cap, unlike the
+// 5-item homepage preview above), since the session's own "X remaining"
+// progress and end-of-session summary need a fixed, complete queue loaded
+// up front rather than a re-fetched teaser.
+export const getDueReviewSession = cache(
+  async (userId: string | null): Promise<ReviewSessionQuestion[]> => {
+    if (!userId) return [];
+    return db
+      .select({
+        id: interviewQuestions.id,
+        question: interviewQuestions.question,
+        answer: interviewQuestions.answer,
+        difficulty: interviewQuestions.difficulty,
+        companies: interviewQuestions.companies,
+        isPremium: interviewQuestions.isPremium,
+      })
+      .from(userInterviewReviews)
+      .innerJoin(interviewQuestions, eq(userInterviewReviews.questionId, interviewQuestions.id))
+      .where(
+        and(
+          eq(userInterviewReviews.userId, userId),
+          lte(userInterviewReviews.nextReviewAt, new Date()),
+        ),
+      )
+      .orderBy(userInterviewReviews.nextReviewAt);
+  },
+);
+
+// Whether the given user currently has active premium — same query shape as
+// features/learn's getIsPremiumUser, duplicated locally rather than imported
+// since features never import other features (architecture.md's invariant).
+export const getIsPremiumUser = cache(async (userId: string): Promise<boolean> => {
+  const [row] = await db
+    .select({ isPremium: profiles.isPremium, premiumExpiresAt: profiles.premiumExpiresAt })
+    .from(profiles)
+    .where(eq(profiles.id, userId));
+  if (!row?.isPremium) return false;
+  return !row.premiumExpiresAt || row.premiumExpiresAt > new Date();
+});
 
 // ── Feature 31: FF Collections list/detail pages ─────────────────────────────
 

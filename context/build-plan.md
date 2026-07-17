@@ -644,6 +644,8 @@ Visual reference: GreatFrontEnd's own "Dashboard" page (screenshots reviewed 202
 
 ### 32 Spaced Repetition Review Session
 
+**Done.** Ran the `architect` skill before building. Real finding during planning: `user_interview_reviews`'s SM-2 columns and the Get Started page's Review Queue (Feature 30) already existed but nothing had ever computed real scheduling — Learn's Interview-tab rating route only wrote `quality`/`repetitions`, so the due-queue was permanently empty. Built the SM-2 algorithm (`features/interview-prep/spaced-repetition/sm2.ts`) + a shared transactional helper (`lib/progress/applyInterviewReview.ts`) used by both the retrofitted `/api/interview-rating` (Learn tab, no XP change) and the new `/api/interview-review-rating` (this feature's dedicated session, awards `INTERVIEW_ANSWERED_XP` + streak on every rating). See `progress-tracker.md`'s Feature 32 entry and `ui-registry.md`'s matching section for the full build.
+
 **UI:**
 
 - One question at a time (full screen focus)
