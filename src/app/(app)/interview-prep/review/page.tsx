@@ -47,7 +47,7 @@ export default async function ReviewSessionPage() {
         </p>
         <Link
           href="/interview-prep"
-          className="mt-6 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
+          className="mt-6 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-dark"
         >
           Back to Interview Prep
         </Link>

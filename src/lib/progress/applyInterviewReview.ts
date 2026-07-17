@@ -23,6 +23,16 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 // and true for the review-session caller, which awards + bumps the daily
 // streak on every rating, same "meaningful activity" bar as
 // applyProgressUpdate/applyChallengeSubmission.
+//
+// Thrown by the awardXp path when the given question isn't an existing, due
+// review row for this user — callers should map this to a 4xx, not a 500.
+export class QuestionNotDueError extends Error {
+  constructor() {
+    super("Question is not due for review");
+    this.name = "QuestionNotDueError";
+  }
+}
+
 export async function applyInterviewReview(
   tx: Tx,
   userId: string,
@@ -30,21 +40,40 @@ export async function applyInterviewReview(
   quality: number,
   awardXp: boolean,
 ): Promise<{ xpAwarded: number }> {
-  // Ensure the row exists before locking it — same "insert is the
-  // synchronization point" idiom as applyProgressUpdate, since a brand-new
-  // (user, question) pair has nothing to lock yet.
-  await tx
-    .insert(userInterviewReviews)
-    .values({ userId, questionId })
-    .onConflictDoNothing({
-      target: [userInterviewReviews.userId, userInterviewReviews.questionId],
-    });
+  let existing: typeof userInterviewReviews.$inferSelect | undefined;
 
-  const [existing] = await tx
-    .select()
-    .from(userInterviewReviews)
-    .where(and(eq(userInterviewReviews.userId, userId), eq(userInterviewReviews.questionId, questionId)))
-    .for("update");
+  if (awardXp) {
+    // Review-session path: require an already-existing, currently-due row —
+    // never create one on the fly. Without this, a client could POST any
+    // questionId (one never actually shown to them, possibly premium) and
+    // replay the same rating indefinitely to farm XP, since nothing else
+    // ties this route's reward to a review the user was genuinely due for.
+    [existing] = await tx
+      .select()
+      .from(userInterviewReviews)
+      .where(and(eq(userInterviewReviews.userId, userId), eq(userInterviewReviews.questionId, questionId)))
+      .for("update");
+    if (!existing || !existing.nextReviewAt || existing.nextReviewAt > new Date()) {
+      throw new QuestionNotDueError();
+    }
+  } else {
+    // Learn-tab path (unchanged): ensure the row exists before locking it —
+    // same "insert is the synchronization point" idiom as
+    // applyProgressUpdate, since a brand-new (user, question) pair has
+    // nothing to lock yet.
+    await tx
+      .insert(userInterviewReviews)
+      .values({ userId, questionId })
+      .onConflictDoNothing({
+        target: [userInterviewReviews.userId, userInterviewReviews.questionId],
+      });
+
+    [existing] = await tx
+      .select()
+      .from(userInterviewReviews)
+      .where(and(eq(userInterviewReviews.userId, userId), eq(userInterviewReviews.questionId, questionId)))
+      .for("update");
+  }
 
   const sm2 = applySm2Rating(
     {

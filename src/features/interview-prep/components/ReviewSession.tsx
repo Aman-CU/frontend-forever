@@ -51,13 +51,16 @@ export function ReviewSession({ questions }: { questions: ReviewSessionQuestionV
     Easy: 0,
   });
   const [saveFailed, setSaveFailed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const total = questions.length;
   const current = questions[index];
   const finished = index >= total;
 
   async function rate(label: RatingLabel, quality: number) {
+    if (isSubmitting) return;
     setSaveFailed(false);
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/interview-review-rating", {
         method: "POST",
@@ -73,6 +76,8 @@ export function ReviewSession({ questions }: { questions: ReviewSessionQuestionV
     } catch {
       setSaveFailed(true);
       return;
+    } finally {
+      setIsSubmitting(false);
     }
 
     setTally((prev) => ({ ...prev, [label]: prev[label] + 1 }));
@@ -81,7 +86,11 @@ export function ReviewSession({ questions }: { questions: ReviewSessionQuestionV
   }
 
   if (finished) {
-    const reviewed = total;
+    // Sum of tally, not `total` — total counts every question in the queue,
+    // including any locked ones the user hit "Skip" on rather than rated
+    // (skip advances the index but never increments tally), so "reviewed"
+    // would otherwise overcount.
+    const reviewed = Object.values(tally).reduce((sum, count) => sum + count, 0);
     return (
       <div className="flex flex-col items-center rounded-xl border border-border bg-surface px-6 py-12 text-center">
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent-muted text-accent">
@@ -105,7 +114,7 @@ export function ReviewSession({ questions }: { questions: ReviewSessionQuestionV
         <div className="mt-8 flex gap-3">
           <Link
             href="/interview-prep"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-dark"
           >
             Back to Interview Prep
           </Link>
@@ -193,7 +202,7 @@ export function ReviewSession({ questions }: { questions: ReviewSessionQuestionV
             <button
               type="button"
               onClick={() => setRevealed(true)}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-dark"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-dark"
             >
               Show Answer
             </button>
@@ -217,9 +226,10 @@ export function ReviewSession({ questions }: { questions: ReviewSessionQuestionV
                   <button
                     key={r.label}
                     type="button"
+                    disabled={isSubmitting}
                     onClick={() => void rate(r.label, r.quality)}
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+                      "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                       r.className,
                     )}
                   >

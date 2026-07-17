@@ -1,8 +1,12 @@
+import { eq } from "drizzle-orm";
+
 import { auth } from "@/lib/auth/server";
 import { ratelimit } from "@/lib/upstash";
 import { db } from "@/lib/db";
 import { getPostgresErrorCode } from "@/lib/dbErrors";
-import { applyInterviewReview } from "@/lib/progress/applyInterviewReview";
+import { interviewQuestions } from "@/lib/schema";
+import { applyInterviewReview, QuestionNotDueError } from "@/lib/progress/applyInterviewReview";
+import { getIsPremiumUser } from "@/features/interview-prep/lib/queries";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -47,13 +51,32 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid questionId or quality" }, { status: 400 });
   }
 
-  // 4. SM-2 update + XP + streak, all-or-nothing.
+  // 4. Premium entitlement — a locked question's answer is never shown to a
+  // non-premium user (see page.tsx), so this route must refuse to process a
+  // rating for one too, even if called directly rather than through the UI.
+  const [question] = await db
+    .select({ isPremium: interviewQuestions.isPremium })
+    .from(interviewQuestions)
+    .where(eq(interviewQuestions.id, questionId));
+  if (!question) {
+    return Response.json({ error: "Question not found" }, { status: 404 });
+  }
+  if (question.isPremium && !(await getIsPremiumUser(session.user.id))) {
+    return Response.json({ error: "This question is part of Premium" }, { status: 403 });
+  }
+
+  // 5. SM-2 update + XP + streak, all-or-nothing. applyInterviewReview
+  // itself is the authoritative check that this question is actually due
+  // for this user — see QuestionNotDueError.
   let xpAwarded = 0;
   try {
     ({ xpAwarded } = await db.transaction((tx) =>
       applyInterviewReview(tx, session.user.id, questionId, quality, true),
     ));
   } catch (error) {
+    if (error instanceof QuestionNotDueError) {
+      return Response.json({ error: "Question is not due for review" }, { status: 403 });
+    }
     console.error("[interview-review-rating] DB write failed:", getPostgresErrorCode(error));
     return Response.json({ error: "Could not save rating" }, { status: 500 });
   }
