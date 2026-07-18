@@ -1,4 +1,4 @@
-export const COLLECTIONS = ["FF 75", "FF JavaScript", "FF React", "FF System Design"];
+export const COLLECTIONS = ["FF 75", "FF JavaScript", "FF React", "FF Frontend System Design"];
 export const LEFT_TOPICS = ["JavaScript Runtime", "Browser Internals", "CSS", "TypeScript"];
 export const RIGHT_TOPICS = ["React", "Accessibility", "Performance", "System Design"];
 

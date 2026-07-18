@@ -1,0 +1,116 @@
+---
+title: "Designing a Real-Time Collaborative Spreadsheet Engine"
+slug: "collaborative-spreadsheet-engine"
+section: "Real-Time & Collaborative"
+difficulty: "hard"
+summary: "A collaborative spreadsheet is a harder variant of the general multiplayer-document problem because the frontend must also maintain a dependency graph between cells — a single remote edit doesn't just change one cell's content, it can trigger a cascading recalculation of every formula cell that depends on it, and that recalculation has to stay correct while other users are simultaneously editing other cells."
+orderIndex: 3
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Google"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- A grid of cells, each holding a raw value, a formula referencing other cells, or formatting metadata.
+- Multiple users editing different (or the same) cells simultaneously, with changes visible to everyone in real time.
+- Formulas recalculate automatically when any cell they depend on changes — including transitively, through chains of formula-to-formula references.
+- Support for a large sheet (tens of thousands of rows) without the UI becoming sluggish.
+
+**Non-functional requirements:**
+
+- Recalculation must be incremental, not a full-sheet re-evaluation on every single cell edit — a large sheet re-evaluating every formula on every keystroke would be unusably slow.
+- Must handle concurrent edits to different cells without contention, and a defined (if simple) resolution for genuinely concurrent edits to the *same* cell.
+- Must render only the currently-visible viewport of a large grid — the same virtualization requirement as any large dataset, applied to a 2D grid rather than a 1D list.
+
+**Explicitly out of scope:** the full formula language's parser/evaluator implementation details and the backend's storage/sharding strategy — this guide focuses on the frontend's dependency-tracking, incremental-recalculation, and real-time-sync architecture.
+
+## 2. Constraints & Estimation
+
+- **The data model is the foundation everything else depends on.** Each cell needs to represent, at minimum: its raw stored value, its formula source (if any), its computed display value, and formatting — and the relationships *between* cells (which cells a formula references) need their own first-class representation, not just something re-parsed out of formula strings on every recalculation.
+- **A dependency graph is mandatory for incremental recalculation.** Without one, the only correct way to know "what needs to recompute after cell A changes" is to re-evaluate everything — a real dependency graph (a directed graph where an edge from cell B to cell A means "B's formula references A") lets the engine recompute only the cells reachable from whatever changed, in dependency order (topological sort), which is what makes recalculation fast on a large sheet.
+- **Circular references are a real, must-handle case**, not a theoretical edge case — a formula graph can form a cycle (A references B, B references A), and the engine needs to detect this during dependency-graph construction/traversal and surface a clear error rather than recursing infinitely.
+- **Grid virtualization is two-dimensional** — unlike a single-column list, only rendering visible rows isn't enough; visible *columns* matter too for a wide sheet, so the virtualization window is a 2D viewport, not a 1D range.
+- **A worked recalculation-cost estimate**: a cell with 50 direct dependents, each with an average of 5 further downstream dependents, touches roughly 250-300 cells transitively — at sub-microsecond per-cell recompute cost for simple arithmetic formulas, that's well under a millisecond total, confirming the topological-sort *traversal* (not the arithmetic itself) is the part worth optimizing on a sheet with deep dependency chains.
+
+## 3. Data Contract Design
+
+```
+// A single cell's shape
+{
+  "cellId": "A1",
+  "rawValue": "=SUM(B1:B10)",
+  "computedValue": 4820,
+  "dependsOn": ["B1", "B2", "...", "B10"],
+  "format": { "numberFormat": "currency" }
+}
+
+// A remote edit event
+{ "type": "cell_update", "cellId": "B3", "rawValue": "150", "editedBy": "u_2", "revision": 88 }
+```
+
+- **`dependsOn` is precomputed and stored alongside the cell**, not re-derived by re-parsing the formula string on every read — this is what lets the dependency graph be built/updated incrementally as formulas change, rather than re-parsing the entire sheet's formulas whenever any one cell is edited.
+- **A `cell_update` event carries only the raw value that changed** — the recalculation of `computedValue` for that cell and everything downstream of it happens client-side (or is confirmed by the server, depending on where the formula engine authoritatively runs), not transmitted pre-computed for every affected cell on every edit, which would be enormously wasteful for a large dependency chain.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Cell Store** — the sheet's actual data: raw values, formulas, computed values, formatting, keyed by cell reference.
+- **Dependency Graph** — a directed graph of cell-to-cell references, maintained incrementally as formulas are added/edited/removed, used to determine the minimal recompute set for any given change.
+- **Recalculation Engine** — given a changed cell, walks the Dependency Graph to find every transitively-dependent cell, topologically sorts them (so a cell never recomputes before something it depends on has), and recomputes only that set.
+- **Virtualized Grid Renderer** — renders only the 2D window of currently-visible rows and columns from the Cell Store, re-rendering a cell when either its own value changes or it scrolls into view.
+- **Sync Layer** — receives remote `cell_update` events and feeds them into the same Recalculation Engine pipeline a local edit would trigger, so remote and local edits share one recalculation code path.
+
+## 5. State Management Design
+
+- **Raw cell values and computed cell values are stored separately**, even though `computedValue` is derived from `rawValue` (and its dependencies) — because computing it isn't free (it may involve walking a dependency chain), so it's cached as its own field and only recomputed when the Recalculation Engine determines it's actually stale, not recomputed reactively on every read.
+- **The Dependency Graph is itself derived state**, kept in sync with the Cell Store's formulas — whenever a formula is added, edited, or removed, the graph's edges for that cell need to update before the next recalculation runs, or the recalculation would walk a stale dependency set.
+- **Viewport/scroll state (which rows/columns are currently visible) is separate from cell data entirely** — it only determines what the Virtualized Grid Renderer mounts, with no bearing on the actual data or recalculation logic.
+
+## 6. Deep Dives
+
+### Sequence: a remote edit triggering recalculation
+
+<SequenceDiagram />
+
+The self-referencing loops mark the recalculation step itself — each client's own Recalculation Engine walking the Dependency Graph and topologically recomputing, whether the triggering edit was its own (applied optimistically, before the server round-trip) or a `cell_update` that just arrived from someone else. Both paths converge on the same recompute logic.
+
+### Incremental recalculation via topological sort
+
+When a cell changes, the engine doesn't recompute the whole sheet — it walks the Dependency Graph outward from the changed cell to find every cell that transitively depends on it (a graph reachability problem), then processes that set in topological order (a cell only recomputes once everything it depends on has already been recomputed in this pass) — this is what keeps a single-cell edit's recalculation cost proportional to how much of the sheet actually depends on it, not the sheet's total size.
+
+### Detecting circular references
+
+Building or updating the Dependency Graph needs a cycle check — if adding a new formula edge would create a cycle (A ultimately depends on itself through some chain), the engine must detect this during graph construction (a standard graph-cycle-detection traversal) and mark the involved cells with a circular-reference error rather than attempting to topologically sort a graph that, by definition, has no valid topological order when it contains a cycle.
+
+### Concurrent edits to the same cell
+
+Since most concurrent edits in a real spreadsheet session target *different* cells, a straightforward last-writer-wins policy per cell (the most recent edit, by server-assigned order, wins) is a reasonable, low-complexity default for the rare same-cell-collision case — full operational-transform-style merging (as the [Multiplayer Collaborative Document Editor guide](/interview-prep/ff-system-design/multiplayer-document-editor)'s text case needs, since two people's characters both need to survive) doesn't obviously apply to "what should the final formula in this cell be" the same way, since a cell's value is a single atomic thing, not an ordered sequence two people are both contributing characters into — the same property-level-LWW reasoning the [Collaborative Canvas Design Tool guide](/interview-prep/ff-system-design/collaborative-canvas-design-tool) applies to Figma's own conflicts.
+
+### Two-dimensional virtualization
+
+Unlike a vertically-scrolling list, a spreadsheet needs to track both a visible row range and a visible column range, and mount only the cells at their intersection — this means the "am I visible" check and the height/width-reservation logic both need a row dimension and a column dimension, not just one, and scrolling horizontally needs to trigger the same kind of window-recompute a vertical scroll does.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Precomputed `dependsOn` per cell | Incremental recalculation is practical at all | Small extra state to keep in sync on every formula edit |
+| Re-parse formulas on demand | No extra stored state | Rediscovering dependencies on every edit defeats the purpose |
+| Eager recalculation | Displayed sheet is always current | CPU cost on every edit, including off-screen cells |
+| Lazy recalculation (dirty-marking) | Saves work for scrolled-out-of-view cells | More complex staleness tracking |
+| Last-writer-wins for same-cell conflicts | Simple to implement and reason about | Rare, silent overwrite on a true same-instant collision |
+
+Precomputed dependencies plus eager recalculation is the practical default for a sheet of typical size; lazy recalculation earns its complexity only once sheets get large enough that off-screen recompute work is measurable.
+
+## 8. Follow-ups
+
+- **"What if a formula references a huge range (e.g. an entire column of 100,000 rows)?"** The dependency graph needs to represent range references efficiently (e.g. as a range object, not 100,000 individual edges) or dependency-graph construction itself becomes the bottleneck — a real, non-trivial data-structure decision.
+- **"How would you support undo/redo across a collaborative session?"** Undo needs to be scoped to "this user's own edits," not a global undo stack shared across collaborators — undoing someone else's edit by pressing your own undo key would be a confusing, almost certainly wrong UX.
+- **"What if two formulas end up in a circular reference after a series of independent edits, each individually valid?"** The cycle-detection check has to run on every formula edit, not just at initial load, since a cycle can be introduced by a change to a cell that, in isolation, looks completely valid.
+- **"How do you test incremental recalculation correctness?"** Build a small dependency graph fixture with known formulas, apply a change, and assert exactly the expected set of dependent cells recomputed (and no others) in the correct order — a pure, deterministic test independent of any real UI or network.
+
+Sources: [Google Sheets System Design](https://www.systemdesignhandbook.com/guides/google-sheets-system-design/), [Designing Data Structures for Collaborative Apps](https://mattweidner.com/2022/02/10/collaborative-data-design.html)

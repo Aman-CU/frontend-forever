@@ -1,0 +1,108 @@
+---
+title: "Designing a Scalable Frontend Design System"
+slug: "scalable-design-system"
+section: "Performance-Critical"
+difficulty: "medium"
+summary: "A design system scales or collapses based on one decision made before a single component is built — whether design tokens (color, spacing, typography as named, indirect values) exist as the shared foundation both design and code reference, since without that layer every component ends up hardcoding raw values that drift out of sync the moment a brand or theme changes."
+orderIndex: 5
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- A shared library of reusable UI components (buttons, inputs, cards, etc.) consumed consistently across multiple product surfaces/teams.
+- Theming support (at minimum light/dark, potentially multiple brands) without needing to touch individual component implementations per theme.
+- Consistent documentation of each component's intended usage, props/variants, and states.
+- A traceable path from a design tool (e.g. Figma) to the actual shipped code, so a design change and a code change stay in sync rather than drifting apart.
+
+**Non-functional requirements:**
+
+- Adding a new theme or adjusting a brand color must be a change in one place, not a find-and-replace across every component that happens to reference that color.
+- Component APIs need to stay stable enough that consuming teams aren't forced into frequent breaking migrations, while still being flexible enough to cover real product variation.
+- The system needs to scale to many consuming teams without becoming a bottleneck — teams shouldn't need to wait on a central team for every minor variant they need.
+
+**Explicitly out of scope:** any single component's detailed accessibility implementation (covered individually in the [Dropdown Menu](/interview-prep/ff-system-design/accessible-dropdown-menu), [Modal](/interview-prep/ff-system-design/reusable-modal-dialog-system), [Star Widget](/interview-prep/ff-system-design/star-rating-widget), and [Tooltip/Popover](/interview-prep/ff-system-design/positioning-aware-tooltip-popover) guides) — this guide is about the system-level architecture those components live inside.
+
+## 2. Constraints & Estimation
+
+- **Design tokens are the foundational layer, established before components, not alongside them** — real design-system guidance is explicit that teams should define tokens (color, typography, spacing, motion) before drawing a single component, since tokens centralize every design decision so a single change propagates automatically across every component and platform that references it, rather than needing to be hunted down wherever it was hardcoded.
+- **A shared naming convention between design and engineering has to be agreed upfront** — a well-documented real failure mode is designers naming tokens for how something *looks* ("light blue") while engineers name variables for how something *behaves* ("primary"), producing persistent friction at every design-to-engineering handoff if not reconciled from the start.
+- **Component variant count is a real signal, not a free axis to keep extending** — practical guidance suggests most components need only a handful of variants (roughly 3-5), and once a component's variant count grows past around 8, it usually means the component's properties and composition patterns are being under-used in favor of just adding more named variants for what should be prop combinations instead.
+- **The system needs to scale via composition and props, not proliferating one-off variants** — a variant should represent a genuinely distinct layout/brand-level treatment that can't be expressed by composing existing props; anything short of that belongs as a prop, not a new named variant.
+- **A rough capacity number worth having ready**: a mature design system at a mid-size product organization typically settles around 40-80 primitive/composite components serving dozens of consuming teams — well past the point where a single central team can review every consumer's every request, which is the concrete scale threshold where the "central-team-governed vs. self-service" tradeoff in section 7 stops being theoretical.
+
+## 3. Data Contract Design
+
+```
+// Design tokens (platform-agnostic, the base layer)
+{
+  "color.accent.default": "#0d9488",
+  "color.accent.foreground": "#ffffff",
+  "spacing.md": "16px",
+  "typography.body.size": "14px"
+}
+
+// Component API built on tokens, not raw values
+<Button variant="primary" size="md">Save</Button>
+// internally resolves to color.accent.default / spacing.md, never a hardcoded hex/px value
+```
+
+- **Tokens are named, semantic values** (`color.accent.default`), not raw values referenced ad hoc (`#0d9488`) scattered across component implementations — every component consumes tokens by name, so retheming means changing the token's resolved value once, not searching every component for a hardcoded reference.
+- **Component props map onto token *categories*, not literal values** — a `size="md"` prop resolves to whatever `spacing.md` currently is, meaning the component's own code never needs to change when a token's underlying value is adjusted.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Token Layer** — the foundational, platform-agnostic set of named design values (color, spacing, typography, motion), which every other layer references and nothing hardcodes around.
+- **Primitive Components** — low-level, single-purpose building blocks (a `Box`, a `Text`, a base `Button`) that consume tokens directly and expose a constrained, well-documented prop surface.
+- **Composite Components** — higher-level components (a `Card`, a `FormField`) built by composing Primitive Components, inheriting token-driven theming automatically rather than re-implementing styling decisions.
+- **Documentation/Registry** — a discoverable catalog of every component's props, variants, and usage guidance, and (where tooling supports it) a traceable link back to the design tool's own component/token definitions, so design and code don't silently diverge over time.
+
+## 5. State Management Design
+
+- **Theme state (which token values are currently active — light/dark, brand variant) is global, application-level state** — every component reads resolved token values reactively from whatever theme is currently active, rather than each component needing its own awareness of "what theme am I in."
+- **Individual component state (a button's pressed/hover/disabled state) is local and independent of the token/theme layer** — theming affects *what values* those states resolve to visually, not whether the states themselves exist or how they're tracked.
+- **Token values themselves are effectively static configuration**, not runtime-computed state — a theme switch swaps which complete set of token values is active, rather than each component recomputing individual style values on the fly.
+
+## 6. Deep Dives
+
+### Why tokens have to come before components
+
+Building components first and extracting tokens later means every existing component likely has some hardcoded value that never gets caught in the retroactive extraction — real design-system practice establishes the token layer first specifically so every component, from its very first implementation, only ever references named tokens, never a raw value, making a future full-system retheme (new brand, new dark mode) a token-layer-only change instead of an audit-every-component exercise.
+
+### Naming convention as a design/engineering contract
+
+Since designers and engineers naturally default to naming things from different mental models (what it looks like vs. what it does), a design system needs one agreed, shared vocabulary for tokens that both sides actually use — the well-documented failure mode of "light blue" (design) versus "primary" (engineering) referring to the same underlying value is exactly the kind of drift a shared naming convention, established early, is meant to prevent.
+
+### Variant count as a smell, not a feature
+
+A component accumulating many named variants (`variant="primary-large-rounded-with-icon"`, and so on) is a sign the component's *composition* model is insufficiently expressive — the fix is usually decomposing what looks like "many variants" into a smaller set of orthogonal props (`size`, `rounded`, `withIcon`) that can be combined, rather than continuing to name every combination as its own variant, which is both harder to document and harder for consuming teams to discover the right option among.
+
+### Design-to-code traceability
+
+Modern design tooling increasingly supports representing tokens as first-class variables (not just static color swatches), which is what makes a real, maintained link between "what the designer changed in the design tool" and "what token value the shipped component actually resolves" possible — without this, a design system's documentation and its actual shipped behavior tend to silently drift apart over time as either side changes independently.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Token layer upfront | Retheming/rebrand becomes a one-place change | Real upfront design/engineering coordination time |
+| Hardcoded values, tokens later | Faster initial velocity | A full-codebase audit is needed the moment theming is actually required |
+| Constrained, opinionated component API | Easier to document/discover/keep consistent | Occasionally doesn't cover an unusual one-off need directly |
+| Central-team-governed contribution | System stays coherent | Bottlenecks fast-moving consuming teams past the ~40-80-component scale above |
+| Fully self-service contribution | No central bottleneck | Consistency drifts without active, ongoing governance |
+
+Most mature systems land on a hybrid of the last two rows — a stable, centrally-owned core plus a lighter-weight proposal path for new patterns — rather than picking one extreme.
+
+## 8. Follow-ups
+
+- **"How would you roll out a breaking change to a widely-consumed component?"** Versioning the design system as its own package with a clear deprecation path (old API still works, flagged deprecated, removed in a later major version) rather than a single, silent breaking change every consumer discovers at once.
+- **"How do you prevent design and code from drifting apart over time?"** A traceable, tooling-supported link between design-tool variables/tokens and the actual shipped token values (rather than a one-time manual handoff) is the real mitigation — periodic manual audits alone tend to fall behind as both sides keep changing independently.
+- **"How would you measure whether the design system is actually succeeding?"** Adoption rate across consuming teams and a declining rate of one-off, system-bypassing custom components being built are more meaningful signals than the system's own component count — a design system with low real adoption isn't succeeding regardless of how complete its component catalog looks.
+- **"How do you test a design system itself, as opposed to testing products built on it?"** Visual regression testing per component/variant/theme combination (catching unintended visual drift) plus accessibility checks run against the primitive components specifically, since every consuming product's own accessibility posture inherits directly from whether the shared primitives got this right.
+
+Sources: [Design Tokens: How to Sync Design and Code in Figma](https://www.figma.com/resource-library/design-tokens/), [How to Structure Figma Variables & Design Tokens](https://zeroheight.com/blog/figma-variables-and-design-tokens-part-one-variable-architecture/)

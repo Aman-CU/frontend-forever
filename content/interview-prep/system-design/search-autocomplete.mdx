@@ -1,0 +1,124 @@
+---
+title: "Designing a Real-Time Search Autocomplete"
+slug: "search-autocomplete"
+section: "Data-Heavy Interfaces"
+difficulty: "easy"
+summary: "A search autocomplete's correctness hinges on one subtle race condition, not on the UI itself: a fast keystroke can trigger a request whose response arrives after an earlier, slower request's response, so the client must debounce input, cancel or ignore stale in-flight requests, and only ever render the response matching the current query — never simply the most recently arrived one."
+orderIndex: 6
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Google", "Amazon", "Meta"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- As the user types into a search box, show a dropdown of ranked suggestions updating live.
+- Support keyboard navigation (arrow keys to move through suggestions, Enter to select, Escape to dismiss) alongside mouse/touch selection.
+- Highlight the matched substring within each suggestion.
+- Gracefully show "no results" and a loading state without the dropdown flickering between them on every keystroke.
+
+**Non-functional requirements:**
+
+- Must not send a network request on every single keystroke — typing "react" character by character shouldn't fire 5 requests when 1 (for the final query) is what the user actually wants answered.
+- Must never render a stale response over a fresher one, even when requests resolve out of order.
+- Must be fully keyboard-accessible and screen-reader-announced as a real combobox pattern, not a purely mouse-driven custom dropdown.
+
+**Explicitly out of scope:** the ranking/relevance algorithm behind suggestions, and full search-results-page rendering — this guide covers the input-to-dropdown client interaction only. A common embedding: the [E-Commerce Storefront guide](/interview-prep/ff-system-design/ecommerce-storefront)'s product search uses exactly this pattern at a smaller scale.
+
+## 2. Constraints & Estimation
+
+- **Debounce timing is a real, measured tradeoff, not an arbitrary constant.** Widely-cited guidance places the sweet spot in the roughly 150–300ms range: below about 100ms starts to feel instant but barely reduces request volume; above roughly 300ms starts to feel laggy to the user. 150-200ms is a common practical default.
+- **Request volume reduction is the whole point** — firing a request per keystroke for a 3-character word like "car" sends 3 requests; debouncing to fire only after typing pauses cuts that to effectively 1 in the common case, with no loss of the result the user actually wanted.
+- **Out-of-order responses are a real, not theoretical, race condition** — a request for "re" can resolve *after* a later request for "react" if the "re" request happens to hit a slower server path, and naively rendering "whatever response arrived most recently" would then show stale "re" suggestions over the box a user has already typed "react" into.
+- **A worked request-reduction estimate**: typing a 6-character query at a typical ~200ms/keystroke pace, with no debounce, fires 6 requests; a 200ms debounce collapses that to effectively 1 request in the common case — an ~83% reduction in request volume for that single query, compounding across every search the user performs in a session.
+
+## 3. Data Contract Design
+
+```
+GET /api/search/suggest?q=reac&limit=8
+
+{
+  "query": "reac",
+  "suggestions": [
+    { "id": "s_1", "text": "react hooks", "matchStart": 0, "matchLength": 4 },
+    { "id": "s_2", "text": "react native", "matchStart": 0, "matchLength": 4 }
+  ]
+}
+```
+
+- **The response echoes back the `query` it was computed for** — this is what lets the client's race-condition guard compare "is this response for the query currently in the input box?" without needing to separately track request IDs against a side-channel map, though a request-ID approach works equally well.
+- **`matchStart`/`matchLength` are server-computed**, not re-derived by the client via its own substring search — the server may be matching on a normalized/stemmed form of the query that doesn't literally appear as a substring in the raw suggestion text (e.g. fuzzy or phonetic matching), so the highlight span needs to come from whatever produced the match.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Search Input** — a controlled text input that updates local "typed value" state on every keystroke immediately (so the box itself never feels laggy), independent of when a network request actually fires.
+- **Debouncer** — sits between the raw keystroke stream and the fetch layer, delaying the actual request until typing pauses for the chosen debounce window.
+- **Request Guard** — tracks the query string (or request ID) of the latest *dispatched* request; when a response arrives, compares it against the latest dispatched query and discards (doesn't render) any response that isn't for the current query.
+- **Suggestion Dropdown** — a combobox-pattern list, receiving only guard-approved, current suggestions, handling keyboard navigation (arrow keys/Enter/Escape) and highlighting the server-provided match span per item.
+
+## 5. State Management Design
+
+- **The input's literal typed text is separate from "the query that was actually sent"** — the input must feel instantly responsive to typing regardless of debounce timing, while the fetch/response cycle operates on a deliberately-delayed, debounced value.
+- **In-flight-request tracking (which query's response is still "the one we're waiting for") is the one piece of state doing real correctness work** — everything else in this feature is presentation, but this guard is what prevents the classic race-condition bug from ever reaching the UI.
+- **Highlighted/active suggestion index (for keyboard navigation) resets whenever the suggestion list itself changes** — carrying over a stale index into a completely different result list would let arrow-key navigation land on the wrong item or an out-of-bounds one.
+
+## 6. Deep Dives
+
+### Debounce vs. throttle, and why debounce is correct here
+
+Throttling would fire at a regular interval regardless of whether the user is still typing; debouncing fires only after input activity pauses — which is the right model for autocomplete, since the goal is "the query the user has settled on," not "a periodic sample of whatever they've typed so far."
+
+### Solving the out-of-order response race condition
+
+Two equivalent, commonly-used approaches: (1) tag each dispatched request with an incrementing ID, and on response, only render if that ID matches the latest dispatched ID (discard anything older); (2) use the browser's `AbortController` to actually cancel the previous in-flight request the moment a new one is dispatched, so a stale response can never arrive at all. The ID/guard approach is simpler to reason about and doesn't depend on the server actually respecting cancellation; the `AbortController` approach additionally saves the wasted server-side work of finishing a request nobody needs anymore.
+
+The debounce and the cancellation guard are two separate mechanisms pairing together, not one:
+
+```ts
+let debounceTimer: ReturnType<typeof setTimeout>;
+let activeController: AbortController | null = null;
+
+function onQueryChange(query: string) {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(async () => {
+    activeController?.abort(); // cancel the previous in-flight request
+    activeController = new AbortController();
+    const res = await fetch(`/api/search/suggest?q=${query}`, { signal: activeController.signal });
+    if (res.ok) render(await res.json());
+  }, 200);
+}
+```
+
+### Caching by query string
+
+Rather than only guarding against staleness, caching each response keyed by its exact query string (an in-memory `Map<string, Suggestion[]>`) lets a backspace-then-retype of the same partial query serve instantly from memory instead of re-hitting the network — a meaningful real-world win given how often users pause, backspace, and retype while searching.
+
+### Accessible keyboard navigation as a real combobox
+
+The suggestion dropdown should follow the ARIA combobox pattern: the input owns `aria-expanded`/`aria-activedescendant`, the listbox is `role="listbox"` with each suggestion `role="option"`, and arrow keys move a visually and programmatically tracked "active" option without moving actual DOM focus away from the input — this is what lets a screen reader correctly announce the currently-highlighted suggestion while the user keeps typing.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Short debounce (~100ms) | Feels near-instant | Barely reduces request volume, more race-condition exposure |
+| Longer debounce (~150-300ms) | ~80%+ request reduction, less race exposure | Risks feeling laggy past ~300ms |
+| Client-side caching by query | Instant re-serve on backspace/retype | Small memory/complexity overhead |
+| Always re-fetching | Simplest implementation | Wastes requests on repeated or corrected queries |
+| `AbortController` cancellation | Spares server wasted work on abandoned requests | Slightly more implementation complexity |
+| Response-ID guard alone | Simpler to implement | Server still does wasted work on a request nobody needs |
+
+150-200ms debounce plus query-keyed caching is the practical sweet spot most real autocomplete implementations converge on.
+
+## 8. Follow-ups
+
+- **"What if the network is slow enough that suggestions never arrive before the user hits Enter?"** Enter should always be able to trigger a full search-results navigation using the raw typed text, independent of whether any suggestion ever loaded — autocomplete is an enhancement, never a blocker to the core search action.
+- **"How would you support fuzzy/typo-tolerant matching in the UI?"** As long as the server-computed `matchStart`/`matchLength` still describes a valid span for highlighting purposes, the client-side rendering logic doesn't need to change — the fuzzy-matching complexity stays entirely server-side.
+- **"What about very short queries (a single character) producing huge, unhelpful result sets?"** A common product decision: don't fire a request at all below a minimum query length (e.g. 2 characters), showing no dropdown rather than a request's worth of noisy single-letter matches.
+- **"How do you test the race-condition guard?"** Deterministically, by mocking two requests where the "earlier" query's response is made to resolve after the "later" query's response, and asserting the UI ends up showing the later query's results — exactly the scenario that a naive "render whatever arrives" implementation would get wrong.
+
+Sources: [Improve Your Search Autocomplete Timing with Debouncing](https://spin.atomicobject.com/2018/06/04/automplete-timing-debouncing/), [Debounce sources - Algolia](https://www.algolia.com/doc/ui-libraries/autocomplete/guides/debouncing-sources)

@@ -1,0 +1,121 @@
+---
+title: "Designing an Offline-First Local Sync Engine"
+slug: "offline-first-sync-engine"
+section: "Offline & Sync"
+difficulty: "hard"
+summary: "An offline-first sync engine inverts the standard client-server relationship by treating the user's local device — not the server — as the primary source of truth: the app reads and writes directly to an embedded local database, and the network becomes an optional, asynchronous sync channel rather than something every interaction depends on."
+orderIndex: 2
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Linear"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Every read and write in the application works identically whether the device is online or offline.
+- Changes made offline sync automatically once connectivity returns, without requiring the user to manually trigger anything.
+- Changes made on multiple devices (or by multiple collaborators) for the same data converge to a single consistent state.
+- The application can be built generically enough to back multiple different features (not hand-rolled per feature) — this guide is about the reusable sync engine itself, not any one feature built on top of it.
+
+**Non-functional requirements:**
+
+- Local reads/writes must be effectively instant — the whole point of local-first is that the network is never in the critical path of a normal interaction.
+- Must survive an app restart or extended offline period without losing queued local changes.
+- Conflict resolution must scale down to "usually nothing special is needed" for low-contention fields, while still providing a real answer for genuinely concurrent conflicting edits.
+
+**Explicitly out of scope:** any single feature's specific data model (see the [Real-Time Task Tracker](/interview-prep/ff-system-design/realtime-task-tracker) or [Collaborative Editor](/interview-prep/ff-system-design/multiplayer-document-editor) guides for feature-specific applications of this pattern) — this guide is the general-purpose sync engine underneath those kinds of features.
+
+## 2. Constraints & Estimation
+
+- **The local store is the primary source of truth, not a cache of server truth** — real local-first architectures explicitly frame it this way: the application reads and writes an embedded local database (IndexedDB on the web, SQLite on mobile/desktop) directly, and network sync is a background concern layered on top, not something the app's core read/write path depends on.
+- **A durable local mutation log is the mechanism that makes offline safe** — every local write is both applied to the local database and appended to a durable, persisted log of pending changes, which is what survives a crash or restart without losing unsent work.
+- **Conflict resolution strategy should be chosen per field/data type, not applied uniformly** — real production guidance describes starting with a simple last-write-wins default and introducing more sophisticated CRDT-based merging only for the specific fields where real data loss has actually been observed, rather than defaulting every field to the heaviest available merge strategy up front.
+- **CRDTs are the more rigorous option where genuine concurrent edits to the same data are common** — conflict-free replicated data types are specifically designed so that multiple replicas, having applied different sets of operations in different orders, still converge to the same final state without manual conflict resolution — valuable specifically where LWW's "just pick one write and discard the other" would lose real, wanted concurrent contributions.
+- **A concrete mutation-log growth estimate**: a moderately active user generates on the order of 50-200 mutations/day across a typical app (status changes, edits, reorders); at roughly 100-200 bytes per logged mutation, that's under 40KB/day, or well under 15MB/year, uncompacted — trivial for IndexedDB's typical budget, which is why log compaction (Follow-ups) only becomes a real concern at multi-year, heavy-usage scale, not from day one.
+
+## 3. Data Contract Design
+
+```
+// Local mutation log entry
+{
+  "mutationId": "m_2201",
+  "entityType": "task" | "document" | "...",
+  "entityId": "e_991",
+  "changes": { "status": "done" },
+  "mergeStrategy": "lww" | "crdt",
+  "createdAt": "2026-07-18T10:00:00Z",
+  "syncedAt": null
+}
+
+// Sync request (batch of pending mutations, sent when online)
+{ "mutations": [ /* array of the above, oldest first */ ], "sinceRevision": 4102 }
+
+// Sync response
+{ "acceptedMutationIds": ["m_2201"], "remoteChangesSince": [ /* entity patches from other clients/collaborators */ ] }
+```
+
+- **`mergeStrategy` is a per-entity-type (or even per-field) property**, not global — this is what lets the engine apply simple last-write-wins to most data while reserving CRDT-based merging specifically for the fields/entities where real concurrent-edit contention justifies the extra complexity.
+- **The sync request is a batch, not one request per mutation** — draining an offline backlog of many queued mutations as a single batched exchange is both more efficient and simpler to reason about than replaying them as separate round-trips.
+- **The sync response returns both which local mutations were accepted and what changed remotely since the client's last sync** — both directions of reconciliation happen in one exchange, rather than the client needing separate "push my changes" and "pull remote changes" round-trips.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Local Database** — the embedded, on-device data store (IndexedDB on web) that the entire application reads from and writes to directly, functioning identically regardless of connectivity.
+- **Mutation Log** — a durable, append-only record of every local write not yet confirmed synced, persisted independently of the Local Database's current-state tables so it survives being replayed even after a crash.
+- **Sync Engine** — when online, batches the Mutation Log's pending entries into a sync exchange with the server, applies the server's accepted/rejected results and any incoming remote changes back onto the Local Database, and resolves conflicts per each entity/field's configured merge strategy.
+- **Reactive Query Layer** — the application's actual read API, subscribing to the Local Database and re-rendering the UI when relevant local data changes — regardless of whether that change originated from a local write or from the Sync Engine applying a remote update.
+
+## 5. State Management Design
+
+- **The Local Database is the only thing the application's UI ever reads from** — there's no separate "network state" the UI also has to reconcile; the Sync Engine's entire job is keeping the Local Database eventually consistent with the server, invisibly to the UI layer.
+- **The Mutation Log is append-only until synced**, and is what specifically makes "close the app while offline, reopen days later" safe — the log's persistence (not the Local Database's current-state snapshot alone) is what guarantees pending work isn't lost.
+- **Per-field merge strategy is configuration, not runtime state** — it's a schema-level decision (this field is LWW, that field is CRDT-merged) made once per entity type, not something computed dynamically per conflict.
+
+## 6. Deep Dives
+
+### Sequence: local write, offline log, batched reconnect sync
+
+<SequenceDiagram />
+
+The two self-referencing steps are the parts that make offline safe: writing locally and appending to the Mutation Log happens the instant the user acts, with no dependency on connectivity; applying the server's response and resolving any conflicts happens only later, once a connection is actually available to batch the exchange.
+
+### Local-first as an inversion of the usual client-server model
+
+In a conventional architecture, the server is the source of truth and the client is (at best) an optimistic cache of it; local-first architecture deliberately inverts this — the local database is authoritative for what the application actually reads and writes, and the server becomes one more replica the Sync Engine reconciles with, asynchronously, whenever connectivity allows. This is a stronger claim than "works offline as a fallback" — it means the network is never structurally required for the app to function correctly, only for changes to eventually reach other devices/collaborators.
+
+### Choosing merge strategy per field, incrementally
+
+Rather than deciding upfront that every piece of data needs full CRDT machinery, production guidance favors starting simple: default every field to last-write-wins, ship it, and only introduce CRDT-based (or other custom) merging for the specific fields where real, observed concurrent-edit conflicts actually cause data loss users notice — an incremental, evidence-driven approach rather than over-engineering merge logic for fields that, in practice, are rarely edited concurrently by more than one source at a time.
+
+### The mutation log as the sync unit, not the current-state snapshot
+
+Syncing by diffing two full current-state snapshots (local vs. server) doesn't preserve *what actually happened* — it only reveals the net difference, losing information about the sequence and intent of individual edits, which matters for conflict resolution. Syncing via the actual ordered log of discrete mutations preserves that history, letting the Sync Engine apply proper per-mutation conflict resolution (was this a status change, a text edit, a delete?) rather than reasoning about an opaque before/after diff.
+
+### Reactive queries unifying local and remote-origin changes
+
+Because the Reactive Query Layer subscribes to the Local Database itself rather than to "network events" as a separate concept, a change the Sync Engine applies after pulling down a remote update triggers the exact same UI re-render path as a change the user just made locally — this is the same principle the [Real-Time Task Tracker guide](/interview-prep/ff-system-design/realtime-task-tracker)'s "reactive updates regardless of change origin" deep dive covers, generalized here as the underlying mechanism any feature built on this sync engine inherits for free.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Local-first (network optional) | Dramatically better perceived performance, genuine offline capability | Needs a real, considered conflict-resolution strategy |
+| Server-authoritative (network required) | Server response is simply correct on every write | No offline capability at all |
+| Default last-write-wins | Simple to implement and reason about, sufficient for most fields | Silently discards a genuine concurrent conflict on high-contention fields |
+| CRDTs everywhere | Handles genuine concurrent-edit contention correctly | Real complexity + per-element storage overhead, unjustified for low-contention fields |
+| Batched sync exchanges | Efficient after a long offline backlog | Exchange must handle a variable, potentially large batch size gracefully |
+
+The LWW-vs-CRDT row is best decided per field, incrementally (per the Deep Dives section above) rather than as one global architectural choice.
+
+## 8. Follow-ups
+
+- **"How would you migrate an existing server-authoritative app to this architecture?"** Incrementally — introduce the Local Database and Mutation Log for one feature/entity type at a time (starting with the least contention-prone data, where LWW is obviously sufficient), rather than attempting a single big-bang rewrite of the entire application's data layer at once.
+- **"What if the local database schema needs to change (a migration) while there are still unsynced local mutations?"** The Mutation Log's entries need to remain interpretable against the old schema shape until they're synced, or the migration itself needs to also transform pending log entries — a genuinely tricky edge case real local-first systems have to account for explicitly.
+- **"How do you test conflict resolution across the different configured merge strategies?"** Deterministically, per merge strategy: for LWW fields, simulate two conflicting mutations with known timestamps and assert the later one wins; for CRDT-merged fields, simulate applying the same set of concurrent operations in different orders across simulated replicas and assert they all converge to an identical final state — correctness for CRDT fields specifically means order-independent convergence, not just "the right value wins."
+- **"How would you bound the local database's storage growth over a very long-lived app usage?"** Some form of log compaction/snapshotting is generally needed over time — an unbounded, ever-growing Mutation Log of every mutation ever made isn't a viable long-term storage model, mirroring the same concern raised in the [Collaborative Editor guide](/interview-prep/ff-system-design/multiplayer-document-editor)'s operation-log-compaction follow-up.
+
+Sources: [Why Local-First Software Is the Future and its Limitations](https://rxdb.info/articles/local-first-future.html), [Local-First Architecture: CRDTs & Sync Engines](https://appscale.blog/en/blog/local-first-architecture-crdts-sync-engines-offline-first-2026)

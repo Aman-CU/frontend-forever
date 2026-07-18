@@ -30,7 +30,7 @@ export const TESTIMONIALS: Testimonial[] = [
     company: "Google",
     date: "Mar 2026",
     quote:
-      "I'd read about the event loop a dozen times and never really got it until I watched the simulator step through microtasks vs. the task queue. That same mental model is what got me through the system design round — FF System Design covers almost exactly what they asked.",
+      "I'd read about the event loop a dozen times and never really got it until I watched the simulator step through microtasks vs. the task queue. That same mental model is what got me through the system design round — FF Frontend System Design covers almost exactly what they asked.",
     name: "Sarah Chen",
     role: "Software Engineer",
     location: "Toronto, Canada",
@@ -55,7 +55,7 @@ export const TESTIMONIALS: Testimonial[] = [
     company: "Amazon",
     date: "Jan 2026",
     quote:
-      "What got me hired wasn't memorizing answers — it was the spaced repetition review queue. By the time my interview loop came around, the FF System Design questions I'd struggled with weeks earlier were second nature.",
+      "What got me hired wasn't memorizing answers — it was the spaced repetition review queue. By the time my interview loop came around, the FF Frontend System Design questions I'd struggled with weeks earlier were second nature.",
     name: "Priya Patel",
     role: "Senior Frontend Engineer",
     location: "Bangalore, India",

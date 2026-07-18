@@ -1,0 +1,105 @@
+---
+title: "Designing an Accessible Image Carousel"
+slug: "accessible-image-carousel"
+section: "Data-Heavy Interfaces"
+difficulty: "easy"
+summary: "An image carousel's hardest requirements aren't visual — the W3C's own carousel pattern requires the container to expose role=\"region\" with aria-roledescription=\"carousel\", each slide to be an aria-roledescription=\"slide\" group, and any auto-rotation to be pausable, since automatically moving content is one of the most common real-world accessibility complaints against carousels."
+orderIndex: 7
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Airbnb"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Display one slide (image, or image + caption) at a time from an ordered set, with next/previous controls.
+- Support optional auto-rotation on a timer.
+- Support both mouse/touch (swipe, click arrows) and full keyboard navigation.
+- Indicate current position among all slides (e.g. dot indicators or "3 of 8").
+
+**Non-functional requirements:**
+
+- Must be genuinely screen-reader accessible, not just visually functional — carousels are a commonly-cited accessibility failure point specifically because auto-advancing content can interrupt a screen reader mid-announcement or move on before a user has finished reading.
+- Auto-rotation must be pausable and must pause automatically on focus/hover — content that moves without user control is a real, well-documented accessibility and usability problem, not a nice-to-have fix.
+- Must not force every slide's images to load immediately — a 10-slide carousel showing 1 slide at a time shouldn't necessarily cost the bandwidth of loading all 10 up front.
+
+**Explicitly out of scope:** the image-optimization/CDN pipeline behind the images themselves (see the general responsive-image techniques covered in the [E-Commerce](/interview-prep/ff-system-design/ecommerce-storefront) and [Photo-Sharing](/interview-prep/ff-system-design/photo-sharing-feed) guides) — this guide is specifically about the carousel's interaction and accessibility contract.
+
+## 2. Constraints & Estimation
+
+- **The W3C ARIA Authoring Practices Guide defines a specific, non-optional structural contract** for this pattern: the outer container needs `role="region"` (or `"group"`) plus `aria-roledescription="carousel"`, and an accessible name via `aria-label` or `aria-labelledby`; each slide needs `role="group"` with `aria-roledescription="slide"`. Deviating from this structure is exactly what makes many real-world carousel implementations fail accessibility audits.
+- **`aria-live` needs care, not blanket use** — using `aria-live="polite"` to announce slide changes is appropriate for user-triggered navigation, but applying it to a carousel that auto-scrolls slowly can cause a screen reader to announce items one by one as they drift past, creating confusing, unrequested noise rather than a helpful update.
+- **Rotation controls need labels that describe the action, not a fixed icon-only state** — a pause/play toggle's accessible name should change between "Stop slide rotation" and "Start slide rotation" depending on current state, not stay static while only the visual icon swaps.
+- **Bandwidth**: only the current slide (plus perhaps the next one, as a look-ahead) needs to be loaded eagerly; the rest can lazy-load on approach, the same general principle as any media-heavy component.
+
+## 3. Data Contract Design
+
+```
+{
+  "slides": [
+    { "id": "s1", "imageUrl": "...", "alt": "Beachfront villa exterior at sunset", "caption": "..." },
+    { "id": "s2", "imageUrl": "...", "alt": "Living room with ocean view", "caption": "..." }
+  ],
+  "autoRotateMs": 5000
+}
+```
+
+- **`alt` text is mandatory per slide and must be meaningful**, not a generic "Image 1", "Image 2" — since a screen reader user's entire understanding of a given slide comes from this text when the image itself isn't visually consumed.
+- **`autoRotateMs` being present (or absent/null) is itself a data-level decision** — a component that always defaults to auto-rotating regardless of what the data says removes a legitimate case for a carousel that should never auto-advance (e.g. one showing content-dense slides a user needs time to read).
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Carousel Container** — the `role="region"`/`aria-roledescription="carousel"` accessible container, owning current-slide-index state and exposing next/previous/goToSlide methods.
+- **Slide** — each individual `role="group"`/`aria-roledescription="slide"` panel, lazily loading its image (via the same reserved-aspect-ratio-then-load pattern used across every image-heavy guide in this series) as it becomes the current or next slide.
+- **Navigation Controls** — next/previous buttons (real `<button>` elements, not clickable `<div>`s) and a rotation pause/play toggle with a dynamically-updating accessible label.
+- **Position Indicator** — dot/numbered indicators that are also real, individually-focusable controls (each jumps directly to its slide), not purely decorative.
+- **Rotation Timer** — drives auto-advance when enabled, and is the one piece of state that must pause on hover, on focus-within, and whenever the pause control is toggled.
+
+## 5. State Management Design
+
+- **Current slide index is the carousel's core state** — everything else (which slide is "current" for ARIA purposes, which image needs eager loading, which position indicator is marked active) derives from this one value.
+- **Rotation-paused state is separate from current-slide-index**, and is influenced by multiple independent triggers (explicit pause button, mouse hover, keyboard focus entering the carousel) that all need to converge on the same paused/running state without fighting each other — e.g. focus entering the carousel should pause rotation even if the user never explicitly clicked pause, and it should only resume if the pause wasn't *also* explicitly requested.
+- **Slide-loading state (which images have loaded) is per-slide**, following the same "reserve space by known aspect ratio, then load" pattern as any other image-heavy component in this series.
+
+## 6. Deep Dives
+
+### Building the ARIA structure correctly
+
+Following the W3C carousel pattern precisely: the container gets `aria-roledescription="carousel"` and an accessible name (`aria-label="Property photos"` or similar); each slide gets `aria-roledescription="slide"` and ideally its own label (`aria-label="Slide 3 of 8"` or referencing the position indicator); next/previous controls are real buttons with clear accessible names ("Next slide", "Previous slide"), not icon-only buttons relying purely on a visual arrow.
+
+### Auto-rotation, pause, and screen reader announcements
+
+Auto-advancing content is one of the most consistently flagged accessibility complaints against carousels specifically because it can interrupt a screen reader announcement mid-sentence or move content before a user relying on assistive tech has had time to process it. The concrete mitigations: auto-rotation must have a visible, keyboard-reachable pause control; it must pause automatically the moment keyboard focus or mouse hover enters the carousel (not require an explicit click first); and `aria-live` regions announcing slide changes should be used conservatively — appropriate for deliberate, user-triggered navigation, but a poor fit for a slow, continuous auto-scroll where per-item announcements would just create noise.
+
+### Whether to build a carousel at all
+
+Real accessibility guidance is candid that a carousel is often not the right pattern in the first place — a simple list, a tab-panel-style paginated view, or a static grid frequently serves the same content more accessibly and with less implementation complexity than a fully-compliant auto-rotating carousel. This is worth stating directly in an interview: recognizing when a "simpler, non-carousel" alternative better serves the actual requirement is itself a strong system-design signal, not a cop-out.
+
+### Lazy-loading slides without breaking swipe responsiveness
+
+Eagerly loading only the current slide (plus a one-slide look-ahead in the direction the user is likely to swipe next) balances bandwidth against responsiveness — loading literally everything eagerly wastes bandwidth on slides the user may never reach, while loading strictly on-demand (only once a slide becomes current) can introduce a visible loading flash on a fast swipe.
+
+A concrete number: a typical product-gallery carousel holds 5-10 slides at ~150-300KB each (a reasonably-sized product photo) — loading all of them eagerly costs roughly 1-2MB upfront for content the viewer may never scroll past slide 2 for; the one-slide-look-ahead strategy caps eager cost at 2 slides (~300-600KB) regardless of total slide count, which is the concrete saving behind this guide's recommended default.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Auto-rotation | Showcases more content passively | Real accessibility/annoyance risk if not pausable |
+| No auto-rotation | Safest default for content-dense slides | User must navigate manually |
+| Eager one-slide-ahead loading | Smoother perceived swipe | Small bandwidth cost for slides never reached |
+| Strictly on-demand loading | No wasted bandwidth | Visible loading flash on a fast swipe |
+| `aria-live` on slide change | Helpful for deliberate, user-initiated navigation | Actively harmful (noisy) on continuous auto-scroll |
+
+## 8. Follow-ups
+
+- **"What if the carousel needs to support touch swipe on mobile?"** Swipe gestures need to coexist with the same keyboard/button navigation, updating the identical current-slide-index state — a swipe is just another input source driving the same state transition as clicking "next."
+- **"How would you test this for accessibility, not just visual correctness?"** Verify the ARIA structure with an automated tool (e.g. axe-core) for the mechanical checks (roles, labels present), but also manually verify with an actual screen reader that slide changes are announced sensibly and that rotation genuinely pauses on focus/hover — automated tools can't catch a poorly-timed `aria-live` announcement pattern.
+- **"What if there's only one slide?"** The carousel chrome (next/previous controls, position indicators) should hide entirely rather than render disabled, non-functional controls around a single static image.
+- **"Should this even be a carousel, or a static grid?"** As covered in the deep dive above — this is a legitimate answer to give in an interview when the content doesn't clearly benefit from sequential, one-at-a-time presentation.
+
+Sources: [Carousel Pattern - W3C ARIA APG](https://www.w3.org/WAI/ARIA/apg/patterns/carousel/), [Make accessible carousels - Chrome for Developers](https://developer.chrome.com/blog/accessible-carousel)

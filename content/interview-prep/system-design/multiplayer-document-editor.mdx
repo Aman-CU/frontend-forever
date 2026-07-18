@@ -1,0 +1,122 @@
+---
+title: "Designing a Multiplayer Collaborative Document Editor"
+slug: "multiplayer-document-editor"
+section: "Real-Time & Collaborative"
+difficulty: "hard"
+summary: "A multiplayer document editor's core problem is merging concurrent edits from multiple people into one consistent document without a central lock — the two real, production-proven approaches are Operational Transformation (transform each incoming operation against every operation it raced with) and CRDTs (structure the data so any merge order converges to the same result), and the right choice depends on whether the content is closer to linear text or a tree of richly-propertied objects."
+orderIndex: 2
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Google", "Notion", "Figma"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Multiple users editing the same document simultaneously, with each other's changes appearing live.
+- Each collaborator's cursor/selection visible to everyone else, labeled with their identity.
+- The document must never diverge into inconsistent states between collaborators — everyone converges to the same final content.
+- Support offline edits that later merge back in when connectivity returns, without the user losing their local changes.
+
+**Non-functional requirements:**
+
+- Concurrent edits from two people typing in the same region must merge sensibly (both people's characters end up in the document, in a reasonable order) rather than one silently overwriting the other.
+- Must remain responsive under normal typing latency — the local editor must never wait for a server round-trip before showing the user's own keystrokes.
+- Must scale to a realistic number of concurrent editors per document (not internet-scale, but comfortably beyond 2-3 people) without the merge logic becoming the bottleneck.
+
+**Explicitly out of scope:** the document's rich rendering/formatting engine itself (that's the [Rich Text Editing guide](/interview-prep/ff-system-design/rich-text-editor-engine)'s territory) — this guide is specifically about the concurrency/merge model that makes multiplayer editing correct.
+
+## 2. Constraints & Estimation
+
+- **Two real, distinct merge strategies exist in production, not just theory.** Operational Transformation (OT) — the technique behind Google Docs — transforms each incoming operation against every other operation it conflicts with, so operations can apply in different orders on different clients and still converge; it works well for linear text but requires defining a transform function for every pair of operation types, which grows combinatorially as operation types multiply.
+- **CRDTs (Conflict-free Replicated Data Types)** structure the data itself so that merging is commutative by construction — any client can apply any set of operations in any order and land on the same result, without needing a central transform step. This trades some memory/metadata overhead (CRDTs typically carry extra bookkeeping per element) for not needing OT's combinatorial transform-function matrix.
+- **A real, instructive counter-example: Figma deliberately chose neither pure OT nor a textbook CRDT.** Figma's documents are trees of objects with many properties each, not linear text — OT's per-character transform model doesn't map cleanly onto that shape. Figma instead uses a CRDT-inspired but simpler property-level last-writer-wins scheme with fractional indexing for ordering, reasoning that users rarely edit the exact same property of the exact same object simultaneously, so full conflict-resolution machinery is unnecessary overhead for their actual data shape.
+- **Presence (cursors/selections) has fundamentally different consistency requirements than the document content itself** — it's fine for a cursor position update to be dropped or arrive slightly stale; it is not fine for a document edit to be dropped.
+- **A concrete bandwidth estimate for presence**: at 30 updates/second per collaborator and a small (~50-100 byte) payload per update, a single active collaborator's cursor stream costs roughly 1.5-3KB/sec; a document with 10 simultaneous active collaborators is still under 30KB/sec total for presence — trivial relative to typical broadband, which is exactly why presence can afford to be broadcast frequently and lossily while document edits (far lower volume, but zero-loss-tolerant) get the durable, acknowledged channel instead.
+
+## 3. Data Contract Design
+
+```
+// Document edit operation (OT-style example)
+{ "type": "insert", "position": 42, "text": "hello", "clientId": "c_1", "revision": 118 }
+
+// Presence update (separate, lower-guarantee channel)
+{ "type": "presence", "userId": "u_2", "selection": { "start": 40, "end": 40 }, "color": "#4f46e5" }
+```
+
+- **Every edit operation carries the revision/version it was generated against** — this is what the server (running OT) or the CRDT merge logic uses to determine how to transform or merge it correctly relative to whatever else has landed since.
+- **Presence updates are a separate message type from document operations**, deliberately excluded from the durable operation log — they're ephemeral UI state, not part of the document's actual content history, and don't need the same delivery guarantees.
+- **The client never assumes its own optimistic edit is final** — it applies it locally immediately, but the operation is still subject to being transformed (OT) or simply merged (CRDT) once it's reconciled with what other clients did concurrently.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Local Document Model** — the in-memory representation of the document, updated optimistically the instant the local user types, before any server round-trip.
+- **Operation Queue** — buffers locally-generated operations, sending them to the server/sync layer and tracking which are still unacknowledged (needed for OT's transform-against-concurrent-ops logic, or a CRDT's own merge bookkeeping).
+- **Sync/Merge Layer** — receives remote operations, transforms (OT) or merges (CRDT) them against local unacknowledged operations, and applies the result to the Local Document Model.
+- **Presence Layer** — a separate, lower-guarantee channel rendering other users' live cursor/selection positions, independent of the document-content merge pipeline.
+
+## 5. State Management Design
+
+- **Document content state and presence state are architecturally separate**, with different consistency guarantees — content must never be lost or diverge; presence can be lossy/stale without correctness consequences.
+- **Locally-generated, not-yet-acknowledged operations need to be tracked distinctly from acknowledged ones** — this is the core bookkeeping either merge strategy needs: OT must transform incoming remote operations against this exact "what have I done that the server hasn't confirmed yet" set; a CRDT-based approach needs equivalent bookkeeping to know which local changes are already reflected in a given remote state.
+- **Offline edits accumulate in the same Operation Queue** as online ones — the queue doesn't need a fundamentally different code path for "offline," it just means operations sit un-sent for longer before the same merge logic reconciles them on reconnect.
+
+## 6. Deep Dives
+
+### Sequence: two concurrent inserts, transformed and reconciled
+
+<SequenceDiagram />
+
+Both clients send their insert against the same revision (118) — neither has seen the other's edit yet. The server transforms each operation against the other and broadcasts the transformed result back, so both clients converge on identical final text at revision 119 without either op simply overwriting the other.
+
+### Operational Transformation, concretely
+
+When two clients concurrently insert text at overlapping positions, OT's job is to transform each operation against the other so that applying both (in either order, on either client) produces the same final text — e.g. if client A inserts at position 3 and client B (concurrently) inserts at position 5, B's operation needs its position adjusted once A's insertion is accounted for, so it still lands in the "same" logical spot relative to the now-shifted text. The real cost: every new kind of operation (insert, delete, format, move) needs a transform function defined against every *other* kind of operation, which is where OT's complexity grows combinatorially as an editor's feature set grows.
+
+```ts
+function transformInsert(op: InsertOp, against: InsertOp): InsertOp {
+  // If the concurrent op inserted at or before this op's position, shift
+  // this op forward by the length of what it inserted.
+  if (against.position <= op.position) {
+    return { ...op, position: op.position + against.text.length };
+  }
+  return op;
+}
+```
+
+This is exactly one entry in the transform-function matrix mentioned above — a real editor needs the equivalent for every other operation-type pairing (insert-vs-delete, delete-vs-delete, and so on).
+
+### CRDTs, concretely
+
+Instead of transforming operations against each other, a CRDT structures the data so that merges are commutative and associative by construction — a common approach for text represents each character (or block) with a stable, globally-unique position identifier that doesn't depend on other characters' current positions, so inserting/deleting never requires renumbering anything else, and any two replicas merging their operation sets in any order converge to the same result without a transform step.
+
+### Why Figma didn't pick either textbook approach
+
+Figma's actual content — a tree of design objects with dozens of properties each — doesn't resemble linear text, so OT's character-position transform model is a poor fit. Figma's team has described choosing a simpler, CRDT-*inspired* but property-level last-writer-wins scheme instead: since two users independently editing the exact same property of the exact same object at the exact same instant is rare in practice, full merge-conflict resolution per property is unnecessary complexity for their real usage pattern — a good example of choosing a scheme based on the actual shape and contention pattern of the data, not defaulting to the theoretically "correct" heaviest-duty option.
+
+### Offline edits merging back in
+
+Since local edits already flow through the same Operation Queue regardless of connectivity, reconnecting after an offline period is just "the queue has a backlog to send" rather than a special-cased recovery flow — the same OT-transform or CRDT-merge logic that handles two concurrent online edits handles "my edits from an hour ago merging against everything that happened on the server since," just with a larger backlog to process at once.
+
+## 7. Performance & UX Tradeoffs
+
+| Approach | Best fit | Cost |
+| --- | --- | --- |
+| Operational Transformation | Linear text (Google Docs) | Transform-function surface grows combinatorially with operation-type count |
+| CRDTs | High-contention, arbitrary merge order | More per-element metadata/storage overhead |
+| Property-level LWW (Figma's approach) | Tree of independently-edited properties | Silent overwrite on the rare true same-property collision |
+| Frequent, lossy presence broadcast | Cursor/selection liveliness | Wasted bandwidth if not throttled (~30 updates/sec is the real-world norm) |
+
+The choice between the first three rows should follow the actual data shape — linear text, arbitrary-order high-contention data, or a low-contention property tree — not a default preference for whichever sounds most sophisticated.
+
+## 8. Follow-ups
+
+- **"What happens if two users edit the same cell/property simultaneously?"** Depends entirely on the chosen merge strategy — OT would transform the operations against each other; a last-writer-wins property scheme (Figma's approach) would simply let the later-timestamped write win, an intentional simplification acceptable because true simultaneous edits to the identical property are rare.
+- **"How would you show other users' cursors without them feeling laggy or overwhelming the network?"** Treat presence as its own low-guarantee, throttled/coalesced channel entirely separate from the document-operation pipeline, exactly as described above.
+- **"How do you test convergence correctness?"** Property-based testing is the standard approach for both OT and CRDT implementations: generate many random concurrent operation sequences, apply them in different orders/timings across simulated clients, and assert every client converges to an identical final document state — correctness here means convergence under *any* ordering, not just the common-case ordering.
+- **"What if the document needs to support very large documents efficiently?"** Both OT and CRDT approaches typically need some form of operation-log compaction/snapshotting over time, since an unbounded history of every keystroke ever made isn't a viable long-term storage or replay model.
+
+Sources: [How Figma's multiplayer technology works](https://www.figma.com/blog/how-figmas-multiplayer-technology-works/), [CRDTs vs. Operational Transformation](https://systemdr.systemdrd.com/p/crdts-vs-operational-transformation)

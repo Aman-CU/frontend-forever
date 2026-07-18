@@ -15,7 +15,7 @@ export const INTERVIEW_PREP_NAV: InterviewPrepNavSection[] = [
       { label: "FF JavaScript", href: "/interview-prep/ff-javascript" },
       { label: "FF React", href: "/interview-prep/ff-react" },
       { label: "FF Next.js", href: "/interview-prep/ff-nextjs" },
-      { label: "FF System Design", href: "/interview-prep/ff-system-design" },
+      { label: "FF Frontend System Design", href: "/interview-prep/ff-system-design" },
     ],
   },
   {

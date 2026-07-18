@@ -1,0 +1,117 @@
+---
+title: "Designing a Real-Time Messaging Client"
+slug: "realtime-messaging-client"
+section: "Real-Time & Collaborative"
+difficulty: "hard"
+summary: "A real-time messaging client is architected around a persistent WebSocket connection carrying three distinct concerns — message delivery, presence, and read-receipt status — each with its own consistency requirements, layered over an optimistic local message list that must reconcile a client-generated temporary ID with the server's real message ID once it confirms delivery."
+orderIndex: 1
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Meta", "Slack", "Discord"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Send and receive messages in one-on-one and group conversations, appearing in near-real time for all participants.
+- Show delivery/read status per message (sent → delivered → read, the WhatsApp-style checkmark progression).
+- Show presence (online/offline/typing) for the people the user is chatting with.
+- Support scrolling back through message history, and jumping to unread messages on reopening a conversation.
+
+**Non-functional requirements:**
+
+- Sending a message must feel instant — the message should appear in the sender's own view immediately, before the server has confirmed it, and reconcile silently once it does.
+- Must handle the connection dropping and reconnecting (mobile networks, laptop sleep) without duplicating or losing messages sent during the gap.
+- Must scale a single conversation's real-time fan-out differently for a 2-person DM versus a 10,000-member channel — broadcasting every message to every member individually doesn't scale linearly forever.
+
+**Explicitly out of scope:** end-to-end encryption internals and the backend's message-queue/fan-out infrastructure — this guide is about the client's connection management, optimistic send pipeline, and status reconciliation. A voice/video call initiated from within a chat is a distinct problem with its own media-transport concerns, covered separately in the [Browser Video Conferencing guide](/interview-prep/ff-system-design/browser-video-conferencing).
+
+## 2. Constraints & Estimation
+
+- **WebSockets are the standard transport** for this category — a persistent, bidirectional connection is what makes both inbound message delivery and presence/typing indicators possible without polling.
+- **Small groups vs. large groups need different delivery strategies at the backend**, which shapes what the client can assume: a small group (roughly under a couple hundred members) can be fanned out to each connected member directly; a very large channel (thousands of members) generally routes through a queue-based fan-out instead — the client-facing contract (receive a message event over the socket) stays the same either way, but the client shouldn't assume every group member gets the message with identical latency at very large scale.
+- **Read-receipt status is per-recipient, not a single flag** — a message in a group chat has a different "read" state for each of N recipients, so the client's status model needs to represent partial read state ("read by 3 of 8"), not a boolean.
+- **Reconnection must reconcile a gap**, not just re-open the socket — the client needs to know the last message ID/timestamp it successfully received and request anything missed during the disconnect window, rather than assuming the reconnected socket will replay it automatically.
+- **A worked fan-out cost estimate**: direct fan-out to a 200-member group means one message triggers 200 individual socket writes — at a modest ~200 bytes/write, that's ~40KB of server-side fan-out traffic per message, trivial at that scale; the same math at 10,000 members is 2MB per message, which is roughly the point real systems switch to queue-based delivery instead of direct per-connection writes — the concrete threshold behind the "small vs. large group" split above.
+
+## 3. Data Contract Design
+
+```
+// Outbound (optimistic send)
+{ "clientTempId": "tmp_a1b2", "conversationId": "c_9", "body": "...", "sentAt": "..." }
+
+// Server confirmation (over the same socket)
+{ "type": "message_ack", "clientTempId": "tmp_a1b2", "serverId": "msg_5521", "deliveredAt": "..." }
+
+// Inbound message event
+{ "type": "message", "id": "msg_5522", "conversationId": "c_9", "senderId": "u_2", "body": "...", "sentAt": "..." }
+
+// Read receipt event
+{ "type": "read_receipt", "conversationId": "c_9", "messageId": "msg_5521", "readBy": "u_3", "readAt": "..." }
+```
+
+- **`clientTempId` is how the client reconciles its own optimistic send** — the message is rendered immediately keyed by this temporary ID, and the `message_ack` event tells the client to swap it for the server's real `serverId` without the message visibly disappearing and reappearing.
+- **Read receipts are their own event type, addressed by `messageId` + `readBy`**, not folded into the message payload itself — since read state changes independently of (and after) the message's own content, and multiple recipients read at different times.
+- **Reconnection uses a `since` parameter** (`GET /api/messages?conversationId=c_9&since=msg_5518`) to backfill exactly what was missed, rather than relying on the socket layer to replay a buffer.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Connection Manager** — owns the single WebSocket connection, its reconnection/backoff logic, and a `lastReceivedMessageId` watermark used to request a backfill on reconnect.
+- **Message Store** — the per-conversation, ordered message list, keyed so an optimistically-sent message (by `clientTempId`) and its later server-confirmed form (by `serverId`) resolve to the same list entry rather than a duplicate.
+- **Presence Tracker** — a separate, lightweight channel of online/typing state, deliberately not sharing the same reconciliation guarantees as message delivery (a missed presence update is a stale indicator, not lost data).
+- **Read-Receipt Aggregator** — tracks per-message, per-recipient read state, updating the checkmark UI as receipt events arrive independently of message delivery itself.
+
+## 5. State Management Design
+
+- **Optimistic message state and confirmed message state share one identity once acknowledged** — a message exists once in the Message Store from the moment it's sent, transitioning from "pending" (temp ID, no ack) to "sent" (real ID, ack received) to "read" (receipt events arrived), never rendered twice.
+- **Presence/typing state is ephemeral and doesn't need to survive a reconnect gap the way messages do** — it's fine for a typing indicator to simply reset to "not typing" after a disconnect, rather than requiring the same backfill-on-reconnect guarantee message delivery needs.
+- **Per-recipient read state on a message is additive** — each `read_receipt` event adds one more reader to that message's read-by set, and the UI's "read by all" checkmark is a derived value (set size equals recipient count), not separately tracked.
+
+## 6. Deep Dives
+
+### Sequence: send, ack, deliver, read, reconnect
+
+<SequenceDiagram />
+
+The diagram above lines up every message shape from section 3 in the order they actually occur: an optimistic send, the server's ack swapping in the real ID, delivery to the recipient, that recipient's read receipt flowing back, and — on a later reconnect — the client requesting exactly what it missed rather than a full re-sync.
+
+### The optimistic-send-then-reconcile pipeline
+
+The message renders in the sender's UI the instant they hit send, tagged with a client-generated temporary ID and a "pending" visual state (commonly a single gray checkmark). When the server's `message_ack` arrives carrying that same temporary ID plus the real server-assigned ID, the client swaps the identifier in place — critically, without removing and re-adding the message (which would cause a visible flicker/reorder) — and updates the visual state to "sent." If the ack never arrives (send failed), the message needs a distinct "failed, tap to retry" state rather than silently staying pending forever.
+
+### Reconnection and gap recovery
+
+On any reconnect, the client's Connection Manager compares its last-known message ID/timestamp per open conversation against the server, requesting only the missed range rather than a full history re-sync — this is the same "resume, don't restart" principle used by any real-time client that can't assume the connection is truly persistent (mobile networks sleep, laptops suspend). Getting this wrong produces either duplicate messages (if the client doesn't dedupe against messages it already has) or silently missing ones (if the client assumes the socket will just "catch up" on its own).
+
+### Scaling fan-out and what it means for the client
+
+Direct per-member fan-out works cleanly for small conversations; very large channels typically shift to a queue-backed delivery path server-side. The client-facing event shape doesn't need to change between these cases, but a client shouldn't assume uniform, near-instant delivery latency to every member of a very large channel the way it reasonably can for a 2-person DM — this mostly affects how confidently the UI can claim "delivered to everyone" for a huge group.
+
+### Per-recipient read receipts in a group
+
+Unlike a 1:1 chat's simple "read" boolean, a group message's read state is inherently a set (who has read it so far). The UI commonly collapses this to "Read by 3" or a full checkmark once every recipient has read it, but the underlying state the client tracks needs to be the actual per-recipient set, not a single flag, since new information (a specific person reading) arrives incrementally.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Optimistic send | Feels instant | Rare, brief visible "failed, retry" if the ack never arrives |
+| Wait for server confirmation | No false-positive sends | Noticeably less responsive; virtually no real product does this |
+| Typing event per keystroke | Maximally live indicator | Chatty — unnecessary socket traffic |
+| Throttled typing events | Bounded traffic | Slightly less granular liveliness |
+| Direct fan-out (small groups) | Lowest latency | Doesn't scale past ~hundreds of members (see estimate above) |
+| Queue-based delivery (large channels) | Scales to thousands of members | Higher latency, invisible to the client's own contract |
+
+Optimistic send is the row with no real competing choice in practice — every mainstream messaging product ships it despite the rare visible-failure cost.
+
+## 8. Follow-ups
+
+- **"What if the same account is logged in on two devices?"** Both devices need to independently maintain the same reconnect/backfill logic against their own last-received watermark — read receipts and message delivery aren't scoped to "a device," they're scoped to "a user," so both connections need consistent state, typically reconciled by the server rather than the devices negotiating directly.
+- **"How would you show 'this message failed to send' distinctly from 'still sending'?"** A timeout on the pending state (no ack within some window) flips it to a distinct failed/retry visual state, rather than leaving it pending indefinitely — pending forever is itself a UX bug, not a neutral "still working" state.
+- **"What if a user is offline for days and comes back?"** The `since`-based backfill still works in principle, but a very large gap may need pagination (fetch the most recent messages first, older ones on scroll-up) rather than one unbounded backfill request.
+- **"How do you test the reconnection/reconciliation logic?"** Simulate a disconnect mid-conversation with a mocked socket, inject messages "sent" during the gap, then reconnect and assert the client's backfill request uses the correct watermark and produces no duplicates — deterministic and fully testable without a real network.
+
+Sources: [How to Build a Chat or Messaging App](https://getstream.io/blog/build-chat-messaging-app/), [System Design: Chat Application](https://www.techinterview.org/post/3233465319/system-design-chat-application/)

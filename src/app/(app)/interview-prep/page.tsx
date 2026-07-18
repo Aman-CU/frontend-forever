@@ -16,8 +16,9 @@ export const metadata: Metadata = {
 };
 
 // FF System Design has no row in collection_questions (Feature 49's separate
-// MDX guides), so it's rendered with a null summary — CollectionRow shows a
-// "Coming soon" state for it instead of a progress bar.
+// MDX guides) — getCollectionSummaries derives its count from the filesystem
+// instead, only falling back to a null summary (CollectionRow's "Coming
+// soon" state) while zero guides are authored.
 const COLLECTION_ROW_ORDER: InterviewPrepCollectionKey[] = [
   "ff-75",
   "ff-javascript",

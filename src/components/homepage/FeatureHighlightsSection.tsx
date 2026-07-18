@@ -36,7 +36,7 @@ const FEATURES: FeatureHighlight[] = [
     title: "Interview-Ready Questions",
     shortLabel: "Interview Prep",
     description:
-      "Practice from FF 75, FF JavaScript, FF React, and FF System Design — premium questions documented from real interviews at top companies, not generic multiple choice.",
+      "Practice from FF 75, FF JavaScript, FF React, and FF Frontend System Design — premium questions documented from real interviews at top companies, not generic multiple choice.",
     icon: MessageCircleQuestion,
     color: "premium",
     Visual: InterviewPrepMiniVisual,

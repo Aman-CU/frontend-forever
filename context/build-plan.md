@@ -922,12 +922,14 @@ Every concept eventually gets a hand-built Simulate experience, but each one is 
 
 ### 49 FF System Design — AlgoMaster-Style Practice
 
+**Done — all 27 topics authored (28 guides with the pilot).** Scope confirmed with the user up front: a fresh, standalone topic list (not the 8 existing `ff-system-design` rows in `interview_questions`, which stay untouched and keep feeding only Feature 48's Learn concepts), authored in the long-form 8-section format below. Built system-first with one pilot guide, then completed the full run in the same session — topics sourced from [greatfrontend/awesome-front-end-system-design](https://github.com/greatfrontend/awesome-front-end-system-design)'s README per explicit instruction, each creatively renamed (never the repo's literal titles) and grounded via `WebSearch` before writing. Shipped: the list/guide route pair, the filesystem MDX content reader (`lib/systemDesignGuides.ts`), the `rough.js` diagram primitive system (`features/interview-prep/components/diagrams/rough/` — a hand-tuned bespoke diagram for the pilot, plus a generic data-driven `FlowDiagram` for the other 26), `mdxComponents.tsx` promoted to `components/shared/` on its second consumer, and all 27 fully-authored guides across the 5 draft sections (now finalized against real content: Data-Heavy Interfaces, Real-Time & Collaborative, Media & Rich Content, Offline & Sync, Performance-Critical). See `progress-tracker.md`'s Feature 49 entry and `ui-registry.md`'s matching section for the full build, including the per-guide slug list.
+
 **Split out from Feature 31** — System Design's content model (long-form guides with diagrams) doesn't fit the other 4 collections' short-Q&A pattern. Structurally modeled on algomaster.io's `/practice/system-design` list and individual guide pages (explicitly requested, fetched and analyzed live against the running site), adapted from AlgoMaster's backend-systems focus to FF's frontend-only positioning (`project-overview.md`: "Not LeetCode-style algorithms" — FF's existing System Design questions are already frontend-specific: Infinite-Scroll Feed, Real-Time Collaborative Editor).
 
 **UI — List page** (`/interview-prep/ff-system-design`):
 
 - Table columns: **Section/Problem, Difficulty, Action** only — AlgoMaster's Learn/Simulation/History columns dropped per explicit instruction
-- Problems grouped into frontend-relevant sections (draft, to finalize against the real question list): Data-Heavy Interfaces, Real-Time & Collaborative, Media & Rich Content, Offline & Sync, Performance-Critical
+- Problems grouped into frontend-relevant sections (finalized against the real 27-guide run): Data-Heavy Interfaces, Real-Time & Collaborative, Media & Rich Content, Offline & Sync, Performance-Critical
 - "Action" column → "Start" button → guide page
 
 **UI — Guide page** (`/interview-prep/ff-system-design/[slug]`), section structure keeps AlgoMaster's pacing but every section is retargeted at the client, not the backend:

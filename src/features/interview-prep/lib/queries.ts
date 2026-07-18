@@ -9,6 +9,7 @@ import {
   type ChallengeDifficulty,
   type CollectionQuestionCollection,
 } from "@/lib/constants";
+import { getAllSystemDesignGuides } from "@/lib/systemDesignGuides";
 
 // COLLECTION_QUESTION_COLLECTIONS's declared order (javascript, react, nextjs)
 // is the intended IA order (build-plan.md's sidebar order) — not alphabetical.
@@ -60,16 +61,24 @@ const getCollectionQuestionCounts = unstable_cache(
 
 // FF Collections rows for Get Started. completedCount is always 0 today — no
 // per-user completion tracking exists yet for collection_questions (that's
-// Feature 31/32's job). Real, not mocked — genuinely zero until then, same
-// precedent as Practice Hub's bars pre-Feature-29. FF System Design isn't
-// included: it has no row in this table at all (Feature 49's separate content).
+// Feature 31/32's job) or for the FF System Design guides (Feature 49 has no
+// schema at all). Real, not mocked — genuinely zero until then, same
+// precedent as Practice Hub's bars pre-Feature-29. FF System Design's count
+// comes from the filesystem (Feature 49's MDX guides, no DB row), not a
+// query — CollectionRow only falls back to "Coming soon" when this returns
+// null, which it now does exactly when zero guides are authored yet.
 export const getCollectionSummaries = cache(async (): Promise<CollectionSummary[]> => {
   const counts = await getCollectionQuestionCounts();
+  const systemDesignGuideCount = getAllSystemDesignGuides().length;
+
   return [
     { collection: "ff-75", questionCount: counts.ff75, completedCount: 0 },
     { collection: "ff-javascript", questionCount: counts["ff-javascript"], completedCount: 0 },
     { collection: "ff-react", questionCount: counts["ff-react"], completedCount: 0 },
     { collection: "ff-nextjs", questionCount: counts["ff-nextjs"], completedCount: 0 },
+    ...(systemDesignGuideCount > 0
+      ? [{ collection: "ff-system-design" as const, questionCount: systemDesignGuideCount, completedCount: 0 }]
+      : []),
   ];
 });
 

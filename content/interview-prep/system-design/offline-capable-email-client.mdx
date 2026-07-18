@@ -1,0 +1,123 @@
+---
+title: "Designing an Offline-Capable Email Client"
+slug: "offline-capable-email-client"
+section: "Offline & Sync"
+difficulty: "medium"
+summary: "An email client's frontend has to reconcile two mismatched realities — the underlying protocol (IMAP) models email as a server-authoritative, folder-based store built for occasionally-connected syncing, while a modern client wants instant local reads and writes — which real clients resolve by maintaining a full local copy of mail state and treating the server connection as a background sync channel, not the thing every read/write waits on."
+orderIndex: 1
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Microsoft Outlook", "Gmail"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Browse folders/labels, read messages, and compose/send new ones.
+- Search across a potentially large mail archive.
+- Actions taken offline (archive, delete, mark read, compose a reply) apply instantly locally and send once connectivity returns.
+- Multi-device consistency — reading a message on one device should be reflected as read on others.
+
+**Non-functional requirements:**
+
+- Must remain fully browsable and actionable while offline, not just able to display previously-loaded content in a read-only state.
+- Must not lose or duplicate an outbound message if connectivity drops mid-send or a client crashes with a queued send pending.
+- Search and folder navigation must stay responsive even against a large (potentially years-deep) local archive.
+
+**Explicitly out of scope:** the email protocol/server internals (IMAP/SMTP server implementation, spam filtering) — this guide covers the client's local-store-first architecture and its sync relationship with the server.
+
+## 2. Constraints & Estimation
+
+- **The underlying mail protocol is built around a server-authoritative, sync-oriented model**, not a real-time push model — IMAP maintains an ongoing synchronization relationship between a local copy and the server's copy, designed from the outset for occasionally-connected access rather than assuming a constant connection.
+- **A genuinely offline-capable client needs a full local mail store, not a thin cache** — some real clients explicitly distinguish themselves by storing a complete local archive (years of history) versus a limited rolling window (e.g. only the most recent few months), which is a real, user-visible product decision with real local-storage-size implications.
+- **Every mutating action (read/unread, archive, delete, send) needs to work against the local store first**, with the server sync happening asynchronously — this is the same local-first principle as the general [Offline-First Sync Engine](/interview-prep/ff-system-design/offline-first-sync-engine) pattern, applied specifically to mail's folder/message data shape.
+- **Outbound send needs durable local queuing** — a compose action must be safely queued locally (surviving a crash or an offline period) before it's considered "sent" from the user's perspective, with actual delivery to the SMTP layer happening once connectivity allows.
+- **A concrete local-storage number worth naming**: a moderately active mailbox accumulates roughly 10,000-50,000 messages/year including headers and snippets — at a rough 2-5KB of local-store overhead per message (metadata + indexed snippet, excluding large attachments which are cached separately), a multi-year full archive lands in the low hundreds of MB, comfortably within IndexedDB's typical per-origin budget, which is the concrete math behind why "full archive vs. rolling window" is a real, non-trivial product decision rather than an obvious default.
+
+## 3. Data Contract Design
+
+```
+// Local message record
+{
+  "id": "msg_5521",
+  "folderId": "inbox",
+  "from": "...", "subject": "...", "snippet": "...", "bodyRef": "local_blob_991",
+  "isRead": false,
+  "syncState": "synced" | "pending_local_change"
+}
+
+// Queued outbound action (durable, local)
+{
+  "actionId": "a_1",
+  "type": "send" | "mark_read" | "archive" | "delete",
+  "targetId": "msg_5521",
+  "payload": { ... },
+  "queuedAt": "2026-07-18T10:00:00Z",
+  "synced": false
+}
+```
+
+- **Every local message carries an explicit `syncState`** — this is what lets the UI (and the sync engine) distinguish "this reflects the server" from "this has a local change not yet confirmed by the server," the same distinction any local-first architecture needs.
+- **Mutating actions are queued as durable, typed records**, not just applied silently to the local message and forgotten — this is the mechanism (identical in spirit to the general offline-first Mutation Queue pattern) that survives an app restart or extended offline period without losing pending changes.
+- **A compose/send action is queued the same way as any other mutating action** — from the sync engine's perspective, "send this message" and "mark this message read" are both just queued actions awaiting a sync opportunity, differing only in what the eventual server-side effect is.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Local Mail Store** — the client's full (or windowed) local copy of folders and messages, which every read in the UI is served from directly, regardless of connectivity.
+- **Action Queue** — durably records every mutating action (read/unread, archive, delete, send) the instant the user performs it, independent of whether the client is currently online.
+- **Sync Engine** — when connectivity is available, drains the Action Queue against the server (via IMAP/SMTP or an equivalent API), and separately pulls down any new/changed server-side state (new mail arriving, changes from another device) into the Local Mail Store.
+- **Search Index** — a local index built over the Local Mail Store's content, so search stays fast and fully functional offline rather than requiring a live server round-trip per query.
+
+## 5. State Management Design
+
+- **The Local Mail Store is what the entire UI reads from, unconditionally** — there's no separate "offline view" versus "online view"; every screen reads local state, and connectivity only affects how quickly that local state converges with the server, exactly the local-first principle applied to the [Offline-First Sync Engine guide](/interview-prep/ff-system-design/offline-first-sync-engine)'s task-tracker example, here applied to mail.
+- **The Action Queue is the single mechanism through which the Local Mail Store's local changes eventually reach the server** — a locally-marked-read message and a locally-composed reply both flow through the identical queue-then-sync pipeline, just with different action payloads.
+- **Multi-device consistency is handled by treating every device as an independent Action Queue drainer against the same server state** — device A marking a message read queues and eventually syncs that action; device B's Sync Engine, on its own next sync pass, pulls that server-side change down into its own Local Mail Store — no direct device-to-device communication is needed, only each device's independent relationship with the server.
+
+## 6. Deep Dives
+
+### Sequence: queued send, then a second device pulling read state
+
+<SequenceDiagram />
+
+Notice there's no direct device-to-device message anywhere — Client B only learns Client A marked a message read by making its own `sync (pull)` request and receiving whatever changed server-side since its last sync, exactly the "every device is an independent Action Queue drainer" model from section 5.
+
+### Full local archive vs. a rolling window
+
+A genuinely offline-first email client needs to decide how much mail history actually lives locally — some real clients differentiate specifically by storing a user's complete archive locally (enabling offline access to mail from years ago) versus only a recent rolling window (e.g. a limited number of months), which is a real, product-level tradeoff between local storage footprint and how far back offline browsing actually works.
+
+### Queuing outbound sends durably
+
+Since a send action must survive a crash or an extended offline period without being lost or duplicated, the Action Queue needs the send itself (not just "the user clicked send") to be the durable, replayable unit — on reconnect, the Sync Engine replays queued send actions against the SMTP layer, and a real implementation needs idempotency here (a way to recognize "this exact queued send was already delivered" even if, e.g., the client crashed right after the server accepted it but before the client could mark the action as synced) to avoid a duplicate send on retry.
+
+### Read/unread and other lightweight state across devices
+
+Unlike a send (which has an obvious, one-directional, idempotency-sensitive effect), a read/unread flag is a simple, low-stakes, frequently-changing piece of state — a straightforward last-writer-wins policy per message (whichever device's read-state change reaches the server most recently wins) is entirely sufficient here, without needing anything more sophisticated, mirroring the same "most fields don't need heavyweight conflict resolution" reasoning as the [Collaborative Canvas Design Tool](/interview-prep/ff-system-design/collaborative-canvas-design-tool) and [Real-Time Task Tracker](/interview-prep/ff-system-design/realtime-task-tracker) guides.
+
+### Local search over a large archive
+
+Rather than sending every search query to the server (which would make search entirely dependent on connectivity, defeating the purpose of an offline-capable client), a genuinely offline-capable design needs a local search index built over the Local Mail Store's actual content — trading some local indexing/storage overhead for search that works identically whether the client is online or not.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Full local archive | Offline access to years of mail history | Local storage footprint (low hundreds of MB for a multi-year mailbox) |
+| Rolling recent-mail window | Bounded, predictable storage cost | Offline access only as far back as the window |
+| Durable queuing + idempotent replay | Prevents a duplicated outbound send on retry | More implementation work than fire-and-hope sending |
+| Eager local search indexing | Search results always current | Ongoing indexing work on every message change |
+| Batched local search indexing | Lower steady-state overhead | Small, real freshness lag on search results |
+
+The queuing row is the one with the least room for a shortcut — a duplicated outbound email is a genuinely bad, user-visible failure mode, not a cosmetic one.
+
+## 8. Follow-ups
+
+- **"What if the same email is marked read on one device and deleted on another before either syncs?"** This needs an explicit, defined resolution policy (e.g. delete generally wins over a read-state change, since a deleted message's read state is moot) — the specific policy matters less than the fact that a defined policy exists, rather than leaving the outcome to whichever sync happens to reach the server first with no considered precedence.
+- **"How would you handle attachments in an offline-capable client?"** Attachments are typically fetched and cached locally on demand (not eagerly for every message, given their size) with their own local-cache-then-sync lifecycle distinct from the lightweight message metadata — a real, additional design surface beyond plain text mail content.
+- **"How do you test the offline queue-and-sync logic?"** Simulate queuing several actions (including a send) while "offline," then simulate reconnecting and assert the Sync Engine replays them in the correct order against a mocked server, with idempotent handling verified by simulating a retry of an action the mock server reports as already applied.
+- **"What if the user's local storage quota is exceeded by a very large mail archive?"** A real client needs a defined eviction/windowing policy (e.g. keep full text locally only for recent mail, falling back to a lighter cached summary plus on-demand refetch for older mail) rather than an unbounded local store that eventually fails to write.
+
+Sources: [OfflineIMAP - Wikipedia](https://en.wikipedia.org/wiki/OfflineIMAP), [Best Offline Email Clients 2026](https://www.getmailbird.com/offline-first-email-apps-performance/)

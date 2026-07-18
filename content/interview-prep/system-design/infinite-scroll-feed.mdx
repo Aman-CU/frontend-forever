@@ -1,0 +1,140 @@
+---
+title: "Designing an Infinite-Scroll Feed"
+slug: "infinite-scroll-feed"
+section: "Data-Heavy Interfaces"
+difficulty: "medium"
+summary: "An infinite-scroll feed is built from three cooperating pieces — a windowed list that only mounts the rows currently on screen, an IntersectionObserver-based sentinel that triggers the next page fetch before the user hits the bottom, and a cache keyed by cursor so pages can be appended, deduplicated, and replayed on remount without refetching."
+orderIndex: 1
+datePublished: "2026-07-17"
+dateModified: "2026-07-17"
+companies: ["Meta", "Twitter", "LinkedIn"]
+---
+
+## 1. Requirements Gathering
+
+Before writing a line of code, pin down what "infinite scroll" actually needs to do for this product — the UI-level requirements, not a backend spec.
+
+**Functional requirements:**
+
+- Load an initial page of feed items on mount, then fetch the next page automatically as the user scrolls near the bottom.
+- Render new items without a jarring layout jump or losing the user's scroll position.
+- Support pull-to-refresh (or an equivalent "New posts" affordance) without discarding items already loaded below.
+- Handle items that change or disappear after they've been fetched — a post gets deleted, edited, or liked while it's already on screen.
+- Work when the user navigates away and back (e.g. opens a post, then presses back) — the feed should still be scrolled to where they left it, not reset to the top.
+
+**Non-functional requirements:**
+
+- Must stay smooth (60fps scroll) with 10,000+ items loaded over a session — this is the constraint that rules out naively rendering every row.
+- Must degrade gracefully on a slow network: a stalled fetch shouldn't freeze scrolling, it should show a loading affordance at the bottom.
+- Must work with JavaScript-driven scrolling as the primary signal — no dependency on a fixed page size the server can't adjust.
+
+**Explicitly out of scope for this guide:** the ranking/personalization algorithm that decides *which* posts appear (that's a backend/ML concern) and the storage engine behind the API. This guide is about what the client does with an ordered, paginated stream of items it's handed.
+
+## 2. Constraints & Estimation
+
+Frontend system design estimation is about budgets and ceilings, not throughput math:
+
+- **DOM node ceiling:** a modern browser starts to visibly stutter well before 10,000 live DOM nodes with any non-trivial styling (shadows, images, flex layouts) per node. If each feed item is a card with an avatar, text, and an image, budget for roughly 200-400 *mounted* rows as the practical ceiling before virtualization becomes mandatory — and a feed session can easily exceed 10,000 items over time, so virtualization isn't optional, it's the whole point of this design.
+- **Network/page-size budget:** a page size of 10-20 items balances perceived latency (small enough to arrive fast) against request overhead (large enough that scrolling doesn't fire a fetch every second). Each item's payload should be trimmed to what the feed card actually renders — full comment threads or nested reply data don't belong in the list payload, only in the detail view.
+- **Image weight:** images are almost always the dominant byte cost in a feed. Budget for lazy-loading (`loading="lazy"` or an IntersectionObserver-driven loader) on every image below the fold, and a low-cost blurred placeholder or dominant-color swatch to avoid layout shift while the real image loads.
+- **Scroll-position restoration cost:** restoring scroll position on back-navigation means the previously-fetched pages (or at least their heights) need to still be available in memory or cache — this is a real memory/complexity tradeoff, covered in the Deep Dives section below.
+- **A worked bandwidth estimate**: at 15 items/page and ~2KB of text payload per item (excluding images, which lazy-load separately), one page fetch is ~30KB; a user scrolling through 10 pages in a session pulls ~300KB of feed JSON — trivial against typical page budgets, confirming that item *count* (driving the DOM-node ceiling above) is the real constraint here, not payload bandwidth. This is the general pattern worth applying to any data-heavy list guide in this series: DOM cost and network cost are separate budgets that hit their ceilings at very different scales, and design decisions should target whichever one actually binds first — see this same math applied differently in the [Social News Feed](/interview-prep/ff-system-design/social-news-feed) and [Masonry Discovery Feed](/interview-prep/ff-system-design/masonry-discovery-feed) guides.
+
+## 3. Data Contract Design
+
+The feed is a paginated, cursor-based stream — not an offset-based one. Cursor pagination is the right shape here because the underlying list is constantly being inserted into (new posts arrive above/within the range you've already paged through); offset-based pagination silently skips or duplicates items when the underlying order shifts mid-session.
+
+```
+GET /api/feed?cursor={opaque_cursor}&limit=15
+
+{
+  "items": [
+    {
+      "id": "post_8f21",
+      "author": { "id": "u_42", "name": "Ada Lovelace", "avatarUrl": "..." },
+      "body": "...",
+      "imageUrl": "...",
+      "createdAt": "2026-07-17T09:00:00Z",
+      "likeCount": 128,
+      "viewerHasLiked": false
+    }
+  ],
+  "nextCursor": "eyJvZmZzZXQiOjE1LCJ0Ijox...", // opaque, server-owned
+  "hasMore": true
+}
+```
+
+Design decisions worth calling out:
+
+- **The cursor is opaque to the client.** The client's only job is to pass whatever `nextCursor` it was given back on the next request — it never constructs or interprets one. This keeps the client decoupled from whatever the server uses internally (a timestamp+ID compound key, a keyset cursor, anything).
+- **`hasMore` is explicit**, not inferred from `items.length < limit`. Relying on page size to signal the end is a common bug source the moment the server changes its internal batching.
+- **Item shape is feed-card-sized, not full-object-sized** — no comment arrays, no full author profile. A tap into the post fetches the detail payload separately.
+- **Real-time updates (likes, new posts) are a separate channel**, not part of pagination — see the Deep Dives section on live updates.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+The architecture is a loop with four responsibilities, each owned by a different layer:
+
+- **Viewport** — the scrollable container. Its only job is to report scroll position and expose enough height for native scrolling to feel correct.
+- **Virtualized List** — decides which of the (potentially thousands of) loaded items actually get mounted as real DOM nodes, based on what's currently visible plus a small overscan buffer above/below.
+- **IntersectionObserver sentinel** — an invisible marker element rendered a fixed distance before the true end of the list. When it enters the viewport, that's the trigger to fetch the next page — well before the user actually hits the bottom, so the fetch has time to resolve before they'd notice a gap.
+- **Data layer (cache + fetch hook)** — owns the list of loaded pages, the current cursor, in-flight/error state, and exposes a flat, deduplicated array of items to the list for rendering.
+
+This separation matters because it keeps "what's visible" (a rendering concern) fully decoupled from "what's loaded" (a data concern) — the virtualized list can hold thousands of items in its backing array while only ever mounting a few dozen real nodes.
+
+## 5. State Management Design
+
+Three distinct pieces of state, each with a different owner and a different lifetime:
+
+- **Server cache state** (the pages of items, the cursor, loading/error flags) — owned by a query/cache layer (React Query, SWR, or a hand-rolled equivalent built around `useInfiniteQuery`-style semantics). This state is keyed by the feed's identity (e.g. `["feed", filterParams]`) so switching feeds (e.g. Following vs. For You) doesn't require manually resetting state — it's a cache-key change.
+- **Scroll/viewport state** (scroll offset, which rows are currently rendered) — owned by the virtualization layer, ideally as a ref-driven value rather than React state, since it updates on every scroll frame and re-rendering the whole tree on every pixel of scroll would defeat the entire point of virtualizing.
+- **Optimistic interaction state** (a like that hasn't been confirmed by the server yet) — applied as a local patch over the cached item, reconciled (or rolled back) when the real response arrives. This needs to survive the item scrolling out of view and back into view without reverting, which means it lives in the cache layer's item record, not in the row component's local state (a row component unmounts when virtualized out — anything stored in its own `useState` is lost).
+
+A common mistake here is putting "which items are loaded" and "which items are visible" in the same piece of state — they need to update at completely different frequencies (network-speed vs. every-scroll-frame), and coupling them forces either unnecessary re-fetches or unnecessary re-renders.
+
+## 6. Deep Dives
+
+### Virtualization strategy
+
+Two viable approaches:
+
+- **Fixed-height virtualization** — every row is assumed to be the same height. Simplest to implement and reason about (position of row *n* is just `n * rowHeight`), but feed cards rarely have uniform height (variable text length, optional images) — so this only works if you deliberately constrain every card to a fixed height, which is a real design tradeoff, not just an implementation detail.
+- **Variable-height (measured) virtualization** — rows report their real rendered height after mount, and the list maintains a running offset cache. This is what real feed products use, since card height genuinely varies. The tricky part is that a row's height is unknown *before* it's measured, so the list has to estimate, render, then correct — which can cause a visible micro-jump if the estimate is far off. Minimizing that means picking a good average-height estimate and, where possible, reserving space based on content the server already sent (e.g. "this post has an image" is enough to reserve extra height even before the image loads).
+
+### Scroll-position restoration
+
+When the user navigates into a post and back, they expect the feed exactly as they left it — not reset to the top, and not re-fetched from page 1. This requires:
+
+- Keeping the fetched pages and the cursor alive in cache across the navigation (not just in component state, which unmounts) — this is exactly what a query-cache layer keyed by a stable feed identity gives you for free.
+- Persisting the scroll offset itself (or, more robustly, the ID of the topmost visible item) alongside that cache entry, and restoring by scrolling to that item's measured position on remount — restoring a raw pixel offset breaks the moment row heights were only estimates during the first pass.
+
+### Prefetching
+
+The sentinel-triggered fetch already prefetches *ahead* of the visual edge, but the more common perceived-latency win is prefetching *images* for rows just below the currently-rendered window (the overscan buffer) before they're scrolled into view, rather than waiting for the row to mount and its `<img>` tag to start loading. This trades a small amount of extra bandwidth for eliminating the "blank card, then image pops in" flash on fast scrolling.
+
+### Real-time updates (new posts, live like counts)
+
+New posts arriving at the *top* of the feed while the user is scrolled down are a UX decision, not just a technical one: silently prepending items would shift everything the user is currently looking at. The standard pattern is to buffer incoming real-time items and surface a "X new posts" pill at the top, only merging them into the rendered list on a deliberate user action (tap the pill, or pull-to-refresh) — never an unprompted layout shift below the fold.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Fixed-height virtualization | Simple math (`n * rowHeight`), no measurement pass | Only works if every card is forced to a uniform height |
+| Variable-height (measured) virtualization | Matches real feed cards' natural variable height | Estimate-then-correct can cause a visible micro-jump |
+| Small overscan buffer | Less memory/CPU | Fast flicks can outrun rendering, showing blank gaps |
+| Large overscan buffer | No blank gaps on fast scroll | More mounted nodes than strictly necessary |
+| Optimistic like/reaction UI | Feels instant | Rare, brief visible rollback if the server rejects it |
+
+Real feed products consistently pick the second row of the first pair (measured virtualization) despite its complexity, since a uniform-height constraint rarely survives contact with real, variable-length content.
+
+## 8. Follow-ups
+
+Interviewer curveballs worth having a real answer for:
+
+- **"What if the network drops mid-scroll?"** The sentinel fetch fails, the list should show a retry affordance at the bottom rather than silently stopping — and the existing loaded items must stay fully interactive; a failed next-page fetch shouldn't affect anything already rendered.
+- **"What if the user is on a very slow connection?"** Shrink the page size, delay image loading further, and consider a lower-fidelity placeholder (text-only card skeleton) until the network layer confirms bandwidth — the same component architecture supports this via the page-size parameter without a structural change.
+- **"How would this change for a chat-style reverse-infinite-scroll (loading older messages upward)?"** The sentinel moves to the top instead of the bottom, and — critically — prepending items above the viewport must preserve scroll position exactly (the classic "content jumped when older messages loaded" bug), which means measuring the height of newly-prepended content and adjusting `scrollTop` by that exact delta in the same paint.
+- **"How do you test this without a real backend?"** Mock the cursor-pagination contract directly (a fake `nextCursor` sequence with deterministic pages) so virtualization, sentinel-triggering, and cache-merging can all be verified against fixed, repeatable data rather than a live feed.
