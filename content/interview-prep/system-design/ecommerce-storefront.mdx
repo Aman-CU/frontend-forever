@@ -65,7 +65,7 @@ POST /api/cart/validate
 ```
 
 - **PLP pagination is a plain, page-numbered contract**, not cursor-based — unlike a social feed, a product catalog is a comparatively stable, filterable dataset a shopper often wants to jump around in ("show me page 5"), so classic offset/page-number pagination is the right fit here, not the cursor pattern a live-ranked feed needs.
-- **A dedicated cart-validation endpoint**, called on checkout entry (not on every cart view), re-prices and re-checks stock against what the client remembers — the client never trusts its own cached `priceAtAdd` as the checkout-time price.
+- **A dedicated cart-validation endpoint**, called on checkout entry (not on every cart view), re-prices and re-checks stock against what the client remembers — the client never trusts its own cached `priceAtAdd` as the checkout-time price. This checkout-entry check is early feedback for the user, not the final word: a multi-step checkout (address → shipping → payment) can take real elapsed time, so the actual order-creation/payment-authorization call needs its own atomic server-side re-validation of price, stock, and total immediately before charging — never reusing the checkout-entry response as if it were still current by the time the user confirms payment.
 - **Filters are server-applied query parameters**, not client-side array filtering — filtering a 17,000-item catalog in the browser is both a performance and a correctness problem (the client would need the entire catalog loaded to filter it).
 
 ## 4. High-Level Component Architecture
@@ -95,7 +95,7 @@ The concrete INP risk areas on checkout — a coupon field that fires a server r
 
 ### Price/stock drift between add-to-cart and checkout
 
-Storing `priceAtAdd` on the client is useful for showing "price changed since you added this" messaging, but it must never be trusted as the actual charge amount — the validation endpoint is the single point where price and stock are re-confirmed, and a UI that surfaces "this item's price changed" (rather than silently updating or silently failing) is both more honest and avoids a support-ticket-generating surprise at payment.
+Storing `priceAtAdd` on the client is useful for showing "price changed since you added this" messaging, but it must never be trusted as the actual charge amount — a UI that surfaces "this item's price changed" (rather than silently updating or silently failing) is both more honest and avoids a support-ticket-generating surprise at payment. Critically, this isn't a single checkpoint: checkout-entry validation catches the common case early, but the moment that actually creates the order and authorizes payment needs its own atomic re-validation of price, stock, quantity, and total, server-side, immediately beforehand — treating checkout-entry's response as still valid minutes later (after the user filled out shipping and payment forms) is exactly the kind of time-of-check-to-time-of-use gap that lets a stale price or an item that sold out mid-checkout slip through to an actual charge.
 
 ### Filter/sort as URL state
 

@@ -52,6 +52,20 @@ export function getSystemDesignGuide(slug: string): SystemDesignGuide | null {
   return { frontmatter: data as SystemDesignGuideFrontmatter, content };
 }
 
+// `orderIndex` is only unique *within* a section (each section restarts at
+// 1), so sorting the flat list by orderIndex alone ties every section's Nth
+// guide together — Prev/Next navigation would then cross section boundaries
+// in whatever order Array.sort's tie-break happens to preserve, not the
+// intended reading order. Section order matches the list page's grouping
+// (build-plan.md's finalized 5-section run).
+const SECTION_ORDER = [
+  "Data-Heavy Interfaces",
+  "Real-Time & Collaborative",
+  "Media & Rich Content",
+  "Offline & Sync",
+  "Performance-Critical",
+];
+
 export function getAllSystemDesignGuides(): SystemDesignGuide[] {
   if (!fs.existsSync(GUIDES_DIR)) return [];
 
@@ -63,7 +77,11 @@ export function getAllSystemDesignGuides(): SystemDesignGuide[] {
       const { data, content } = matter(source);
       return { frontmatter: data as SystemDesignGuideFrontmatter, content };
     })
-    .sort((a, b) => a.frontmatter.orderIndex - b.frontmatter.orderIndex);
+    .sort((a, b) => {
+      const sectionDiff =
+        SECTION_ORDER.indexOf(a.frontmatter.section) - SECTION_ORDER.indexOf(b.frontmatter.section);
+      return sectionDiff !== 0 ? sectionDiff : a.frontmatter.orderIndex - b.frontmatter.orderIndex;
+    });
 }
 
 export type SystemDesignGuideNavItem = { slug: string; title: string };

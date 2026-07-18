@@ -32,7 +32,7 @@ companies: ["YouTube", "Netflix"]
 - **Adaptive bitrate (ABR) streaming is universal across real video platforms** — every major streaming product encodes the same video into several quality/bitrate tiers, splits each tier into short segments (commonly a few seconds each), and lets the client choose which tier to request per segment based on current conditions, rather than committing to one fixed quality for the whole playback.
 - **Bandwidth estimation is commonly throughput-based**: the player estimates available bandwidth largely from how long the most recently downloaded segment took relative to its size, then selects the highest quality tier whose bitrate comfortably fits that estimate — a reactive approach (it responds to bandwidth that has already changed, not bandwidth about to change), which is a genuine, acknowledged limitation of the simplest ABR algorithms.
 - **Buffer health matters as much as raw bandwidth** — a player with a healthy multi-segment buffer can afford to ride out a brief bandwidth dip without switching quality at all; a player with a thin buffer needs to react more conservatively, since it has less runway before a stall.
-- **Standard protocols (HLS, MPEG-DASH) define the segment/tier manifest format** the player consumes — the actual video decoding and buffering in the browser is done via the Media Source Extensions (MSE) API, since neither protocol is natively understood by the `<video>` element without a JavaScript layer feeding it segments through MSE.
+- **Standard protocols (HLS, MPEG-DASH) define the segment/tier manifest format** the player consumes — the actual video decoding and buffering in the browser is generally done via the Media Source Extensions (MSE) API, since neither protocol is natively understood by the `<video>` element without a JavaScript layer feeding it segments through MSE. The one real exception: Safari (desktop and iOS) has native HLS support built into `<video>` itself — an `.m3u8` manifest can be set directly as the `src` and Safari handles segment fetching and ABR internally, no MSE or JavaScript player logic required. DASH has no equivalent native support anywhere, and browsers other than Safari have no native HLS support either, which is why a real player still needs the full MSE-driven path as the general case, using native HLS only as a Safari-specific shortcut.
 - **A worked tier-selection estimate**: at a 4-second segment duration, a 1080p tier (~6Mbps) needs the client to sustain ~3MB/segment-interval; on a connection that's just measured ~4Mbps of throughput, the 480p tier (~2.5Mbps, ~1.25MB/segment-interval) is the highest one that fits with real margin — this is literally the arithmetic the ABR Controller runs on every segment decision, just automated rather than manual.
 
 ## 3. Data Contract Design
@@ -81,9 +81,12 @@ Before requesting each new segment, the ABR Controller: (1) checks the Bandwidth
 ```ts
 function selectRendition(renditions: { bitrate: number }[], estimatedBps: number, safetyMargin = 0.8) {
   const affordable = renditions.filter((r) => r.bitrate <= estimatedBps * safetyMargin);
-  return affordable.length
-    ? affordable.reduce((best, r) => (r.bitrate > best.bitrate ? r : best))
-    : renditions[0]; // fall back to the lowest tier if nothing else fits
+  if (affordable.length) return affordable.reduce((best, r) => (r.bitrate > best.bitrate ? r : best));
+  // Manifests aren't guaranteed to list renditions in bitrate order, so the
+  // fallback has to compute the actual lowest tier rather than assume it's
+  // renditions[0] — picking the wrong one here defeats the whole point of a
+  // conservative fallback.
+  return renditions.reduce((lowest, r) => (r.bitrate < lowest.bitrate ? r : lowest));
 }
 ```
 
@@ -97,7 +100,7 @@ Starting playback requires buffering at least one segment before the `<video>` e
 
 ### Media Source Extensions as the buffering mechanism
 
-Since HLS/DASH aren't natively understood by the `<video>` element, the player uses MSE to feed downloaded segment bytes into a `SourceBuffer` that the native element decodes and plays from — this is the mechanism that makes JavaScript-driven, protocol-aware adaptive streaming possible at all inside a standard browser video element, rather than needing a plugin or a fully custom decoder.
+Since HLS/DASH generally aren't natively understood by the `<video>` element, the player uses MSE to feed downloaded segment bytes into a `SourceBuffer` that the native element decodes and plays from — this is the mechanism that makes JavaScript-driven, protocol-aware adaptive streaming possible at all inside a standard browser video element, rather than needing a plugin or a fully custom decoder. A real player still checks for Safari's native HLS support first (via `video.canPlayType`) and skips its own MSE path entirely there, falling back to MSE everywhere else and for DASH unconditionally.
 
 ## 7. Performance & UX Tradeoffs
 

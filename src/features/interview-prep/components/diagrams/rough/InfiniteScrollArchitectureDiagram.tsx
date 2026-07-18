@@ -3,7 +3,7 @@
 import type { RoughSVG } from "roughjs/bin/svg";
 
 import { RoughDiagram, type RoughThemeColors } from "./RoughDiagram";
-import { drawArrow, drawBox } from "./roughPrimitives";
+import { drawArrow, drawBox, drawLine } from "./roughPrimitives";
 
 type Box = { key: string; x: number; y: number; w: number; h: number; lines: string[] };
 
@@ -33,8 +33,13 @@ function draw(rc: RoughSVG, colors: RoughThemeColors): SVGElement[] {
   nodes.push(drawArrow(rc, 190, 160, 235, 160, arrowStyle));
   // sentinel -> fetch trigger: sentinel intersects, next page requested
   nodes.push(drawArrow(rc, 405, 145, 460, 68, arrowStyle));
-  // fetch trigger -> API: the actual network request
-  nodes.push(drawArrow(rc, 567, 95, 567, 235, arrowStyle));
+  // fetch trigger -> API: the actual network request — routed right of the
+  // Cache box (which sits directly between query and API in the same
+  // column) so the connector doesn't visually cut through Cache or overlap
+  // the reverse API -> cache arrow below.
+  nodes.push(drawLine(rc, 620, 95, 700, 95, arrowStyle));
+  nodes.push(drawLine(rc, 700, 95, 700, 235, arrowStyle));
+  nodes.push(drawArrow(rc, 700, 235, 620, 235, arrowStyle));
   // API -> cache: response lands as a new page + next cursor
   nodes.push(drawArrow(rc, 567, 235, 567, 190, arrowStyle));
   // cache -> virtualized list: new rows appended, only visible ones render

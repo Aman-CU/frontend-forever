@@ -92,13 +92,25 @@ Since a canvas has no notion of "which element is under the cursor," the applica
 
 Rather than storing layer order as an integer position (which would require renumbering every sibling on an insert-between operation — a conflict-prone, chatty operation in a multiplayer context), fractional indexing assigns each object a sortable string/number that can always have a new value generated *between* any two existing ones, so inserting a new layer between two others is a single, independent, non-conflicting write — no other object's order value needs to change.
 
-A simplified midpoint generator over a base-36 alphabet (a real implementation also handles unequal-length keys and periodic rebalancing):
+A simplified midpoint generator over a base-36 alphabet:
 
 ```ts
 function generateKeyBetween(a: string | null, b: string | null): string {
   const digits = "0123456789abcdefghijklmnopqrstuvwxyz";
   const lo = a ?? "";
   const hi = b ?? "z";
+
+  // No string sorts strictly between e.g. "a" and "a0" in this scheme —
+  // any string prefixed by "a" is >= "a0" the instant its next character is
+  // the alphabet's own first digit. A real implementation (e.g. npm's
+  // `fractional-indexing`) sidesteps this entirely by never generating a
+  // key that is another key's prefix plus the first digit alone; that
+  // invariant, plus unequal-length-key handling and periodic rebalancing,
+  // is real work this illustration deliberately leaves out.
+  if (lo && hi.startsWith(lo) && hi[lo.length] === digits[0]) {
+    throw new Error(`No key exists strictly between "${a}" and "${b}" in this simplified scheme`);
+  }
+
   let result = "";
   for (let i = 0; ; i++) {
     const loDigit = digits.indexOf(lo[i] ?? "0");

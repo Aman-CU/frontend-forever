@@ -53,12 +53,17 @@ companies: ["Linear"]
 { "mutations": [ /* array of the above, oldest first */ ], "sinceRevision": 4102 }
 
 // Sync response
-{ "acceptedMutationIds": ["m_2201"], "remoteChangesSince": [ /* entity patches from other clients/collaborators */ ] }
+{
+  "newRevision": 4118,
+  "acceptedMutationIds": ["m_2201"],
+  "rejectedMutations": [{ "mutationId": "m_2203", "reason": "validation_failed" }],
+  "remoteChangesSince": [ /* entity patches from other clients/collaborators */ ]
+}
 ```
 
 - **`mergeStrategy` is a per-entity-type (or even per-field) property**, not global — this is what lets the engine apply simple last-write-wins to most data while reserving CRDT-based merging specifically for the fields/entities where real concurrent-edit contention justifies the extra complexity.
 - **The sync request is a batch, not one request per mutation** — draining an offline backlog of many queued mutations as a single batched exchange is both more efficient and simpler to reason about than replaying them as separate round-trips.
-- **The sync response returns both which local mutations were accepted and what changed remotely since the client's last sync** — both directions of reconciliation happen in one exchange, rather than the client needing separate "push my changes" and "pull remote changes" round-trips.
+- **The sync response returns both which local mutations were accepted and what changed remotely since the client's last sync** — both directions of reconciliation happen in one exchange, rather than the client needing separate "push my changes" and "pull remote changes" round-trips. Every submitted mutation needs an explicit outcome, not just an accepted list — a mutation missing from `acceptedMutationIds` is ambiguous (rejected? not yet processed? lost in transit?) unless rejections are their own explicit field the client can act on (e.g., surface a conflict, drop the mutation, retry). `newRevision` is what the client advances its next request's `sinceRevision` to — without the server handing back a concrete watermark, the client has no correct value to send on its next sync.
 
 ## 4. High-Level Component Architecture
 

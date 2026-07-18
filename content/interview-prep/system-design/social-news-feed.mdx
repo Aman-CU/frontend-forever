@@ -32,7 +32,7 @@ companies: ["Meta", "Twitter", "Reddit"]
 
 - **DOM node ceiling** applies exactly as it does for any high-volume list — virtualization is mandatory past a few hundred mounted rows, and feed cards are typically heavier (avatar, rich text, media, action bar) than a simple row, so the practical mounted-row budget is lower than a plain list's.
 - **Payload shape varies by post type.** A single flat `Post` shape with optional fields for each post type (`imageUrl?`, `videoUrl?`, `sharedPost?`) is simpler to virtualize than a discriminated union requiring per-type height estimation logic, but the client still needs a `type` field to pick the right renderer.
-- **Ranking is genuinely live**, not a fixed backing list — this rules out plain offset pagination outright (the classic bug: the twelfth item you saw shifts to the eleventh position as new candidates are scored, so an offset-based "page 2" silently skips or repeats items). A cursor must encode enough ranking state (a score-and-ID pair, or an opaque server-owned token) that "the next page" means "the next items after this one in this specific ranking pass," not "items 16–30."
+- **Ranking is genuinely live**, not a fixed backing list — this rules out plain offset pagination outright (the classic bug: the twelfth item you saw shifts to the eleventh position as new candidates are scored, so an offset-based "page 2" silently skips or repeats items). A cursor must encode enough ranking state — a score-and-ID pair *plus* an identifier for which ranking pass produced it — that "the next page" means "the next items after this one in this specific ranking pass," not "items 16–30" and not "wherever this score-and-ID pair happens to land in whatever the model returns right now." Without that ranking-pass tag, a page-2 request issued after the model re-ranks in the background could silently splice two different ranking passes together. Client-side deduplication by post ID on top of this is still worth keeping as a defense-in-depth measure, not a substitute for it — a live model occasionally returning an already-seen post is a real, if secondary, failure mode this doesn't fully rule out on its own.
 - **Real-time volume is low relative to page-load volume** — new-post notifications are lightweight (a count or a few post stubs), not a re-fetch of the whole feed, so this channel can run over a cheap WebSocket/SSE connection independent of the main pagination API.
 - **A worked estimate for the mixed-media case**: a text-only post might be ~1KB of JSON; a shared/reposted post embedding the original's data pushes closer to ~2KB; images/video are excluded from this payload entirely (only URLs, fetched separately per the [Photo-Sharing Feed guide](/interview-prep/ff-system-design/photo-sharing-feed)'s tiered-loading approach). At 15 items/page and a realistic mix, that's roughly 20-30KB/page — the dominant cost in this feed is still DOM node count and image bytes, not the ranked-post JSON itself.
 
@@ -56,12 +56,14 @@ GET /api/feed?cursor={opaque_rank_cursor}&limit=15
       "viewerHasLiked": false
     }
   ],
-  "nextCursor": "eyJyYW5rIjowLjkyLCJpZCI6InBvc3RfOTkxIn0=",
+  "nextCursor": "eyJyYW5rIjowLjkyLCJpZCI6InBvc3RfOTkxIiwicmFua2luZ1Bhc3MiOiJycF8yMDI2MDcxOF8xIn0=",
   "hasMore": true
 }
+// nextCursor decodes to { "rank": 0.92, "id": "post_991", "rankingPass": "rp_20260718_1" } —
+// the rankingPass tag is what pins page 2 to the same ranking pass as page 1.
 ```
 
-- **The cursor is opaque and rank-derived**, not an offset — the client's contract with the server is "give me what comes after this point in the ranking," never "give me page N."
+- **The cursor is opaque and rank-derived**, not an offset — the client's contract with the server is "give me what comes after this point in the ranking, in this same ranking pass," never "give me page N." Getting a genuinely fresh ranking (a manual pull-to-refresh, or reopening the app after a long gap) is a deliberate, separate request that discards the old cursor and starts a brand-new ranking pass — it's never expressed as "continue paginating with the old cursor," since that cursor's `rankingPass` no longer describes what the model would return now.
 - **A separate, lightweight real-time channel** — `WS /feed-updates` — pushes `{ "newPostCount": 3 }`-style events, not full post payloads. The client only fetches the actual new posts (via the same cursor-paginated endpoint, cursor pointed at "before" the current top item) when the user acts on the "new posts" affordance.
 - **`sharedPost` is embedded, not a second round-trip** — a repost needs its original post's author/body inline so the feed can render it in one pass; a client-side waterfall fetch per shared post would be a real, avoidable performance bug.
 

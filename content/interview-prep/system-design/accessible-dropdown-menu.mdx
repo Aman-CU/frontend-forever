@@ -45,7 +45,7 @@ dateModified: "2026-07-18"
 }
 ```
 
-- **`disabled` per item is data, not purely a styling concern** — a disabled menu item needs `aria-disabled="true"` and must be skipped by arrow-key navigation, not merely styled to look unavailable while remaining focusable/activatable.
+- **`disabled` per item is data, not purely a styling concern** — a disabled menu item needs `aria-disabled="true"` and must reject activation (Enter/Space/click do nothing), not merely be styled to look unavailable while remaining silently activatable. It still receives roving arrow-key focus like any other item, so its disabled state is actually perceivable rather than the item just vanishing from the sequence.
 - **A `destructive` (or similarly-flagged) item is a presentation hint**, not an accessibility requirement on its own — though pairing it with a confirming interaction (see the [Modal/Dialog guide](/interview-prep/ff-system-design/reusable-modal-dialog-system)) is a common, related product decision for genuinely destructive actions.
 
 ## 4. High-Level Component Architecture
@@ -60,7 +60,7 @@ dateModified: "2026-07-18"
 ## 5. State Management Design
 
 - **Open/closed state lives on the Trigger/Menu pairing itself**, exposed via `aria-expanded` — this is the one piece of state that determines whether the Menu Panel renders at all.
-- **The "active" (currently arrow-key-highlighted) item index is separate from any item's `disabled` state** — moving between items via arrow keys needs to skip disabled items automatically, treating them as non-stops in the navigation sequence rather than requiring the user to arrow past a dead stop.
+- **The "active" (currently arrow-key-highlighted) item index is separate from any item's `disabled` state** — arrow keys move the active index through every item, disabled or not; only *activating* the active item (Enter/Space) needs to check `disabled` and no-op. Skipping disabled items during navigation instead is a real footgun: if every item in the menu happens to be disabled, a naive "keep advancing until you land on an enabled one" loop never terminates.
 - **Focus-return-to-trigger on close is unconditional** — regardless of *how* the menu closed (Escape, outside click, item selection), focus needs to land back on the Trigger, not be left stranded on a now-unmounted Menu Panel element.
 
 ## 6. Deep Dives
@@ -74,14 +74,15 @@ function onMenuKeyDown(e: KeyboardEvent, items: HTMLElement[], activeIndex: numb
   const delta = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
   if (!delta) return;
 
-  let next = activeIndex;
-  do {
-    next = (next + delta + items.length) % items.length;
-  } while (items[next].ariaDisabled === "true");
-
+  const next = (activeIndex + delta + items.length) % items.length;
   items[activeIndex].tabIndex = -1;
   items[next].tabIndex = 0;
   items[next].focus();
+}
+
+function onMenuItemActivate(e: KeyboardEvent | MouseEvent, item: HTMLElement, select: () => void) {
+  if (item.ariaDisabled === "true") return; // disabled items reject activation, not navigation
+  select();
 }
 ```
 
@@ -94,7 +95,7 @@ Rendering the Menu Panel as a direct DOM child of the Trigger risks being visual
 | Key | Action |
 | --- | --- |
 | Enter / Space (on Trigger) | Open menu, focus first item |
-| Arrow Down / Up | Move active item to next/previous (skips disabled items) |
+| Arrow Down / Up | Move active item to next/previous (disabled items still receive focus) |
 | Home / End | Jump to first/last item |
 | Escape | Close menu, return focus to Trigger |
 | Tab | Close menu, move focus out (never cycles within the menu) |

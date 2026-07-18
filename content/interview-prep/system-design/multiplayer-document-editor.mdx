@@ -78,9 +78,16 @@ When two clients concurrently insert text at overlapping positions, OT's job is 
 
 ```ts
 function transformInsert(op: InsertOp, against: InsertOp): InsertOp {
-  // If the concurrent op inserted at or before this op's position, shift
-  // this op forward by the length of what it inserted.
-  if (against.position <= op.position) {
+  // Equal positions need a deterministic tie-break — without one, transforming
+  // A against B and B against A independently would both decide "I go first,"
+  // and the two application orders would converge on different text (B-then-A
+  // vs A-then-B). clientId gives every client the same fixed total order to
+  // agree on which op "goes first" at a tied position.
+  const againstGoesFirst =
+    against.position < op.position ||
+    (against.position === op.position && against.clientId > op.clientId);
+
+  if (againstGoesFirst) {
     return { ...op, position: op.position + against.text.length };
   }
   return op;

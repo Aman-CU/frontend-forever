@@ -81,14 +81,20 @@ The debounce and the cancellation guard are two separate mechanisms pairing toge
 ```ts
 let debounceTimer: ReturnType<typeof setTimeout>;
 let activeController: AbortController | null = null;
+let latestQuery = "";
 
 function onQueryChange(query: string) {
+  latestQuery = query;
+  activeController?.abort(); // cancel any in-flight request the instant new input arrives
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(async () => {
-    activeController?.abort(); // cancel the previous in-flight request
     activeController = new AbortController();
     const res = await fetch(`/api/search/suggest?q=${query}`, { signal: activeController.signal });
-    if (res.ok) render(await res.json());
+    // Belt-and-suspenders: abort() alone still leaves a window where an
+    // older response resolves before its abort takes effect — the
+    // latestQuery check is what actually guarantees a stale response can
+    // never render over a fresher one.
+    if (res.ok && query === latestQuery) render(await res.json());
   }, 200);
 }
 ```

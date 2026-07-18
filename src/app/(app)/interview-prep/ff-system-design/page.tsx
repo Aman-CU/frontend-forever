@@ -132,6 +132,7 @@ export default async function FfSystemDesignListPage() {
                         <td className="px-4 py-3 text-right">
                           <Link
                             href={`/interview-prep/ff-system-design/${guide.frontmatter.slug}`}
+                            aria-label={`Start: ${guide.frontmatter.title}`}
                             className="inline-flex items-center rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text-primary transition-colors hover:border-accent hover:text-accent"
                           >
                             Start

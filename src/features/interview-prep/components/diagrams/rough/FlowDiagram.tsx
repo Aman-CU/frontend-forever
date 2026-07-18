@@ -64,10 +64,21 @@ export function FlowDiagram({ nodes, edges, ariaLabel, columns = 3 }: Props) {
       const dx = x2 - x1;
       const dy = y2 - y1;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const startX = x1 + (dx / dist) * (BOX_W / 2) * 0.95;
-      const startY = y1 + (dy / dist) * (BOX_H / 2) * 0.95;
-      const endX = x2 - (dx / dist) * (BOX_W / 2) * 0.95;
-      const endY = y2 - (dy / dist) * (BOX_H / 2) * 0.95;
+      const ux = dx / dist;
+      const uy = dy / dist;
+      // Distance from center to the box's actual edge along this ray (not a
+      // fixed per-axis offset) — the edge hit is whichever axis's half-extent
+      // the ray reaches first, so diagonal connections land on the real
+      // rectangle boundary instead of overshooting/undershooting it.
+      const edgeDist = (ex: number, ey: number) =>
+        Math.min(ex !== 0 ? BOX_W / 2 / Math.abs(ex) : Infinity, ey !== 0 ? BOX_H / 2 / Math.abs(ey) : Infinity) *
+        0.95;
+      const startT = edgeDist(ux, uy);
+      const endT = edgeDist(-ux, -uy);
+      const startX = x1 + ux * startT;
+      const startY = y1 + uy * startT;
+      const endX = x2 - ux * endT;
+      const endY = y2 - uy * endT;
 
       els.push(drawArrow(rc, startX, startY, endX, endY, { stroke: colors.accent, roughness: 1.4 }));
     }

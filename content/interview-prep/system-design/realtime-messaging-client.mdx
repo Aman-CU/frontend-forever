@@ -51,7 +51,7 @@ companies: ["Meta", "Slack", "Discord"]
 { "type": "read_receipt", "conversationId": "c_9", "messageId": "msg_5521", "readBy": "u_3", "readAt": "..." }
 ```
 
-- **`clientTempId` is how the client reconciles its own optimistic send** — the message is rendered immediately keyed by this temporary ID, and the `message_ack` event tells the client to swap it for the server's real `serverId` without the message visibly disappearing and reappearing.
+- **`clientTempId` is both a client-side reconciliation key and a server-side idempotency key.** On the client, it's how the optimistic send reconciles — the message is rendered immediately keyed by this temporary ID, and the `message_ack` event tells the client to swap it for the server's real `serverId` without the message visibly disappearing and reappearing. On the server, it's what makes a retried send safe: the server deduplicates by the `(senderId, clientTempId)` pair, so if a message was already persisted but its `message_ack` never made it back to the client (a drop right after the write), retrying the identical send doesn't create a second message — the server recognizes the pair it's already seen and returns the *original* `serverId` again, rather than persisting a duplicate.
 - **Read receipts are their own event type, addressed by `messageId` + `readBy`**, not folded into the message payload itself — since read state changes independently of (and after) the message's own content, and multiple recipients read at different times.
 - **Reconnection uses a `since` parameter** (`GET /api/messages?conversationId=c_9&since=msg_5518`) to backfill exactly what was missed, rather than relying on the socket layer to replay a buffer.
 
@@ -84,7 +84,7 @@ The message renders in the sender's UI the instant they hit send, tagged with a 
 
 ### Reconnection and gap recovery
 
-On any reconnect, the client's Connection Manager compares its last-known message ID/timestamp per open conversation against the server, requesting only the missed range rather than a full history re-sync — this is the same "resume, don't restart" principle used by any real-time client that can't assume the connection is truly persistent (mobile networks sleep, laptops suspend). Getting this wrong produces either duplicate messages (if the client doesn't dedupe against messages it already has) or silently missing ones (if the client assumes the socket will just "catch up" on its own).
+On any reconnect, the client's Connection Manager compares its last-known message ID/timestamp per open conversation against the server, requesting only the missed range rather than a full history re-sync — this is the same "resume, don't restart" principle used by any real-time client that can't assume the connection is truly persistent (mobile networks sleep, laptops suspend). Getting this wrong produces either duplicate messages (if the client doesn't dedupe against messages it already has) or silently missing ones (if the client assumes the socket will just "catch up" on its own). The same care applies to the client's own still-pending *outbound* sends across a reconnect: a message stuck "pending" with no ack when the connection dropped needs to be safely retriable, which is exactly what `clientTempId`'s server-side idempotency guarantee is for — the client can resend the identical `(clientTempId, body)` payload without checking whether the original attempt actually landed first.
 
 ### Scaling fan-out and what it means for the client
 

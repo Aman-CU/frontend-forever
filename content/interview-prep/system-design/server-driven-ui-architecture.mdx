@@ -20,7 +20,7 @@ dateModified: "2026-07-18"
 
 **Non-functional requirements:**
 
-- The client must never crash or render a blank screen when the server references a component type the client doesn't (yet) recognize — forward/backward compatibility across client and server versions releasing independently is a core requirement, not an edge case.
+- The client must never crash or render a blank screen when the server references a component type the client doesn't (yet) recognize, *or* when a recognized type's `props` payload is malformed (missing fields, wrong shape) — forward/backward compatibility across client and server versions releasing independently is a core requirement, not an edge case, and a known type with bad data is at least as likely in practice as an unknown type.
 - Rendering must stay performant even though the screen's structure is now data-driven rather than statically compiled — parsing and rendering an arbitrary server-described tree shouldn't be meaningfully slower than a hardcoded equivalent.
 - The set of server-referenceable component types needs governance — an uncontrolled, ever-growing vocabulary of component types undermines the whole point of a constrained, client-understood rendering contract.
 
@@ -50,6 +50,7 @@ dateModified: "2026-07-18"
 
 - **Every section carries a `type` the client maps to a real, registered component renderer** — the client's rendering logic is a lookup (`type` → component), not a hardcoded sequence of specific components.
 - **An unrecognized `type` (from a newer server version than the client's registered set knows about) must be a defined, graceful case** — rendered as nothing (silently skipped) or a minimal, non-breaking placeholder, never a crash or a blank screen, since server and client release independently and the server may reference component types a not-yet-updated client hasn't shipped support for.
+- **A recognized `type` doesn't mean trustworthy `props`** — every registered component needs its own runtime schema its `props` are checked against before the component ever renders (expected fields present, roughly the right shape), since the server-described payload is external input the same way an API response is, not something the client's own code produced.
 
 ## 4. High-Level Component Architecture
 
@@ -57,14 +58,14 @@ dateModified: "2026-07-18"
 
 - **Screen Fetcher** — requests the structured screen description from the server for the current route/context.
 - **Component Registry** — a client-side map from `type` string to the actual registered React (or equivalent) component responsible for rendering that section type.
-- **Renderer** — walks the fetched description's sections, looks each one up in the Component Registry, and renders the matched component with the given `props`; for an unrecognized `type`, falls back to a defined graceful no-op rather than throwing.
+- **Renderer** — walks the fetched description's sections, looks each one up in the Component Registry, and renders the matched component with the given `props`; for an unrecognized `type`, falls back to a defined graceful no-op rather than throwing. Wraps each individual section in its own error boundary, so a component that throws mid-render (most commonly because its `props` failed schema validation, or slipped past it) takes down only that one section, not the whole page.
 - **Component Types** — the actual, bounded set of implemented section renderers (hero banners, carousels, forms, etc.), each a normal client component that happens to be invoked indirectly via the Registry rather than referenced directly in a hardcoded screen layout.
 
 ## 5. State Management Design
 
 - **The fetched screen description is the primary state the Renderer operates over** — treated as data, re-fetched per screen/route rather than assembled from separate, independently-fetched pieces the client would otherwise need to compose itself.
 - **The Component Registry is effectively static configuration**, established at client build/boot time from whatever component types that client version actually implements — it's not something that changes at runtime based on the fetched description.
-- **Unrecognized-type handling needs to be genuinely stateless/local to the Renderer's walk** — encountering one unknown type shouldn't affect rendering of the other, recognized sections in the same screen description; each section renders (or gracefully doesn't) independently.
+- **Unrecognized-type handling needs to be genuinely stateless/local to the Renderer's walk** — encountering one unknown type shouldn't affect rendering of the other, recognized sections in the same screen description; each section renders (or gracefully doesn't) independently. The same isolation applies to a recognized type with invalid props: a plain JS try/catch around JSX doesn't catch a render-time throw, so this is specifically what the per-section error boundary is for, not something the Renderer's own control flow can provide on its own.
 
 ## 6. Deep Dives
 
