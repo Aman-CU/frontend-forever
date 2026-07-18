@@ -1,0 +1,123 @@
+---
+title: "Designing a Personalized Social News Feed"
+slug: "social-news-feed"
+section: "Data-Heavy Interfaces"
+difficulty: "hard"
+summary: "A social news feed is a client that renders a server-ranked, cursor-paginated stream of heterogeneous posts, appends new items via a non-disruptive 'new posts available' banner rather than auto-inserting above the fold, and reconciles optimistic interactions (likes, comments) against a feed the backend re-ranks on every fetch, not just on write."
+orderIndex: 2
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Meta", "Twitter", "Reddit"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Render an initial page of ranked posts on load, and fetch more as the user scrolls.
+- Support several distinct post types in one stream (text, image, video, shared/reposted content, ads) without a separate rendering path per type breaking the scroll experience.
+- Reflect new posts arriving while the user is already reading, without disrupting their current scroll position or reading flow.
+- Support interactions (like, comment, share) that update instantly for the acting user, everywhere that post currently appears in the DOM.
+- Handle a post being edited, deleted, or hidden after it's already rendered on the client.
+
+**Non-functional requirements:**
+
+- Must stay smooth scrolling through thousands of ranked posts in a session — the same virtualization requirement as any large list, compounded here by heterogeneous, variable-height post types.
+- Feed order is **not** client-computed — ranking is a backend/ML concern the client must never re-sort or second-guess, only render in the order it's given.
+- Must tolerate a ranking model that can legitimately return different results for the same cursor position across requests (the ranking signal is live, not a fixed dataset) without producing duplicate or missing items in the rendered stream.
+
+**Explicitly out of scope:** the ranking algorithm itself (engagement prediction, ML scoring) and the fan-out/write-path infrastructure that generates candidate posts — this guide is about what the client does once it's handed an ordered page of posts to render.
+
+## 2. Constraints & Estimation
+
+- **DOM node ceiling** applies exactly as it does for any high-volume list — virtualization is mandatory past a few hundred mounted rows, and feed cards are typically heavier (avatar, rich text, media, action bar) than a simple row, so the practical mounted-row budget is lower than a plain list's.
+- **Payload shape varies by post type.** A single flat `Post` shape with optional fields for each post type (`imageUrl?`, `videoUrl?`, `sharedPost?`) is simpler to virtualize than a discriminated union requiring per-type height estimation logic, but the client still needs a `type` field to pick the right renderer.
+- **Ranking is genuinely live**, not a fixed backing list — this rules out plain offset pagination outright (the classic bug: the twelfth item you saw shifts to the eleventh position as new candidates are scored, so an offset-based "page 2" silently skips or repeats items). A cursor must encode enough ranking state — a score-and-ID pair *plus* an identifier for which ranking pass produced it — that "the next page" means "the next items after this one in this specific ranking pass," not "items 16–30" and not "wherever this score-and-ID pair happens to land in whatever the model returns right now." Without that ranking-pass tag, a page-2 request issued after the model re-ranks in the background could silently splice two different ranking passes together. Client-side deduplication by post ID on top of this is still worth keeping as a defense-in-depth measure, not a substitute for it — a live model occasionally returning an already-seen post is a real, if secondary, failure mode this doesn't fully rule out on its own.
+- **Real-time volume is low relative to page-load volume** — new-post notifications are lightweight (a count or a few post stubs), not a re-fetch of the whole feed, so this channel can run over a cheap WebSocket/SSE connection independent of the main pagination API.
+- **A worked estimate for the mixed-media case**: a text-only post might be ~1KB of JSON; a shared/reposted post embedding the original's data pushes closer to ~2KB; images/video are excluded from this payload entirely (only URLs, fetched separately per the [Photo-Sharing Feed guide](/interview-prep/ff-system-design/photo-sharing-feed)'s tiered-loading approach). At 15 items/page and a realistic mix, that's roughly 20-30KB/page — the dominant cost in this feed is still DOM node count and image bytes, not the ranked-post JSON itself.
+
+## 3. Data Contract Design
+
+```
+GET /api/feed?cursor={opaque_rank_cursor}&limit=15
+
+{
+  "items": [
+    {
+      "id": "post_991",
+      "type": "text" | "image" | "video" | "shared",
+      "author": { "id": "u_7", "name": "...", "avatarUrl": "..." },
+      "body": "...",
+      "media": { "imageUrl": "..." } | { "videoUrl": "...", "durationMs": 41000 } | null,
+      "sharedPost": { "id": "post_880", "author": {...}, "body": "..." } | null,
+      "createdAt": "2026-07-18T10:00:00Z",
+      "likeCount": 512,
+      "commentCount": 24,
+      "viewerHasLiked": false
+    }
+  ],
+  "nextCursor": "eyJyYW5rIjowLjkyLCJpZCI6InBvc3RfOTkxIiwicmFua2luZ1Bhc3MiOiJycF8yMDI2MDcxOF8xIn0=",
+  "hasMore": true
+}
+// nextCursor decodes to { "rank": 0.92, "id": "post_991", "rankingPass": "rp_20260718_1" } —
+// the rankingPass tag is what pins page 2 to the same ranking pass as page 1.
+```
+
+- **The cursor is opaque and rank-derived**, not an offset — the client's contract with the server is "give me what comes after this point in the ranking, in this same ranking pass," never "give me page N." Getting a genuinely fresh ranking (a manual pull-to-refresh, or reopening the app after a long gap) is a deliberate, separate request that discards the old cursor and starts a brand-new ranking pass — it's never expressed as "continue paginating with the old cursor," since that cursor's `rankingPass` no longer describes what the model would return now.
+- **A separate, lightweight real-time channel** — `WS /feed-updates` — pushes `{ "newPostCount": 3 }`-style events, not full post payloads. The client only fetches the actual new posts (via the same cursor-paginated endpoint, cursor pointed at "before" the current top item) when the user acts on the "new posts" affordance.
+- **`sharedPost` is embedded, not a second round-trip** — a repost needs its original post's author/body inline so the feed can render it in one pass; a client-side waterfall fetch per shared post would be a real, avoidable performance bug.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Feed Store** — owns the flat, deduplicated, ordered list of loaded posts, the current rank-cursor, and per-post optimistic-interaction patches. This is the single source of truth the virtualized list renders from.
+- **Virtualized Feed List** — mounts only the visible window of posts, delegating to a **Post Renderer** that switches on `post.type` to pick the right card layout (text/image/video/shared) without the virtualization layer itself needing to know post-type details.
+- **Pagination Sentinel** — same IntersectionObserver-triggered "fetch the next page before the user hits bottom" mechanism as any infinite-scroll list.
+- **Real-Time Channel** — a WebSocket/SSE connection separate from the pagination fetches, feeding a small "N new posts" banner component that sits pinned above the currently-rendered top of the feed.
+- **Interaction Layer** — applies an optimistic patch to a post's `viewerHasLiked`/`likeCount` in the Feed Store immediately on click, before the server confirms, and reconciles (or rolls back) on response.
+
+## 5. State Management Design
+
+- **Server cache state** (loaded pages, cursor, loading/error) is owned by a query/cache layer keyed on the feed's identity (e.g. `["feed", "home"]`), exactly like the general infinite-scroll pattern — this is what makes back-navigation scroll restoration possible without a full re-fetch.
+- **Real-time "new posts" state is separate and deliberately not auto-merged** — it's a count/preview sitting outside the main rendered list until the user acts, so an incoming post never silently shifts content the user is currently reading.
+- **Optimistic interaction state lives on the post record inside the Feed Store**, not in the row component's local state — a liked-then-scrolled-away-then-scrolled-back post must still show as liked, and the row component genuinely unmounts when virtualized out of view, so anything in its own `useState` would be lost.
+- A common bug here: computing `likeCount` display purely from the server's last-fetched value without layering the optimistic patch on top — this produces a visible "flicker back to the old count" the moment any unrelated re-render occurs before the server confirms.
+
+## 6. Deep Dives
+
+### Two-pass ranking and what it means for the client
+
+Real feed systems generally rank in two passes: a coarse candidate-generation/ranking pass at write time, and a final re-ranking with fresh signals (recency, live engagement) at read time. The practical implication for the frontend: **the client must treat every fetch's order as authoritative and final for that fetch** — never cache posts and re-sort them locally, and never assume position N in page 2 has any fixed relationship to position N in page 1's underlying candidate set. This is also why a cursor must be rank-derived rather than an offset: the "next" page is defined relative to where the last item landed in that specific ranking pass, not a row count.
+
+### The "new posts" banner pattern
+
+Silently prepending new items above whatever the user is currently looking at is a real, well-documented UX mistake — it shifts everything on screen the instant it happens. The standard fix, used across major feed products, is to buffer incoming real-time posts behind a small pinned notification ("12 new posts") and only merge them into the rendered list on a deliberate user action (tapping the banner, or a manual refresh) — never as an unprompted layout shift.
+
+### Heterogeneous post-type rendering without breaking virtualization
+
+Variable post types (text-only, image, video, shared/reposted) means variable heights, which is the same estimated-then-measured virtualization challenge as any data-heavy feed — but compounded by needing a per-type renderer. The clean pattern is a single `Post` union type with a `type` discriminant, one shared row wrapper that measures and reports height regardless of internal content, and a `PostRenderer` that switches on `type` purely for the rendering logic *inside* that already-measured row — the virtualization layer never needs to know post-type-specific rendering logic exists.
+
+### Optimistic interactions across duplicate renders
+
+If a shared/reposted item embeds the original post's data inline, liking that original post from within a repost (or from its own standalone appearance elsewhere in the feed) has to update every rendered instance consistently — which means the optimistic patch belongs keyed by post ID in a central store, not duplicated per-instance in each row.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Fresh re-ranking on every read | More relevant results | Backend latency the client can't hide, only honestly show |
+| Real-time push of full post payloads | Simpler client rendering | Wastes bandwidth on posts the user may never request |
+| Real-time push of a count only | Leaner over the wire | One extra round-trip when the user does act on it |
+| Optimistic like/reaction UI | Every interaction feels instant | Rare, brief visible rollback if the server rejects it |
+
+The count-only push is the better default here — full-payload push only pays off if the "new posts" affordance auto-reveals content without a click, which this guide's own banner pattern deliberately avoids.
+
+## 8. Follow-ups
+
+- **"How would ads fit into this feed without the client needing to know an ad-ranking algorithm?"** Ads arrive as just another `type` in the same paginated response, already interleaved by the backend at whatever position its policy dictates — the client's rendering contract doesn't change, only the discriminated union gains another variant.
+- **"What happens if the user's ranking cursor becomes stale (e.g. they left the tab open for hours)?"** The server should be able to reject a too-old cursor with a specific error the client maps to "refresh your feed" rather than quietly returning ranking-inconsistent results.
+- **"How do you test ranking-dependent pagination without a live ML model?"** Mock the cursor contract with a fixed, deterministic sequence of pages (same testing approach as any cursor-paginated feed) — the client's correctness doesn't depend on what produced the ranking, only on correctly requesting/rendering "whatever comes next after this cursor."
+- **"What if two real-time events arrive out of order?"** The "new posts" channel should only ever need to trust the latest count/state it received, not reconcile an ordered log of events — the actual post data is always re-fetched fresh via the pagination endpoint when the user acts, sidestepping ordering entirely.
+
+Sources: [Designing a Scalable News Feed System](https://blog.algomaster.io/p/designing-a-scalable-news-feed-system), [Frontend System Design: Facebook News Feed](https://dev.to/zeeshanali0704/frontend-system-design-facebook-news-feed-li3)

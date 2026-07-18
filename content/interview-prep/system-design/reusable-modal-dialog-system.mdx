@@ -1,0 +1,119 @@
+---
+title: "Designing a Reusable Modal and Dialog System"
+slug: "reusable-modal-dialog-system"
+section: "Performance-Critical"
+difficulty: "easy"
+summary: "A modal's non-negotiable accessibility contract has four parts — move focus into it on open, trap focus inside it while open, close on Escape and return focus to the trigger, and make background content genuinely inert (not just visually dimmed) — and modern browsers now provide a native <dialog> element with showModal() that handles focus-trapping and the top-layer/backdrop mechanics for free."
+orderIndex: 2
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Show a modal dialog over the current page, dimming/disabling the background.
+- Support both simple confirmation dialogs and richer content (forms, multi-section layouts).
+- Close via an explicit close action, Escape key, or (optionally) clicking the backdrop.
+- Stack correctly if a modal ever needs to open another modal on top of it.
+
+**Non-functional requirements:**
+
+- Focus must move into the modal on open and be trapped inside it while open — a background element must never be reachable via Tab while a modal is open.
+- Closing must return focus to whatever triggered the modal, not leave focus lost on `<body>`.
+- Background content must be genuinely non-interactive while a modal is open, not merely visually obscured behind an overlay a sighted mouse user could still theoretically click through gaps in, or a screen reader could still navigate into.
+
+**Explicitly out of scope:** the specific content rendered inside any one modal instance — this guide covers the reusable dialog shell's accessibility and rendering mechanics.
+
+## 2. Constraints & Estimation
+
+- **Four accessibility requirements are non-negotiable, not optional polish**: move focus in on open; trap focus within the modal (Tab on the last focusable element wraps to the first, and vice versa with Shift+Tab); close on Escape, returning focus to the original trigger; and use `role="dialog"` with `aria-modal="true"` plus `aria-labelledby` referencing a real visible heading (preferred over a plain `aria-label`, since it also benefits sighted screen-reader users who can both see and hear the same label).
+- **The native `<dialog>` element with `.showModal()` is now the recommended foundation** rather than a fully hand-rolled implementation — it provides built-in focus trapping (Tab cycles within the dialog automatically) and top-layer rendering, meaningfully reducing how much of this contract needs custom JavaScript.
+- **Background inertness needs more than `aria-hidden`** — the `inert` HTML attribute is the more robust mechanism, since it blocks all interaction with the background (not just hiding it from assistive technology), which is what `aria-hidden` alone does not guarantee.
+- **Rendering via a portal (React's `createPortal` or equivalent) avoids inherited CSS/stacking problems** — breaking a modal out of a parent with `overflow: hidden` or a constraining `z-index` context, the same reasoning the [Dropdown Menu guide](/interview-prep/ff-system-design/accessible-dropdown-menu) applies to its own overlay panel.
+- **Nesting depth has a practical ceiling worth stating up front**: a design system should budget for at most 2 levels of stacked modals (a form, plus one confirmation on top of it) — every additional level multiplies the focus-trap-yielding and pre-open-focus-restoration bookkeeping in the Deep Dives section below, and more than 2 levels is almost always a sign the flow itself needs redesigning, not a case this primitive should optimize for.
+
+## 3. Data Contract Design
+
+```
+{
+  "isOpen": true,
+  "titleId": "modal-title-771",
+  "initialFocusTarget": "confirm-button", // optional override
+  "dismissible": true // whether Escape/backdrop-click close it
+}
+```
+
+- **`titleId` is required, not optional** — it's what `aria-labelledby` on the dialog element references, and the contract should make omitting a title structurally awkward rather than silently allowed, given how central it is to the dialog's accessible name.
+- **`dismissible: false` is a real, legitimate case** (e.g. a mandatory "accept terms" dialog) — the contract needs to explicitly support "Escape and backdrop-click do nothing here," not treat every dialog as equally dismissible by default.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Modal Root/Portal** — a single top-level DOM mount point every modal instance renders into, sidestepping any ancestor's clipping/stacking issues.
+- **Focus Manager** — captures the previously-focused element on open (to restore later), moves focus into the modal, and implements the Tab/Shift+Tab wrap-around trap while open.
+- **Backdrop/Inert Layer** — dims the background visually and applies `inert` to the rest of the document (or the nearest appropriate ancestor) so it's genuinely non-interactive, not just visually obscured.
+- **Dialog Content** — the actual `role="dialog"`/`aria-modal="true"` element, application-supplied content rendered inside, honoring the `dismissible` flag for Escape/backdrop-click behavior.
+
+## 5. State Management Design
+
+- **Open/closed is the primary state**, and everything else (focus trapping active, background inert) is derived directly from it — there's no independent "is focus currently trapped" flag separate from "is the modal open."
+- **The pre-open focused element is captured once, at the moment of opening**, and held specifically for restoring focus on close — this needs to be captured before focus moves into the modal, not derived after the fact.
+- **Nested/stacked modals need their own independent open state each**, with the *outer* modal's focus trap and inertness suspended (not removed) while an inner modal is open, and correctly resumed once the inner one closes — a real, if uncommon, edge case worth designing for explicitly rather than assuming only one modal is ever open at a time.
+
+## 6. Deep Dives
+
+### Focus trapping mechanics
+
+On every Tab keypress while the modal is open, if focus is on the last focusable element inside the dialog, the trap redirects it to the first (and the mirrored case for Shift+Tab on the first element) — the native `<dialog>` element's `showModal()` does this automatically; a fully custom implementation needs to enumerate the dialog's focusable descendants and implement this wrap-around logic itself.
+
+```ts
+function onDialogKeyDown(e: KeyboardEvent, focusable: HTMLElement[]) {
+  if (e.key !== "Tab" || focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+```
+
+### Why `inert` over `aria-hidden` alone for the background
+
+`aria-hidden="true"` on the background only affects assistive technology — it doesn't stop a sighted mouse user from clicking through to a background element positioned awkwardly relative to the overlay, and doesn't prevent keyboard focus from landing there via some paths. The `inert` attribute genuinely disables interaction (clicks, focus, text selection) across the entire subtree it's applied to, which is what makes the background *actually* non-interactive, not just hidden from one category of user.
+
+### Restoring focus correctly on close
+
+Regardless of which path closes the modal (an explicit close button, Escape, backdrop click), focus needs to return to whatever element originally opened it — captured once at open-time and restored unconditionally on close, rather than assuming focus will "naturally" land somewhere sensible once the modal unmounts (it commonly falls back to `<body>`, a genuinely lost-focus state for keyboard/screen-reader users).
+
+### Stacked modals
+
+If a modal opens a second modal (e.g. a confirmation dialog launched from within a form modal), the outer modal's focus trap needs to yield to the inner one entirely while it's open — the inner modal becomes the active trap, and closing it needs to restore the *outer* modal's trap (and its own remembered pre-open focus target within itself), not the page's original pre-any-modal focus target.
+
+## 7. Performance & UX Tradeoffs
+
+| Approach | Pro | Con |
+| --- | --- | --- |
+| Native `<dialog>` + `showModal()` | Focus trap and top-layer stacking built in, far less custom JS | Some styling constraints (backdrop pseudo-element, animation quirks) |
+| Fully custom (portal + hand-rolled trap) | Total control over styling/animation | Every accessibility requirement is bespoke, easy to under-implement |
+| `inert` for background | Blocks real interaction, not just AT visibility | Newer platform feature — confirm target browser support |
+| `aria-hidden` alone for background | Universally supported | Doesn't stop a sighted click-through or stray keyboard focus |
+| Backdrop-click-to-dismiss | Convenient for low-stakes dialogs | Wrong for a deliberate-decision dialog (an unsaved-changes warning) |
+
+The native-`<dialog>` row is the practical default for new work today — it removes an entire category of hand-rolled focus-trap bugs for free.
+
+## 8. Follow-ups
+
+- **"How would you test this for accessibility, not just visual appearance?"** Automated tooling catches the mechanical ARIA/role requirements; genuinely verifying the focus trap (Tab wraps correctly at both ends), Escape behavior, and focus restoration needs real keyboard-driven interaction testing, not just a static accessibility-tree snapshot.
+- **"What if the modal's content is scrollable and taller than the viewport?"** The dialog container itself needs its own internal scroll region, with the page behind it prevented from scrolling (commonly via locking `body` scroll while a modal is open) so the user isn't confused about which region actually scrolls.
+- **"How do you handle a modal that needs to be non-dismissible until a required action is taken?"** The `dismissible: false` case from the data contract — Escape and backdrop-click are simply no-ops, and the only path to closing is the required in-dialog action itself.
+- **"How would you build this as a reusable primitive other teams can use without re-solving accessibility each time?"** Exactly the point of this guide's Modal Root/Focus Manager separation — application teams supply only the Dialog Content, while the accessibility mechanics (focus trap, inertness, restoration) live once in the shared primitive, not reimplemented per feature.
+
+Sources: [How to Build Accessible Modals with Focus Traps](https://www.uxpin.com/studio/blog/how-to-build-accessible-modals-with-focus-traps/), [Mastering Accessible Modals with ARIA and Keyboard Navigation](https://www.a11y-collective.com/blog/modal-accessibility/)

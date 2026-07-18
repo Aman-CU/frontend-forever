@@ -1,7 +1,11 @@
 import type { ComponentPropsWithoutRef } from "react";
 
-// Token-styled renderers for MDX elements so concept prose matches the design
+// Token-styled renderers for MDX elements so rendered prose matches the design
 // system without any hardcoded colors. Passed to <MDXRemote components={...} />.
+// Promoted from features/learn (Feature 22) to here on Feature 49, its second
+// consumer (the FF System Design guide pages) — same "promote on second
+// consumer" precedent as Markdown.tsx/safeJsonLd; features/ never import
+// from other features (AGENTS.md rule 3), so this couldn't stay feature-scoped.
 export const mdxComponents = {
   h2: (props: ComponentPropsWithoutRef<"h2">) => (
     <h2 className="mt-8 mb-3 text-xl font-bold text-text-primary" {...props} />
@@ -37,5 +41,19 @@ export const mdxComponents = {
       className="my-5 overflow-x-auto rounded-xl border border-border bg-surface-secondary p-4 font-mono text-xs leading-6 text-text-primary [&_code]:bg-transparent [&_code]:p-0"
       {...props}
     />
+  ),
+  table: (props: ComponentPropsWithoutRef<"table">) => (
+    <div className="my-5 overflow-x-auto rounded-xl border border-border">
+      <table className="w-full border-collapse text-sm" {...props} />
+    </div>
+  ),
+  thead: (props: ComponentPropsWithoutRef<"thead">) => (
+    <thead className="bg-surface-secondary text-text-primary" {...props} />
+  ),
+  th: (props: ComponentPropsWithoutRef<"th">) => (
+    <th className="border-b border-border px-3 py-2 text-left font-semibold" {...props} />
+  ),
+  td: (props: ComponentPropsWithoutRef<"td">) => (
+    <td className="border-b border-border px-3 py-2 align-top text-text-secondary" {...props} />
   ),
 };

@@ -1,0 +1,122 @@
+---
+title: "Designing an Accessible Dropdown Menu Component"
+slug: "accessible-dropdown-menu"
+section: "Performance-Critical"
+difficulty: "easy"
+summary: "A dropdown menu's correctness is defined almost entirely by its ARIA contract, not its visual styling — the W3C's menu button pattern requires the trigger to carry aria-haspopup and a toggling aria-expanded, and the revealed menu itself to use role=\"menu\" with role=\"menuitem\" children navigable by arrow keys, not just Tab."
+orderIndex: 1
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- A trigger (usually a button) that reveals a list of actionable items when activated.
+- Support both mouse/touch activation and full keyboard operation.
+- Close on selecting an item, on pressing Escape, or on clicking outside.
+- Support nested/submenu structures where relevant (e.g. a "More options" item revealing a further list).
+
+**Non-functional requirements:**
+
+- Must be genuinely operable via keyboard alone, with arrow keys moving between menu items, not just Tab cycling through them like ordinary focusable elements.
+- Must announce its open/closed state and current context to screen readers correctly.
+- Must not visually clip or overflow off-screen depending on where the trigger sits in the viewport.
+
+**Explicitly out of scope:** application-specific menu content and the broader design system's button/icon styling — this guide covers the interaction/accessibility contract shared by any dropdown menu implementation.
+
+## 2. Constraints & Estimation
+
+- **The trigger button needs `aria-haspopup` (menu or true) and a toggling `aria-expanded`** — `true` when the menu is open, `false` when closed — this is the mechanism that tells assistive technology the button controls a revealable menu and communicates its current state.
+- **The revealed menu itself needs `role="menu"`, with each actionable entry as `role="menuitem"`** — this is a fundamentally different semantic than a generic list of links or buttons, and is what enables the expected arrow-key navigation behavior assistive technology users expect from a "menu," not a Tab-through list.
+- **Keyboard behavior is specified, not left to convention** — Enter or Space opens the menu and moves focus to the first item; arrow keys move between items; Escape closes and returns focus to the trigger.
+- **Viewport-edge collision needs handling** — a menu opened near the right or bottom edge of the viewport needs to flip/shift its position rather than rendering partially off-screen, the same positioning concern the [Tooltip/Popover guide](/interview-prep/ff-system-design/positioning-aware-tooltip-popover) covers in more depth.
+- **Item count has a real ceiling before this stops being "a menu" at all** — a typical menu holds 3-12 items, well under any virtualization threshold; a picker that legitimately needs hundreds of options (a country selector) exceeds what arrow-key roving-focus navigation can reasonably scale to and becomes the [Search Autocomplete guide](/interview-prep/ff-system-design/search-autocomplete)'s problem instead — a real, sizing-driven signal for which pattern actually applies, not just a stylistic choice.
+
+## 3. Data Contract Design
+
+```
+{
+  "items": [
+    { "id": "edit", "label": "Edit", "disabled": false },
+    { "id": "delete", "label": "Delete", "disabled": false, "destructive": true }
+  ]
+}
+```
+
+- **`disabled` per item is data, not purely a styling concern** — a disabled menu item needs `aria-disabled="true"` and must reject activation (Enter/Space/click do nothing), not merely be styled to look unavailable while remaining silently activatable. It still receives roving arrow-key focus like any other item, so its disabled state is actually perceivable rather than the item just vanishing from the sequence.
+- **A `destructive` (or similarly-flagged) item is a presentation hint**, not an accessibility requirement on its own — though pairing it with a confirming interaction (see the [Modal/Dialog guide](/interview-prep/ff-system-design/reusable-modal-dialog-system)) is a common, related product decision for genuinely destructive actions.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Trigger** — the button carrying `aria-haspopup`/`aria-expanded`, toggling the menu's open state on activation.
+- **Menu Panel** — the `role="menu"` container, rendered via a portal (to avoid clipping/z-index issues from an ancestor with `overflow: hidden`, the same technique the [Modal/Dialog guide](/interview-prep/ff-system-design/reusable-modal-dialog-system) uses) and positioned relative to the Trigger using the collision-aware positioning approach covered in the [Tooltip/Popover guide](/interview-prep/ff-system-design/positioning-aware-tooltip-popover).
+- **Menu Items** — `role="menuitem"` entries, receiving roving keyboard focus (only one item is ever the actual Tab-stop at a time; arrow keys move an internally-tracked "active" index rather than moving real DOM focus item-by-item via Tab).
+- **Dismiss Handler** — closes the menu on outside click, on Escape, or on item selection, and returns focus to the Trigger in every case.
+
+## 5. State Management Design
+
+- **Open/closed state lives on the Trigger/Menu pairing itself**, exposed via `aria-expanded` — this is the one piece of state that determines whether the Menu Panel renders at all.
+- **The "active" (currently arrow-key-highlighted) item index is separate from any item's `disabled` state** — arrow keys move the active index through every item, disabled or not; only *activating* the active item (Enter/Space) needs to check `disabled` and no-op. Skipping disabled items during navigation instead is a real footgun: if every item in the menu happens to be disabled, a naive "keep advancing until you land on an enabled one" loop never terminates.
+- **Focus-return-to-trigger on close is unconditional** — regardless of *how* the menu closed (Escape, outside click, item selection), focus needs to land back on the Trigger, not be left stranded on a now-unmounted Menu Panel element.
+
+## 6. Deep Dives
+
+### Roving focus vs. real Tab-stops for menu items
+
+Rather than every menu item being independently Tab-focusable (which would mean Tab, not arrow keys, moves between them — wrong for the expected "menu" interaction model), the standard pattern gives only one item `tabindex="0"` at a time (the "active" one), with the rest at `tabindex="-1"`; arrow key presses move which item is "active" and receives real DOM focus, while Tab itself moves focus *out* of the menu entirely, closing it, consistent with how native OS menus behave.
+
+```ts
+function onMenuKeyDown(e: KeyboardEvent, items: HTMLElement[], activeIndex: number) {
+  const delta = e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0;
+  if (!delta) return;
+
+  const next = (activeIndex + delta + items.length) % items.length;
+  items[activeIndex].tabIndex = -1;
+  items[next].tabIndex = 0;
+  items[next].focus();
+}
+
+function onMenuItemActivate(e: KeyboardEvent | MouseEvent, item: HTMLElement, select: () => void) {
+  if (item.ariaDisabled === "true") return; // disabled items reject activation, not navigation
+  select();
+}
+```
+
+### Portal rendering to avoid clipping
+
+Rendering the Menu Panel as a direct DOM child of the Trigger risks being visually clipped by any ancestor with `overflow: hidden` or a constraining `z-index` stacking context — rendering it through a portal into a shared top-level DOM node (the same technique the [Modal/Dialog guide](/interview-prep/ff-system-design/reusable-modal-dialog-system) uses) sidesteps this, at the cost of needing to compute the Menu Panel's screen position explicitly rather than relying on normal in-flow layout.
+
+### Keyboard contract, at a glance
+
+| Key | Action |
+| --- | --- |
+| Enter / Space (on Trigger) | Open menu, focus first item |
+| Arrow Down / Up | Move active item to next/previous (disabled items still receive focus) |
+| Home / End | Jump to first/last item |
+| Escape | Close menu, return focus to Trigger |
+| Tab | Close menu, move focus out (never cycles within the menu) |
+| Right Arrow (on a submenu item) | Open submenu, focus its first item |
+| Left Arrow (inside a submenu) | Close submenu, return focus to the parent item |
+
+This table is the actual interviewable artifact — a candidate who can produce this exact mapping, unprompted, is demonstrating the same knowledge as reciting the W3C pattern from memory, just in a form that's immediately checkable against a real implementation.
+
+### Handling nested submenus
+
+A submenu is structurally another instance of the same Trigger/Menu Panel/Menu Items pattern, opened by a parent menu item rather than an external button — the same `aria-haspopup`/`aria-expanded` contract applies to that parent item, and arrow-key navigation needs an additional rule (commonly: right-arrow opens/enters a submenu, left-arrow closes it and returns to the parent item) beyond the flat single-level case.
+
+## 7. Performance & UX Tradeoffs
+
+- **Portal rendering vs. simple in-flow rendering** — portals solve real clipping/stacking problems at the cost of needing explicit position computation instead of relying on normal document flow.
+- **Roving tabindex vs. all-items-focusable** — roving focus matches the expected native menu interaction model at the cost of more bookkeeping (tracking and updating which single item currently holds `tabindex="0"`).
+
+## 8. Follow-ups
+
+- **"How would you test this for accessibility, not just visual correctness?"** Automated checks (e.g. axe-core) catch the mechanical ARIA-attribute requirements, but verifying real keyboard-only operation (can you open, navigate, and select purely via keyboard, does focus correctly return to the trigger on every close path) needs manual or scripted keyboard-interaction testing.
+- **"What if the menu needs to support type-ahead (typing a letter jumps to a matching item)?"** A common, expected addition to the same roving-focus model — tracked as a small buffer of recently-typed characters matched against item labels, resetting after a short pause, independent of the arrow-key navigation logic.
+- **"How do you handle a menu item that itself needs a confirming step (e.g. Delete)?"** That's a distinct pattern layered on top — selecting the item opens a confirmation (often the [Modal/Dialog guide](/interview-prep/ff-system-design/reusable-modal-dialog-system)'s pattern), rather than the destructive action firing immediately on menu-item activation.
+
+Sources: [Menu Button Pattern - W3C ARIA APG](https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/), [Menu and Menubar Pattern - W3C ARIA APG](https://www.w3.org/WAI/ARIA/apg/patterns/menubar/)

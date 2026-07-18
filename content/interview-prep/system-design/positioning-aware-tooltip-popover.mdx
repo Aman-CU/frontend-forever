@@ -1,0 +1,132 @@
+---
+title: "Designing a Positioning-Aware Tooltip and Popover System"
+slug: "positioning-aware-tooltip-popover"
+section: "Performance-Critical"
+difficulty: "easy"
+summary: "Tooltips and popovers look like the same component but have a hard, non-cosmetic distinction — a tooltip may only ever contain non-interactive text (never a button, link, or form field), and content that needs interaction is by definition a popover, not a tooltip, which changes both the correct ARIA role and the correct dismissal/focus behavior."
+orderIndex: 4
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Show supplementary content anchored to a trigger element, positioned intelligently relative to it (above/below/beside).
+- Automatically reposition (flip/shift) when the default placement would render off-screen or clipped by a scroll container.
+- Support both hover/focus-triggered tooltips (non-interactive) and click-triggered popovers (interactive, can contain focusable content).
+- Dismiss appropriately for each: a tooltip hides on losing hover/focus, on Escape, and stays visible if the pointer moves from the trigger onto the tooltip itself rather than away entirely (WCAG 1.4.13's dismissible/hoverable requirements); a popover dismisses on outside click, Escape, or an explicit close action.
+
+**Non-functional requirements:**
+
+- Must never render clipped by an ancestor's `overflow: hidden` or positioned incorrectly by an ancestor's `transform`/stacking context.
+- Must reposition correctly and efficiently as the trigger scrolls or the viewport resizes, without a visible lag between the trigger moving and the floating element following.
+- The distinction between a tooltip and a popover must be enforced structurally, not left to convention, since building an interactive tooltip is a common but genuine accessibility bug.
+
+**Explicitly out of scope:** the specific positioning math library's internals — this guide covers the architectural decisions around *using* such a library (or an equivalent home-grown solution) correctly, not implementing collision-detection geometry from scratch.
+
+## 2. Constraints & Estimation
+
+- **The tooltip/popover distinction is a hard content rule, not a naming preference** — a tooltip may contain only non-interactive text; if the content needs interaction (a button, a link, a form field), it is a popover by definition, which correspondingly needs `role="dialog"` (or similar) rather than `role="tooltip"`, and different dismissal semantics (click-outside/Escape for a popover, versus losing hover/focus *or* Escape for a tooltip — WCAG 1.4.13 requires a tooltip be dismissible via Escape without moving the pointer, and hoverable, meaning it shouldn't disappear if the pointer moves onto the tooltip itself rather than away).
+- **Positioning needs a real collision-detection pipeline, not a single fixed offset** — a purpose-built positioning engine (the modern standard approach) continuously accounts for viewport boundaries, scroll containers, and clipping ancestors, applying a sequence of adjustments: flipping placement when the default side would collide, shifting along the cross-axis to stay in bounds, and resizing when neither flip nor shift fully resolves a collision.
+- **A tooltip's trigger needs `aria-describedby`** referencing the tooltip's `id`, while the tooltip container itself needs `role="tooltip"` — this is what associates the supplementary text with the trigger for assistive technology, distinct from a popover's typically `aria-expanded`/`aria-controls` pairing (closer to the [Dropdown Menu guide](/interview-prep/ff-system-design/accessible-dropdown-menu)'s contract).
+- **Reposition frequency on scroll is bounded by frame budget, not event count** — a page can fire dozens of scroll events per second, but a floating element only needs to visibly track its trigger at up to the display's refresh rate (commonly 60fps, ~16.7ms/frame); batching position recomputation to at most once per animation frame (rather than once per raw scroll event) is the concrete number this guide's "efficient repositioning" deep dive is actually targeting.
+- **Interaction-hook concerns (hover-with-delay, focus, click-to-toggle, dismiss-on-outside-interaction) are common enough across both tooltips and popovers** that real positioning libraries provide them as a standard, reusable set rather than something every consuming team reimplements per component.
+
+## 3. Data Contract Design
+
+```
+// Tooltip (non-interactive)
+{ "kind": "tooltip", "triggerId": "info-icon-1", "content": "Plain text only" }
+
+// Popover (interactive)
+{ "kind": "popover", "triggerId": "filter-button-1", "content": "<FilterFormComponent />", "dismissOn": ["outsideClick", "escape"] }
+```
+
+- **`kind` is a structural, required distinction**, not an optional style flag — a component consuming this contract should be prevented (by type, by lint rule, or at minimum by clear convention) from passing interactive content into a `kind: "tooltip"` instance.
+- **`dismissOn` is meaningful only for popovers** — a tooltip's dismissal (losing hover/focus, Escape, and disappearing only once the pointer leaves both the trigger and the tooltip itself) is a fixed, spec-driven behavior, not a configurable list of triggers the same way a popover's explicit dismissal behavior is.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Positioning Engine** — given a trigger element and a floating element, computes the floating element's screen coordinates, applying flip/shift/size middleware as needed to avoid viewport/clipping-ancestor collisions, and recomputes on scroll/resize.
+- **Tooltip** — a thin wrapper pairing the Positioning Engine with hover/focus-triggered show/hide logic, `role="tooltip"`, and the trigger's `aria-describedby` association — deliberately restricted to non-interactive content. Also listens for Escape (dismiss without moving the pointer) and treats the pointer being over the tooltip itself as "still showing," not just the trigger (WCAG 1.4.13).
+- **Popover** — a separate wrapper pairing the same Positioning Engine with click-toggle show/hide logic, `role="dialog"` (or similar), `aria-expanded`/`aria-controls` on the trigger, and outside-click/Escape dismissal — permitting focusable, interactive content.
+- **Portal Layer** — both Tooltip and Popover render their floating content through a shared portal mount point, the same clipping/stacking-avoidance reasoning as the [Dropdown Menu](/interview-prep/ff-system-design/accessible-dropdown-menu) and [Modal](/interview-prep/ff-system-design/reusable-modal-dialog-system) guides.
+
+## 5. State Management Design
+
+- **Positioning state (computed coordinates, current flipped/shifted placement) is fully derived** from the trigger's current DOM position, the floating element's own size, and the viewport/scroll-container boundaries — recomputed reactively on scroll/resize, never manually set.
+- **Open/closed/visible state differs meaningfully between the two**: a tooltip's visibility is driven directly by hover/focus state (no separate "is it open" flag distinct from "is the trigger currently hovered/focused"), while a popover has genuine, independent open/closed state that persists after the triggering click, requiring an explicit dismissal action to close.
+- **Both share the same underlying positioning state shape**, since the Positioning Engine doesn't need to know or care whether it's serving a tooltip or a popover — the distinction lives entirely in the show/hide trigger logic and the ARIA contract layered on top.
+
+## 6. Deep Dives
+
+### The flip/shift/size collision-resolution pipeline
+
+A modern positioning approach applies a sequence of adjustments rather than a single fixed calculation: first attempt the requested placement (e.g. "below the trigger"); if that would collide with the viewport edge, flip to the opposite side ("above the trigger" instead); if a collision remains along the perpendicular axis, shift the floating element along that axis to stay in bounds; and if neither resolves it, resize the floating element to fit the available space. Running this as a small, composable pipeline (rather than one large positioning function) is what lets each concern be reasoned about and adjusted independently.
+
+```ts
+import { computePosition, flip, shift, size } from "@floating-ui/dom";
+
+async function positionFloating(trigger: HTMLElement, floating: HTMLElement) {
+  floating.style.position = "absolute"; // left/top below do nothing without this
+  const { x, y } = await computePosition(trigger, floating, {
+    placement: "bottom",
+    middleware: [
+      flip(),
+      shift({ padding: 8 }),
+      // size() only computes available space — it needs its own apply
+      // callback to actually do anything with it, here capping the
+      // floating element so it never renders larger than what's available.
+      size({
+        apply({ availableWidth, availableHeight }) {
+          Object.assign(floating.style, {
+            maxWidth: `${availableWidth}px`,
+            maxHeight: `${availableHeight}px`,
+          });
+        },
+      }),
+    ],
+  });
+  Object.assign(floating.style, { left: `${x}px`, top: `${y}px` });
+}
+```
+
+Each middleware is one stage of the pipeline — `flip` first, `shift` if a collision remains, `size` as the last resort — exactly the fixed order the prose above describes.
+
+### Why an interactive tooltip is a real accessibility bug
+
+If a component styled/labeled as a "tooltip" contains a button or link, a screen reader user navigating with `role="tooltip"` semantics has no expectation that the content is interactive (tooltips are conventionally dismissed simply by moving focus/hover away, with no notion of "entering" them to interact) — any interactive content genuinely needs popover semantics (a dismissable, focusable container the user can deliberately enter and interact within), which is why the kind/content-type distinction in this design needs to be enforced, not just documented as a convention teams might drift from.
+
+### Efficient repositioning on scroll/resize
+
+Recomputing the floating element's position needs to track the trigger's position continuously as the page scrolls or resizes — a naive implementation recalculating on every scroll event without any batching/throttling can introduce visible lag or jank; real positioning libraries handle this via efficient, batched position updates (commonly leveraging `ResizeObserver`/`IntersectionObserver` under the hood) rather than a raw scroll-event listener recomputing synchronously on every fired event.
+
+### Shared interaction hooks across both patterns
+
+Concerns like "show on hover after a short delay, hide on hover-out after a short delay" (avoiding a flickering tooltip on a fast mouse pass-through) or "dismiss a popover on outside click or Escape" are common enough that real implementations provide them as a small set of reusable, composable hooks rather than something reimplemented from scratch inside every tooltip or popover instance in an application.
+
+## 7. Performance & UX Tradeoffs
+
+| | Tooltip | Popover |
+| --- | --- | --- |
+| Content | Non-interactive text only | Can contain buttons, links, forms |
+| ARIA role | `role="tooltip"` | `role="dialog"` (or similar) |
+| Trigger association | `aria-describedby` | `aria-expanded` / `aria-controls` |
+| Shows on | Hover or focus | Click/tap |
+| Dismisses on | Losing hover/focus, Escape, or the pointer leaving both trigger and tooltip | Outside click, Escape, or explicit close |
+| Typical delay | Short show-delay to avoid flicker | None — opens immediately on click |
+
+Collapsing this table into one flexible "floating content" component is the shortcut that produces the interactive-tooltip accessibility bug covered in the Deep Dives section below — the two rows genuinely need separate wrappers, not configuration flags on one shared component.
+
+## 8. Follow-ups
+
+- **"How would you handle a tooltip that needs to remain visible while the mouse moves from the trigger toward the tooltip itself (e.g. to read longer text)?"** This starts to blur into popover territory — if the content needs to be "entered," it likely shouldn't be a true tooltip; a common resolution is a small grace-period/safe-area between trigger and floating element rather than reclassifying genuinely non-interactive long text as a popover.
+- **"How do you test collision/flip behavior without manually resizing a real browser window in every test?"** Mock the trigger and viewport dimensions and assert the Positioning Engine selects the expected flipped/shifted placement for a given set of dimensions — the geometry logic is a pure function of inputs, testable independent of a real rendered DOM.
+- **"What about touch devices, where there's no 'hover'?"** Tooltips commonly need a touch-specific trigger (e.g. tap-and-hold, or simply omitting hover-only tooltips on touch and relying on visible labels instead) since the hover concept the whole pattern is built around doesn't exist on touch input.
+- **"How would you support nested popovers (a popover opening another popover)?"** The same stacking/focus-yielding consideration as the [Modal/Dialog guide](/interview-prep/ff-system-design/reusable-modal-dialog-system)'s nested-modal case — the outer popover's dismissal logic needs to not fire while an inner one is open, and closing the inner one needs to correctly restore the outer one's state.
+
+Sources: [Tooltip | Floating UI](https://floating-ui.com/docs/tooltip), [Floating UI - Create tooltips, popovers, dropdowns](https://floating-ui.com/)

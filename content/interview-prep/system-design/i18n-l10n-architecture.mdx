@@ -1,0 +1,120 @@
+---
+title: "Designing an Internationalization and Localization Architecture"
+slug: "i18n-l10n-architecture"
+section: "Performance-Critical"
+difficulty: "medium"
+summary: "A frontend's internationalization architecture is won or lost on message formatting, not translation file management — the ICU MessageFormat standard is what lets a single message template correctly express plurals, gendered forms, and embedded dates/numbers across languages with wildly different grammatical rules, and is the format underlying nearly every major i18n library and platform convention in use today."
+orderIndex: 7
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Render all user-facing text in the user's selected (or detected) language, with a defined fallback when a translation is missing.
+- Correctly pluralize, format dates/numbers/currency, and handle gendered message forms per-locale, not just per-language.
+- Support right-to-left (RTL) languages (Arabic, Hebrew) with correctly mirrored layout, not just flipped text direction.
+- Allow switching locale at runtime (or per-route) without a full app reload where reasonably possible.
+
+**Non-functional requirements:**
+
+- Adding a new locale should be primarily a translation-content addition, not a code change to every component that renders text.
+- Message templates must be genuinely translatable — a translator working from an extracted string file needs enough context (not just a bare template with numbered placeholders) to produce a grammatically correct translation.
+- RTL support needs to be systemic (a CSS/layout-level architecture decision), not a per-component special case bolted on after the fact.
+
+**Explicitly out of scope:** the translation-management/content pipeline (how translators actually receive and submit translated strings) and locale detection heuristics — this guide covers the client's message-formatting and layout-direction architecture, treating translated content as already available. Locale/theme are both examples of global, cross-cutting configuration a component library needs to inherit automatically, the same architectural concern the [Scalable Design System guide](/interview-prep/ff-system-design/scalable-design-system) covers for theming.
+
+## 2. Constraints & Estimation
+
+- **ICU MessageFormat is the standard mechanism for anything grammatically locale-dependent** — it's the syntax underlying nearly every major i18n library and platform convention (React/Vue i18n libraries, Symfony's translator, Android's plural strings, iOS's stringsdict), specifically because plural rules vary far more across languages than English's simple singular/plural split — the standard defines plural categories (`zero`, `one`, `two`, `few`, `many`, `other`) letting each language's translation supply only the categories that language's grammar actually needs.
+- **A hardcoded `count === 1 ? "item" : "items"` pattern doesn't generalize** — many languages have plural rules English doesn't (a distinct "two" form, or a "few"/"many" distinction based on the actual number, not just singular/plural) — which is exactly the gap ICU MessageFormat's plural categories are designed to close, rather than the client needing per-language conditional logic.
+- **RTL support requires CSS logical properties, not physical ones** — using `margin-inline-start` instead of `margin-left` (and the equivalent for padding, borders, positioning) is what allows a single stylesheet to correctly mirror for RTL locales via the `dir` attribute, rather than needing a parallel, hand-mirrored RTL stylesheet maintained separately.
+- **Directional icons need explicit handling** — an arrow icon pointing "forward" in an LTR reading direction needs to visually mirror in RTL, which isn't something CSS logical properties alone solve; icon components need their own RTL-awareness.
+- **A worked bundle-size estimate**: a mid-size app's translation strings might total ~2,000 keys at an average ~40 bytes/key (~80KB uncompressed) per locale; bundling all 15 supported locales upfront costs ~1.2MB the vast majority of visitors never need, versus loading just the active locale's ~80KB bundle (plus a fallback) — a >90% reduction in i18n-related initial payload, which is the concrete number behind lazy-loading per-locale bundles rather than shipping everything.
+
+## 3. Data Contract Design
+
+```
+// ICU MessageFormat template, keyed by translation key
+{
+  "cart.itemCount": "{count, plural, =0 {Your cart is empty} one {# item in your cart} other {# items in your cart}}",
+  "welcome.greeting": "{name}, welcome back!"
+}
+
+// Locale metadata
+{ "locale": "ar", "direction": "rtl", "pluralRules": "arabic-6-category" }
+```
+
+- **Message templates are stored keyed by a stable identifier**, not by the source-language text itself — this is what lets the same key resolve to entirely different grammatical structures per locale without the application code needing to know or care which structure a given locale uses.
+- **Locale metadata explicitly includes `direction`** — this is what drives the `dir` attribute on the document root, which in turn is what CSS logical properties key off of to mirror correctly.
+- **Plural category selection (`=0`, `one`, `other`, etc.) lives inside the ICU template itself**, resolved by the formatting library at render time based on the actual `count` value and the active locale's specific plural rules — the application code that renders `cart.itemCount` never branches on count itself.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Locale Provider** — holds the currently active locale and its direction/plural-rule metadata, exposed to the whole component tree (commonly via context), and drives the document's `dir` attribute.
+- **Message Formatter** — given a translation key, the active locale, and any interpolation values (a count, a name), resolves and renders the correct ICU-formatted string, including selecting the correct plural/gender category.
+- **Translated Components** — ordinary application components that call the Message Formatter by key rather than embedding literal text, so switching locale re-resolves every rendered string without any component needing locale-specific logic of its own.
+- **Direction-Aware Primitives** — layout/icon components that explicitly consult the active locale's `direction` where CSS logical properties alone aren't sufficient (primarily directional icons/animations).
+
+## 5. State Management Design
+
+- **Active locale is genuinely global, cross-cutting state** — nearly every rendered component depends on it, so it's provided high in the component tree (context or an equivalent), not threaded manually through every intermediate component's props.
+- **Message templates themselves are effectively static configuration per locale** — loaded once per locale (commonly lazily, only loading the currently-needed locale's translation bundle rather than every supported locale's content upfront), not recomputed or fetched per render.
+- **Direction (`ltr`/`rtl`) is derived from the active locale**, not independently settable — there's no legitimate case where the direction disagrees with what the active locale's metadata specifies.
+
+## 6. Deep Dives
+
+### Why ICU MessageFormat over hardcoded conditionals
+
+A message needing to express a count-dependent plural in English can get away with a simple ternary, but many languages have grammatically distinct forms English doesn't (Arabic has six plural categories; Russian and Polish have different "few" vs. "many" thresholds based on the actual number's last digits) — hardcoding a conditional per language inside application code doesn't scale and puts grammatical correctness in the hands of engineers rather than translators. ICU MessageFormat moves this entirely into the translated template itself: a translator supplies whichever plural categories their language's grammar actually requires, and the formatting library's job is purely mechanical — evaluate the given count against the active locale's plural rules and select the matching category, with application code never touching plural logic directly.
+
+```ts
+const pluralRules = new Intl.PluralRules("ar"); // Arabic: 6 grammatical categories
+const category = pluralRules.select(3); // "few"
+
+const template = {
+  zero: "لا عناصر", one: "عنصر واحد", two: "عنصران",
+  few: "{count} عناصر", many: "{count} عنصرًا", other: "{count} عنصر",
+};
+const message = template[category].replace("{count}", "3");
+```
+
+The formatter's own code never changes per locale — only the template object above (translator-supplied) does.
+
+### RTL as a systemic CSS decision, not a per-component patch
+
+Adopting CSS logical properties (`margin-inline-start`/`padding-inline-end`/etc.) throughout the codebase, rather than physical properties (`margin-left`/`padding-right`), is what makes a single stylesheet automatically mirror correctly the instant the `dir` attribute switches to `rtl` — the browser itself handles the actual property resolution based on direction. The alternative (maintaining a parallel, hand-mirrored RTL-specific stylesheet) is both more maintenance burden and a much easier place for RTL support to silently rot as the LTR styles evolve without a corresponding RTL update.
+
+### Directional icons and layout that CSS alone doesn't solve
+
+Logical properties handle spacing/positioning correctly, but a "next"/"forward" arrow icon pointing right in LTR needs to point left in RTL to preserve its meaning — this requires icon components to be direction-aware (reading the active locale's direction and conditionally mirroring), since an icon's visual content (unlike a CSS box's margin) isn't something the `dir` attribute alone flips.
+
+### Lazy loading translation bundles
+
+Loading every supported locale's full translation content on every visit (regardless of which locale the user actually needs) wastes real bandwidth on content that will never render — the standard mitigation is loading only the currently-active locale's translation bundle, with switching locale triggering a fetch for the newly-selected one, rather than bundling all locales into the initial client payload.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| ICU MessageFormat | Grammatically correct plurals/genders across all locales | Real template-syntax complexity, needs a capable formatting library |
+| Flat key-value strings + hardcoded conditionals | Simple, no extra library | Produces incorrect grammar for many non-English locales |
+| CSS logical properties throughout | One stylesheet correctly mirrors for RTL | More work to adopt across an existing large codebase |
+| Separate RTL stylesheet | No changes to existing LTR styles | Reliably drifts out of sync with LTR over time |
+| Lazy-loaded per-locale bundles | >90% smaller i18n payload for the common case (see estimate above) | Brief loading state on an actual locale switch |
+| Bundle all locales upfront | Instant locale switching | ~1.2MB the vast majority of visitors never use |
+
+Every row's "right" column is also the one nearly every mature i18n implementation converges on — this is a case where there's little genuine tension once the numbers are in front of you.
+
+## 8. Follow-ups
+
+- **"How would you handle a translation that's simply missing for a given locale?"** A defined fallback chain (missing translation falls back to a default locale's version, commonly English, rather than rendering a blank string or a raw translation key) — and ideally a way to flag/log the gap for the content pipeline, rather than silently and permanently showing fallback content.
+- **"How do you test i18n correctness beyond 'does the English version look right'?"** Testing plural-category selection and RTL layout specifically — asserting a given count correctly resolves to the expected ICU category for a locale with non-trivial plural rules, and visually/structurally verifying that logical-property-based layouts actually mirror correctly under `dir="rtl"`, not just that the text itself is translated.
+- **"What about locale-specific date/number/currency formatting beyond plain message templates?"** Handled by the same underlying formatting infrastructure ICU-based libraries provide (locale-aware date/number formatters), consumed the same way as plural-aware message templates — a date embedded in a message should format according to the active locale's conventions, not a single hardcoded format string.
+- **"How would you support a locale switch without a full page reload?"** Since translation bundles and direction are provided via the Locale Provider rather than baked into a server-rendered initial HTML payload, switching the active locale (loading the new bundle, updating the `dir` attribute) can re-render the existing component tree with the new locale's content in place, provided components consistently call the Message Formatter rather than embedding any literal text directly.
+
+Sources: [A Practical Guide to the ICU Message Format](https://phrase.com/blog/posts/guide-to-the-icu-message-format/), [ICU message format: Guide to plurals, dates & localization syntax](https://simplelocalize.io/blog/posts/what-is-icu/)

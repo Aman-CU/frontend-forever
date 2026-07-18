@@ -1,0 +1,115 @@
+---
+title: "Designing a Browser-Based Video Conferencing App"
+slug: "browser-video-conferencing"
+section: "Real-Time & Collaborative"
+difficulty: "hard"
+summary: "A video conferencing client's core architectural decision is choosing a media-routing topology — peer-to-peer only works for very small calls, so any real multi-participant product routes audio/video through a Selective Forwarding Unit (SFU) that receives one stream per participant and forwards only the streams each other participant actually needs, rather than every client uploading to every other client directly."
+orderIndex: 5
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Zoom", "Google Meet"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Join a call and publish local audio/video; see and hear every other participant.
+- Mute/unmute audio and enable/disable video locally, reflected to everyone else.
+- Screen sharing as an additional video track.
+- Handle participants joining and leaving mid-call without disrupting everyone else's connection.
+
+**Non-functional requirements:**
+
+- Must scale beyond a handful of participants — a naive architecture where every client sends its stream directly to every other client breaks down quickly as participant count grows.
+- Must adapt to each participant's actual bandwidth/device capability — a participant on a poor connection shouldn't force everyone else down to their quality level, nor should they be sent more data than they can actually handle.
+- Signaling (the negotiation to establish each connection) must complete quickly enough that joining a call feels near-instant, not like a multi-second handshake.
+
+**Explicitly out of scope:** the media codec internals and the SFU/media-server backend implementation itself — this guide covers the client's connection topology, signaling flow, and stream-management architecture. The text-chat surface a call is often launched from is its own problem, covered in the [Real-Time Messaging Client guide](/interview-prep/ff-system-design/realtime-messaging-client).
+
+## 2. Constraints & Estimation
+
+- **Three real, named architectures exist for routing media, each with a clear scaling ceiling.** Peer-to-peer (P2P): every participant connects directly to every other participant — simple, lowest latency, but each client's upload bandwidth has to support one stream per *other* participant, so it degrades fast past a handful of people. A Selective Forwarding Unit (SFU): every participant sends one stream to a central server, which forwards only the streams each recipient needs — this is the most common architecture for real multi-party products, since it shifts the fan-out cost from each client's upload bandwidth onto the server. A Multipoint Control Unit (MCU): the server actually decodes and re-encodes/mixes streams into one composite — highest server cost, but lowest client-side complexity/bandwidth, useful for very constrained clients.
+- **Signaling is a separate concern from media transport** — establishing a WebRTC connection (exchanging session descriptions and network candidates) needs its own signaling channel (commonly a WebSocket) before any actual audio/video can flow; the client needs to model these as two distinct phases, not one.
+- **Bandwidth adaptation is expected, not optional at scale** — SFU-based products commonly support simulcast (a client sends multiple quality tiers of its own video simultaneously) so the SFU can forward the appropriate tier to each recipient based on that recipient's actual conditions, rather than forcing one uniform quality on every viewer.
+- **A worked upload-bandwidth comparison**: a single 720p video stream runs roughly 1.5-2.5Mbps. In pure P2P, a 6-person call means each client uploads 5 simultaneous streams — 7.5-12.5Mbps upload, above what many home connections sustain reliably. With an SFU, each client uploads exactly one stream regardless of call size — the same 1.5-2.5Mbps whether the call has 6 or 60 people — which is the concrete number behind why P2P "degrades fast past a handful of people" while SFU doesn't.
+
+## 3. Data Contract Design
+
+```
+// Signaling messages (over a WebSocket, before media flows)
+{ "type": "offer", "sdp": "...", "fromUserId": "u_1", "toUserId": "sfu" }
+{ "type": "answer", "sdp": "...", "fromUserId": "sfu", "toUserId": "u_1" }
+{ "type": "ice_candidate", "candidate": "...", "fromUserId": "u_1" }
+
+// Participant roster/state (application-level, separate from raw media)
+{ "type": "participant_update", "userId": "u_2", "audioMuted": false, "videoEnabled": true, "screenSharing": false }
+```
+
+- **Signaling messages are their own message type**, distinct from the actual media streams (which never pass through this JSON channel at all — media flows over the separate WebRTC peer connection once negotiated).
+- **Participant state (muted/video-enabled/screen-sharing) is explicit application data**, not inferred from the media stream itself — a client needs to render an accurate "muted" icon even in the instant before it's actually received that participant's (silent) audio packets.
+- **Every client connects to the SFU, not to each other directly** — from the client's perspective, there's exactly one peer connection (to the SFU), which then internally represents N remote participants' tracks, rather than the client managing N separate peer connections.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Signaling Client** — manages the WebSocket connection used purely for negotiation (offers/answers/ICE candidates) and application-level participant state, entirely separate from the actual media path.
+- **Media Connection Manager** — owns the single `RTCPeerConnection` to the SFU, publishing the local participant's tracks and receiving the forwarded remote tracks the SFU decides to send.
+- **Track Renderer** — maps each remote track to a `<video>`/`<audio>` element in the UI grid, handling participants joining/leaving by adding/removing tracks without needing to renegotiate the entire connection for every roster change where avoidable.
+- **Bandwidth/Quality Controller** — where simulcast is supported, signals the SFU about which quality tier to request per remote participant (e.g. lower resolution for a participant currently shown as a small thumbnail versus the actively-speaking main view).
+
+## 5. State Management Design
+
+- **Signaling/negotiation state (connection establishment progress) is separate from steady-state call state** (who's currently in the call, who's muted) — the former is a short-lived handshake; the latter persists and updates for the call's whole duration.
+- **Participant roster state is authoritative from the server** (via the signaling channel), not inferred purely from which media tracks happen to be currently arriving — a participant can be "in the call" with video temporarily disabled, which is a state the client needs represented explicitly, not derived from "am I currently receiving a video track from them."
+- **Local media state (is my own mic muted) updates instantly on local UI action** and is broadcast to others as a signaling/application-state message, independent of whether the underlying audio track is technically still being captured (many implementations keep capturing but stop sending, to make un-muting instant).
+
+## 6. Deep Dives
+
+### Sequence: signaling before media flows
+
+<SequenceDiagram />
+
+Notice the two distinct phases the diagram makes visible: nothing above the "publish local track" step is actual audio/video — it's pure negotiation (offer, answer, ICE candidates) over the signaling channel, and only once that completes does the client publish its own track and start receiving the SFU's forwarded remote track.
+
+### Why SFU over P2P for multi-party calls
+
+In pure P2P, each client's upload bandwidth has to support one outbound stream per other participant — a 6-person call means each client is uploading 5 simultaneous video streams, which quickly exceeds typical consumer upload bandwidth. An SFU inverts this: each client uploads exactly one stream (to the SFU) regardless of participant count, and the SFU handles the fan-out of forwarding it to whoever needs it — shifting the bandwidth-multiplication problem from every client's limited upload capacity onto server infrastructure built to handle it.
+
+### Signaling as a distinct phase from media transport
+
+Before any audio/video can flow, the client and the SFU need to exchange session descriptions (what codecs/formats each side supports) and ICE candidates (viable network paths, accounting for NAT/firewalls) — this negotiation happens over a conventional channel like a WebSocket, and only once it completes does the actual `RTCPeerConnection` start carrying media. Modeling these as genuinely separate phases in the client (a signaling state machine, then a media-connection state machine) keeps "why can't I hear anyone" debugging tractable — a stuck signaling handshake and a media/codec problem are different failure modes needing different diagnostics.
+
+### Simulcast and adaptive quality
+
+Rather than every viewer receiving the same fixed quality from a given participant's camera, simulcast has the sending client encode and upload multiple quality tiers (e.g. low/medium/high resolution) of its own stream simultaneously, and the SFU forwards whichever tier fits each individual recipient's current bandwidth/rendering size (a participant shown as a tiny thumbnail doesn't need the same resolution as the person currently the main focus). This is what lets a call with mixed connection qualities among participants avoid forcing everyone down to the worst common denominator.
+
+### Joining/leaving without disrupting everyone else
+
+Since every client's actual connection is to the SFU (not to each other), a participant joining or leaving only requires the SFU to start/stop forwarding that one participant's tracks to everyone else — no other participant's own peer connection needs to renegotiate, which is precisely the scalability benefit an SFU topology provides over a mesh of direct P2P connections that would each need updating.
+
+## 7. Performance & UX Tradeoffs
+
+| Architecture | Client upload cost | Server cost | Best fit |
+| --- | --- | --- | --- |
+| P2P | Scales with participant count (~1.5-2.5Mbps × N others) | None | Very small calls (2-4 people) |
+| SFU | Fixed, one stream regardless of call size | Moderate (forwarding only) | Most real multi-party products |
+| MCU | Fixed, lowest of the three | Highest (decode + re-encode/mix) | Very constrained/low-power clients |
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Simulcast (multiple quality tiers) | Every viewer gets quality matched to their conditions | Extra publisher upload bandwidth + encode CPU |
+| Single fixed quality | Simpler, less publisher cost | One shared compromise quality for every viewer |
+| Keep audio capture running while muted | Unmuting feels instant | Small ongoing local audio-processing cost |
+
+SFU is the practical default for anything beyond a 1:1 or very small call — the P2P row's cost grows linearly with participants while SFU's stays flat.
+
+## 8. Follow-ups
+
+- **"What if a participant's connection to the SFU drops mid-call?"** The client needs reconnection logic analogous to any real-time client (re-establish signaling, renegotiate the media connection), and the SFU/other participants need to handle that participant's tracks disappearing and reappearing gracefully rather than treating a temporary drop as a permanent leave.
+- **"How would you implement screen sharing alongside camera video?"** As an additional track published on the same peer connection (or a second connection, depending on the SFU's design) — from the client's perspective it's another track to publish/render, using the same publish/subscribe model as camera video.
+- **"How do you test signaling logic without real WebRTC connections?"** Mock the signaling WebSocket and assert the client's state machine transitions correctly through offer/answer/ICE-candidate exchange sequences — the actual `RTCPeerConnection`/media-transport behavior is better suited to integration/manual testing than unit tests, since it depends on real browser media APIs.
+- **"What happens when more people want to speak than the UI can reasonably show?"** This becomes a UI/product decision layered on top of the same architecture — commonly, only actively-speaking or pinned participants get full video tiles, with others shown as an avatar/name-only tile, still receiving (or not even subscribing to) their video track depending on how aggressively the client manages subscription to save bandwidth.
+
+Sources: [WebRTC Architecture Explained: P2P vs SFU vs MCU](https://www.red5.net/blog/webrtc-architecture-p2p-sfu-mcu-xdn/), [P2P? SFU? MCU? Which WebRTC Architecture Is Right for You](https://signalwire.com/blogs/industry/p2p-sfu-mcu-find-out-which-webrtc-architecture-is-right-for-you)

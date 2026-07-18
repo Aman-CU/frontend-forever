@@ -1,0 +1,129 @@
+---
+title: "Designing a Masonry-Style Visual Discovery Feed"
+slug: "masonry-discovery-feed"
+section: "Data-Heavy Interfaces"
+difficulty: "medium"
+summary: "A masonry (Pinterest-style) grid packs variable-height image cards into the shortest available column rather than a uniform row grid, which means the frontend must know each image's aspect ratio before layout so it can assign cards to columns without waiting for every image to actually download first."
+orderIndex: 5
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Pinterest"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- A grid of image cards with genuinely variable aspect ratios (portrait, landscape, square), packed tightly with no large gaps — the defining visual signature of a masonry layout, distinct from a uniform CSS grid.
+- Infinite scroll loading more cards as the user scrolls down.
+- Responsive column count (e.g. 2 columns on mobile, 5+ on wide desktop) that re-flows the existing cards when the viewport resizes.
+- A "pin"/save interaction and a tap-through to a detail view, without breaking the grid's scroll position on return.
+
+**Non-functional requirements:**
+
+- Must avoid a "waterfall" layout bug where cards visibly jump into their final position after their image loads — this is the single most common masonry implementation mistake.
+- Must stay smooth scrolling through a large, continuously-growing set of cards — the same virtualization concern as any data-heavy feed, complicated by masonry's column-based (not simple row-based) positioning.
+- Re-flowing the entire grid on every viewport resize must not be so expensive it visibly stutters during a window resize or an orientation change.
+
+**Explicitly out of scope:** the recommendation/discovery algorithm that decides which images to show and in what order — this guide is about laying out and rendering whatever ordered set of images the client is given.
+
+## 2. Constraints & Estimation
+
+- **The image's aspect ratio must be known before layout, not learned from loading the image.** The classic bug (confirmed across real masonry implementations) is calculating column position based on a card's *expected* height before its image has actually loaded, then having the real image's dimensions shift the layout once it arrives — visible reflow, exactly the kind of layout instability Core Web Vitals' Cumulative Layout Shift metric penalizes. The fix is universal across real implementations: the data contract must carry each image's true `width`/`height` (or aspect ratio) up front, so the grid can compute final card height *before* requesting the image byte at all.
+- **Column-count responsiveness is a re-layout, not just a CSS media query**, because masonry's column-packing algorithm (assign each new card to the currently-shortest column) depends on the actual column count — changing from 3 to 5 columns on a resize means re-running the packing algorithm, not just re-flowing existing DOM positions via CSS alone (unless relying on the newer native `display: grid-lanes` masonry support — shipped in Safari 26.4, testable behind a flag in Chromium, with Firefox still catching up as of this guide — where the browser's own reflow handles it instead).
+- **Virtualizing a masonry grid is harder than virtualizing a single-column feed** — a virtualized single list only needs to track one running height per item; a masonry grid needs to track a running height *per column*, and a scrolled-into-view row of cards can span multiple columns at once, each with an independent "how much height is loaded" state.
+- **A worked column-repacking cost estimate**: a resize crossing a column-count breakpoint (say 3 columns to 5) needs to re-run the packing algorithm over every currently-loaded item — at O(n) for n loaded items, repacking 500 already-loaded cards is a few thousand comparisons, sub-millisecond on any modern device; the real cost isn't the algorithm, it's making sure this doesn't re-run on every one of the dozens of resize events a single drag fires, which is exactly why debouncing (section 7) matters more here than raw algorithmic efficiency.
+
+## 3. Data Contract Design
+
+```
+GET /api/discover?cursor={cursor}&limit=25
+
+{
+  "items": [
+    {
+      "id": "pin_5521",
+      "imageUrl": "...?w=736",
+      "width": 736,
+      "height": 1104,
+      "title": "...",
+      "boardName": "...",
+      "saveCount": 8120
+    }
+  ],
+  "nextCursor": "...",
+  "hasMore": true
+}
+```
+
+- **`width`/`height` (or a precomputed aspect ratio) travel with every item** — this is the one field this contract cannot omit, since the entire masonry-packing algorithm on the client depends on knowing final card proportions before the image loads.
+- Cursor-based pagination, same reasoning as every other infinite-scroll contract in this series — a continuously-growing discovery feed has the same "offset breaks under live insertion" problem as a social feed.
+- A single `imageUrl` at grid-appropriate resolution (not a separate thumbnail/full-res pair) is sufficient here, since — unlike a photo-sharing feed — a masonry discovery grid's cards typically link out to a separate detail view rather than upgrading in place to a larger asset.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Column Packer** — given the ordered list of items (each with a known aspect ratio) and the current column count, assigns each item to whichever column currently has the least accumulated height, then computes that column's new running height. This is pure layout math, independent of whether any image has actually loaded.
+- **Masonry Grid** — renders the columns the Column Packer produces, delegating each card's actual image rendering to a Card component that already knows its final box dimensions (from the aspect ratio) before the image arrives.
+- **Resize Observer** — recomputes the target column count from the viewport width and re-runs the Column Packer against the *existing* loaded items when it changes, rather than discarding and re-fetching.
+- **Pagination Sentinel** — the same IntersectionObserver-triggered next-page fetch as the [Infinite-Scroll Feed guide](/interview-prep/ff-system-design/infinite-scroll-feed), appending newly-fetched items to the Column Packer's input rather than a flat list.
+
+## 5. State Management Design
+
+- **Layout state (which column each card lives in, each column's running height) is derived, computed state** — not stored independently of the underlying item list, since it's a pure function of `(items, columnCount)` and must never drift out of sync with either input.
+- **The underlying item list (loaded pages, cursor) is owned by the same server-cache-layer pattern as any infinite-scroll feed** — the Column Packer's output is a presentation-layer derivation on top of it, recomputed whenever the input list or column count changes, not duplicated as separately-tracked state.
+- **Column count itself is local UI state derived from viewport width**, recalculated on resize (typically debounced, since resize events fire rapidly) rather than on every single resize event tick.
+
+## 6. Deep Dives
+
+### Avoiding the waterfall/reflow bug
+
+Since every item's aspect ratio is already known from the data contract, the Column Packer can compute every card's final box (width from the column, height from the aspect ratio) *before* a single image byte has been requested. Each card then renders a correctly-sized placeholder box immediately, with the actual `<img>` loading into an already-stable, already-correctly-sized space — this is what eliminates the classic "grid pops and shifts as images load in" bug, and it only works because dimensions arrived with the data, not from measuring the loaded image.
+
+### The column-packing algorithm itself
+
+The standard approach: maintain a running height per column; for each new item (in order), assign it to the column with the current minimum height, then add that item's computed height (from its aspect ratio and the column's fixed width) to that column's running total. This is a greedy algorithm — it doesn't produce a perfectly balanced result in every case, but it's the same approach real masonry libraries use, and it runs in a single pass over the item list.
+
+```ts
+function packColumns(items: { height: number }[], columnCount: number) {
+  const columnHeights = new Array(columnCount).fill(0);
+  const assignments: number[] = [];
+
+  for (const item of items) {
+    const shortest = columnHeights.indexOf(Math.min(...columnHeights));
+    assignments.push(shortest);
+    columnHeights[shortest] += item.height;
+  }
+  return assignments; // assignments[i] = which column item i belongs to
+}
+```
+
+### Virtualizing a multi-column layout
+
+A masonry grid's virtualization has to track visibility per column independently, since a single "scrolled past row" concept doesn't cleanly apply when columns have drifted to different heights — the practical approach is to track each column's own visible range and only mount cards within each column's currently-visible window, rather than trying to force a masonry layout into a single-list virtualization abstraction built for uniform rows.
+
+### Resize handling without a full re-fetch
+
+Changing column count needs to re-run the Column Packer against the *already-loaded* item list, not trigger a new fetch — the underlying data (which items exist, in what order) hasn't changed, only how they're packed into columns. Debouncing the resize handler (recomputing only after resize activity settles, not on every fired event) keeps this from becoming its own performance problem during an active window resize.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Greedy shortest-column-first packing | Fast, single-pass, sub-ms even at 500+ items | Can leave one column noticeably taller than others |
+| Balanced (look-ahead) packing | More visually even columns | More compute for a marginal visual improvement |
+| Debounced resize | Avoids repacking on every one of dozens of resize events | Grid looks briefly stale mid-resize |
+| Immediate re-flow on every resize event | Always current | Disruptive, wasted repacking during an active drag |
+| One resolution per image | Simpler, no upgrade-in-place logic | Grid and detail view need separately-sized requests |
+
+Greedy packing plus debounced resize is the real-world default combination — the marginal gains from balanced packing or immediate re-flow rarely justify their added cost.
+
+## 8. Follow-ups
+
+- **"What if an item's actual image fails to load?"** The reserved box (sized from the known aspect ratio) stays exactly the same size — a failed image never collapses its space, since that space was computed independently of the image itself, only from data already in hand.
+- **"How would you handle extremely tall or extremely wide outlier images breaking the visual rhythm?"** Common real-world approach: cap the rendered aspect ratio within a sane min/max range (crop or letterbox extreme outliers) rather than let a single 10:1 aspect-ratio image dominate a column — a deliberate product/design decision, not a purely technical one.
+- **"Could this use native CSS masonry instead of JS-computed column packing?"** As of this guide, `display: grid-lanes` ships in Safari 26.4 and is testable behind a flag in Chromium, with Firefox still updating its own implementation — real, but not yet universal, support. A production implementation today still needs the JS-computed approach described here as the baseline, with `grid-lanes` usable as progressive enhancement for browsers that support it rather than a full replacement yet.
+- **"How do you test the column-packing algorithm?"** As a pure function of `(items with known aspect ratios, column count) → column assignments`, it's straightforward to unit test with fixed input arrays and assert the resulting column heights and item-to-column assignments — no rendering or real images required.
+
+Sources: [Intro to Masonry Layout](https://blog.scottlogic.com/2025/09/17/intro-to-masonry.html), [Designing a Pinterest-Style Masonry Grid Layout](https://frontendlead.com/system-design/design-pintrest)

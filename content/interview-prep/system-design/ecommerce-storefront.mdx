@@ -1,0 +1,123 @@
+---
+title: "Designing a High-Traffic E-Commerce Storefront"
+slug: "ecommerce-storefront"
+section: "Data-Heavy Interfaces"
+difficulty: "medium"
+summary: "A high-traffic storefront's frontend architecture is won or lost on the product-listing page's render speed and the checkout flow's input responsiveness — Largest Contentful Paint on the product grid and Interaction to Next Paint on checkout form fields are the two Core Web Vitals with the most direct, measured link to conversion rate."
+orderIndex: 3
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Amazon", "eBay", "Walmart"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- A product-listing page (PLP) with filtering (category, price range, brand), sorting, and pagination over a potentially huge catalog.
+- A product-detail page (PDP) with an image gallery, variant selection (size/color), and inventory-aware "Add to Cart".
+- A cart that persists across sessions and reflects real-time price/availability changes.
+- A multi-step checkout (shipping address → shipping method → payment) with real-time validation and price recalculation at each step.
+- Search with autocomplete suggestions (a smaller, embedded instance of the general [Search Autocomplete](/interview-prep/ff-system-design/search-autocomplete) problem).
+
+**Non-functional requirements:**
+
+- PLP image-heavy grids must hit a fast Largest Contentful Paint (LCP) — the product grid *is* the largest above-the-fold content, so LCP here is measuring exactly the thing that determines whether a shopper perceives the page as fast.
+- Checkout forms must stay responsive under Interaction to Next Paint (INP) — every field interaction (typing an address, changing shipping method, applying a coupon) can trigger a price recalculation or validation call, and a checkout page is disproportionately likely to have poor INP precisely because of this.
+- Must degrade gracefully when a product's price/stock changes between when it was added to cart and when checkout begins.
+
+**Explicitly out of scope:** payment processor integration internals (tokenization, PCI compliance) and the recommendation/personalization engine — this guide covers the browsing/cart/checkout client, not the backend systems behind pricing or fraud checks.
+
+## 2. Constraints & Estimation
+
+- **LCP budget on the PLP**: the largest element is almost always a product image. Real case studies show LCP improvements driving a large share of measured conversion lift — one Shopify Plus case study attributed roughly 60% of a 17% conversion increase to LCP gains alone, largely from image optimization. Budget for responsive, properly-sized product images (not one oversized master image scaled down by CSS) and a placeholder that reserves the correct aspect ratio to avoid layout shift.
+- **INP budget on checkout**: a page moving from "Poor" to "Good" Core Web Vitals status has been shown to reduce page abandonment by roughly a quarter in Google's own reporting. Checkout is disproportionately at risk because of synchronous-feeling work triggered by every field: address validation, shipping recalculation, coupon application, and payment-gateway iframes all competing for the main thread on the exact page where a bad interaction costs a completed sale.
+- **Catalog size**: PLPs commonly page tens of thousands of products per category. Server-side filtering/sorting/pagination is mandatory — a client can't reasonably hold or sort a full category's inventory in memory.
+- **Real-time price/stock drift**: cart items must be re-validated against current price/stock at checkout entry, not trusted from whenever they were added — a real and common correctness bug is charging (or attempting to charge) a stale price.
+- **A worked PLP payload estimate**: a page of 24 products at ~200 bytes of JSON each (name, price, rating, thumbnail URL — no full description) is under 5KB; the actual weight is almost entirely the 24 product thumbnails, which at a responsively-served ~15-25KB each total 400-600KB for the visible grid — reinforcing that image strategy, not the data contract, is where this page's real LCP budget goes.
+
+## 3. Data Contract Design
+
+```
+GET /api/products?category=shoes&sort=price_asc&page=2&filters[brand]=nike
+
+{
+  "items": [
+    { "id": "p_44", "name": "...", "price": 8999, "currency": "USD",
+      "thumbnailUrl": "...", "rating": 4.5, "inStock": true }
+  ],
+  "page": 2,
+  "totalPages": 340,
+  "totalCount": 16987
+}
+```
+
+```
+POST /api/cart/validate
+{ "items": [{ "productId": "p_44", "quantity": 1, "priceAtAdd": 8999 }] }
+
+{
+  "items": [
+    { "productId": "p_44", "quantity": 1, "currentPrice": 8499,
+      "priceChanged": true, "inStock": true }
+  ]
+}
+```
+
+- **PLP pagination is a plain, page-numbered contract**, not cursor-based — unlike a social feed, a product catalog is a comparatively stable, filterable dataset a shopper often wants to jump around in ("show me page 5"), so classic offset/page-number pagination is the right fit here, not the cursor pattern a live-ranked feed needs.
+- **A dedicated cart-validation endpoint**, called on checkout entry (not on every cart view), re-prices and re-checks stock against what the client remembers — the client never trusts its own cached `priceAtAdd` as the checkout-time price. This checkout-entry check is early feedback for the user, not the final word: a multi-step checkout (address → shipping → payment) can take real elapsed time, so the actual order-creation/payment-authorization call needs its own atomic server-side re-validation of price, stock, and total immediately before charging — never reusing the checkout-entry response as if it were still current by the time the user confirms payment.
+- **Filters are server-applied query parameters**, not client-side array filtering — filtering a 17,000-item catalog in the browser is both a performance and a correctness problem (the client would need the entire catalog loaded to filter it).
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Product Grid** — a paginated (not infinite-scroll, typically) grid of product cards, each rendering a responsively-sized image with a reserved aspect-ratio box to prevent layout shift while it loads.
+- **Filter/Sort Panel** — writes to URL query parameters (so filtered views are shareable/bookmarkable and survive a refresh), which the Product Grid's data layer reads to build the query.
+- **Cart Store** — a client-side cache of cart contents (persisted to `localStorage`/a server-synced cart for logged-in users) that the Checkout Flow re-validates against the server on entry rather than trusting.
+- **Checkout Stepper** — a multi-step form (address → shipping → payment) where each step's changes trigger a price/shipping recalculation against the server, debounced the same way a search box would debounce a query, to avoid an INP-costly network call on every keystroke.
+
+## 5. State Management Design
+
+- **Catalog/filter state lives in the URL**, not just component state — `?category=shoes&sort=price_asc&page=2` is the actual source of truth, which is what makes a filtered PLP shareable and correctly restorable on back-navigation, exactly like Feature 31's own filterable list pages.
+- **Cart state is optimistic for quantity changes** (increment/decrement feels instant) but **authoritative from the server at checkout entry** — the validation endpoint's response, not the client's remembered state, decides what the user actually pays.
+- **Checkout form state is local to the stepper** until each step is confirmed, with the recalculation call being the one piece that talks to the server per step — keeping the multi-step form's own field state separate from the "confirmed and priced" state avoids re-triggering a network call on every keystroke of an address field before the user has even finished typing.
+
+## 6. Deep Dives
+
+### Image strategy on the product grid
+
+Since the LCP element is almost always a product thumbnail, the concrete techniques that measurably help: `srcset`/`sizes` for responsive images (serving a phone the phone-sized asset, not the desktop-grid-sized one), a reserved aspect-ratio container (via CSS `aspect-ratio` or explicit width/height) so the image's arrival doesn't shift layout, and prioritizing the above-the-fold row of products (e.g. `fetchpriority="high"` on the first few, standard lazy-loading below the fold) rather than treating every product image identically.
+
+### Checkout INP: isolating expensive interactions
+
+The concrete INP risk areas on checkout — a coupon field that fires a server request, a shipping-method selector that recalculates the whole order total, a payment iframe loading a third-party script — all share one fix pattern: debounce/defer the expensive work so a single keystroke or click doesn't synchronously trigger it, and give immediate optimistic visual feedback (a subtle loading indicator on just the total, not a full-page spinner) while the real recalculation resolves in the background.
+
+### Price/stock drift between add-to-cart and checkout
+
+Storing `priceAtAdd` on the client is useful for showing "price changed since you added this" messaging, but it must never be trusted as the actual charge amount — a UI that surfaces "this item's price changed" (rather than silently updating or silently failing) is both more honest and avoids a support-ticket-generating surprise at payment. Critically, this isn't a single checkpoint: checkout-entry validation catches the common case early, but the moment that actually creates the order and authorizes payment needs its own atomic re-validation of price, stock, quantity, and total, server-side, immediately beforehand — treating checkout-entry's response as still valid minutes later (after the user filled out shipping and payment forms) is exactly the kind of time-of-check-to-time-of-use gap that lets a stale price or an item that sold out mid-checkout slip through to an actual charge.
+
+### Filter/sort as URL state
+
+Treating filters as component state instead of URL state is a common mistake that breaks two things at once: the page becomes unshareable/unbookmarkable, and a browser back-button press after applying a filter doesn't restore the prior view correctly — both fixed by making the query parameters the actual source of truth the data-fetching layer reads from.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Aggressive image compression | Faster LCP | Lost product-photo fidelity can cost conversions a different way |
+| Responsive sizing (per-viewport resolution) | Fast *and* faithful | More image variants to generate/serve |
+| Optimistic cart quantity updates | Instant-feeling UI | Must still reconcile against the server before checkout |
+| Longer checkout-recalc debounce | Fewer INP-costly requests | Feels sluggish if tuned too long |
+| Shorter checkout-recalc debounce | Feels responsive | Reintroduces the INP problem it's meant to solve |
+
+Responsive image sizing dominates blanket compression as a strategy — it's the row that improves both metrics at once rather than trading one against the other.
+
+## 8. Follow-ups
+
+- **"What if the payment gateway's iframe itself is slow to load?"** Load it lazily, only once the user reaches the payment step (not eagerly on checkout entry), and show a clear loading state rather than blocking the rest of the checkout UI on a third-party script.
+- **"How would you handle a flash-sale traffic spike on the PLP?"** This is mostly a caching/CDN/backend concern, but the client's job is to degrade gracefully — stale-while-revalidate caching on catalog data, and a clear "checking availability" state on add-to-cart rather than a false-positive success that a validation step later reverses.
+- **"What if a user has the same cart open in two tabs?"** The validation-on-checkout-entry pattern already covers this — whichever tab reaches checkout first gets validated against real current stock, and the second tab's stale local cart state gets corrected the same way a genuinely stale cart would.
+- **"How do you test checkout without hitting a real payment gateway?"** Mock the validation/pricing contract with fixed, deterministic responses — the same testing principle as any other server-authoritative flow in this guide series.
+
+Sources: [The business impact of Core Web Vitals](https://web.dev/case-studies/vitals-business-impact), [Shopify Core Web Vitals Case Study](https://webvitals.tools/blog/ecommerce-performance-case-study/)

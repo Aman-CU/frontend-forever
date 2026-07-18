@@ -1,0 +1,109 @@
+---
+title: "Designing an AI-Assisted Frontend Feature"
+slug: "ai-assisted-frontend-feature"
+section: "Performance-Critical"
+difficulty: "medium"
+summary: "An AI-assisted frontend feature — a copilot, an AI-powered search, an inline suggestion — is architecturally a streaming-UI problem before it's an AI problem: the client has to render a response incrementally as tokens arrive over time, handle a mid-stream cancellation cleanly, and treat the model's output as untrusted, renderable content rather than a single atomic API response."
+orderIndex: 8
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Send a user's prompt/query to a backend-hosted model and render its response as it streams in, not only once fully complete.
+- Support the model's response containing rich content (Markdown, code blocks, and potentially structured UI like a chart or form), not just plain text.
+- Allow the user to cancel an in-progress generation.
+- Maintain a conversational history/context across multiple turns where the feature is chat-like.
+
+**Non-functional requirements:**
+
+- The UI must feel responsive from the first token, not wait for the entire response to resolve before showing anything — perceived latency is dominated by time-to-first-token, not total generation time.
+- Must handle a stream ending abnormally (network drop, backend error mid-stream) without leaving the UI in a stuck "still generating" state indefinitely.
+- Rendering partial, incomplete Markdown/code mid-stream (a code fence that hasn't been closed yet) must not visually break or produce invalid rendered output.
+
+**Explicitly out of scope:** the model/inference backend itself and prompt engineering — this guide covers the client's streaming-response rendering, cancellation, and rich-content-safety architecture.
+
+## 2. Constraints & Estimation
+
+- **Streaming is the standard delivery mechanism, not a nice-to-have** — real conversational AI interfaces render token-by-token as they arrive (commonly over Server-Sent Events or a chunked HTTP response), specifically because waiting for a complete response before showing anything would make even a fast model feel slow.
+- **Beyond plain markdown, some frontends render actual interactive components the model's output requests** — modern copilot frameworks describe going beyond markdown rendering to support the model directly triggering charts, forms, or other interactive UI components in the response, which means the client needs a defined, bounded contract for what kinds of rich content a response can request, similar in spirit to the [Server-Driven UI guide](/interview-prep/ff-system-design/server-driven-ui-architecture)'s bounded component vocabulary.
+- **Cancellation needs to be a first-class, cleanly-handled state**, not an afterthought — a user closing a chat panel or clicking "stop" mid-generation needs the client to abort the in-flight stream (freeing the connection) and settle the UI into a clear "stopped, partial response" state, not a response that appears frozen mid-sentence with no indication of why.
+- **Streaming Markdown/code safely requires incremental-parse tolerance** — a code fence or table that hasn't fully arrived yet needs to render as reasonably-formatted partial content, not broken/mismatched Markdown syntax visibly leaking through, and once complete, needs to re-render cleanly as valid formatted output.
+- **A concrete token-rate number worth having ready**: a typical LLM response streams at roughly 20-60 tokens/second (~4-5 characters/token), meaning a moderate 500-token response arrives over 8-25 seconds — long enough that time-to-first-token, not total generation time, genuinely dominates perceived latency, and long enough that a UI rendering only on `done` would feel broken by comparison, not just slower.
+
+## 3. Data Contract Design
+
+```
+// Streamed response chunks (Server-Sent Events style)
+event: token
+data: {"delta": "The "}
+
+event: token
+data: {"delta": "answer "}
+
+event: component
+data: {"type": "chart", "props": { "data": [...] }}
+
+event: done
+data: {"finishReason": "stop"}
+```
+
+- **The stream is a sequence of typed events, not one big final payload** — `token` events append incremental text; a distinct `component` event type is how the model's response can request rendering a specific, client-registered interactive component (mirroring the [Server-Driven UI guide](/interview-prep/ff-system-design/server-driven-ui-architecture)'s `type`-keyed component contract) rather than the client trying to parse structured UI intent out of plain text.
+- **A `done` event with an explicit `finishReason`** (`"stop"`, `"cancelled"`, `"error"`) lets the client distinguish a normal completion from a user-initiated cancellation from a genuine failure, each warranting a different final UI state.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Stream Client** — opens the connection to the backend (SSE or streaming fetch), parses incoming typed events, and exposes an abort method for cancellation.
+- **Message Accumulator** — appends incoming `token` deltas into the growing current-message text, and tracks any `component` events requesting rich, non-text content within the same message.
+- **Incremental Renderer** — renders the Message Accumulator's current (possibly incomplete) content as formatted Markdown/code, tolerant of not-yet-closed syntax, re-rendering as more content arrives.
+- **Component Registry** — the same bounded, `type`-keyed mapping pattern as the [Server-Driven UI guide](/interview-prep/ff-system-design/server-driven-ui-architecture), resolving a `component` event's `type` to an actual registered interactive component, with a defined graceful fallback for an unrecognized type. Resolving the type is only half the job: the accompanying `props` payload is model-generated, untrusted data and needs to pass that specific component's own schema (expected shape, a size cap on array/string fields, and rejecting unsafe URL schemes in any URL-shaped prop) before it's ever passed to the component — an unrecognized type and a recognized-type-with-invalid-props both need the same graceful-fallback treatment, not just the former.
+
+## 5. State Management Design
+
+- **The in-progress message's accumulated text is append-only state**, growing with each `token` event — the Incremental Renderer re-derives its formatted output from this accumulated state on each update rather than trying to incrementally patch previously-rendered output.
+- **Generation status (`idle`/`streaming`/`cancelled`/`error`/`done`) is explicit state** driving what controls are shown (a "stop" button only while `streaming`, a "regenerate" option once `done` or `error`) — not inferred implicitly from whether the Stream Client's connection object happens to still be open.
+- **Cancellation needs to leave the accumulated partial text intact**, not discard it — the user should still see whatever was generated before they stopped it, with a clear visual indicator that generation was stopped rather than completed normally.
+
+## 6. Deep Dives
+
+### Rendering markdown/code incrementally without breaking
+
+A naive approach re-parses the full accumulated text as Markdown on every incoming token and re-renders the result — functionally workable but potentially wasteful for a long response, and needs specific tolerance for incomplete syntax (an unclosed code fence, an incomplete table row) so the partial render looks like "still being written" rather than visibly broken markup. Real implementations commonly special-case a few specific incomplete-syntax patterns (e.g. treating an unclosed code fence as "still inside a code block" rather than letting the raw unclosed backticks leak into the rendered output) rather than expecting a general Markdown parser to gracefully handle every possible incomplete input.
+
+### Clean cancellation
+
+Aborting an in-progress stream needs to do two things correctly: actually close the underlying connection (so the client stops receiving — and the backend, ideally, stops generating — tokens that will never be shown), and settle the UI into an explicit, clearly-labeled "stopped" state rather than one that looks identical to either "still generating" or "finished normally." The `finishReason: "cancelled"` distinction in the data contract is precisely what lets the UI render an accurate, honest end-state rather than presenting a user-cancelled response identically to a naturally-completed one.
+
+### A bounded contract for model-triggered interactive components
+
+Rather than trying to infer "the model wants to show a chart" from parsing its plain-text output, a defined `component` event type with a `type` field lets the model (via the backend's own prompt/tool-calling setup) explicitly request a specific, client-registered component — the same "server/model describes what to render, client is the rendering engine for a bounded, known set of types" pattern as the [Server-Driven UI guide](/interview-prep/ff-system-design/server-driven-ui-architecture), applied here to model output instead of a server-orchestrated screen description. An unrecognized `type` needs the same graceful-fallback handling for the same reason: model behavior/capabilities and client-registered component support don't necessarily deploy in lockstep. Bounding the *type* isn't sufficient on its own, though — a model can just as easily hallucinate or be prompt-injected into emitting a recognized type with malformed `props` (a chart's `data` array with 500,000 points, an image component's `src` set to a `javascript:` URL), so each registered component needs its own props schema checked before render, with the same fallback path an unrecognized type gets.
+
+### Multi-turn conversational context
+
+Each new user message needs to be sent alongside enough of the prior conversation for the model to maintain context — from the client's perspective, this is primarily a state-management question (maintaining an ordered message history, including both user and assistant turns, and including the right amount of that history in each new request) rather than a rendering concern, though the same Incremental Renderer and Component Registry apply uniformly to every assistant turn in that history, not just the most recent one.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Token-by-token streaming | Time-to-first-token dominates perceived speed | Needs the full incremental-rendering/cancellation architecture |
+| Wait for full response | Simplest possible client | Feels broken next to a streaming competitor at 20-60 tokens/sec |
+| Re-parse full text per token | Simple to implement correctly | More CPU work per update on a long response |
+| Incremental patching | More efficient | Meaningfully more complex, especially incomplete-syntax tolerance |
+| Bounded, registered component set | Rendering surface stays safe/predictable | Model can only trigger what's already registered client-side |
+
+The first row is the one with no real competing option in practice — every real conversational AI product streams; the others are genuine per-project judgment calls.
+
+## 8. Follow-ups
+
+- **"What if the backend/model is slow to even start responding (a long time-to-first-token)?"** A clear, distinct "thinking"/loading state before the first token arrives, separate from the "streaming" state once tokens are actively arriving — conflating the two risks the UI looking identically stuck in both a normal brief pause and a genuinely broken connection.
+- **"How would you handle the model's response including something that shouldn't be rendered as trusted HTML?"** Model output needs to be treated as untrusted content the same way any user-generated content would be — rendered through a safe Markdown renderer (no raw HTML injection), never via a raw `dangerouslySetInnerHTML`-style path, regardless of how much the response is "from an AI" rather than literally from a human user.
+- **"How do you test streaming UI without a real, variable-latency model backend?"** Mock the Stream Client with a scripted sequence of `token`/`component`/`done` events (including a scripted cancellation mid-stream) and assert the Message Accumulator and Incremental Renderer produce the expected state transitions and final rendered output — fully deterministic and independent of a real model's actual latency/output variability.
+- **"How would multiple simultaneous AI features on the same page (e.g. an inline suggestion and a separate chat panel) share this architecture?"** Each would have its own independent Stream Client/Message Accumulator instance, but could share the same underlying Incremental Renderer and Component Registry implementations — the streaming/rendering architecture is reusable across features, while each feature's actual conversation/generation state stays isolated.
+
+Sources: [CopilotKit - The Complete Frontend Stack for AI Agents](https://www.copilotkit.ai/blog/frontend-stack-for-ai-agents), [Frontend in the Age of AI: How to Integrate LLM Agents Right into the UI](https://medium.com/@ignatovich.dm/frontend-in-the-age-of-ai-how-to-integrate-llm-agents-right-into-the-ui-0514cd7a20fe)

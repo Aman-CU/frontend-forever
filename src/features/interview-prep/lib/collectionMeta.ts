@@ -46,7 +46,7 @@ export const COLLECTION_META: Record<InterviewPrepCollectionKey, CollectionMeta>
     icon: Layers,
   },
   "ff-system-design": {
-    label: "FF System Design",
+    label: "FF Frontend System Design",
     description: "Frontend system design practice — rich, guided walkthroughs of real interview prompts.",
     icon: Network,
   },

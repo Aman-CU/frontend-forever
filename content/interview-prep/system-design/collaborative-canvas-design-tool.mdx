@@ -1,0 +1,150 @@
+---
+title: "Designing a Collaborative Canvas-Based Design Tool"
+slug: "collaborative-canvas-design-tool"
+section: "Real-Time & Collaborative"
+difficulty: "hard"
+summary: "A browser-based design tool's central architectural decision is rejecting the DOM as the rendering surface entirely — real production tools render a scene graph of vector shapes to a single <canvas> via WebGL/WebGPU instead, because DOM elements simply can't scale to the tens of thousands of independently-transformable, overlapping vector objects a real design file contains."
+orderIndex: 4
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Figma", "Canva"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- An infinite (or very large) pannable, zoomable 2D canvas containing vector shapes, text, and images.
+- Selection, drag, resize, and rotate interactions on individual objects and groups.
+- Multiple users viewing and editing the same canvas simultaneously, seeing each other's cursors and selections.
+- Layering/grouping (objects stack in a defined order, can be grouped into reusable components).
+
+**Non-functional requirements:**
+
+- Must stay smooth (60fps interactions) with a document containing thousands of objects — a real design file at professional scale routinely has this many shapes, layers, and groups.
+- Panning/zooming must feel immediate, not like scrolling a large DOM tree.
+- Concurrent edits from multiple designers must not corrupt the shared document or cause visible flicker/jumping for the properties other users are simultaneously watching.
+
+**Explicitly out of scope:** the specific vector-rendering math (Bézier curve rasterization, boolean shape operations) and the plugin/extension system — this guide covers the canvas rendering architecture and multiplayer synchronization model.
+
+## 2. Constraints & Estimation
+
+- **The DOM is the wrong rendering primitive at this scale.** A real design tool's document routinely contains thousands of individually-transformable vector objects with arbitrary overlap and blending — real production tools (Figma is the most-documented example) render this to a single `<canvas>` via a custom rendering pipeline on WebGL (with a more recent migration to WebGPU for further performance headroom), rather than one DOM element per shape.
+- **A custom renderer means owning hit-testing, selection, and text layout yourself** — none of the browser's native DOM event/layout machinery (click targets, `:hover`, text reflow) applies to canvas-rendered content, so the application has to reimplement "what object is under this cursor position" and "how does this text wrap" as its own logic against the scene graph.
+- **Multiplayer at this object-tree granularity is a different shape of problem than collaborative text** — a design document is a tree of objects with many independent properties (position, size, fill, stroke, text content), not a linear sequence, which is exactly why (per the [Collaborative Editor guide](/interview-prep/ff-system-design/multiplayer-document-editor)) production tools favor property-level conflict resolution over character-level operational transforms here.
+- **Presence rendering (other users' cursors/selections) needs to be cheap and frequent** — real implementations coalesce cursor broadcasts to a bounded rate (documented around 30 updates/second) and treat them as ephemeral, never persisted alongside the actual document history.
+- **A rough object-count ceiling where per-element DOM rendering breaks down**: a professional design file routinely holds several thousand shapes; at roughly 60fps, that's a per-frame budget of ~16ms to lay out, paint, and composite every visible object — DOM elements individually cost enough layout/paint overhead that a few thousand of them reliably blows this budget, whereas a single batched WebGL/WebGPU draw call for the same shape count comfortably fits inside it, which is the concrete number behind "the DOM is the wrong rendering primitive at this scale."
+
+## 3. Data Contract Design
+
+```
+// Scene graph node
+{
+  "id": "shape_991",
+  "type": "rectangle",
+  "transform": { "x": 120, "y": 80, "rotation": 0, "scaleX": 1, "scaleY": 1 },
+  "fill": "#4f46e5",
+  "zIndex": "a0|g", // fractional index for ordering, see below
+  "parentId": "group_44"
+}
+
+// Presence (ephemeral, separate channel)
+{ "type": "presence", "userId": "u_3", "cursor": { "x": 512, "y": 300 }, "selectedIds": ["shape_991"] }
+```
+
+- **`zIndex` is a fractional-index string, not an integer position** — inserting a new object between two existing layers means generating a value that sorts between their two fractional indices, without renumbering every other object's index, which would otherwise require touching (and conflict-resolving) every sibling on every reorder.
+- **`parentId` models grouping as a tree relationship**, not a flat list with a separate group-membership map — group transforms (moving a whole group) compose naturally as a tree traversal this way.
+- **Presence is structurally separate from the scene graph**, exactly as in the [Collaborative Editor guide](/interview-prep/ff-system-design/multiplayer-document-editor) — never durably stored, never part of the document's actual saved state.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Scene Graph** — the authoritative tree of every object in the document (shapes, groups, text, images), each with its own transform/style properties and a fractional-index-based sibling order.
+- **Renderer** — walks the Scene Graph and draws it to a single `<canvas>` via WebGL/WebGPU, redrawing only the regions affected by a given change rather than the whole canvas on every frame where possible.
+- **Hit-Testing/Interaction Layer** — since the canvas gives no native click targets, this layer maintains its own spatial index (e.g. a bounding-box tree) to answer "which object is under this pointer position" for selection, drag, and resize interactions.
+- **Sync Layer** — applies property-level last-writer-wins (or a project-specific CRDT-inspired scheme) merges to the Scene Graph as remote edits arrive, and broadcasts local edits the same way.
+- **Presence Layer** — the same ephemeral, throttled cursor/selection broadcast pattern as the [Collaborative Editor guide](/interview-prep/ff-system-design/multiplayer-document-editor), rendered as an overlay on top of the canvas rather than participating in the Scene Graph itself.
+
+## 5. State Management Design
+
+- **The Scene Graph is the single source of truth for document content**, and the Renderer is a pure function of it (plus viewport pan/zoom) — the renderer never holds its own independent copy of object state that could drift from the Scene Graph.
+- **Viewport state (pan offset, zoom level) is separate from the Scene Graph** — panning/zooming never mutates any object's actual coordinates, only how the Renderer projects the Scene Graph onto the visible canvas.
+- **Selection state is per-user** (each collaborator has their own selection) but needs to be broadcast as presence so everyone can see what everyone else has selected — it's derived, ephemeral UI state layered over the shared Scene Graph, not part of the graph itself.
+
+## 6. Deep Dives
+
+### Sequence: concurrent property edits and a layer insert
+
+<SequenceDiagram />
+
+Because the two clients edit different properties of the same object (transform vs. fill), there's no real conflict to resolve — each update just broadcasts through the Sync Layer to the other client. The final step shows the fractional-indexing payoff directly: inserting a new layer is one independent write (a `zIndex` string that sorts between its neighbors), never a renumbering operation touching other clients' objects.
+
+### Why a custom canvas renderer instead of the DOM
+
+At the scale of a real design document — thousands of shapes, arbitrary overlap, real-time transforms — per-object DOM elements hit real limits: layout/paint cost per element, no efficient way to batch-render thousands of arbitrary vector shapes, and the DOM's box-model layout engine simply isn't built for freeform 2D vector composition. A custom WebGL/WebGPU pipeline treats the whole canvas as one draw surface, batching geometry efficiently and giving direct control over exactly what gets redrawn on any given change — the tradeoff is reimplementing everything the DOM normally gives for free (hit-testing, text layout, accessibility semantics) as application-level code.
+
+### Hit-testing without the DOM
+
+Since a canvas has no notion of "which element is under the cursor," the application maintains its own spatial index over the Scene Graph — a common approach is a bounding-box hierarchy that can be queried efficiently for "what objects intersect this point/region," walked in reverse z-order (topmost object first) to resolve which object a click actually targets, including correctly handling rotated/scaled bounding boxes, not just axis-aligned ones.
+
+### Fractional indexing for layer order
+
+Rather than storing layer order as an integer position (which would require renumbering every sibling on an insert-between operation — a conflict-prone, chatty operation in a multiplayer context), fractional indexing assigns each object a sortable string/number that can always have a new value generated *between* any two existing ones, so inserting a new layer between two others is a single, independent, non-conflicting write — no other object's order value needs to change.
+
+A simplified midpoint generator over a base-36 alphabet:
+
+```ts
+function generateKeyBetween(a: string | null, b: string | null): string {
+  const digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+  const lo = a ?? "";
+  const hi = b ?? "z";
+
+  // No string sorts strictly between e.g. "a" and "a0" in this scheme —
+  // any string prefixed by "a" is >= "a0" the instant its next character is
+  // the alphabet's own first digit. A real implementation (e.g. npm's
+  // `fractional-indexing`) sidesteps this entirely by never generating a
+  // key that is another key's prefix plus the first digit alone; that
+  // invariant, plus unequal-length-key handling and periodic rebalancing,
+  // is real work this illustration deliberately leaves out.
+  if (lo && hi.startsWith(lo) && hi[lo.length] === digits[0]) {
+    throw new Error(`No key exists strictly between "${a}" and "${b}" in this simplified scheme`);
+  }
+
+  let result = "";
+  for (let i = 0; ; i++) {
+    const loDigit = digits.indexOf(lo[i] ?? "0");
+    const hiDigit = digits.indexOf(hi[i] ?? "z");
+    if (hiDigit - loDigit > 1) {
+      result += digits[Math.floor((loDigit + hiDigit) / 2)];
+      return result;
+    }
+    result += digits[loDigit];
+  }
+}
+```
+
+### Presence at scale
+
+Cursor and selection broadcasts for every connected collaborator need to be both frequent (to feel live) and cheap (to not compete with actual document-edit traffic) — coalescing to a bounded rate rather than broadcasting on every raw mouse-move event, and explicitly excluding presence data from the document's durable history/undo stack, is what makes this scale to dozens of concurrent viewers without presence traffic overwhelming the more important document-sync channel.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Custom canvas (WebGL/WebGPU) rendering | Scales to thousands of objects at 60fps | Reimplements hit-testing, text layout, accessibility semantics from scratch |
+| DOM-based rendering | Hit-testing/layout/accessibility free | Breaks down well before real design-file object counts |
+| Property-level last-writer-wins | Simple to implement and reason about | True simultaneous same-property edits: later write silently wins |
+| Full CRDT/OT merging | Semantically merges genuine conflicts | Real implementation complexity for a rarely-hit case here |
+| Fractional indexing for layer order | Insert-between is a single non-conflicting write | Index strings can rarely need periodic rebalancing |
+
+The canvas-vs-DOM row only tips toward custom rendering once object counts genuinely exceed what DOM layout/paint can sustain at 60fps — a simple single-shape editor has no reason to pay this cost.
+
+## 8. Follow-ups
+
+- **"How would you implement undo/redo against a real-time-synced Scene Graph?"** Each user's undo stack needs to track *their own* operations distinctly from remote ones, so pressing undo reverts the local user's last change, not whatever the most recent edit from anyone happened to be — the same principle as the [Collaborative Editor guide](/interview-prep/ff-system-design/multiplayer-document-editor)'s per-user undo scoping.
+- **"What about accessibility, given the canvas has no native DOM semantics?"** A parallel, off-screen accessibility tree (mirroring the Scene Graph's structure into ARIA-described elements) is the common real-world approach — genuinely non-trivial extra work specifically because canvas rendering opts out of everything the DOM gives for free here.
+- **"How do you handle a huge document that's slow even for the renderer?"** Spatial culling (only render objects that actually intersect the current viewport, not the whole document) plus level-of-detail simplification when heavily zoomed out are the standard mitigations, conceptually similar to virtualizing an off-screen list.
+- **"How do you test hit-testing and rendering correctness without a real GPU?"** Test the Scene Graph's spatial-index query logic (given a point/region, which object IDs does it return) as pure data-structure logic, independent of actual WebGL/WebGPU rendering — the rendering pipeline itself is more suited to visual/snapshot testing than unit testing.
+
+Sources: [How Figma's multiplayer technology works](https://www.figma.com/blog/how-figmas-multiplayer-technology-works/), [Figma Rendering: Powered by WebGPU](https://www.figma.com/blog/figma-rendering-powered-by-webgpu/)

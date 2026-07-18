@@ -2,7 +2,7 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import { BookOpen } from "lucide-react";
 
 import type { ConceptContent } from "@/lib/mdx";
-import { mdxComponents } from "./mdxComponents";
+import { mdxComponents } from "@/components/shared/mdxComponents";
 import { InfoCards } from "./InfoCards";
 import { MarkUnderstoodButton } from "./MarkUnderstoodButton";
 

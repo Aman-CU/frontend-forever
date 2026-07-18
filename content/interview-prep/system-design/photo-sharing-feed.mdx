@@ -1,0 +1,120 @@
+---
+title: "Designing a Photo-Sharing Feed and Gallery"
+slug: "photo-sharing-feed"
+section: "Data-Heavy Interfaces"
+difficulty: "medium"
+summary: "A photo-sharing feed's defining constraint is that its dominant payload is image bytes, not text or JSON — the frontend architecture exists mainly to solve one problem: rendering a smooth, endless stream of photos and short videos on mid-range phones over unreliable networks without either stuttering the scroll or downloading more image data than the viewport will ever show."
+orderIndex: 4
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Instagram", "Flickr"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- An infinite-scrolling feed of photo (and short video) posts, each with a caption, like/comment counts, and a double-tap-to-like interaction.
+- A grid-view profile gallery (a 3-column square-thumbnail grid) as a distinct layout from the single-column feed view, both backed by the same underlying media.
+- A full-screen photo/story viewer reachable from either the feed or the grid.
+- Support posts with multiple images/videos in a single swipeable carousel.
+
+**Non-functional requirements:**
+
+- Must load acceptably on a mid-range phone over a flaky 4G connection — this is explicitly the hard constraint that shapes the whole design, not an edge case.
+- Must avoid downloading full-resolution originals when a small thumbnail is all the current layout will ever display.
+- Scrolling through thousands of photos in a session must stay smooth — the same virtualization requirement as any data-heavy feed, with images (not text) as the dominant per-row cost.
+
+**Explicitly out of scope:** image processing/filters, the recommendation ranking behind "Explore"-style discovery, and the media-upload pipeline — this guide covers rendering and browsing already-published photos, not producing them.
+
+## 2. Constraints & Estimation
+
+- **Image bytes dominate the budget, not DOM nodes.** A real, documented before/after case: adding `loading="lazy"` to a photo feed's images cut mobile load time from 27.5s to 11s and page weight by 74% — the single lazy-loading attribute mattered more here than most JS-level optimizations, because the bottleneck was network bytes, not render cost.
+- **Multiple resolutions per image are mandatory, not optional.** Serving one canonical resolution to both a 3-column grid thumbnail and a full-screen viewer means either the grid downloads far more than it displays, or the viewer upscales a blurry thumbnail — a real, transformation-API-backed image pipeline (serve `?w=200` for the grid, `?w=1080` for the viewer, from the same source asset) is the standard fix.
+- **Video adds a second cost axis**: autoplaying every video in a feed as it scrolls into view is a common pattern, but it multiplies bandwidth cost badly if not paired with muted-by-default, IntersectionObserver-gated playback (only the currently-centered video actually plays) and a lower-bitrate preview stream before a full-quality load.
+- **Multi-image posts (a swipeable carousel within a single feed post)** need lazy-loading *within* the carousel too — a 5-image post shouldn't download images 2-5 until the user actually swipes toward them.
+- **A worked tiered-loading estimate**: a grid thumbnail at `?w=400` runs roughly 20-40KB; the same source upgraded to a full-screen `?w=1080` viewer runs roughly 150-300KB. Scrolling past 30 photos in a session without opening any of them costs ~1MB in this tiered scheme versus ~6-9MB if every photo loaded at full resolution up front — a concrete illustration of why tiered loading, not just lazy-loading, is what actually controls a photo feed's byte budget.
+
+## 3. Data Contract Design
+
+```
+GET /api/photo-feed?cursor={cursor}&limit=12
+
+{
+  "items": [
+    {
+      "id": "post_331",
+      "author": { "id": "u_9", "username": "...", "avatarUrl": "..." },
+      "media": [
+        { "type": "image", "thumbnailUrl": "...?w=400", "fullUrl": "...?w=1080", "width": 1080, "height": 1350 }
+      ],
+      "caption": "...",
+      "likeCount": 2044,
+      "commentCount": 61,
+      "viewerHasLiked": false,
+      "createdAt": "2026-07-18T09:00:00Z"
+    }
+  ],
+  "nextCursor": "...",
+  "hasMore": true
+}
+```
+
+- **Every media item carries both a thumbnail and full-resolution URL plus its real aspect ratio** (`width`/`height`) — the aspect ratio is what lets the client reserve correct layout space before any image byte has actually arrived, preventing layout shift.
+- **`media` is always an array**, even for a single-image post — this means the carousel-rendering logic for multi-image posts and the single-image case share one code path instead of a special-cased branch.
+- Cursor-based pagination, same reasoning as the general infinite-scroll and social-feed cases — a photo feed is just as susceptible to the "content shifted under an offset-based page" bug as any other live-inserted stream.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Feed/Grid List** — the same virtualized-list core as any infinite-scroll feed, but its row-height estimation is driven by each media item's real aspect ratio (known up front from the data contract) rather than an average-height guess, since photo posts vary far more in height than typical text-post cards.
+- **Media Loader** — a shared component wrapping every `<img>`/`<video>` in the feed: renders a reserved-aspect-ratio placeholder immediately, requests the thumbnail resolution first, and only upgrades to full resolution when the media enters (or is about to enter) the viewport.
+- **Carousel (per multi-image post)** — its own small swipeable component (the same interaction/accessibility contract as the standalone [Image Carousel guide](/interview-prep/ff-system-design/accessible-image-carousel)) that defers loading images beyond the first until the user actually swipes, reusing the same Media Loader per slide.
+- **Full-Screen Viewer** — opened from either the Feed/Grid List or a Carousel slide; requests the full-resolution asset the grid never needed to load, using the tapped thumbnail as an immediate low-res placeholder while the upgrade loads.
+
+## 5. State Management Design
+
+- **Media resolution state (which images have upgraded from thumbnail to full-res) is local to each Media Loader instance** — this is deliberately not lifted to a global store, since it's purely a per-image loading-progress concern with no cross-component dependency.
+- **Like/interaction state follows the same optimistic-patch-in-a-central-store pattern as any social feed** — a like applied in the grid view must be reflected if the same post is later opened in the full-screen viewer, so it can't live only in whichever component the interaction happened in.
+- **Feed vs. grid view are two different renderings of the same underlying cached post data** — switching between a profile's grid view and the main feed shouldn't require two separate fetches of the same posts if they're already cached by ID.
+
+## 6. Deep Dives
+
+### Progressive/tiered image loading
+
+The concrete pattern: request the smallest resolution the current layout needs first (grid thumbnail or feed-width image), and only request a larger resolution when the user takes an action that needs it (opening the full-screen viewer, or the image growing on screen via a pinch-zoom gesture). A transformation-URL-based image API (append `?w=` params to one source asset) makes this a URL-construction concern rather than needing separately-uploaded resolutions.
+
+### Video autoplay without a bandwidth blowup
+
+Gate playback on IntersectionObserver so only the video nearest the viewport's center actually plays (and only one at a time), start muted (both a UX convention and a real bandwidth-relevant default, since audio tracks add cost even at low volume), and consider a short, low-bitrate preview loop before committing to the full-quality stream once a video has been in view for a sustained moment.
+
+### Reserving layout space before the image arrives
+
+Since every media item's real `width`/`height` is already known from the data contract, the feed can set an `aspect-ratio` CSS box (or a padding-box trick) for every post *before* any image byte downloads — this is what actually prevents the classic "feed jumps around while photos pop in" layout-shift complaint, and it's a pure client-side layout decision once the aspect ratio is available in the payload.
+
+### Multi-image carousels and virtualization interacting
+
+A naive implementation eagerly renders (and therefore loads) every image in every multi-image post the moment the post itself is virtualized into view — the fix is a second, inner layer of laziness: the carousel only mounts/loads slide 1 initially, and slides 2+ load on swipe-intent (or a small look-ahead of just the next slide), independent of whether the *post itself* is virtualized in or out.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Thumbnail-first, upgrade on demand | ~1MB/30-photo session vs. ~6-9MB one-shot | Brief, visible quality upgrade moment when a photo is opened |
+| One-shot full-resolution load | No upgrade moment, always sharp | 6-9x the bandwidth for photos never studied closely |
+| Autoplay every visible video | Maximum passive engagement | Real, easily-measured bandwidth regression |
+| Gate autoplay to one centered video | Bounded bandwidth cost | Only one video plays at a time |
+| Aggressive (viewport-only) lazy-loading | No wasted bandwidth | Brief blank/placeholder flash on fast scrolling |
+| Small look-ahead buffer | Eliminates the flash | Small amount of extra, sometimes-wasted bandwidth |
+
+The tiered-loading row is the one with the clearest, most measurable win — the 1MB vs. 6-9MB gap only widens as session length grows.
+
+## 8. Follow-ups
+
+- **"What if the user has data-saver mode enabled?"** Respect it by defaulting to a lower resolution tier even for the "full" image request, and consider disabling video autoplay entirely rather than just muting it.
+- **"How would Stories (ephemeral, full-screen, auto-advancing content) change this architecture?"** Stories are effectively a specialized full-screen viewer with a timer-driven auto-advance instead of manual swipe/tap navigation, and typically pre-fetch the next 1-2 stories' media eagerly (since the auto-advance timer gives much less lead time than a user's own scroll pace) — a deliberate exception to the otherwise-lazy loading strategy used everywhere else in this design.
+- **"How do you test image-heavy virtualization without downloading real images in CI?"** Mock the media contract with fixed aspect ratios and stub image URLs, verifying the layout/height-reservation logic independent of real network image loads.
+- **"What if a photo fails to load?"** Show a clear broken-image placeholder sized to the still-known aspect ratio (never collapse the reserved space, which would reintroduce the layout-shift problem this design otherwise solves) with a manual retry affordance.
+
+Sources: [Improving Elfsight Instagram Feed performance by 250%](https://www.mapledesign.co.uk/tech-blog/elfsight-instagram-feed-performance/), [Improving Instagram Web With Progressive Image Loading](https://cloudinary.com/blog/improving_instagram_web_new_features_for_a_better_user_experience)

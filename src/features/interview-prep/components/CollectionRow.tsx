@@ -7,9 +7,9 @@ import type { CollectionSummary } from "@/features/interview-prep/lib/queries";
 type Props = {
   collectionKey: InterviewPrepCollectionKey;
   meta: CollectionMeta;
-  // null for FF System Design — it has no row in collection_questions at all
-  // (Feature 49's separate MDX content), so it renders "Coming soon" instead
-  // of a progress bar.
+  // null renders "Coming soon" instead of a progress bar — true for FF
+  // System Design only until its first MDX guide (Feature 49) is authored;
+  // it has no row in collection_questions itself either way.
   summary: CollectionSummary | null;
 };
 

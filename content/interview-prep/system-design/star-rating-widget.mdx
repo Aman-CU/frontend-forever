@@ -1,0 +1,106 @@
+---
+title: "Designing a Star Rating Widget"
+slug: "star-rating-widget"
+section: "Performance-Critical"
+difficulty: "easy"
+summary: "A star rating widget looks trivial but its correct accessible implementation is a radio-group in disguise — a screen reader must hear it as 'rate this 3 out of 5 stars, radio button, 3 of 5 selected,' not a row of unlabeled icon buttons, since a rating is fundamentally a single choice among a fixed set of discrete values."
+orderIndex: 3
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Display a row of stars (commonly 5) reflecting a current rating value.
+- Support both a read-only display mode (showing an existing average/given rating) and an interactive input mode (letting the user pick a rating).
+- Support hover/focus preview — highlighting stars up to the one currently under the pointer/keyboard focus before a selection is committed.
+- Support half-star (fractional) ratings where the product requires that precision.
+
+**Non-functional requirements:**
+
+- The interactive mode must be a genuinely accessible form input, not a purely visual row of clickable icons with no semantic meaning.
+- Must be operable via keyboard alone, with a clear way to set each discrete rating value without requiring a mouse hover.
+- The read-only display mode must not expose interactive semantics at all — a static rating shown on a product card is not a form control and shouldn't be announced or navigable as one.
+
+**Explicitly out of scope:** the backend aggregation of many users' ratings into an average — this guide covers the widget itself, both as a display and as an input.
+
+## 2. Constraints & Estimation
+
+- **A rating is a single choice among N discrete values — structurally a radio group**, not N independent toggle buttons. This framing is what determines the correct ARIA/semantic implementation: `role="radiogroup"` containing `role="radio"` stars (or, more simply, a real native `<input type="radio">` set visually styled as stars), each announcing its own value and whether it's currently selected.
+- **Read-only display mode needs entirely different semantics from interactive input mode** — a purely presentational star row (e.g. "4.5 stars, 128 reviews" on a product card) should carry an accessible text equivalent (e.g. `aria-label="Rated 4.5 out of 5 stars"`) on a non-interactive container, not radio/button semantics that falsely imply it can be changed.
+- **Hover/keyboard preview state is presentation, not the committed value** — the widget needs to track "what's currently highlighted for preview" separately from "what's actually been selected," since a user can hover across several stars before clicking, and moving the mouse away should revert the display to the actual committed value, not leave it on whatever was last previewed.
+- **Half-star support changes the input granularity but not the underlying pattern** — it just means each visual "star" position actually represents two selectable values (e.g. clicking the left half of the third star selects 2.5, the right half selects 3), still expressible as a radio group with twice as many discrete options.
+- **The option count stays trivially small regardless of scale** — a 5-star widget is 5 DOM nodes, a 10-point scale is 10, half-star granularity doubles either; even the largest realistic rating scale never approaches the hundreds-of-items range where the [Search Autocomplete](/interview-prep/ff-system-design/search-autocomplete) or [Infinite-Scroll Feed](/interview-prep/ff-system-design/infinite-scroll-feed) guides' virtualization concerns would apply — this component's cost is entirely in getting the semantics right, never in rendering volume.
+
+## 3. Data Contract Design
+
+```
+// Interactive input
+{ "value": 3, "max": 5, "step": 1, "mode": "input" }
+
+// Read-only display
+{ "value": 4.5, "max": 5, "mode": "display", "reviewCount": 128 }
+```
+
+- **`mode` explicitly distinguishes display from input** — this is what determines whether the component renders radio semantics at all, rather than inferring it implicitly from, say, whether an `onChange` handler happens to be passed.
+- **`step` supports both whole-star (`1`) and half-star (`0.5`) granularity** as a single configurable value, rather than needing a structurally different component for each.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Rating Group (input mode)** — a `role="radiogroup"` (or native fieldset of radio inputs) with an accessible group label (e.g. "Rate this product"), containing one radio per discrete rating value.
+- **Rating Star (input mode, per value)** — an individual `role="radio"` with its own accessible label (e.g. "3 stars"), visually rendered as a filled/outlined star icon reflecting whether it's at or below the currently previewed/selected value.
+- **Rating Display (display mode)** — a single non-interactive element with one summarizing `aria-label` (e.g. "Rated 4.5 out of 5 stars, 128 reviews"), rendering the visual star fill purely as decoration with `aria-hidden` on the individual icon elements.
+- **Preview State Manager** — tracks the currently hovered/focused value distinct from the committed selected value, only present in input mode.
+
+## 5. State Management Design
+
+- **Committed value and preview value are separate state**, only in input mode — moving the mouse across the stars updates preview state instantly for visual feedback, while the actual committed value (and any `onChange`-style callback) only updates on an explicit selection action (click, or Enter/Space on a focused radio).
+- **Display mode has no interactive state at all** — it's a pure rendering of a given numeric value, with no preview/selection concepts applicable.
+- **Keyboard navigation state follows standard radio-group conventions**: arrow keys move between the discrete rating options (which also, per native radio-group behavior, immediately selects the newly-focused option — consistent with how native radio buttons work, not requiring a separate confirm step).
+
+## 6. Deep Dives
+
+### Why a radio group, not N independent buttons
+
+Framing this as N independent toggle buttons risks a state where multiple stars could theoretically be "on" simultaneously, or none — neither of which represents a valid rating. A radio group's fundamental semantic (exactly one option selected among a fixed set) directly matches what a rating actually is, which is why the correct accessible implementation reaches for `role="radiogroup"`/`role="radio"` (or literal native radio inputs) rather than inventing a custom multi-button widget and reimplementing single-selection logic from scratch.
+
+### Separating preview state from committed state
+
+Hovering across a 5-star row commonly highlights stars 1 through N-under-the-cursor to preview what selecting there would look like, without actually changing the real rating until a click/Enter confirms it. This needs its own transient state (which value is currently "previewed") layered visually on top of, but not overwriting, the actual committed value — moving the mouse away (without clicking) must revert the visual display back to the real committed value, not leave it stuck showing the last hovered position.
+
+### Read-only display mode's distinct semantics
+
+A star rating shown purely for informational display (a product's average rating on a listing card) is not a form control at all, and giving it radio/button semantics would be actively misleading to a screen reader user — it would sound like an interactive input that, on attempted interaction, does nothing. The correct pattern collapses the whole row into one non-interactive element with a single descriptive `aria-label` summarizing the value, with the individual star icons marked `aria-hidden` as pure decoration.
+
+### Half-star granularity
+
+Supporting half-star selections doesn't require a different accessibility pattern — it's the same radio-group structure with twice the number of discrete options (0.5, 1, 1.5, 2, ... up to max), each still an individually labeled, individually selectable radio value; the added complexity is purely in the visual rendering (splitting each star icon into a clickable left/right half) and in generating clear accessible labels for the half-value options (e.g. "3.5 stars").
+
+### Display mode vs. input mode, at a glance
+
+| | Display mode | Input mode |
+| --- | --- | --- |
+| Semantic role | Single non-interactive element | `role="radiogroup"` / `role="radio"` |
+| Accessible label | One summarizing `aria-label` (e.g. "Rated 4.5 of 5") | Per-option label (e.g. "3 stars") |
+| Star icons | `aria-hidden`, pure decoration | Focusable, individually selectable |
+| Preview state | None | Tracked separately from committed value |
+| Typical consumer | Product card, list row | Review form, settings |
+
+Conflating these two — giving a purely informational rating radio/button semantics — is the single most common accessibility bug this component invites, since it makes a static display sound like a broken input to a screen reader.
+
+## 7. Performance & UX Tradeoffs
+
+- **Radio-group semantics vs. a simpler custom button row** — radio semantics are the *correct* pattern and cost little extra implementation effort once recognized, since it maps directly onto native platform conventions users' assistive technology already understands.
+- **Hover-preview feedback vs. simplicity** — preview state adds a small amount of extra state management for a meaningfully better perceived interactivity; omitting it (only ever showing the committed value, even mid-hover) is simpler but feels less responsive.
+
+## 8. Follow-ups
+
+- **"How would you make this component reusable across a design system with different max values (e.g. a 10-point scale)?"** As a configurable `max`/`step` pair, exactly as modeled in the data contract — the underlying radio-group pattern is unchanged regardless of scale, only the number of rendered options changes.
+- **"What if the rating needs to support 'no rating yet' as a distinct state from '0 stars'?"** A radio group can legitimately have no option selected at all — this maps naturally onto "not yet rated," distinct from an explicit, deliberate "0" selection, without needing a separate boolean flag alongside the numeric value.
+- **"How do you test this component?"** Verify the ARIA structure (radiogroup/radio roles, correct accessible labels per option) with an automated accessibility check, and separately test keyboard interaction (arrow keys move and select, Tab enters/exits the group correctly) and the preview-vs-committed value distinction with interaction-level tests.
+
+Sources: [Front-End System Design - Star Widget](https://www.youtube.com/watch?v=IBm1vsK0vXE), [Which Aria Attributes Should I Use?](https://www.easternstandard.com/blog/which-aria-attributes-should-i-use-accessibility-and-aria-tags-for-common-ui-patterns/)

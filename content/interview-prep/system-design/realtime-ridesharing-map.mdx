@@ -1,0 +1,127 @@
+---
+title: "Designing a Real-Time Ridesharing Map Interface"
+slug: "realtime-ridesharing-map"
+section: "Media & Rich Content"
+difficulty: "hard"
+summary: "A ridesharing app's frontend is fundamentally a real-time map-rendering client layered over a WebSocket connection streaming frequent, small location updates — the core design challenge is rendering smoothly-interpolated vehicle movement on the map between discrete GPS updates that typically arrive only every few seconds, rather than visibly teleporting a driver's marker from point to point."
+orderIndex: 4
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Uber"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Show nearby available drivers on a map before requesting a ride.
+- Once matched, show the assigned driver's live position moving toward the pickup point, then toward the destination.
+- Show an ETA that updates as the driver's actual position changes.
+- Handle the ride lifecycle (requested → driver assigned → en route to pickup → trip in progress → completed) with the map view adapting to each stage.
+
+**Non-functional requirements:**
+
+- Driver position updates typically arrive only every few seconds from the backend — the map must not visibly "jump" the driver's marker between updates, since that reads as broken, not just low-frequency.
+- Must handle a driver's connection dropping briefly without the rider seeing an incorrect "driver disappeared" state for a momentary gap.
+- Map rendering (potentially many nearby driver markers before a match) must stay smooth even as positions update continuously.
+
+**Explicitly out of scope:** the backend's geospatial matching/dispatch algorithm and the pricing engine — this guide covers the client's real-time position rendering, interpolation, and ride-state UI. Any in-app chat between rider and driver reuses the same WebSocket-delivery patterns as the [Real-Time Messaging Client guide](/interview-prep/ff-system-design/realtime-messaging-client), layered alongside the location stream rather than replacing it.
+
+## 2. Constraints & Estimation
+
+- **Real-time position delivery uses a persistent connection**, not polling — a WebSocket connection is the standard mechanism for pushing driver location updates to the rider's client instantly as they occur, rather than the client repeatedly asking "any update yet?"
+- **GPS updates from a driver's device arrive at a real, bounded interval** — commonly every couple of seconds while actively driving, not continuously — which means the map is always rendering a driver's position *between* two known data points, not a truly continuous feed.
+- **Interpolating between discrete updates is what makes movement look smooth** — rather than snapping the marker directly to each new coordinate the instant it arrives, the client animates the marker's position from its last known point toward the newly-received point over roughly the same duration as the expected update interval, so movement reads as continuous driving rather than a series of jumps.
+- **Nearby-driver rendering before a match needs to scale to a real market's driver density** — a busy area can have many simultaneously-updating driver markers on screen at once, which is a genuine rendering-load concern distinct from the single-driver-tracking case that dominates once a ride is actually matched.
+- **A worked bandwidth estimate**: post-match, one driver sending an update every 3 seconds at ~50 bytes/update costs under 20 bytes/sec average — negligible. Pre-match, a dense downtown area might have 200 nearby drivers each updating every 5-10 seconds at a coarser payload; even at 200 × ~40 bytes every 5 seconds, that's ~1.6KB/sec — still modest, but two full orders of magnitude more than the single-driver case, which is the concrete reason pre-match and post-match use genuinely different update cadences rather than one uniform rate.
+
+## 3. Data Contract Design
+
+```
+// WebSocket location update (post-match, single tracked driver)
+{ "type": "driver_location", "driverId": "d_44", "lat": 37.7750, "lng": -122.4195, "heading": 128, "timestampMs": 1752834000000 }
+
+// Nearby-drivers snapshot (pre-match, many drivers)
+{ "type": "nearby_drivers", "drivers": [{ "id": "d_12", "lat": 37.7745, "lng": -122.4190 }, ...] }
+
+// Ride state
+{ "type": "ride_state", "rideId": "r_991", "status": "driver_en_route", "etaSeconds": 240 }
+```
+
+- **Post-match location updates include `heading`** (direction of travel), which lets the rendered marker rotate to face the direction of movement — a real, noticeable visual-quality detail that a bare lat/lng pair wouldn't support.
+- **Pre-match "nearby drivers" is a different message shape/channel than the single post-match tracked driver** — before a match, the client only needs approximate positions for a general "drivers nearby" impression; after a match, it needs precise, frequent updates for one specific driver, which is a meaningfully different data-volume and precision requirement.
+- **Ride state (the lifecycle stage) is a separate message type from raw location** — the map's behavior (what it shows, how it's framed) changes based on ride state independently of any single location update.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Location Socket** — the persistent WebSocket connection receiving both nearby-driver snapshots (pre-match) and the single tracked driver's frequent updates (post-match).
+- **Position Interpolator** — given a driver's last-known position and a newly-arrived position, animates the rendered marker smoothly between them over the expected update interval, rather than snapping instantly on each raw update.
+- **Map Renderer** — renders the base map, driver marker(s), route polyline, and pickup/destination pins, reading interpolated (not raw) positions for smooth movement.
+- **Ride State Machine** — tracks the current ride lifecycle stage and drives what the Map Renderer frames/shows at each stage (zoomed to show nearby drivers pre-match; framed to show the route to pickup once matched; framed to show the trip route once in progress).
+
+## 5. State Management Design
+
+- **Raw received positions and the interpolated/rendered position are distinct state** — the Position Interpolator's animated, in-between position is what the Map Renderer actually reads from on every frame, while the raw last-two-received-positions are only the interpolation's input, not what's directly rendered.
+- **Ride lifecycle state is the source of truth for what the map should be showing**, with location data layered on top of whatever that stage calls for — pre-match, the map shows many nearby drivers; post-match, it shows exactly one tracked driver plus a route — this is a state-driven view switch, not something location data alone determines.
+- **A brief connection gap's handling is itself explicit state** ("last update received N seconds ago") — this is what lets the UI distinguish a normal, still-within-expected-interval gap from a genuinely stale connection worth surfacing to the rider.
+
+## 6. Deep Dives
+
+### Sequence: two location updates, interpolated in between
+
+<SequenceDiagram />
+
+Each `interpolate marker` step is the rider's client, not the server — it's a purely local animation running between the two real GPS updates it actually received, which is exactly what turns a data point every few seconds into what reads as continuous driving.
+
+### Interpolating between discrete GPS updates
+
+Since real GPS updates arrive only every few seconds, rendering the driver marker by simply teleporting it to each newly-received coordinate looks broken — visibly jumping rather than driving. The standard fix: on receiving a new position, animate the marker from its previous rendered position to the new one over roughly the duration of the expected update interval (so by the time the *next* update arrives, the marker has just finished arriving at the *current* one), using the `heading` field to also rotate the marker to face the direction of travel for an even more convincing effect.
+
+```ts
+function interpolatePosition(
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number },
+  elapsedMs: number,
+  durationMs: number,
+) {
+  const t = Math.min(elapsedMs / durationMs, 1);
+  return { lat: from.lat + (to.lat - from.lat) * t, lng: from.lng + (to.lng - from.lng) * t };
+}
+```
+
+Called on every animation frame with `durationMs` set to the expected update interval, `t` reaches 1 right as the next real update arrives.
+
+### Distinguishing pre-match and post-match rendering needs
+
+Before a match, the rider mainly needs a general sense of "there are drivers nearby" — approximate positions for potentially many drivers, updated relatively infrequently, is sufficient and far cheaper to render and transmit than precise per-driver tracking for every nearby vehicle. After a match, the requirements flip: one driver, tracked precisely and frequently, matters far more than a general area sense — this is why real implementations use genuinely different message shapes/channels for these two phases rather than one uniform "always send precise data for every visible driver" approach that would waste bandwidth pre-match and potentially under-serve precision post-match.
+
+### Handling a driver's momentary disconnect
+
+A driver's device losing connectivity for a few seconds (a tunnel, a dead zone) shouldn't immediately read to the rider as "driver vanished" — the client should track time-since-last-update and only surface a "reconnecting" or degraded state after that gap meaningfully exceeds the normal expected update interval, giving genuine, brief connectivity blips time to self-resolve without alarming the rider over a normal, transient condition.
+
+### Rendering many simultaneously-updating markers before a match
+
+A dense area's nearby-drivers view can have dozens of markers each updating independently — batching re-renders (updating all currently-visible driver positions together on a single animation tick rather than triggering a separate re-render per individual driver update) keeps this from becoming its own performance problem, the same general "batch frequent small updates rather than reacting to each individually" principle that shows up across most real-time-heavy interfaces in this guide series.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Interpolated smooth movement | Dramatically better perceived experience | Marker position is an estimate, not the driver's literal instant position |
+| Raw-update-accurate positioning | Always shows the last real known point | Visibly "teleports" between updates every few seconds |
+| Frequent, precise pre-match driver updates | Looks maximally live | Meaningfully more bandwidth/render cost for approximate-sense-only info |
+| Coarser pre-match update cadence | Bounded bandwidth/render cost (see estimate above) | Slightly less live-feeling before a match |
+| Eager "reconnecting" state on a gap | Rider immediately knows something's off | False alarms on normal, brief connectivity blips |
+
+Every real ridesharing product interpolates — raw-update-accurate positioning simply doesn't read as "driving" at a multi-second update interval.
+
+## 8. Follow-ups
+
+- **"How would you show the driver's route to the pickup point, not just their current position?"** A route polyline, typically returned by a routing/directions service given the driver's current position and the pickup point, re-requested periodically (not on every single location tick) as the driver's actual path may deviate from the originally-computed route.
+- **"What if the map needs to work well on a low-end device with many nearby drivers rendered?"** Clustering nearby markers at low zoom levels (showing a count badge rather than individual markers) is the standard mitigation, only expanding to individual markers once zoomed in enough that showing each one individually is both meaningful and performant.
+- **"How do you test the position-interpolation logic?"** As a pure function of `(previous position, new position, elapsed time) → current interpolated position`, testable with fixed coordinate/timestamp fixtures independent of any real map rendering or WebSocket connection.
+- **"What if the rider's own location also needs to be shown live (e.g. walking to a pickup point)?"** The rider's own device becomes another position source feeding the same Location Socket/Map Renderer pipeline — architecturally the same problem as tracking a driver, just sourced from the rider's own GPS instead of a remote WebSocket push.
+
+Sources: [The Architecture Behind Uber Live Tracking](https://dev.to/meeth_gangwar_f56b17f5aff/the-architecture-behind-uber-live-tracking-5bbm), [Designing Uber: Geospatial Indexing, WebSockets, and Distributed Locks](https://dev.to/ganesh_parella/designing-uber-geospatial-indexing-websockets-and-distributed-locks-4mhb)

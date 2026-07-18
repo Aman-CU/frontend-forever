@@ -1,0 +1,116 @@
+---
+title: "Designing a Travel Search and Booking Flow"
+slug: "travel-search-and-booking"
+section: "Media & Rich Content"
+difficulty: "medium"
+summary: "A travel booking frontend's hardest problem is a search results page built almost entirely from third-party supplier data of wildly inconsistent shape and latency — the pattern real travel platforms converge on is normalizing every supplier's response into one standardized internal contract at the API boundary, so the rendering layer never needs supplier-specific branches, and progressively rendering results as slower suppliers respond rather than waiting for the slowest one."
+orderIndex: 3
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Airbnb", "Expedia", "Booking.com"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Search for a travel product (a stay, a flight) with filters (dates, price range, amenities/stops) and sorting.
+- A results list showing rich cards (photos, price, rating, key details) for each option.
+- A detail page with a full gallery, description, and a multi-step booking flow (options → traveler details → payment).
+- Filter changes update results without a full page reload, and remain shareable/bookmarkable via the URL.
+
+**Non-functional requirements:**
+
+- Results should start appearing quickly even when the underlying data comes from multiple third-party suppliers with inconsistent, sometimes slow, response times — the client can't simply wait for the single slowest supplier before showing anything.
+- The results page is almost always the highest-traffic page in a travel product, so its performance has an outsized effect on the whole product's perceived quality and conversion.
+- Filtering (e.g. dragging a price slider) must feel instant and must not require a full page/data refetch for every intermediate value while dragging.
+
+**Explicitly out of scope:** the supplier integration/normalization backend itself and payment processing internals — this guide covers the client architecture for rendering search results and driving the booking flow, treating a normalized results contract as already available.
+
+## 2. Constraints & Estimation
+
+- **Aggregating multiple third-party suppliers means wildly inconsistent response shapes and latencies** — real travel platforms solve this by normalizing every supplier's raw response into one standardized internal API contract before it ever reaches the frontend, so the client's rendering logic is written against one consistent shape regardless of how many different suppliers' data it actually represents.
+- **The search results page is the highest-traffic page by a wide margin** in a real travel product (one well-known example reports tens of millions of searches daily on that single page) — this justifies architectural investment specifically there (client-side rendering with a standardized data contract, aggressive route-level code-splitting) that wouldn't be justified on a lower-traffic page.
+- **Progressive rendering as suppliers respond**, rather than waiting for all of them, is the standard mitigation for supplier-latency variance — showing what's already available and streaming in more results as slower suppliers respond, instead of blocking the entire results page on the slowest one.
+- **Filter interactions need to be decoupled from network requests during the interaction itself** — a price-range slider being dragged shouldn't fire a request on every pixel of movement; it should only trigger a refetch once the user settles on a value (or via a debounce), while the slider's own visual position updates instantly regardless.
+
+## 3. Data Contract Design
+
+```
+GET /api/search?checkIn=2026-08-01&checkOut=2026-08-05&guests=2&priceMax=300
+
+{
+  "results": [
+    {
+      "id": "listing_771",
+      "title": "...",
+      "thumbnailUrl": "...",
+      "pricePerNight": 210,
+      "rating": 4.8,
+      "supplierSource": "internal", // normalized, not supplier-specific shape
+      "available": true
+    }
+  ],
+  "totalCount": 4820,
+  "resultsCompletionStatus": "partial" // some suppliers still responding
+}
+```
+
+- **Every result conforms to one normalized shape regardless of which underlying supplier it came from** — `supplierSource` may be present for internal bookkeeping/attribution, but the rendering layer's card component never branches on it.
+- **`resultsCompletionStatus` lets the client honestly show "more results loading" rather than presenting a partial result set as if it were final** — the alternative (silently treating whatever's arrived so far as complete) risks a user believing they've seen all available options when slower suppliers haven't responded yet. It also gates when the selected sort order is authoritative: while `"partial"`, the list is sorted only among results that have arrived so far and stays stable as more merge in (no jarring reorder of cards the user is currently looking at); once `"complete"`, the client does one final full re-sort against the selected criterion (price/duration) — a late-arriving cheaper option is guaranteed correct position only at that point, not continuously during the partial phase.
+- **Filters are URL query parameters**, the same pattern as the [E-Commerce Storefront guide](/interview-prep/ff-system-design/ecommerce-storefront)'s PLP — filtered search results need to be shareable/bookmarkable and correctly restorable on back-navigation.
+- **A worked progressive-render latency estimate**: if 8 of 10 suppliers typically respond within ~300ms but the remaining 2 take up to 2s, waiting for all 10 makes every search feel like a 2s search; rendering the 8 fast results immediately and streaming in the last 2 means the page feels roughly 6-7x faster for the common case, at the cost of a visible "more results loading" state for that tail — the concrete payoff behind progressive rendering.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Search Results List** — renders normalized result cards; subscribes to a results stream that can update incrementally (per `resultsCompletionStatus`) rather than requiring one complete, final payload before rendering anything.
+- **Filter Panel** — writes to URL query state; each filter (price slider, amenity checkboxes) manages its own instant local visual state, only propagating to the URL/query on settle or debounce, not on every intermediate interaction frame.
+- **Detail Page / Gallery** — a separate route, fetching the specific listing's full data (more detail than the results card needed) plus its own image gallery, using the same progressive image-loading principles as the [Photo-Sharing Feed guide](/interview-prep/ff-system-design/photo-sharing-feed).
+- **Booking Stepper** — a multi-step flow (options → traveler info → payment) structurally similar to the [E-Commerce Storefront](/interview-prep/ff-system-design/ecommerce-storefront)'s checkout stepper — each step's changes may trigger a price/availability recheck against the server before allowing progression.
+
+## 5. State Management Design
+
+- **Filter/search state lives in the URL**, exactly as in the [E-Commerce Storefront guide](/interview-prep/ff-system-design/ecommerce-storefront), for the same shareability/back-navigation reasons — a filtered travel search result set is exactly the kind of state a user might want to bookmark or send to someone else.
+- **Result-completion state (`partial` vs. `complete`) is tracked distinctly from the results array itself** — the UI needs to know not just "what results exist so far" but "should I still be showing a loading indicator for more," which is a different piece of state than the list of already-arrived results.
+- **The slider/filter's own instant visual state is local component state**, decoupled from the "committed" filter value that actually triggers a network request — this is what lets dragging feel fluid regardless of debounce timing on the actual data refetch.
+
+## 6. Deep Dives
+
+### Normalizing heterogeneous supplier data at the boundary
+
+Rather than the frontend needing a different card-rendering branch per supplier (different field names, different availability semantics, different pricing structures), the API layer transforms every supplier's raw response into one consistent internal shape before the client ever sees it — a real, documented pattern from major travel platforms' own architecture writeups, and the same "standardize the contract so the client can be written once" principle behind any large-scale frontend rearchitecture that moves from server-rendered legacy templates to a client-rendered, API-driven model.
+
+### Progressive rendering under variable supplier latency
+
+Since some suppliers respond in tens of milliseconds and others take much longer, waiting for every supplier before rendering anything would make the results page's speed equal to its slowest dependency — real platforms instead render whatever has arrived and keep `resultsCompletionStatus: "partial"` visible as an honest "more results loading" signal. Sorting and progressive arrival are in real tension — a strict, continuously-correct sort would mean every late arrival can reshuffle cards the user is currently looking at, which is exactly the jarring-reorder problem; always-append-at-the-end would keep the list stable but silently violate whatever sort the user picked. The resolution this guide uses is delayed final sorting: the list is sorted among whatever's arrived and stays stable as more merge in during the `"partial"` phase, then gets exactly one full re-sort once `resultsCompletionStatus` flips to `"complete"` — trading a temporarily approximate sort order during loading for a list that doesn't visibly jump around mid-scan, with the fully-correct order guaranteed at one predictable point rather than continuously.
+
+### Filter interactions without over-fetching
+
+A price-range slider (or similar continuous-value filter) needs its visual thumb position to update on every pixel of drag for the interaction to feel responsive, but committing that value to the URL/network on every pixel would be wildly excessive — the standard pattern is local, instant visual state for the control itself, with the "committed" value (that actually updates the URL and triggers a refetch) updated only on drag-release or after a debounce window, mirroring the general debounce pattern used for search-as-you-type elsewhere in this guide series.
+
+### Micro-frontend / route-level splitting for a high-traffic page
+
+Given how disproportionately much traffic the search-results page receives relative to the rest of a travel product, real platforms have specifically invested in optimizations scoped to that one page — code-splitting so unrelated parts of the app don't cost the results page anything, and treating filter-panel interactions as isolated (a price slider change shouldn't force the rest of the page's components to re-render) rather than a single monolithic page-level state update on every interaction.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Progressive/partial rendering | ~6-7x faster perceived speed for the common case | Results can shift slightly as slower suppliers respond |
+| Wait for complete result set | Never reorders after initial render | Page feels as slow as its single slowest supplier |
+| URL-driven filter state | Shareable, bookmarkable, back-button-correct | Small extra plumbing (serializing filters to query params) |
+| Purely local filter state | Simpler | Not shareable, breaks on refresh/back-navigation |
+| Debounced filter commits | Avoids a request storm while dragging | Small, deliberate delay before results reflect the new value |
+
+Progressive rendering plus URL-driven filters is the same combination the [E-Commerce Storefront guide](/interview-prep/ff-system-design/ecommerce-storefront) converges on — both guides share the same "highest-traffic page, real latency variance" shape.
+
+## 8. Follow-ups
+
+- **"What if one supplier is down entirely?"** The results page should render normally with `resultsCompletionStatus` reflecting the reduced set, rather than failing the whole search — a single supplier's outage shouldn't be a whole-page failure mode given the aggregation architecture already treats suppliers as independent, heterogeneous sources.
+- **"How would you handle price/availability changing between viewing search results and completing a booking?"** The same re-validation-at-a-critical-step pattern as the [E-Commerce Storefront](/interview-prep/ff-system-design/ecommerce-storefront)'s cart-validation endpoint — re-check price/availability at booking-flow entry (or at each step) rather than trusting whatever was shown on the results card, which may be stale by the time the user actually books.
+- **"How do you test a page aggregating multiple unreliable third-party data sources?"** Mock the normalized-results API contract with fixed, deterministic responses (including a simulated `partial` → `complete` transition) — the client's rendering and progressive-update logic can be fully tested against this normalized contract without needing real, flaky third-party suppliers in a test environment.
+- **"How would internationalization (different currencies, date formats) fit into this design?"** As a presentation-layer concern applied uniformly to the already-normalized result data — since every result already conforms to one internal shape, localizing price/date display is a single formatting layer, not per-supplier special-casing.
+
+Sources: [Rearchitecting Airbnb's Frontend](https://medium.com/airbnb-engineering/rearchitecting-airbnbs-frontend-5e213efc24d2), [Expedia Speeds up Flights Search with Micro Frontends and GraphQL Optimizations](https://www.infoq.com/news/2024/03/expedia-graphql-micro-frontends/)

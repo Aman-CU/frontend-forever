@@ -1,0 +1,117 @@
+---
+title: "Designing a Rich Text Editor Engine"
+slug: "rich-text-editor-engine"
+section: "Real-Time & Collaborative"
+difficulty: "medium"
+summary: "A rich text editor's foundational decision is treating the browser's native contentEditable as an unreliable input surface, not a source of truth — production editors maintain their own immutable document model, apply the browser's raw DOM mutations back onto that model through a reconciliation step, and re-render the DOM from the model, precisely because contentEditable's real-world DOM behavior is notoriously inconsistent across browsers."
+orderIndex: 7
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Notion", "Meta"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Type, format (bold/italic/headings/lists), and structure rich content, with the formatting visible live as the user types.
+- Support block-level structure (paragraphs, headings, lists, quotes) and inline formatting (bold, italic, links) independently composable.
+- Undo/redo that behaves predictably, including across formatting and structural changes, not just plain text edits.
+- Copy/paste that intelligently handles pasted rich content (from another app, or from the web) rather than either stripping all formatting or importing broken markup.
+
+**Non-functional requirements:**
+
+- Must behave consistently across browsers and input methods (including IME composition for languages like Japanese/Chinese, and mobile soft-keyboard autocomplete/autocorrect) — contentEditable's actual DOM mutation behavior for these cases varies significantly across browsers and is a well-documented source of editor bugs.
+- Must stay responsive on large documents — re-rendering the entire document on every keystroke doesn't scale to a long document.
+- Must serialize to and from a stable, versionable document format (for storage, and for the multiplayer sync layer described in the [Collaborative Editor guide](/interview-prep/ff-system-design/multiplayer-document-editor), if this editor is used in that context).
+
+**Explicitly out of scope:** the specific collaborative-sync/CRDT layer (covered in the [Multiplayer Collaborative Document Editor guide](/interview-prep/ff-system-design/multiplayer-document-editor)) — this guide is about the single-user editing engine's own document-model and DOM-reconciliation architecture, which a collaborative layer would then sit on top of.
+
+## 2. Constraints & Estimation
+
+- **`contentEditable`'s native DOM behavior can't be trusted as the document's source of truth.** Browsers apply their own DOM mutations for typing, formatting shortcuts, and especially IME composition and mobile autocorrect in ways that are inconsistent across browser engines — production editors don't read the DOM after an edit and treat *that* as the new document state; instead, they maintain a separate, deliberate document model and treat the DOM purely as a rendering target and an input-signal source.
+- **A reconciliation loop is required, similar in spirit to a virtual-DOM diffing library**: user input (typed characters, formatting commands, paste events) gets interpreted into model-level operations first, the model updates, and then the DOM is efficiently updated to match the new model state — rather than trusting whatever raw DOM mutation the browser already applied.
+- **Undo/redo needs to operate on the document model, not the DOM** — since the DOM is a derived rendering target, undo has to replay model-level history (a sequence of model states or operations), not attempt to reverse arbitrary DOM mutations directly.
+- **Large documents need the same virtualization instinct as any large dataset**, though it's more delicate here since contentEditable's behavior around partially-rendered/virtualized content is itself an area with real cross-browser inconsistency risk.
+- **A concrete reconciliation-cost estimate**: a long document might hold 5,000-10,000 text/block nodes; re-rendering all of them on every keystroke (at a typing rate of ~10 keystrokes/second) would mean tens of thousands of DOM node touches per second — comfortably over budget for smooth typing. Granular reconciliation that only touches the handful of nodes actually affected by one keystroke keeps the per-keystroke DOM-mutation count in the single digits regardless of total document size, which is the concrete number behind why "re-render everything" doesn't scale here.
+
+## 3. Data Contract Design
+
+```
+// A simplified document model (tree of nodes)
+{
+  "root": {
+    "type": "root",
+    "children": [
+      {
+        "type": "paragraph",
+        "children": [
+          { "type": "text", "text": "Hello ", "format": {} },
+          { "type": "text", "text": "world", "format": { "bold": true } }
+        ]
+      },
+      { "type": "heading", "level": 2, "children": [{ "type": "text", "text": "Section" }] }
+    ]
+  },
+  "selection": { "anchor": { "path": [0, 1], "offset": 5 }, "focus": { "path": [0, 1], "offset": 5 } }
+}
+```
+
+- **The document is a tree of typed nodes**, not an HTML string — this is what makes it possible to reason about "the document" independent of any particular DOM rendering of it, and what makes serialization to other formats (Markdown, a collaborative-sync wire format) a matter of walking a known tree structure rather than parsing arbitrary HTML.
+- **Selection is modeled as paths into this tree plus an offset**, not raw DOM `Range` objects — DOM selection objects become invalid the instant the DOM is re-rendered from the model, so a model-relative selection representation is what survives a re-render.
+- **Text runs carry their own format metadata** (`bold`, etc.) directly, rather than relying on nested DOM elements (`<b><i>text</i></b>`) to represent combined formatting — this keeps the model's shape independent of arbitrarily deep DOM nesting for overlapping formats.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Document Model** — the typed tree of nodes representing the actual document content and structure, independent of any DOM representation.
+- **Input Interpreter** — listens to native browser input events (`beforeinput`, composition events for IME, paste events) and translates them into model-level operations (insert text, apply format, split block) rather than trusting the DOM mutation the browser might otherwise apply directly.
+- **Reconciler** — takes the updated Document Model and efficiently updates the actual DOM to match it, analogous to a virtual-DOM diff, rather than re-rendering the whole editable region on every keystroke.
+- **Selection Manager** — translates between the model's path-based selection representation and the browser's native `Selection`/`Range` APIs, restoring correct native selection after every reconciled DOM update.
+- **History Stack** — records Document Model states (or the operations that produced them) for undo/redo, operating entirely at the model level.
+
+## 5. State Management Design
+
+- **The Document Model is the single source of truth** — the DOM is always a rendering of it, never the other direction; any apparent DOM mutation from browser-native behavior (autocorrect, IME) gets interpreted back into a model operation via the Input Interpreter rather than read directly as the new truth.
+- **Selection state is normalized to model coordinates immediately** on every selection change, since native DOM `Range` objects don't survive a re-render — keeping selection in model terms is what lets the Reconciler correctly restore the user's cursor position after updating the DOM.
+- **Undo history operates on model snapshots or model-level operations**, never DOM snapshots — this is also what makes undo correctly interact with formatting and structural changes uniformly, rather than needing special-cased logic for "undo a DOM attribute change" versus "undo a DOM node removal."
+
+## 6. Deep Dives
+
+### Why not trust contentEditable's own DOM output
+
+Real editor implementations describe `contentEditable` as fundamentally unreliable at the DOM level — different browsers wrap typed content in different elements, IME composition sequences produce intermediate DOM states that don't represent final intended input, and mobile autocorrect/autocomplete can mutate the DOM in browser-specific ways. The practical fix used across production rich text frameworks: intercept input at a level *before* the browser's own DOM mutation fully lands (commonly via the `beforeinput` event, which fires before the DOM changes and describes the intended edit), interpret the user's actual intent from that signal, apply the corresponding operation to the Document Model, and let the Reconciler — not the browser — decide the resulting DOM.
+
+### The reconciliation loop
+
+After every model-level change, the Reconciler compares the new Document Model against what's currently in the DOM and applies the minimal set of DOM mutations needed to match — batching updates rather than re-rendering the entire editable region on every keystroke, the same efficiency goal a virtual-DOM diffing algorithm serves, applied specifically to contentEditable's DOM instead of a general application UI.
+
+### Selection as model coordinates, not DOM ranges
+
+A DOM `Range`/`Selection` object referencing specific DOM nodes becomes stale the instant those nodes are replaced by a reconciliation pass — representing selection instead as `(path into the model tree, offset within a text node)` survives a re-render cleanly, since the Selection Manager can always re-resolve a model-coordinate selection against whatever the current DOM looks like after reconciliation, restoring the native browser selection to the equivalent position.
+
+### Paste handling
+
+A naive paste handler either imports arbitrary external HTML wholesale (risking broken/unexpected structure and styles bleeding in from the source) or strips all formatting (losing legitimate structure like lists or headings a user actually wanted preserved). The practical approach: intercept the paste event, parse the incoming HTML/plain-text against a constrained set of recognized node types the Document Model actually supports, and discard or normalize anything outside that set — treating "what can be pasted" as bounded by "what the model can represent," not by whatever arbitrary markup the clipboard happened to contain.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Model-first architecture | Actually-consistent cross-browser behavior, testable/serializable state | Significant implementation complexity (Input Interpreter + Reconciler) |
+| Trust the DOM directly | Minimal code, quick to prototype | Inconsistent, browser-specific bugs at scale |
+| Granular reconciliation | Keeps large documents responsive (single-digit DOM touches/keystroke) | Reconciliation logic meaningfully more complex than full re-render |
+| Full re-render per keystroke | Simple to reason about | Tens of thousands of node touches/sec on a large document — unusable |
+| Strict paste normalization | Predictable, on-brand document | Occasionally discards formatting the user expected to survive |
+
+Every production rich text framework converges on the left column despite its extra complexity — the right column's simplicity doesn't survive contact with a real, large, multi-browser document.
+
+## 8. Follow-ups
+
+- **"How would you support collaborative multiplayer editing on top of this?"** The Document Model becomes the shared state a CRDT or OT layer (per the [Multiplayer Collaborative Document Editor guide](/interview-prep/ff-system-design/multiplayer-document-editor)) operates on — this editor's job (model, input interpretation, reconciliation, selection) stays the same; the collaborative layer sits between "a local operation is generated" and "the model actually updates," transforming/merging it against concurrent remote operations first.
+- **"How do you handle IME composition (e.g. typing Japanese) correctly?"** IME composition produces a sequence of intermediate, not-yet-final input states before the user confirms a selection — the Input Interpreter needs to specifically recognize composition-start/update/end events and only commit a final model operation once composition ends, rather than treating every intermediate composition update as a separate committed edit.
+- **"What if the document needs to support custom embedded content (e.g. an embedded code block with its own syntax highlighting)?"** As a distinct node type in the Document Model with its own specialized rendering in the Reconciler — the tree-of-typed-nodes architecture is exactly what makes adding a new block type an additive change, not a rework of the core model.
+- **"How do you test an editor engine like this?"** Test the Input Interpreter's event-to-operation translation and the Document Model's operation-application logic as pure, DOM-independent unit tests (given this input event, does it produce the expected model operation and resulting tree) — reserving actual browser/DOM-dependent testing for the Reconciler and Selection Manager specifically, where real cross-browser `contentEditable` behavior is what's actually being verified.
+
+Sources: [Introduction | Lexical](https://lexical.dev/docs/intro), [Why ContentEditable is Terrible](https://medium.engineering/why-contenteditable-is-terrible-122d8a40e480)

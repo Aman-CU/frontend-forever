@@ -1,0 +1,115 @@
+---
+title: "Designing an Audio Streaming Player"
+slug: "audio-streaming-player"
+section: "Media & Rich Content"
+difficulty: "medium"
+summary: "An audio streaming player's defining constraint is that playback must begin within a couple hundred milliseconds of pressing play and essentially never stall, which real music-streaming products achieve through aggressive predictive pre-fetching of upcoming tracks, chunked/compressed audio delivery, and a persistent playback queue that survives navigation and network drops without interrupting the currently-playing track."
+orderIndex: 2
+datePublished: "2026-07-18"
+dateModified: "2026-07-18"
+companies: ["Spotify", "SoundCloud"]
+---
+
+## 1. Requirements Gathering
+
+**Functional requirements:**
+
+- Play a queue of tracks with play/pause/skip/seek/shuffle/repeat controls.
+- Playback continues uninterrupted while the user navigates between different pages of the app (browsing, searching, viewing a playlist).
+- Gapless playback between tracks in an album/playlist where the source material was mastered to play continuously.
+- Show and let the user reorder the upcoming queue.
+
+**Non-functional requirements:**
+
+- Playback must start near-instantly on pressing play, and buffering/stalling during normal listening should be rare even under imperfect network conditions.
+- Switching tracks (skip forward/back) must feel instant, not wait on a fresh network request before audio resumes.
+- Must recover gracefully from a network interruption without the currently-playing audio cutting out mid-track if avoidable.
+
+**Explicitly out of scope:** the audio encoding/licensing/rights-management backend and the recommendation algorithm behind auto-generated queues — this guide covers the client's playback engine, queue management, and pre-fetching architecture. The [Video Streaming Player guide](/interview-prep/ff-system-design/video-streaming-player) covers the same adaptive-delivery family of ideas at video's much higher bitrate/complexity.
+
+## 2. Constraints & Estimation
+
+- **Startup latency has a concrete target**: real music-streaming products aim for audio to begin within roughly 200ms of the user pressing play — this shapes the whole design toward pre-fetching and chunked delivery rather than waiting to download a full track before playback can begin.
+- **Predictive pre-fetching is the primary anti-stall mechanism** — the client downloads upcoming queue tracks *before* the current track finishes, not reactively once it ends, so track transitions don't introduce a fresh network round-trip into the critical playback path.
+- **Audio is chunked and compressed for delivery** (commonly via an efficient audio codec suited to music, delivered through a CDN), rather than requested as one large file — this is what makes both fast startup (only the first chunk is needed to begin playback) and mid-track quality/network adaptation possible. Concretely, this means an HLS or DASH audio-only manifest (or an equivalent fragmented container/codec pairing, e.g. fragmented MP4 carrying AAC) fed through Media Source Extensions (MSE) into a single continuous `SourceBuffer` — the same mechanism the [Video Streaming Player guide](/interview-prep/ff-system-design/video-streaming-player) uses for video, just audio-only. A plain `<audio src>` swap between separate whole-file chunks doesn't reliably achieve gapless playback (the decoder resets between files); MSE's single continuous buffer is what actually eliminates the gap. Where MSE isn't available, the fallback is progressive single-file playback via a plain `<audio>` element — functional, but loses gapless track transitions and mid-track quality adaptation.
+- **The player must survive route/page navigation** — since audio playback is a cross-cutting, app-wide concern (the user keeps listening while browsing), the playback engine can't be scoped to whatever page happened to start it; it needs to live above individual page/route components in the application architecture.
+- **A worked pre-fetch bandwidth estimate**: a compressed track at ~128kbps runs roughly 1MB/minute; pre-fetching just the next track's first 15-20 seconds (enough to eliminate transition gap risk) costs ~250-350KB — trivial against a typical session's total playback bandwidth, which is why aggressive pre-fetching of just the opening chunk (not the whole next track) is the practical default rather than an all-or-nothing choice.
+
+## 3. Data Contract Design
+
+```
+// Playback queue
+{
+  "currentTrack": { "id": "t_881", "title": "...", "artist": "...", "durationMs": 214000 },
+  "upcoming": [
+    { "id": "t_882", "title": "...", "artist": "..." },
+    { "id": "t_883", "title": "...", "artist": "..." }
+  ]
+}
+
+// Streamable track resource
+{
+  "trackId": "t_881",
+  "chunks": [
+    { "index": 0, "url": ".../t_881/chunk-0.ogg", "byteSize": 128000 },
+    { "index": 1, "url": ".../t_881/chunk-1.ogg", "byteSize": 128000 }
+  ]
+}
+```
+
+- **The queue is a distinct object from any individual track's streaming data** — reordering or modifying the upcoming queue never requires re-requesting the currently-playing track's already-buffered audio.
+- **Tracks are addressed as a set of chunks**, not one monolithic file — this lets the client start playback the instant chunk 0 has arrived, continuing to fetch subsequent chunks in the background as playback progresses, rather than gating playback start on the entire track downloading.
+
+## 4. High-Level Component Architecture
+
+<ArchitectureDiagram />
+
+- **Playback Engine** — a singleton, app-wide audio engine (not scoped to any one page/route) wrapping the browser's native audio playback, so navigating between pages never interrupts what's currently playing.
+- **Queue Manager** — owns the ordered list of upcoming tracks, independent of the Playback Engine's current playback state, exposing reorder/skip/shuffle operations.
+- **Prefetcher** — proactively begins downloading the next queued track's initial chunk(s) once the current track is sufficiently far into playback, so a skip-forward or natural track-end transition has audio ready immediately rather than starting a fetch at that moment.
+- **Chunk Buffer** — manages the current track's downloaded-but-not-yet-played audio chunks, feeding the Playback Engine continuously and triggering further chunk fetches as the buffer depletes.
+
+## 5. State Management Design
+
+- **Playback state (is audio playing, current position, current track) lives above any individual route/page** in the application's state tree — this is what makes "keep playing while I browse elsewhere in the app" possible, since the component tree for whatever page is currently displayed is not what owns playback.
+- **The Queue Manager's upcoming-tracks list is independent of the Chunk Buffer's per-track download state** — reordering the queue only affects which track the Prefetcher targets next, never disrupting a chunk fetch already in progress for the currently-playing track.
+- **Prefetch state (which upcoming tracks have already had their initial chunks downloaded) is tracked separately per track**, so re-ordering the queue doesn't waste already-completed prefetch work — if a track that was already being prefetched moves further back in the queue, its partial download isn't discarded, just deprioritized.
+
+## 6. Deep Dives
+
+### Predictive pre-fetching as the core anti-stall mechanism
+
+Rather than only fetching the current track and reacting to a track ending, the Prefetcher begins downloading the *next* track's initial audio chunks while the current track still has meaningful playback time remaining — by the time a track transition happens (whether via natural end-of-track or a manual skip), the next track's opening audio is frequently already available locally, eliminating what would otherwise be a network-round-trip gap in the middle of continuous listening.
+
+### Chunked delivery and fast startup
+
+Splitting a track into small chunks means playback can begin the instant the first chunk has arrived, rather than waiting for the entire (multi-megabyte) track file — this is the direct mechanism behind hitting an aggressive startup-latency target, and it also enables graceful quality/bitrate adaptation mid-track if network conditions change, using the same chunk-boundary-switching principle as video's adaptive bitrate streaming, just applied to audio.
+
+### Surviving network interruptions without cutting out
+
+Since the Chunk Buffer holds some amount of already-downloaded-but-not-yet-played audio ahead of the current playback position, a brief network interruption can be entirely absorbed by that buffer — playback continues from already-downloaded chunks while the Chunk Buffer's fetch logic retries in the background, only becoming audible to the user if the interruption outlasts the buffer's depth. Real implementations also commonly maintain failover to alternate delivery paths (e.g. a different CDN edge) if a specific source becomes unreachable.
+
+### App-wide playback state, independent of navigation
+
+Because the Playback Engine and its state live above the routing/page layer rather than being owned by whatever page initiated playback, navigating to a different part of the app (search, a different playlist, settings) never touches the Playback Engine at all — this is a deliberate architectural choice, not an incidental one, and it's what makes "audio keeps playing while I do something else in the app" a property of the architecture rather than something bolted on per-page.
+
+## 7. Performance & UX Tradeoffs
+
+| Decision | Favors | Costs |
+| --- | --- | --- |
+| Aggressive pre-fetch (next track's opening chunk) | Eliminates audible transition gap | ~250-350KB spent on tracks sometimes skipped unheard |
+| Reactive fetching only | No wasted bandwidth | Real risk of an audible gap on every transition |
+| Smaller chunks | Lower startup latency, finer adaptability | More request overhead |
+| Larger chunks | Less request overhead | Slower time-to-first-audio |
+| Deeper interruption-tolerance buffer | Absorbs longer network drops silently | More memory held, possibly wasted on a skip |
+
+Aggressive-but-bounded pre-fetching (just the opening chunk, not the whole next track) is the practical middle ground real products land on.
+
+## 8. Follow-ups
+
+- **"How would you implement gapless playback between album tracks?"** The next track's very first chunk needs to be not just downloaded but ready to hand off to the Playback Engine with zero gap at the exact sample the current track ends — this requires the Prefetcher's target to be ready well before the transition point, and the Playback Engine to support a seamless handoff between two already-buffered audio sources rather than a stop-then-start transition.
+- **"What if the user is offline (e.g. downloaded tracks for offline listening)?"** The Chunk Buffer's source shifts from network fetches to local storage-backed chunks for downloaded tracks, but the rest of the architecture (Queue Manager, Playback Engine, app-wide state) is unchanged — offline playback is a different chunk *source*, not a different playback model.
+- **"How do you test the prefetching logic?"** Mock the Queue Manager with a fixed upcoming-tracks list and a simulated playback-position clock, and assert the Prefetcher issues its next-track fetch at the expected playback-position threshold — deterministic and independent of real audio decoding.
+- **"What happens if a track fails to load entirely?"** The Queue Manager should skip to the next track automatically with a clear (but non-disruptive) error indicator, rather than stalling the whole queue on one unplayable track.
+
+Sources: [How Spotify Plays Your Music Without Buffering](https://medium.com/thesystemdesign/how-spotify-plays-your-music-without-buffering-most-of-the-time-6120f87f84cf), [Spotify Streaming Architecture](https://builder.aws.com/content/399pGGTs8PSjiN3vmP9797l0unz/spotify-streaming-architecture-how-music-reaches-millions-in-seconds)
