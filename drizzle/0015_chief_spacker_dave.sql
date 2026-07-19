@@ -1,0 +1,2 @@
+ALTER TABLE "playbook_reads" DROP CONSTRAINT "playbook_reads_playbook_slug_check";--> statement-breakpoint
+ALTER TABLE "playbook_reads" ADD CONSTRAINT "playbook_reads_playbook_slug_check" CHECK ("playbook_reads"."playbook_slug" IN ('frontend-interview-playbook', 'react-interview-playbook', 'behavioural-interview-playbook', 'frontend-system-design-playbook', 'frontend-resume-playbook', 'build-in-public-playbook'));

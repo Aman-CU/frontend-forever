@@ -47,6 +47,19 @@ export type InterviewCollection = (typeof INTERVIEW_COLLECTIONS)[number];
 export const COLLECTION_QUESTION_COLLECTIONS = ["ff-javascript", "ff-react", "ff-nextjs"] as const;
 export type CollectionQuestionCollection = (typeof COLLECTION_QUESTION_COLLECTIONS)[number];
 
+// Feature 50's 5 Playbook slugs (build-plan.md, Phase 6). Content is
+// filesystem MDX (lib/playbookGuides.ts), not a DB table — this constant
+// exists purely to CHECK-constrain playbook_reads.playbook_slug below.
+export const PLAYBOOK_SLUGS = [
+  "frontend-interview-playbook",
+  "react-interview-playbook",
+  "behavioural-interview-playbook",
+  "frontend-system-design-playbook",
+  "frontend-resume-playbook",
+  "build-in-public-playbook",
+] as const;
+export type PlaybookSlug = (typeof PLAYBOOK_SLUGS)[number];
+
 export const XP_EVENT_TYPES = [
   "concept_understand",
   "concept_simulate",

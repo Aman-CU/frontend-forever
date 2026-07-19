@@ -1,0 +1,49 @@
+---
+title: "The React Question Taxonomy"
+slug: "the-react-question-taxonomy"
+playbookSlug: "react-interview-playbook"
+orderIndex: 2
+summary: "React interview questions fall into 5 categories — fundamentals, hooks, performance, architecture, and ecosystem — and knowing which category a question belongs to tells you what kind of answer the interviewer is actually looking for."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+Not all React questions want the same shape of answer. A fundamentals question wants precision. An architecture question wants judgment. Answering an architecture question with fundamentals-level precision (or vice versa) is a common way to give a "correct" answer that still under-impresses.
+
+## 1. Fundamentals
+
+JSX, the virtual DOM, props vs. state, controlled vs. uncontrolled components, keys in lists. These questions have a mostly-right answer, and interviewers are checking for accuracy and clear explanation, not creativity. Weakness here is disqualifying at almost any level — this is the floor, not the differentiator.
+
+## 2. Hooks
+
+`useState`, `useEffect`, `useRef`, `useMemo`/`useCallback`, custom hooks, and the Rules of Hooks. This category rewards understanding *why* the rules exist (why hooks can't be conditional, why a dependency array must be honest) over reciting what each hook does. A candidate who can explain a stale-closure bug from first principles is answering at a higher level than one who's just memorized "always include all dependencies."
+
+## 3. Performance
+
+When and why a component re-renders, `memo`/`useMemo`/`useCallback`, list virtualization, code splitting. Junior/mid candidates are expected to know the tools exist; senior candidates are expected to know when *not* to reach for them — over-memoization is itself a code smell interviewers watch for. See [Talking About Performance Like a Senior Engineer](/interview-prep/playbook/react-interview-playbook/talking-about-performance-like-a-senior-engineer).
+
+## 4. Architecture
+
+Component composition patterns, state ownership and lifting, when to reach for Context vs. a dedicated store, error boundary placement. These questions are usually open-ended and scenario-based ("how would you structure state for a multi-step form with validation") — there's rarely one right answer, and the interviewer is scoring your reasoning process more than your final structure. See [Whiteboarding React Architecture Without Code](/interview-prep/playbook/react-interview-playbook/whiteboarding-react-architecture-without-code).
+
+## 5. Ecosystem
+
+Server vs. client components, data-fetching patterns, routing, testing philosophy (React Testing Library's user-centric approach vs. Enzyme's implementation-detail approach), build tooling awareness. This category is the most likely to vary by company and by how current the interviewer's own stack is — it's worth confirming what the team actually uses before over-preparing a specific library's API.
+
+## The 5 categories, at a glance
+
+| Category | Covers | What's actually rewarded |
+|---|---|---|
+| Fundamentals | JSX, virtual DOM, props vs. state, keys | Accuracy — this is the floor, not the differentiator |
+| Hooks | `useState`/`useEffect`/`useRef`, the Rules of Hooks | Understanding *why* the rules exist, not reciting them |
+| Performance | Re-renders, `memo`/`useMemo`/`useCallback`, virtualization | Knowing when *not* to reach for a tool, not just that it exists |
+| Architecture | Composition, state ownership, Context vs. a store | Reasoning process, since there's rarely one right structure |
+| Ecosystem | Server/client components, data-fetching, testing philosophy | Awareness calibrated to the specific team's actual stack |
+
+## Why the category matters more than the specific question
+
+Interviewers frequently draw from a pool of variations on the same underlying concept — the exact wording of a hooks question matters less than whether you understand the category it's testing. If you can identify "this is a hooks-rules question wearing a stale-closure costume" the moment you hear it, you can answer confidently even if you've never seen that exact phrasing before. That's the actual goal of studying by category instead of by memorized question list.
+
+## A rough weighting for prep time
+
+If your loop includes a dedicated React round (as most frontend-focused loops do), a reasonable prep split is: fundamentals and hooks get the most repetition (they show up in nearly every round, in some form), performance and architecture get deliberate, scenario-based practice rather than flashcards, and ecosystem gets a lighter pass calibrated to the specific company's stack. FF's [FF React collection](/interview-prep/ff-react) is organized to mirror this taxonomy, so you can target weak categories directly rather than working through it front to back.

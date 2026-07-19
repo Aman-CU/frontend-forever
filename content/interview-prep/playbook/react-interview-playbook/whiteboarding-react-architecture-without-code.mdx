@@ -1,0 +1,41 @@
+---
+title: "Whiteboarding React Architecture Without Code"
+slug: "whiteboarding-react-architecture-without-code"
+playbookSlug: "react-interview-playbook"
+orderIndex: 6
+summary: "In a no-code React architecture round, draw the component tree first, label who owns each piece of state, then walk data flow through it — interviewers are scoring your structural reasoning, not whether you can recall a specific library's API."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+Some React rounds — especially at senior level — never touch an editor. You're given a feature ("design the component structure for a multi-step checkout flow with validation") and a whiteboard or a shared doc, and expected to reason through the architecture out loud. This format trips up strong coders who've never practiced explaining structure without the safety net of syntax to fall back on.
+
+## Start with the component tree, not the state
+
+Resist the urge to jump straight to "I'd use Context for this." Draw the component tree first — what are the actual pieces of UI, and how do they nest? A checkout flow might decompose into a `CheckoutFlow` container, a `StepIndicator`, per-step form components, and a `SummaryPanel`. Getting this shape right first makes every subsequent decision (where state lives, what gets passed as props) much easier to reason about, and shows the interviewer you're thinking in components before you're thinking in tools.
+
+## Label state ownership explicitly
+
+For each piece of state, say out loud where it lives and why. "The current step index lives in `CheckoutFlow` since it controls which child renders. Each step's form data could live locally in that step's component, or lift to `CheckoutFlow` if a later step needs to reference an earlier one's data — for a checkout flow, later steps often do (e.g., showing the shipping address on the review step), so I'd lift it." This kind of narrated tradeoff is the actual content being scored — there usually isn't one "correct" structure, only defensible reasoning.
+
+## Walk data flow in both directions
+
+Once state ownership is settled, trace how data moves: props flow down from `CheckoutFlow` to each step, and updates flow up via callback props (or a shared dispatch if the state shape gets complex enough to justify `useReducer`). Explicitly naming this — rather than leaving it implicit — demonstrates that you're not just placing boxes on a whiteboard but actually understand how they'd communicate.
+
+## Know when to reach for Context vs. prop drilling vs. a store
+
+This is one of the most commonly probed architecture decisions, and a good answer is comparative, not absolute:
+
+- **Prop drilling** is fine for 1–2 levels and keeps data flow explicit and easy to trace — don't reach for anything heavier just because drilling feels slightly annoying.
+- **Context** solves drilling through many layers for state that changes infrequently (theme, current user, locale) — but re-renders every consumer on any change, so it's a poor fit for frequently-changing state like form input values.
+- **A dedicated store** (Redux, Zustand, Jotai, or similar) earns its complexity when state is shared across many unrelated parts of the tree, needs to persist across route changes, or benefits from selective subscriptions that Context can't give you efficiently.
+
+Naming this tradeoff explicitly — not just picking one and moving on — is exactly what [State Management Tradeoffs](/learn/react/state-management-tradeoffs) as a concept is testing, and it's a near-guaranteed follow-up question in any architecture round.
+
+## Handle the edges out loud
+
+Validation errors, a user navigating back mid-flow, an API failure on submit, a page refresh mid-checkout — naming these unprompted, even briefly ("I'd also want to think about how partial progress survives a refresh — maybe persisting step data to sessionStorage") signals the same edge-case awareness that [What Interviewers Actually Score](/interview-prep/playbook/frontend-interview-playbook/what-interviewers-actually-score) covers for coding rounds, applied to architecture instead of code.
+
+## The core skill being tested
+
+A no-code architecture round is really asking: can you make and defend structural decisions before a single line of implementation exists? That's a different (and, at senior level, more valuable) skill than writing correct code against a spec someone else already designed — treat it as its own category to practice, not an afterthought to coding prep.

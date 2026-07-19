@@ -12,7 +12,7 @@ import {
   uniqueIndex,
   check,
 } from "drizzle-orm/pg-core";
-import { XP_EVENT_TYPES, CHALLENGE_STATUSES } from "@/lib/constants";
+import { XP_EVENT_TYPES, CHALLENGE_STATUSES, PLAYBOOK_SLUGS } from "@/lib/constants";
 import { profiles } from "./profiles";
 import { concepts, challenges, interviewQuestions } from "./content";
 
@@ -210,6 +210,42 @@ export const bookmarks = pgTable(
   ],
 ).enableRLS();
 
+// ── playbook_reads ────────────────────────────────────────────────────────────
+// Feature 50's per-chapter read-tracking, written by an explicit "Mark as
+// Read" button (same precedent as understand_completed's own button, not an
+// auto-mark-on-visit). Content itself is filesystem MDX (lib/playbookGuides.ts,
+// no DB table for the guides), so this only tracks the (user, chapter) read
+// state that drives the "X/N articles read" progress bar. chapterSlug is
+// only unique within a playbook, not globally, hence the 3-column unique.
+
+export const playbookReads = pgTable(
+  "playbook_reads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    playbookSlug: text("playbook_slug").notNull(),
+    chapterSlug: text("chapter_slug").notNull(),
+    readAt: timestamp("read_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    unique("playbook_reads_user_chapter_unique").on(
+      table.userId,
+      table.playbookSlug,
+      table.chapterSlug,
+    ),
+    index("playbook_reads_user_id_idx").on(table.userId),
+    check(
+      "playbook_reads_playbook_slug_check",
+      sql`${table.playbookSlug} IN (${sql.join(
+        PLAYBOOK_SLUGS.map((s) => sql.raw(`'${s}'`)),
+        sql`, `,
+      )})`,
+    ),
+  ],
+).enableRLS();
+
 // ── relations ─────────────────────────────────────────────────────────────────
 
 export const userConceptProgressRelations = relations(userConceptProgress, ({ one }) => ({
@@ -297,5 +333,12 @@ export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
   challenge: one(challenges, {
     fields: [bookmarks.challengeId],
     references: [challenges.id],
+  }),
+}));
+
+export const playbookReadsRelations = relations(playbookReads, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [playbookReads.userId],
+    references: [profiles.id],
   }),
 }));

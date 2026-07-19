@@ -1,0 +1,44 @@
+---
+title: "Why Frontend System Design Is Different From Backend"
+slug: "why-frontend-system-design-is-different"
+playbookSlug: "frontend-system-design-playbook"
+orderIndex: 1
+summary: "Frontend system design interviews focus on component architecture, client-side state, and rendering performance under real device and network constraints — not the QPS, sharding, and storage estimation math that backend system design interviews are built around."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+Candidates who prepared for system design using backend-oriented resources often walk into a frontend system design round and reach for the wrong toolkit entirely — throughput estimation, database sharding strategy, load balancer placement. None of that is wrong knowledge to have, but almost none of it is what a frontend system design interviewer is actually listening for.
+
+## The scope shifts from servers to the client
+
+A backend system design prompt ("design a URL shortener," "design a rate limiter") is fundamentally about how a request gets handled once it reaches a server — storage, distribution, consistency, throughput. A frontend system design prompt ("design an infinite-scroll feed," "design a collaborative text editor") is fundamentally about what happens *in the browser* — component structure, where state lives, how data gets fetched and cached client-side, and how the UI stays responsive under real device constraints. The server is usually treated as a given API contract, not something you're designing.
+
+## Constraints are measured differently
+
+Backend estimation math centers on requests per second, storage growth, and replication. Frontend constraints center on things like: how many DOM nodes can render before scroll performance degrades (a moderately complex card-based feed starts to strain somewhere around 200-400 mounted rows, well before a backend engineer's intuition for "a lot of data" would kick in), what the bundle-size budget is for this feature, how the UI should behave on a throttled 3G connection or a mid-tier mobile device, and how much client-side memory a long-lived session (an infinite feed that's been scrolling for twenty minutes) can reasonably consume. These are real, quantifiable constraints — just a completely different set of numbers than a backend interview trains you to estimate, and they're usually expressed in **Core Web Vitals** terms: **LCP** (Largest Contentful Paint — how fast the main content appears), **INP** (Interaction to Next Paint — how responsive the UI feels to input), and **CLS** (Cumulative Layout Shift — how much content jumps around as it loads). Naming these by name, not just describing them, is the standard vocabulary interviewers use for this whole category of constraint.
+
+## The deliverable is a component architecture, not a service diagram
+
+Where a backend answer ends in a diagram of services, queues, and datastores, a frontend answer ends in a component tree with clear state ownership, a data-fetching strategy, and a rendering/performance plan. [A Repeatable Framework for Frontend System Design](/interview-prep/playbook/frontend-system-design-playbook/a-repeatable-framework-for-frontend-system-design) walks through exactly this shape, section by section.
+
+## The problems themselves are frontend-native
+
+Real frontend system design prompts are things like: an infinite-scroll social feed, a real-time collaborative document editor, a search autocomplete with debouncing and cancellation, an offline-capable note-taking app, a video-streaming player with adaptive bitrate. Every one of these has genuine frontend-specific hard subproblems — virtualization strategy, optimistic UI updates, conflict resolution, request cancellation, cache invalidation — that a backend-trained answer would either miss entirely or treat as an afterthought. FF's [FF Frontend System Design](/interview-prep/ff-system-design) collection is built entirely around this class of problem, with full worked guides like [Designing an Infinite-Scroll Feed](/interview-prep/ff-system-design/infinite-scroll-feed).
+
+## Why this distinction matters for prep time
+
+If you spend your limited system-design prep hours on backend-style estimation math for a frontend-focused loop, that time is largely wasted — the interviewer isn't scoring your throughput calculations, and you'll be under-prepared for the component-architecture and state-management reasoning that's actually being evaluated. Confirm with your recruiter (a completely normal question) whether the system design round is frontend-scoped before deciding where your prep hours go.
+
+## Backend vs. frontend system design, side by side
+
+| | Backend system design | Frontend system design |
+|---|---|---|
+| Scope | How a request is handled once it reaches a server | What happens in the browser after data arrives |
+| Estimated in | Requests per second, storage growth, replication | DOM node count, bundle size, LCP/INP/CLS |
+| Deliverable | A diagram of services, queues, and datastores | A component tree with state ownership and a rendering plan |
+| Example prompt | "Design a URL shortener" | "Design an infinite-scroll feed" |
+
+## What carries over from backend system design
+
+Not everything is different — data contract design (what shape of data the frontend needs from an API, REST vs. GraphQL vs. WebSocket tradeoffs) and general tradeoff-reasoning discipline both transfer directly. The core shift is where the design's center of gravity sits: backend design centers on the server and its data; frontend design centers on the browser, the user's perceived experience, and the constraints of running inside it.

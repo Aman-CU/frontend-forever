@@ -1,0 +1,45 @@
+---
+title: "A Repeatable Framework for Frontend System Design"
+slug: "a-repeatable-framework-for-frontend-system-design"
+playbookSlug: "frontend-system-design-playbook"
+orderIndex: 2
+summary: "A repeatable frontend system design framework moves through seven stages in order — requirements, data model, component architecture, state management, deep dives, performance/tradeoffs, and follow-ups — and running every prompt through the same seven stages prevents the most common failure mode: designing components before requirements are even clear."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+Without a repeatable structure, frontend system design answers tend to wander — jumping straight to component names before requirements are clear, or spending all 40 minutes on architecture with no time left to discuss performance or tradeoffs. A fixed seven-stage framework, applied to every prompt regardless of topic, fixes both problems at once: it forces the right things to happen in the right order, and it gives you a built-in way to pace the conversation.
+
+<FlowDiagram />
+
+## 1. Requirements gathering
+
+Before designing anything, clarify scope out loud. For "design an infinite-scroll feed": Does it need real-time updates, or just paginated loading? Should scroll position persist on back-navigation? Is this mobile, desktop, or both? Functional requirements define *what* the feature does; non-functional requirements — measured in frontend-specific terms like "must stay smooth at 60fps with thousands of loaded items," not backend-style QPS — define the bar it needs to clear. Skipping this stage is the single most common mistake in the entire round; see [Why Frontend System Design Is Different](/interview-prep/playbook/frontend-system-design-playbook/why-frontend-system-design-is-different) for why these constraints look nothing like a backend interview's.
+
+## 2. Data model / data contract
+
+Define the shape of data the frontend consumes and sends — not the backend's internal schema, but the contract between client and server. What does a single feed item look like? Is pagination cursor-based or offset-based, and why does that choice matter for a feed the user might scroll for twenty minutes straight? Is the transport REST, GraphQL, or a WebSocket for the real-time pieces? This stage is often rushed, but a sloppy data contract makes every later stage harder to reason about cleanly.
+
+## 3. Component architecture
+
+Now, and only now, sketch the component tree and state ownership — the same discipline covered in [Whiteboarding React Architecture Without Code](/interview-prep/playbook/react-interview-playbook/whiteboarding-react-architecture-without-code), applied at system-design scale. Which component owns the fetched data? Where does scroll position or pagination cursor state live? How do optimistic updates (a like, a new comment) flow through the tree without waiting on a round-trip?
+
+## 4. State management design
+
+A closely related but distinct stage worth calling out on its own: how does state stay synchronized as data arrives from multiple sources — an initial fetch, a real-time update, an optimistic local change that might later fail and need to roll back? See [State Management at Scale](/interview-prep/playbook/frontend-system-design-playbook/state-management-at-scale) for how to reason through this explicitly rather than hand-waving "we'd use a store."
+
+## 5. Deep dives (the largest section)
+
+This is where the interviewer usually steers the conversation into the problem's genuinely hard subproblem — for an infinite feed, that's virtualization strategy and scroll-position restoration; for a collaborative editor, it's conflict resolution; for search autocomplete, it's debounce/cancellation and race conditions. Budget the most time here, not just conceptually but by the clock: for a 40-minute round, a workable split is roughly **10% requirements, 10% data model, 15% component architecture, 10% state management, 35% deep dives, 15% performance/tradeoffs**, with follow-ups absorbed into whatever's left. A framework that spends 30 of 40 minutes on requirements and architecture, leaving no room for the deep dive, has actually under-performed relative to one that moves briskly through the first four stages specifically to protect time for this one.
+
+## 6. Performance and UX tradeoffs
+
+Name the real tradeoffs explicitly — bundle size vs. feature richness, optimistic UI vs. consistency risk, client-side caching vs. staleness. See [Performance Under Constraints](/interview-prep/playbook/frontend-system-design-playbook/performance-under-constraints) for the specific vocabulary this stage rewards.
+
+## 7. Follow-ups
+
+Expect a curveball: "what if the network drops mid-scroll," "what if two users edit the same paragraph simultaneously." Treat these as a natural extension of the deep dive, not a gotcha to defend against — engaging with them collaboratively is itself part of what's being scored.
+
+## Why the fixed order matters more than the content
+
+The framework's real value isn't any single stage — it's that following the same order every time prevents the most common failure (designing architecture before requirements exist) and gives you an internal clock: if you're 15 minutes in and still on requirements, you know to move faster, because the deep-dive stage is where the real signal gets collected. FF's [FF Frontend System Design guides](/interview-prep/ff-system-design) are all structured through exactly these stages, so working through a few end to end is the fastest way to internalize the pacing.

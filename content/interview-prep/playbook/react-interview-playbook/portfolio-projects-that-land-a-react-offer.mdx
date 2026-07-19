@@ -1,0 +1,38 @@
+---
+title: "Portfolio Projects That Land a React Offer"
+slug: "portfolio-projects-that-land-a-react-offer"
+playbookSlug: "react-interview-playbook"
+orderIndex: 7
+summary: "A React portfolio project that actually helps you land an offer demonstrates one hard, specific problem solved well — real state management, real edge cases, real performance thinking — not five shallow CRUD clones with the same todo-list shape."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+Recruiters and hiring managers skim portfolios fast, and most React portfolios blur together because they solve the same easy problem — a todo list, a weather app, a movie-search UI hitting a public API — competently but shallowly. The projects that actually get remembered and discussed in an interview solve one harder problem well, not several easy ones adequately.
+
+## What makes a project actually stand out
+
+**A genuinely hard, specific problem.** Not "a dashboard," but "a dashboard with real-time collaborative editing," or "a data table that stays responsive with 50,000 rows via virtualization," or "an offline-first note app that syncs conflict-free when reconnected." Specificity signals you chose the problem on purpose, not because a tutorial told you to build it.
+
+**Visible engineering decisions, not just a working demo.** A README (or a section of the app itself) that explains *why* you structured state the way you did, what tradeoff you made and why, what you'd do differently with more time — this is exactly the kind of narration [What Interviewers Actually Score](/interview-prep/playbook/frontend-interview-playbook/what-interviewers-actually-score) rewards live, except here you get to write it deliberately instead of improvising it under pressure.
+
+**Real edge cases, handled.** Empty states, loading states, error states, a slow network simulated and handled gracefully. A project that only works on the happy path, with a fast connection, reads as unfinished — even if the core feature is impressive.
+
+**Something you can talk about for 10 minutes without notes.** If you can't explain a decision you made three months ago without re-reading your own code, that's a signal the project didn't actually teach you anything durable. Pick projects you understand deeply enough to defend under follow-up questions.
+
+## Ideas that demonstrate real React skill (not just React syntax)
+
+- A **virtualized data table** with sorting, filtering, and column resizing at real scale — forces you to think about performance, not just correctness.
+- A **collaborative or real-time feature** (shared cursor, live comments, a simple multiplayer canvas) — forces you to reason about state synchronization and optimistic updates.
+- An **offline-capable app** with a sync strategy — forces you to think about state that outlives a single session and conflict resolution.
+- A **complex form flow** with multi-step validation, conditional fields, and draft-saving — forces you to reason about state ownership the way [Whiteboarding React Architecture Without Code](/interview-prep/playbook/react-interview-playbook/whiteboarding-react-architecture-without-code) describes, but with real code behind it.
+
+Notice none of these are novel product ideas — the point isn't originality, it's depth. A "boring" idea executed with real engineering rigor outperforms a flashy idea executed shallowly, every time an interviewer actually reads the code.
+
+## Turning a project into interview material, not just a portfolio link
+
+Before an interview, re-read your own project and write down (even just for yourself) the two or three hardest bugs or decisions you hit and how you resolved them. These become ready-made behavioral and technical talking points — "tell me about a technical challenge you solved" becomes trivial to answer well when you've already rehearsed the story once. See the [Frontend Resume Playbook](/interview-prep/playbook/frontend-resume-playbook/which-projects-to-feature) for how to actually surface these projects on a resume so they get read in the first place.
+
+## What to leave out
+
+Skip tutorial-clone projects with no visible modification (a Netflix clone that's functionally identical to the tutorial it came from is instantly recognizable and actively works against you), and skip projects with no deployed, working version — a GitHub repo an interviewer has to clone and run locally gets far less attention than a live link they can click during the 30 seconds they're skimming your resume.

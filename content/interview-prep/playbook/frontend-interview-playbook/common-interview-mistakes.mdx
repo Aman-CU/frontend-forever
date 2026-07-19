@@ -1,0 +1,55 @@
+---
+title: "Common Frontend Interview Mistakes"
+slug: "common-interview-mistakes"
+playbookSlug: "frontend-interview-playbook"
+orderIndex: 5
+summary: "The most damaging frontend interview mistakes are specific to UI rounds — treating them like a generic coding round with no keyboard support or visual states — layered on top of universal ones like coding in silence and skipping clarifying questions."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+Interviewers see the same avoidable mistakes over and over, from candidates who are clearly technically capable. None of these require more studying to fix — they require noticing you're doing them. Some of what follows applies to any software engineering interview; the first three are specific to frontend rounds and are the ones candidates most reliably miss, precisely because nothing in the prompt ever asks for them directly.
+
+## Treating a UI round like a generic coding round
+
+The most frontend-specific mistake on this list: building an interactive widget — a dropdown, a modal, a tab panel — with `div`s and `onClick` handlers and nothing else, the same way you'd write any algorithm problem. It works with a mouse, the demo looks fine, and it still costs real points. [What Interviewers Watch For During Live Coding](/interview-prep/playbook/react-interview-playbook/what-interviewers-watch-for-in-live-coding) covers this from the "what's scored" side; from the mistakes side, the concrete failure is shipping a widget that can't be operated with a keyboard (no focus management, no arrow-key navigation, no `Escape` to close), uses no semantic HTML (a `div` where a real button element belongs, losing built-in keyboard and screen-reader behavior for free), and has no `aria-label` on an icon-only control. None of this is in most prompts. It's graded anyway — see [The 5 Interview Formats You'll Face](/interview-prep/playbook/frontend-interview-playbook/the-five-interview-formats) for why UI coding is scored differently from algorithmic coding in the first place.
+
+## Skipping the states nobody asked for
+
+"Build a search box" almost never says "and handle the loading state, the zero-results state, and a failed-request state" — but a UI round grades all three as if they were explicit requirements, because in real frontend work they always are. Shipping only the happy path (data loads instantly, the request never fails, the list is never empty) is the single fastest way to look like you've never actually shipped a production UI feature, even when the core logic is correct. Fix: after the primary interaction works, narrate and add the three states out loud — loading, empty, error — before polishing anything else.
+
+## Leaning on framework magic instead of understanding the platform
+
+A candidate who can use `useState` fluently but can't explain what re-renders, why a key matters, or what the browser is actually doing on a click event is exposed the moment a question goes one layer beneath the framework API — and frontend interviewers deliberately probe that layer more than almost any other discipline's interviewers do. This shows up as being unable to answer "what would happen without React here" or "how would you do this in plain JS." Fix: for every framework convenience you rely on daily, be able to say in one sentence what it's actually doing underneath — FF's [Browser Internals](/learn) concepts exist specifically to close this gap.
+
+## Coding in silence
+
+This is the single most common mistake across every format, frontend or otherwise. A candidate goes quiet, types for eight minutes, and the interviewer has nothing to score except a final diff and a vague sense of unease. Even when the code ends up correct, silence reads as either overconfidence or an inability to communicate under pressure — neither is the impression you want to leave. Fix: narrate constantly, even a running "okay, now I need to handle the case where the array is empty" is enough.
+
+## Skipping clarifying questions
+
+Diving straight into code on an ambiguous prompt is a tell that you're pattern-matching to a problem you've seen before rather than actually reasoning about the one in front of you. "Build an autocomplete" could mean client-side filtering of a static list or a debounced API call with cancellation — guessing wrong wastes half the round. Fix: ask 1–3 clarifying questions before writing code, every time, even when you're fairly confident of the answer.
+
+## Ignoring data edge cases until prompted
+
+Distinct from the UI-visual-states mistake above: null/undefined inputs, off-by-one boundaries, duplicate entries, and unexpectedly-shaped data are almost never mentioned in an algorithmic or JS-utility prompt, and interviewers deliberately leave them out to see whether you'll surface them yourself. Waiting for the interviewer to ask "what if the array is empty?" instead of raising it first is a consistent, measurable signal gap between candidates who otherwise wrote similar code.
+
+## Over-engineering a simple problem
+
+The opposite mistake also costs points: turning a 15-line problem into three abstracted layers, a config object, and a "for future extensibility" comment. In a time-boxed interview this usually means running out of time before the actual requirement is even fully working. Fix: solve the literal problem first, then mention out loud what you'd generalize if requirements grew — you get credit for the judgment without spending the clock on it.
+
+## Freezing after a wrong turn
+
+Every candidate goes down a wrong path at some point — that's expected, not disqualifying. What actually hurts is freezing, going quiet, or restarting from scratch in a panic instead of talking through the mistake and pivoting. "Wait, this approach doesn't handle the duplicate case — let me back up" is a stronger signal than pretending the false start never happened.
+
+## Not managing the clock
+
+Spending 35 of 45 minutes perfecting the happy path and then rushing (or failing) to handle edge cases in the last 10 minutes is a time-management failure, not a knowledge failure. Fix: get a rough, visibly-incomplete-but-correct-shaped solution working early, then spend remaining time hardening it — narrated the whole way — rather than polishing the first 20% repeatedly.
+
+## Being vague in behavioral answers
+
+"I helped improve the team's process" tells an interviewer nothing they can score. Behavioral rounds specifically probe for the concrete details a vague answer omits — see the [STAR Method Done Properly](/interview-prep/playbook/behavioural-interview-playbook/the-star-method-done-properly) for how to structure an answer that survives follow-up questions instead of collapsing under them.
+
+## The pattern behind all of these
+
+The three UI-specific mistakes at the top of this list are closer to a skill gap than a communication gap — keyboard support, visual states, and platform fundamentals genuinely need to be practiced, not just remembered to mention. Everything after them is a communication failure, not a competence failure: the underlying skill was very likely there, but the interviewer had no way to see it. That second group costs zero additional study hours to fix — it's purely about behavior in the room, which makes it the highest-leverage prep you can do the week before an interview. The first group is worth a real practice session before then.

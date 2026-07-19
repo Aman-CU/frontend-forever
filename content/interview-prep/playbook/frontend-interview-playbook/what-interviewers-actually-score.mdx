@@ -1,0 +1,41 @@
+---
+title: "What Interviewers Actually Score"
+slug: "what-interviewers-actually-score"
+playbookSlug: "frontend-interview-playbook"
+orderIndex: 4
+summary: "Interviewers score a leveling rubric, not just a right answer — problem-solving process, communication while coding, edge-case awareness, and code quality all count, and a correct solution reached silently and messily can score lower than a clean, narrated near-miss."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+Candidates consistently overestimate how much a "correct final answer" matters and underestimate everything around it. Interviewers aren't grading a test with one right answer — they're filling out a structured rubric designed to predict how you'll actually perform on the job, and most rubrics score at least four dimensions independently.
+
+## The four things nearly every rubric scores
+
+**Problem-solving process.** Did you clarify ambiguous requirements before diving in? Did you consider more than one approach, or lock onto the first idea and never reconsider it? A candidate who pauses to ask "should this handle duplicate entries?" before coding reads as more senior than one who codes fast and finds out the hard way.
+
+**Communication while working.** Silent coding is one of the most common reasons a technically-correct solution still scores poorly. Interviewers can't read your mind — if you don't narrate what you're doing and why, they have no signal to score beyond the final diff, and they'll default to assuming you got lucky rather than that you reasoned your way there.
+
+**Code quality and structure.** Naming, function decomposition, avoiding duplication, not over-engineering a 10-line problem into five abstractions — these get scored even in a 30-minute round. It doesn't need to be production-grade, but it needs to look like code a teammate could read without you standing next to them.
+
+**Edge-case and correctness awareness.** Empty inputs, null/undefined, off-by-one errors, race conditions in async code, an empty-state UI that was never designed for. Catching these yourself — even without being prompted — is one of the strongest positive signals in the entire loop; being walked into them by the interviewer and still missing the fix is one of the weakest.
+
+## Why a "correct" answer can still score low
+
+Picture two candidates solving the same debounce implementation. Candidate A gets it working in 15 minutes, says almost nothing the whole time, and the code has a `timer` variable with no explanation. Candidate B takes 22 minutes, thinks out loud about leading vs. trailing edge behavior, asks whether cancel-on-unmount matters, and ends with a slightly less polished but well-reasoned solution. Most rubrics score B higher — despite A "finishing" first — because B's process is legible and B demonstrated judgment A never showed any evidence of having.
+
+## Level-specific expectations
+
+The bar moves with the level you're interviewing for, not just the difficulty of the prompt:
+
+| Level | What gets rewarded beyond "it works" |
+|---|---|
+| Junior/Mid | Clean, correct code; asks clarifying questions; recovers from a hint without spiraling |
+| Senior | Proactively surfaces tradeoffs; catches edge cases unprompted; explains *why*, not just *what* |
+| Staff+ | Frames the problem's constraints before solving it; discusses what they'd do differently at scale or under time pressure |
+
+If you're not sure what level you're being interviewed at, ask the recruiter — calibrating your communication to the wrong bar (over-explaining basics to a staff-level interviewer, or under-explaining tradeoffs to a mid-level one) reads as miscalibrated self-awareness either way.
+
+## The practical takeaway
+
+Narrate your thinking even when it feels unnecessary. Ask a clarifying question before writing the first line, even if you're fairly sure of the answer — it costs 15 seconds and signals process. And when you finish early, spend the remaining time listing edge cases out loud rather than sitting in silence — "I'd also want to handle X and Y if this were production" is free credit that most candidates leave on the table. See [Common Interview Mistakes](/interview-prep/playbook/frontend-interview-playbook/common-interview-mistakes) for the flip side — the specific behaviors that actively cost points, not just the ones that fail to earn them.

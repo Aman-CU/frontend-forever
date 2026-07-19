@@ -953,7 +953,7 @@ Every concept eventually gets a hand-built Simulate experience, but each one is 
 
 ### 50 Playbook Section
 
-**New section, not in the original spec** — 5 guided articles teaching interview strategy, distinct in kind from the Q&A collections. Content responsibility user-delegated; draft chapter outlines below, to be authored as MDX (`content/interview-prep/playbook/[playbook-slug]/[chapter-slug].mdx`).
+**Done — shipped as 6 playbooks (38 chapters), not the 5 below.** New section, not in the original spec — guided articles teaching interview strategy, distinct in kind from the Q&A collections. Content responsibility user-delegated; the 5 outlines below were the original draft. **Added post-ship, same session, on explicit request: a 6th playbook, `build-in-public-playbook`** (6 chapters) covering building in public and open source contribution as a career-growth channel — `why-building-in-public-compounds-your-career`, `what-to-share-and-how-often`, `making-your-first-open-source-contribution`, `becoming-a-recognized-open-source-contributor`, `turning-public-work-into-career-leverage`, `avoiding-burnout-and-staying-consistent`. See `progress-tracker.md`'s Feature 50 entry for the full build, the post-ship competitive-quality audit (5 parallel research agents, one per original playbook, rating against real competing content) and the fixes it drove.
 
 **UI:**
 
