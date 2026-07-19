@@ -61,7 +61,19 @@ export function getAllChaptersForPlaybook(playbookSlug: string): PlaybookChapter
     .map((file) => {
       const source = fs.readFileSync(path.join(dir, file), "utf-8");
       const { data, content } = matter(source);
-      return { frontmatter: data as PlaybookChapterFrontmatter, content };
+      const frontmatter = data as PlaybookChapterFrontmatter;
+      // getPlaybookChapter resolves a chapter by filename, but every consumer
+      // of this list (prev/next nav, the index page's chapter links) builds
+      // URLs from frontmatter.slug — a mismatch here would list a chapter
+      // whose own link 404s. Fail loudly at read time instead of shipping a
+      // silently broken link.
+      const filenameSlug = file.slice(0, -".mdx".length);
+      if (frontmatter.slug !== filenameSlug) {
+        throw new Error(
+          `Playbook chapter slug mismatch in ${playbookSlug}/${file}: frontmatter.slug is "${frontmatter.slug}" but the filename is "${filenameSlug}".`,
+        );
+      }
+      return { frontmatter, content };
     })
     .sort((a, b) => a.frontmatter.orderIndex - b.frontmatter.orderIndex);
 }
