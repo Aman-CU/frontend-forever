@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getCachedSession } from "@/lib/auth/server";
 import { COLLECTION_META, type InterviewPrepCollectionKey } from "@/features/interview-prep/lib/collectionMeta";
 import { getCollectionSummaries, getReviewQueuePreview } from "@/features/interview-prep/lib/queries";
+import { getPlaybookProgress } from "@/features/interview-prep/lib/playbookQueries";
 import { CollectionRow } from "@/features/interview-prep/components/CollectionRow";
 import { ReviewQueueSection } from "@/features/interview-prep/components/ReviewQueueSection";
 import { PlaybookPreview } from "@/features/interview-prep/components/PlaybookPreview";
@@ -31,9 +32,10 @@ export default async function InterviewPrepGetStartedPage() {
   const session = await getCachedSession();
   const userId = session?.user?.id ?? null;
 
-  const [collectionSummaries, reviewItems] = await Promise.all([
+  const [collectionSummaries, reviewItems, playbookProgress] = await Promise.all([
     getCollectionSummaries(),
     getReviewQueuePreview(userId),
+    getPlaybookProgress(userId),
   ]);
 
   const summaryByCollection = new Map(collectionSummaries.map((s) => [s.collection, s]));
@@ -66,7 +68,7 @@ export default async function InterviewPrepGetStartedPage() {
         </div>
       </section>
 
-      <PlaybookPreview />
+      <PlaybookPreview progress={playbookProgress} />
 
       <StudyPlansPreview />
 

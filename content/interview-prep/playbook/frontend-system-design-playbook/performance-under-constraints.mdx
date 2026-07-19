@@ -1,0 +1,33 @@
+---
+title: "Performance Under Constraints"
+slug: "performance-under-constraints"
+playbookSlug: "frontend-system-design-playbook"
+orderIndex: 5
+summary: "Frontend system design performance answers should name a specific constraint — DOM node count, bundle size, network conditions — before naming a fix, since interviewers are scoring whether you know why a technique like virtualization or code-splitting applies here, not whether you can recite that it exists."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+Every frontend system design prompt eventually turns to performance, and the difference between a mid-level and a senior-sounding answer here is almost always the same thing: does the candidate name a specific constraint that's actually being violated, or do they recite a generic list of optimization techniques with no clear trigger for any of them?
+
+## Anchor every fix to a specific constraint
+
+"I'd add virtualization" is a technique, not yet an answer. "Once this feed has more than a few hundred rendered items, keeping every one of them in the DOM starts costing real memory and layout time, so I'd virtualize — rendering only the rows near the viewport and recycling the rest" names the actual constraint (unbounded DOM node growth) that virtualization solves. The same discipline applies everywhere in this section: name the constraint, then the technique, in that order.
+
+## The constraints worth naming explicitly
+
+**DOM node ceiling.** Long lists, deeply nested trees, and feeds with rich per-item content all risk unbounded DOM growth. The fix — virtualization (rendering only visible rows) — is one of the most commonly expected frontend system design answers, and naming a real threshold shows more calibration than a reflexive "always virtualize everything": a moderately complex card (an avatar, a few lines of text, an action row) starts to strain around 200-400 mounted rows, while a simple, low-complexity row can reasonably go into the low thousands before it's a problem — the ceiling depends on per-row complexity, not just row count alone.
+
+**Bundle size and code-splitting.** A feature-heavy app loading its entire codebase upfront delays first interaction. Route-based or feature-based code splitting, lazy-loading a heavy component (a rich text editor, a chart library) only when it's actually needed, and keeping a performance budget in mind from the start are all fair game to raise, especially for any prompt involving a large or infrequently-used feature.
+
+**Network conditions.** Not every user is on a fast, stable connection. A strong answer considers what the experience degrades to on a throttled connection — does the UI show a meaningful loading state, or does it appear broken? Should some data be prefetched, or would that waste bandwidth for a feature the user might never reach?
+
+**Perceived performance vs. raw speed.** Optimistic UI updates (covered in [State Management at Scale](/interview-prep/playbook/frontend-system-design-playbook/state-management-at-scale)), skeleton screens instead of blank loading states, and prioritizing above-the-fold content are all techniques that improve *perceived* responsiveness even when the underlying network request takes the same amount of time — worth naming as a distinct category from raw optimization. This is also where Core Web Vitals vocabulary belongs concretely: skeleton screens and above-the-fold prioritization are both direct levers on **LCP**, and keeping interactive elements responsive under load (not blocking the main thread with a large synchronous computation) is a direct lever on **INP**. Naming which metric a given technique actually moves is stronger than describing the improvement only in prose.
+
+## A worked example: applying this to an infinite-scroll feed
+
+Constraint: unbounded DOM growth as the user scrolls. Fix: virtualization, rendering a fixed window of items regardless of how far the user has scrolled. Second constraint: network requests firing too eagerly as the user approaches the bottom. Fix: an intersection-observer-based sentinel that triggers the next page fetch slightly before the user reaches the true bottom, so the fetch resolves before it's visibly needed. Third constraint: returning to an already-scrolled feed (via back-navigation) re-fetching and losing scroll position. Fix: caching the already-fetched page data and restoring scroll position on return. Each fix traces back to a named, specific problem — this is the pattern to reproduce on any prompt. FF's full [Infinite-Scroll Feed guide](/interview-prep/ff-system-design/infinite-scroll-feed) works through this exact chain in depth.
+
+## What separates a mid-level answer from a senior one here
+
+A mid-level answer correctly names the right techniques when prompted. A senior answer proactively names the constraint that makes each technique necessary, and can also explain when a technique *wouldn't* be worth the added complexity — for example, correctly deciding that a feed with a hard cap of 50 items doesn't need virtualization at all, resisting the urge to over-engineer a constraint that doesn't actually exist for this specific feature. See [Mid-Level vs. Staff-Level Answers](/interview-prep/playbook/frontend-system-design-playbook/mid-level-vs-staff-level-answers) for more on this exact distinction.

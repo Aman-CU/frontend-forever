@@ -1,0 +1,52 @@
+---
+title: "Talking About Performance Like a Senior Engineer"
+slug: "talking-about-performance-like-a-senior-engineer"
+playbookSlug: "react-interview-playbook"
+orderIndex: 5
+summary: "Senior-level React performance answers start with measurement and a specific bottleneck, not a reflexive list of optimizations — and with React Compiler now stable, knowing when the compiler already handles memoization for you, and when it can't, is as much a marker of seniority in 2026 as naming memo/useMemo/useCallback correctly ever was."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+Ask a junior candidate "how would you optimize this component" and you'll often get a list: "I'd add `memo`, wrap the callbacks in `useCallback`, maybe `useMemo` the expensive calculation." Ask a senior candidate the same question and the answer usually starts somewhere else entirely — with a question back, or a description of how they'd find the actual bottleneck first.
+
+## Start with "is this actually slow"
+
+Premature memoization is a real cost, not a free safety net — it adds memory overhead, comparison cost on every render, and code that's harder to read, all to solve a problem that might not exist. A senior answer typically opens with something like: "before reaching for memoization, I'd profile with React DevTools to see if this component is actually re-rendering more than expected, and whether that re-render is expensive enough to matter." That single sentence signals more seniority than a correct but reflexive list of hook names.
+
+## Name the actual mechanism, not just the tool
+
+Compare these two answers to "why is this list slow":
+
+- **Weaker:** "I'd add `React.memo` to the list item component."
+- **Stronger:** "The parent re-renders on every keystroke because the search input's state lives there, which re-creates the `onClick` handler passed to every list item — so even with `memo`, the items still re-render because the handler prop is a new reference each time. I'd either move the input state down, or memoize the handler with `useCallback` so the prop reference stays stable, and *then* wrap the item in `memo`."
+
+The stronger answer explains the causal chain — state placement causes new function references, which defeats memoization unless both pieces are addressed together. This is the kind of reasoning that separates "knows the APIs" from "understands the mechanism."
+
+## The tools, and when each one actually earns its cost
+
+- **`React.memo`** — skips a re-render if props are shallowly equal. Worth it for components that render often with genuinely unchanged props and are expensive enough to matter; not worth it for cheap components or ones whose props change on nearly every render anyway.
+- **`useMemo`** — caches an expensive computed value between renders. Worth it for real computational cost (sorting/filtering large lists, expensive derived data); not worth it for trivial calculations, where the memoization overhead can exceed the cost it's saving.
+- **`useCallback`** — stabilizes a function reference, usually to keep a memoized child from re-rendering, or to satisfy a dependency array correctly. Rarely useful on its own without a `memo`'d consumer or an effect depending on it.
+- **List virtualization** — for genuinely large lists (hundreds to thousands of rows), rendering only visible rows is a categorically different fix than memoization, and knowing when a list has crossed from "memoize it" to "virtualize it" territory is itself a signal of experience.
+
+| Tool | Fixes | Worth it when | Not worth it when |
+|---|---|---|---|
+| `React.memo` | Unnecessary re-renders from unchanged props | Renders often, props genuinely stable, component is expensive | Cheap component, or props change almost every render anyway |
+| `useMemo` | Recomputing an expensive value every render | Real computational cost — sorting/filtering large data | Trivial calculations — overhead can exceed the savings |
+| `useCallback` | An unstable function reference breaking a child's `memo` | Paired with a `memo`'d consumer or an effect's dependency array | Used alone, with nothing downstream that actually needs a stable reference |
+| List virtualization | Unbounded DOM growth from a long list | Genuinely large lists (hundreds to thousands of rows) | A short, bounded list — added complexity for no real problem |
+
+## When the React Compiler already does this for you
+
+React Compiler went stable in late 2025 and is increasingly present in production React codebases by 2026. It performs essentially the same "does this actually need to be memoized" analysis described above, automatically, at build time — inserting the equivalent of `memo`/`useMemo`/`useCallback` based on real data-flow analysis of the component, not a blanket wrap-everything default. In a codebase running the compiler, manually reaching for these three hooks for the common cases above is increasingly read as a sign the answer hasn't caught up to the tools actually available, not as evidence of senior-level care.
+
+That doesn't make the reasoning in this chapter obsolete — it relocates where the seniority signal lives. The senior-level move in a compiler-enabled codebase isn't manually applying `memo`/`useMemo`/`useCallback`; it's knowing *when the compiler can't help*: values crossing a boundary the compiler doesn't analyze (mutation, refs, some non-standard hook patterns), or a component that's opted out of compilation. A strong 2026 answer names this directly: "if this codebase runs React Compiler, most of the manual memoization reasoning here is already handled for me — I'd confirm that first, then focus on the cases it doesn't cover rather than re-deriving what it already does automatically." If you don't know whether the interviewer's codebase (or the prompt's implied one) runs the compiler, asking is a completely reasonable clarifying question before launching into a memoization-heavy answer.
+
+## Talking tradeoffs, not just techniques
+
+A senior-level answer acknowledges cost, not just benefit: "I'd measure first because memoizing everything by default actually made a past project's render times *worse* in a few cases, since the comparison overhead added up across a deeply nested tree that re-rendered rarely anyway." Concrete, slightly self-critical stories like this land better than a clean list of best practices recited without any lived tradeoff attached.
+
+## What this means for how you prepare
+
+Don't just memorize what each hook does — practice narrating the causal chain from "why is this slow" to "here's the specific fix and why it works," out loud, on components you didn't write. FF's [Render Performance: memo, useMemo, useCallback](/learn/react/render-performance-memoization) concept and its Practice challenges are built around exactly this kind of diagnostic reasoning, not just API recall.

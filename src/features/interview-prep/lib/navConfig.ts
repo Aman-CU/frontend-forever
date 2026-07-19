@@ -38,6 +38,10 @@ export const INTERVIEW_PREP_NAV: InterviewPrepNavSection[] = [
         label: "Frontend Resume Playbook",
         href: "/interview-prep/playbook/frontend-resume-playbook",
       },
+      {
+        label: "Build in Public & Open Source Playbook",
+        href: "/interview-prep/playbook/build-in-public-playbook",
+      },
     ],
   },
   {

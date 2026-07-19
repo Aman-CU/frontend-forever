@@ -1,0 +1,39 @@
+---
+title: "Making Your First Open Source Contribution"
+slug: "making-your-first-open-source-contribution"
+playbookSlug: "build-in-public-playbook"
+orderIndex: 3
+summary: "A first open source contribution should be small and low-stakes on purpose — a documentation fix or a beginner-labeled bug found through a curated good-first-issue list, submitted after reading the project's contributing guide, with patience built in for maintainer response times."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+The hardest part of a first open source contribution is almost never the code — it's picking a project, finding something appropriately sized, and getting past the intimidation of submitting into a codebase you don't own. This chapter is the mechanical, low-stakes version of that first step.
+
+## Finding a project and an issue, without guessing
+
+Don't start by picking a huge, famous project and scrolling its issue tracker hoping something looks approachable — that's the slowest possible path in. Instead, use curated resources built for exactly this: sites that aggregate issues explicitly labeled "good first issue" or "beginner-friendly" across many projects at once, and directories that list projects specifically seeking first-time contributors. Within a single project, look for issues tagged `good first issue`, `help wanted`, or `beginner` — most active projects maintain these labels deliberately, precisely so newcomers don't have to guess at scope.
+
+## Start smaller than feels necessary
+
+A documentation typo fix, a broken link, a small, well-defined bug with a clear reproduction case — these are legitimate first contributions, not lesser ones. The goal of a first PR isn't to prove your skill level, it's to learn the actual mechanics of the contribution workflow (fork, branch, PR, review, merge) on something low-stakes enough that a mistake costs nothing. Save the ambitious first-ever contribution for your second or third one, once the workflow itself is no longer the unfamiliar part.
+
+## The mechanical workflow
+
+**Fork** the repository into your own account, **clone** your fork locally, create a **branch** for your change, make the fix, **commit** with a clear message, **push** to your fork, then open a **pull request** back to the original project describing what changed and why. Every established project runs a close variant of this flow — the specifics (branch naming, commit message format, whether tests are required) live in the project's own contributing guide, not in a universal standard.
+
+## Read the contributing guide before writing a line of code
+
+Almost every serious project has a `CONTRIBUTING.md` (or an equivalent section in its README) describing exactly how that specific project wants contributions handled — coding style, test requirements, how to run the project locally, what a good commit message looks like. Skipping this and guessing is the single most common way a genuinely good fix gets sent back for rework, or ignored, purely on process grounds that had nothing to do with the code itself.
+
+## Build in patience from the start
+
+Maintainers are frequently volunteers, often reviewing contributions in whatever time they have left over from a full-time job, and often in a different timezone than you. A PR sitting unreviewed for several days, or even weeks, on an active project is normal, not a rejection — following up once, politely, after a reasonable interval is fine; assuming silence means failure and giving up is the most common way a genuinely fine contribution never gets to see a review at all.
+
+## What a good first PR description looks like
+
+State plainly what the change does, why (link the issue it addresses if there is one), and how you tested it. "Fixes a typo in the installation instructions" needs almost nothing else; "Fixes a race condition in the cache invalidation logic" should briefly describe how you reproduced the bug and confirmed the fix. Maintainers reviewing dozens of PRs a week move fastest through ones that make their job easy — a clear description is worth more than it seems.
+
+## After the first one
+
+Once the mechanics feel familiar, the natural next step isn't a bigger one-off PR — it's returning to the same project again. Consistency on one project builds real context far faster than scattered one-off contributions across many; see [Becoming a Recognized Open Source Contributor](/interview-prep/playbook/build-in-public-playbook/becoming-a-recognized-open-source-contributor) for what that looks like and where it can lead.

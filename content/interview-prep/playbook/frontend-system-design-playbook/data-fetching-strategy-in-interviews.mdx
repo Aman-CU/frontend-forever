@@ -1,0 +1,51 @@
+---
+title: "Data-Fetching Strategy in System Design Interviews"
+slug: "data-fetching-strategy-in-interviews"
+playbookSlug: "frontend-system-design-playbook"
+orderIndex: 4
+summary: "A strong data-fetching answer in a frontend system design interview starts with rendering strategy (CSR, SSR, or SSG), names the transport (REST, GraphQL, or WebSocket) based on the feature's actual access pattern, addresses caching and staleness explicitly, and treats request cancellation and race conditions as first-class design concerns, not edge cases."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+"How would the frontend get its data?" sounds like a simple question, but it's where a lot of frontend system design answers reveal whether the candidate has actually built and shipped real data-fetching logic or is speaking from theory. The weak version of this answer is "we'd call the API" — full stop, no further reasoning. The strong version treats rendering strategy, transport, caching, and race conditions as a connected set of real design decisions with real tradeoffs.
+
+## Rendering strategy shapes the data-fetching answer too
+
+Before transport even comes up, a genuinely complete answer names *where* the first fetch happens: **CSR** (client-side rendering) defers all data-fetching to the browser after the initial HTML loads — flexible and simple, at the cost of a slower first meaningful paint and weaker SEO, since a crawler sees an empty shell until JS runs. **SSR** (server-side rendering) fetches data on the server and sends fully-rendered HTML on every request — faster first paint and real SEO, at the cost of server load and a slightly more complex data-fetching story split across server and client. **SSG** (static site generation) fetches and renders at build time, serving pre-built HTML with no per-request fetch at all — the fastest possible first paint, but only fits content that doesn't need to be fresh on every visit. For an infinite-scroll feed or a collaborative editor, this is usually SSR-for-the-shell-then-CSR-for-updates; for a landing page or a rarely-changing content page, SSG. Naming which fits the specific feature — and why — is often expected before the REST-vs-GraphQL question below even comes up.
+
+| Strategy | First paint | SEO | Best fit |
+|---|---|---|---|
+| CSR | Slowest — blank until JS runs and fetches | Weak — crawler sees an empty shell | Highly interactive, behind-login features |
+| SSR | Fast — HTML arrives pre-rendered | Strong | Content that needs to be fresh and crawlable per request |
+| SSG | Fastest — no per-request fetch at all | Strongest | Content that doesn't change on every visit |
+
+## Choosing a transport based on the actual access pattern
+
+**REST** fits well when the frontend needs a small number of well-defined resources with predictable shapes — a feed's paginated list of items, a user's profile. **GraphQL** earns its complexity when the frontend needs to compose data from multiple resources flexibly, or when different clients (web, mobile) need meaningfully different shapes of the same underlying data, avoiding both over-fetching and a proliferation of bespoke REST endpoints. **WebSockets** (or SSE for one-directional cases) are for genuinely real-time requirements — live cursors, live comments, presence — not a default choice for anything that merely updates "somewhat often." Naming *why* a given transport fits this specific feature, not just naming one, is the actual signal.
+
+| Transport | Fits when | Weak fit when |
+|---|---|---|
+| REST | A small number of well-defined, predictable resources | Many clients need meaningfully different shapes of the same data |
+| GraphQL | Composing data from multiple resources flexibly, multiple client shapes | A simple, single-resource feature — the complexity isn't earning its keep |
+| WebSocket / SSE | Genuinely real-time — live cursors, presence, live comments | Anything that just updates "somewhat often," not truly live |
+
+## Caching and staleness, addressed explicitly
+
+Once data is fetched, how long is it valid, and what invalidates it? A search-autocomplete result can be cached aggressively and briefly; a live collaborative document's content cannot be cached at all in the traditional sense, since staleness there means showing a user outdated content they might overwrite. A strong answer distinguishes: cache-then-revalidate patterns for read-heavy, infrequently-changing data, versus real-time subscription for data that must always reflect the latest state.
+
+## Request cancellation and race conditions
+
+This is the subproblem candidates skip most often, and it's a near-guaranteed follow-up for any feature involving search, filtering, or fast user input. If a user types quickly into a search box, multiple requests fire in sequence — without cancellation, a slower earlier response can arrive *after* a faster later one and overwrite it with stale results. The fix (aborting the previous request via `AbortController`, or simply ignoring a response if a newer request has since been issued) is a small, specific, and highly-valued thing to name unprompted. FF's [Search Autocomplete guide](/interview-prep/ff-system-design/search-autocomplete) walks through this exact race condition in full.
+
+## Pagination strategy as a data-fetching decision
+
+For any feed or list-based feature, cursor-based pagination (an opaque token pointing at "the next page") is generally preferred over offset-based pagination (`page=3`) for frontend system design purposes, specifically because offset pagination breaks in the presence of concurrent inserts or deletes — a classic follow-up question ("what if new items get added while the user is scrolling?") that a cursor-based approach handles far more gracefully. Naming this reasoning, not just naming "cursor-based," is what earns credit.
+
+## Loading, error, and empty states as part of the data-fetching design
+
+A complete data-fetching answer accounts for what the UI shows during a fetch, if a fetch fails, and if a fetch succeeds but returns nothing — treating these as part of the data-fetching design itself, not a separate UI afterthought, mirrors the same edge-case discipline [What Interviewers Actually Score](/interview-prep/playbook/frontend-interview-playbook/what-interviewers-actually-score) rewards in coding rounds.
+
+## Tying it together
+
+A strong data-fetching answer moves through transport choice, caching/staleness strategy, and race-condition handling as a connected set of decisions — not three disconnected facts recited in sequence. Practicing this on a few different prompt shapes (a feed, a search box, a real-time chat) builds the pattern-matching needed to apply the same reasoning to a prompt you've never seen before.

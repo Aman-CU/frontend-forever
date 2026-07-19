@@ -1,0 +1,35 @@
+---
+title: "What React Interviews Really Test"
+slug: "what-react-interviews-really-test"
+playbookSlug: "react-interview-playbook"
+orderIndex: 1
+summary: "React interviews test whether you understand React's rendering model and hook rules well enough to reason about a component you've never seen before — not whether you've memorized every hook's API signature."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+A lot of React interview prep optimizes for the wrong target: memorizing hook signatures, prop-types trivia, or a list of "top 50 React questions." Interviewers who actually work with React daily are testing something narrower and more useful — can you reason correctly about how a component behaves when its state, props, or the tree around it changes.
+
+## The real skill being tested
+
+React interviews are fundamentally about **mental-model correctness**, not API recall. A candidate who can't remember the exact signature of `useReducer` but correctly predicts when a component will re-render, why a `useEffect` fires twice in development, or what happens to state when a component's key changes, is demonstrating the thing that actually matters on the job. The opposite candidate — fluent in hook syntax but unable to explain *why* a stale closure bug happens — will struggle the moment a real bug doesn't match a memorized pattern.
+
+## The four pillars interviewers probe
+
+**Rendering and reconciliation.** When does a component re-render? What does React's diffing actually compare, and why does list `key` matter beyond "React wants one"? This underlies almost every "why is this slow" or "why did this break" question in a React interview.
+
+**Hooks and their rules.** Not just "what does `useEffect` do" but *why* hooks must be called unconditionally in the same order every render, why a dependency array lying about what it depends on causes stale-closure bugs, and when `useRef` is the right escape hatch versus a code smell.
+
+**State ownership and data flow.** Where should a given piece of state live — local to a component, lifted to a shared ancestor, or in a broader store? This is really a system-design-in-miniature question, and interviewers use it to gauge architectural judgment, not just hook usage.
+
+**Performance intuition.** Not "recite what `memo`/`useMemo`/`useCallback` do" but "given this component tree, where would you actually reach for memoization, and where would it be premature." See [Talking About Performance Like a Senior Engineer](/interview-prep/playbook/react-interview-playbook/talking-about-performance-like-a-senior-engineer) for how this gets evaluated at the senior level specifically.
+
+## Why "gotcha" questions exist
+
+Interviewers often reach for a small, deliberately surprising snippet — a `useEffect` with a missing dependency, a stale closure inside a `setTimeout`, a list rendered with `index` as `key` — not to trick you, but because these are the exact bugs that show up in real production code, written by engineers who understood the API surface but not the underlying model. Getting one of these "wrong" on first read and then reasoning your way to the correct answer out loud is a stronger signal than getting it right by memorized pattern-matching. [Classic React Gotchas Explained](/interview-prep/playbook/react-interview-playbook/classic-react-gotchas-explained) walks through the most common ones.
+
+## What this means for how you prepare
+
+Skip flashcard-style hook-API memorization as your primary strategy — it plateaus fast and doesn't transfer to a question you haven't seen before. Instead, build the rendering model deeply enough that you can *derive* the answer to a novel question rather than recall it. FF's [React Rendering & Reconciliation](/learn/react/react-rendering) concept and its live simulator are built exactly for this — manipulating a component tree and watching what actually re-renders builds the intuition that memorized answers can't substitute for.
+
+The candidates who do best in React interviews aren't the ones who know the most hooks. They're the ones who can look at any component, however unfamiliar, and correctly predict what it will do.

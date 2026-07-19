@@ -1,0 +1,86 @@
+---
+title: "Classic React Gotchas Explained"
+slug: "classic-react-gotchas-explained"
+playbookSlug: "react-interview-playbook"
+orderIndex: 4
+summary: "The classic React interview gotchas — stale closures in useEffect, index-as-key bugs, double effect firing in development, and unnecessary state derivation — all trace back to one root cause: treating a hook's dependency array or a component's re-render as optional detail instead of part of the correctness contract."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+These snippets show up constantly in React interviews because they're small enough to read in seconds but expose whether the underlying model actually clicked. Knowing the "trick" without understanding the mechanism is fragile — it falls apart the moment the question is phrased slightly differently.
+
+## The stale closure in useEffect
+
+```javascript
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setCount(count + 1); // always reads the count from the render that scheduled this effect
+    }, 1000);
+    return () => clearInterval(id);
+  }, []); // empty array means this effect — and its closure — never re-runs
+
+  return <button onClick={() => setCount(count + 1)}>{count}</button>;
+}
+```
+
+The interval keeps incrementing from `0 + 1` forever, because the closure captured `count` from the render where the effect was created, and the empty dependency array means that effect (and its stale `count`) never gets recreated. The fix is either adding `count` to the dependency array (recreating the interval every render — usually undesirable here) or using the functional update form `setCount(c => c + 1)`, which reads the latest state directly instead of relying on a captured value. Understanding *why* — not just which fix to apply — is what separates a memorized answer from a real one.
+
+The functional-update trick works here because the fix is another state update. It doesn't work for the broader class of "read the latest value without re-running the effect" bugs — e.g., an effect that logs or sends analytics using a prop that isn't itself part of what the effect should react to. For that class, React 19.2+ ships `useEffectEvent`: it lets an effect read the latest value of something on every call without that value becoming a reactive dependency, so the effect doesn't need to be recreated (or the interval restarted) just because an unrelated value changed. Mentioning `useEffectEvent` by name, and explaining which class of stale-closure bug it solves versus the functional-update trick, reads as considerably more current than only offering the two older fixes.
+
+## Index as key in a dynamic list
+
+```javascript
+{items.map((item, index) => <Item key={index} data={item} />)}
+```
+
+This works fine for a static list that never reorders, inserts, or deletes. It breaks — subtly, often as a UI bug rather than a crash — the moment items are reordered or removed, because React uses `key` to match elements across renders, and an index-based key tells React "the thing at position 2 is still the same thing" even when it isn't. Symptoms: form input values leaking onto the wrong row, animation glitches, incorrect component state after a delete. The fix is a stable, unique identifier from the actual data, not its position.
+
+## Effects firing twice in development
+
+In React 18+'s Strict Mode, effects mount, unmount, and remount once in development specifically to surface effects that aren't properly cleaned up — this is intentional, not a bug, and it does not happen in production. Candidates who don't know this sometimes "fix" it by removing cleanup logic, which is exactly the wrong direction — the double-fire is there to catch missing cleanup, not to be silenced.
+
+## Deriving state that should just be computed
+
+```javascript
+const [filteredItems, setFilteredItems] = useState([]);
+useEffect(() => {
+  setFilteredItems(items.filter(i => i.active));
+}, [items]);
+```
+
+This works, but it's an extra render and an extra source of truth for something that's fully derivable from `items` on every render:
+
+```javascript
+const filteredItems = items.filter(i => i.active);
+```
+
+The `useEffect` version isn't wrong so much as unnecessary — and unnecessary `useState`/`useEffect` pairs for derived values are one of the most common "smells" interviewers flag, because they multiply the number of places a bug can hide.
+
+## Mutating state directly
+
+```javascript
+function addItem(item) {
+  items.push(item); // mutates the existing array
+  setItems(items);   // same reference — React sees no change, may skip the re-render
+}
+```
+
+React's change detection for `useState` is reference-based, not deep-equality-based. Mutating the existing array or object and passing the same reference back to the setter can cause React to skip a re-render entirely, since nothing about the reference itself changed. The fix is always a new reference: `setItems([...items, item])`.
+
+## The five bugs, side by side
+
+| Bug | Symptom | Fix |
+|---|---|---|
+| Stale closure in `useEffect` | Value never updates past its first-render value | Functional update (`setCount(c => c + 1)`), or `useEffectEvent` for the broader case |
+| Index as `key` | Wrong row's state/animation after reorder or delete | A stable, unique identifier from the actual data |
+| Strict Mode double-invoke | Effects appear to fire twice — dev only | Not a bug — ensure cleanup is correct instead of removing it |
+| Derived state in `useState`/`useEffect` | Extra render, an extra source of truth to keep in sync | Compute the value inline during render instead |
+| Mutating state directly | React skips the re-render entirely | Always pass a new reference (`setItems([...items, item])`) |
+
+## What ties all of these together
+
+Every one of these bugs comes from treating a hook's contract as a suggestion rather than a rule — closures capture values at creation time, keys must identify content not position, state updates must produce new references. Interviewers reach for these specific examples because they're the exact bugs that leak into production code written by developers who know React's API without fully internalizing its model.

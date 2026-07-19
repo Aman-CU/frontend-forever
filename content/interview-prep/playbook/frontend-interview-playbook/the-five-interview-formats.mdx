@@ -1,0 +1,37 @@
+---
+title: "The 5 Interview Formats You'll Face"
+slug: "the-five-interview-formats"
+playbookSlug: "frontend-interview-playbook"
+orderIndex: 2
+summary: "Frontend interview loops draw from 5 distinct formats — coding, UI implementation, system design, quiz-style trivia, and behavioral — and each one tests a different skill, so a single 'practice more' plan is never enough."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+"Frontend interview" isn't one thing. It's an umbrella over five genuinely different formats, and companies mix and match them into a loop depending on level and team. Treating all of your prep as one undifferentiated blob of "coding practice" is the single biggest reason candidates feel unprepared for a round they never expected.
+
+<FlowDiagram />
+
+## 1. Coding (algorithmic / JS fundamentals)
+
+This is the closest thing to a traditional software engineering interview: implement a function, reason about time/space complexity, handle edge cases. At the frontend level it's rarely LeetCode-hard — think `debounce`, a `flatten` utility, an event emitter, a `Promise.all` polyfill — problems that test whether you actually understand JavaScript's runtime semantics rather than whether you've memorized a graph algorithm. FF's [FF JavaScript collection](/interview-prep/ff-javascript) and Practice challenges map directly onto this format.
+
+## 2. UI coding (build a component/feature)
+
+Given a Figma-style mock or a spec in plain English, build a working UI in a live editor — often a todo list, a data table with sorting, a modal, an autocomplete, or a small widget — usually in 30–45 minutes. This format tests something coding rounds don't: can you translate an ambiguous spec into working DOM, state, and event handling without a framework's guardrails doing the thinking for you. Accessibility (keyboard nav, focus management) and edge cases (empty state, loading state, error state) are graded even when the prompt doesn't mention them.
+
+## 3. System design (architecture, not algorithms)
+
+At senior+ levels, expect a whiteboard-style conversation about how you'd architect a larger frontend feature — an infinite-scroll feed, a real-time collaborative editor, a design system. This is not backend system design; it's about component architecture, state ownership, data-fetching strategy, and performance tradeoffs. See the [Frontend System Design Playbook](/interview-prep/playbook/frontend-system-design-playbook) for a full framework, and [FF Frontend System Design](/interview-prep/ff-system-design) for worked examples.
+
+## 4. Quiz-style / trivia rounds
+
+A rapid-fire set of conceptual questions — event loop mechanics, CSS specificity, `var`/`let`/`const`, React reconciliation — sometimes standalone, more often folded into the start of a coding or UI round as a warm-up. These rounds reward breadth over depth: knowing *why* something happens (not just that it does) is what separates a confident answer from a memorized one. FF's [FF 75](/interview-prep/ff-75) collection is built specifically for this format.
+
+## 5. Behavioral
+
+Every loop has at least one round dedicated entirely to how you work — conflict, ambiguity, failure, leadership, impact. Frontend candidates routinely under-prepare for this because it feels like "the easy one." It isn't: interviewers are trained to probe past a rehearsed opener for specifics, and a vague answer here can tank an otherwise strong loop. See the [Behavioural Interview Playbook](/interview-prep/playbook/behavioural-interview-playbook) for the STAR method done properly.
+
+## Matching prep time to format weight
+
+Not every loop uses all five. A typical mid-level frontend loop weights roughly: 30% coding, 30% UI coding, 20% behavioral, 10% system design, 10% quiz-style. Senior loops shift weight toward system design and behavioral, and reduce pure coding. Before you start grinding practice problems, find out (from the recruiter, directly — this is a completely normal question to ask) which formats your specific loop includes, and spend your limited prep hours where the loop actually spends its rounds.

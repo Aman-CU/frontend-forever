@@ -1,0 +1,39 @@
+---
+title: "What Interviewers Watch For During Live Coding"
+slug: "what-interviewers-watch-for-in-live-coding"
+playbookSlug: "react-interview-playbook"
+orderIndex: 3
+summary: "During a live React coding round, interviewers watch component decomposition, state placement, and how you handle async and edge cases as closely as whether the feature works — a working feature with all state crammed into one component still reads as junior-level."
+datePublished: "2026-07-19"
+dateModified: "2026-07-19"
+---
+
+A React live-coding round looks like a UI-building exercise, but the actual evaluation happens one layer below "does it work." Two candidates can both ship a functioning autocomplete and walk away with very different scores, because the interviewer was watching decisions the working demo doesn't reveal on its own.
+
+## Component decomposition, decided early
+
+Before writing much code, a strong candidate sketches (even just verbally) how the UI breaks into components — not because it's required, but because it signals architectural thinking before the pressure of debugging sets in. Cramming an entire feature into one component and never revisiting that structure is one of the most common tells of a less experienced candidate, even when the end result technically works.
+
+## Where state actually lives
+
+This is the single most-watched decision in a React round. Does form state live in the component that renders the form, or did it get needlessly lifted to a distant parent "just in case"? Is server data being treated as separate from UI state (loading/error/open-dropdown state), or mashed into one giant `useState` object? Interviewers are specifically checking whether you can articulate *why* a piece of state lives where it does, not just that the app works.
+
+## How derived state is handled
+
+A classic tell: storing a value in state that could just be computed from existing state or props during render (a filtered list, a total, a formatted string). This creates sync bugs and extra re-renders, and reaching for `useState` reflexively instead of computing inline is one of the fastest ways to look less experienced than your actual code quality suggests. Interviewers notice, even when they don't say so out loud.
+
+## Async and effect handling
+
+Fetching data, debouncing input, cleaning up subscriptions — this is where a huge fraction of real React bugs live, and interviewers know it. Specifically watched: does your `useEffect` clean up (cancel a fetch, clear a timer) on unmount or re-run? Do you handle the loading/error/empty states, or only the happy path? Does a fast-typing user trigger a race condition where an older response overwrites a newer one? Raising these out loud — even if you don't have time to fully implement the fix — earns real credit.
+
+## Accessibility, unprompted
+
+Keyboard navigation for an interactive widget, focus management when a modal opens, an `aria-label` on an icon-only button — these are rarely in the prompt, and that's deliberate. Building a dropdown that only works with a mouse is a strong (negative) signal at any level above junior, and adding basic keyboard support unprompted is one of the highest-leverage small moves available in a UI round.
+
+## Reactivity to feedback
+
+Interviewers sometimes interject mid-round — "what if this list has 10,000 items," "what if the API is slow" — specifically to see how you respond, not because they expect a perfect answer on the spot. Treating this as a collaborative extension of the problem (rather than a correction to defend against) is itself part of what's being scored.
+
+## The takeaway
+
+A React live-coding round is an architecture interview wearing a feature-building costume. Ship the feature, but narrate the decisions behind component boundaries, state placement, and edge-case handling the entire way through — that narration is most of what actually gets scored. See [Classic React Gotchas Explained](/interview-prep/playbook/react-interview-playbook/classic-react-gotchas-explained) for the specific bugs this format is most likely to probe for.
