@@ -7,12 +7,13 @@ import { GoogleLogo } from "@/components/shared/logos/GoogleLogo";
 import { MetaLogo } from "@/components/shared/logos/MetaLogo";
 import { MicrosoftLogo } from "@/components/shared/logos/MicrosoftLogo";
 import { StripeLogo } from "@/components/shared/logos/StripeLogo";
+import type { CompanyGuideSummary } from "@/features/interview-prep/lib/queries";
 
-// Lightweight static teaser (Feature 30 sign-off) — real logo components,
-// not placeholder text chips, but only the 6 that already exist from
-// Feature 04's homepage strip. The other 26 of the full 32-company list
-// (build-plan.md, Feature 51) need their own hand-inlined SVGs, built as
-// part of that feature — not invented here as a stand-in.
+// The 6 real logo components from Feature 04's homepage strip — kept as-is
+// here (Feature 51 sign-off): the full 32-company grid page uses a
+// consistent monochrome initials tile for every company instead (see
+// CompanyBadge), but this small teaser row predates that decision and stays
+// on its existing 6 real logos rather than being restyled to match.
 const COMPANY_PREVIEWS = [
   { name: "Google", Logo: GoogleLogo },
   { name: "Meta", Logo: MetaLogo },
@@ -24,8 +25,13 @@ const COMPANY_PREVIEWS = [
 
 const TOTAL_COMPANY_COUNT = 32;
 
-export function CompanyGuidesPreview() {
+type Props = {
+  companies: CompanyGuideSummary[];
+};
+
+export function CompanyGuidesPreview({ companies }: Props) {
   const remaining = TOTAL_COMPANY_COUNT - COMPANY_PREVIEWS.length;
+  const totalQuestions = companies.reduce((sum, c) => sum + c.questionCount + c.challengeCount, 0);
 
   return (
     <div>
@@ -44,20 +50,25 @@ export function CompanyGuidesPreview() {
 
       <Link
         href="/interview-prep/company-guides"
-        className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:shadow-md"
+        className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:shadow-md"
       >
-        {COMPANY_PREVIEWS.map(({ name, Logo }) => (
-          <span
-            key={name}
-            className="flex h-11 items-center rounded-lg bg-surface-secondary px-4 text-text-primary"
-          >
-            <span className="sr-only">{name}</span>
-            <Logo className="h-5 w-auto" />
+        <div className="flex flex-wrap items-center gap-3">
+          {COMPANY_PREVIEWS.map(({ name, Logo }) => (
+            <span
+              key={name}
+              className="flex h-11 items-center rounded-lg bg-surface-secondary px-4 text-text-primary"
+            >
+              <span className="sr-only">{name}</span>
+              <Logo className="h-5 w-auto" />
+            </span>
+          ))}
+          <span className="flex h-11 items-center rounded-lg bg-accent-muted px-4 text-xs font-semibold text-accent">
+            +{remaining} more
           </span>
-        ))}
-        <span className="flex h-11 items-center rounded-lg bg-accent-muted px-4 text-xs font-semibold text-accent">
-          +{remaining} more
-        </span>
+        </div>
+        <p className="text-xs text-text-muted">
+          {totalQuestions} real questions and challenges across all {TOTAL_COMPANY_COUNT} companies
+        </p>
       </Link>
     </div>
   );

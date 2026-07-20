@@ -22,6 +22,8 @@ import {
   projectBriefs,
   roadmaps,
   roadmapSteps,
+  studyPlans,
+  studyPlanItems,
 } from "../src/lib/schema";
 import { CONCEPTS } from "./seed/concepts";
 import { CHALLENGES } from "./seed/challenges";
@@ -29,6 +31,7 @@ import { INTERVIEW_QUESTIONS } from "./seed/interviewQuestions";
 import { COLLECTION_QUESTIONS } from "./seed/collectionQuestions";
 import { PROJECT_BRIEFS } from "./seed/projectBriefs";
 import { ROADMAPS } from "./seed/roadmaps";
+import { STUDY_PLANS } from "./seed/studyPlans";
 
 // ── DB connection (same TLS pattern as drizzle.config.ts) ────────────────────
 
@@ -256,6 +259,53 @@ async function seed() {
 
     const action = inserted ? "inserted" : "already existed";
     console.log(`[seed] Roadmap "${roadmap.slug}" ${action}, ${stepRows.length} step(s) upserted`);
+  }
+
+  console.log("[seed] Inserting study plans...");
+  for (const plan of STUDY_PLANS) {
+    const { items, ...planData } = plan;
+
+    await db
+      .insert(studyPlans)
+      .values({ ...planData, isPremium: planData.isPremium ?? false })
+      .onConflictDoUpdate({
+        target: studyPlans.slug,
+        set: {
+          title: sql`excluded.title`,
+          durationLabel: sql`excluded.duration_label`,
+          hoursCommitment: sql`excluded.hours_commitment`,
+          description: sql`excluded.description`,
+          isPremium: sql`excluded.is_premium`,
+          orderIndex: sql`excluded.order_index`,
+        },
+      });
+
+    const [planRow] = await db
+      .select({ id: studyPlans.id })
+      .from(studyPlans)
+      .where(sql`${studyPlans.slug} = ${plan.slug}`);
+    if (!planRow) continue;
+
+    // Items have no stable per-row key of their own (a plan's itinerary is
+    // re-authored as a whole, not edited row-by-row) — delete and reinsert
+    // fresh per plan rather than upserting on (study_plan_id, order_index),
+    // which would leave stale trailing rows behind if an edit ever shrinks
+    // a plan's item count.
+    await db.delete(studyPlanItems).where(sql`${studyPlanItems.studyPlanId} = ${planRow.id}`);
+    await db.insert(studyPlanItems).values(
+      items.map((item, i) => ({
+        studyPlanId: planRow.id,
+        groupLabel: item.groupLabel,
+        orderIndex: i + 1,
+        itemType: item.itemType,
+        refId: item.refId ?? null,
+        href: item.href,
+        title: item.title,
+        description: item.description,
+      })),
+    );
+
+    console.log(`[seed] Study plan "${plan.slug}" upserted, ${items.length} item(s) replaced`);
   }
 
   console.log("[seed] Done.");

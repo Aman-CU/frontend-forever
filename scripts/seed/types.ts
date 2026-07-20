@@ -4,6 +4,8 @@ import type {
   ChallengeDifficulty,
   InterviewCollection,
   CollectionQuestionCollection,
+  StudyPlanSlug,
+  StudyPlanItemType,
 } from "../../src/lib/constants";
 import type { PracticeCategory } from "../../src/features/practice/lib/practiceCategories";
 
@@ -91,4 +93,32 @@ export type RoadmapSeed = {
   description: string;
   orderIndex: number;
   steps: string[];
+};
+
+// Feature 51's Lightning Prep. No conceptSlug/challengeSlug-style resolution
+// step — href is written directly since items point at a mix of concept
+// pages, Practice category pages, FF Collection/System-Design/Company-Guides
+// index pages, and Playbook chapters, several of which have no DB row to
+// resolve an id from (Playbook/System Design content is filesystem-only).
+export type StudyPlanItemSeed = {
+  groupLabel: string;
+  itemType: StudyPlanItemType;
+  // Only set for "concept" ("category/slug") and "playbook-chapter"
+  // ("playbookSlug/chapterSlug") — the two itemTypes with a live per-user
+  // completion source (see studyPlanQueries.ts). Omitted for every other type.
+  refId?: string;
+  href: string;
+  title: string;
+  description: string;
+};
+
+export type StudyPlanSeed = {
+  slug: StudyPlanSlug;
+  title: string;
+  durationLabel: string;
+  hoursCommitment: string;
+  description: string;
+  isPremium?: boolean;
+  orderIndex: number;
+  items: StudyPlanItemSeed[];
 };

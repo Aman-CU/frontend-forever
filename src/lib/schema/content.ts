@@ -17,6 +17,8 @@ import {
   CHALLENGE_DIFFICULTIES,
   INTERVIEW_COLLECTIONS,
   COLLECTION_QUESTION_COLLECTIONS,
+  STUDY_PLAN_SLUGS,
+  STUDY_PLAN_ITEM_TYPES,
 } from "@/lib/constants";
 
 // Every table below is .enableRLS()'d — this has no bearing on the app itself
@@ -286,6 +288,76 @@ export const roadmapSteps = pgTable(
   ],
 ).enableRLS();
 
+// ── study_plans ───────────────────────────────────────────────────────────────
+// Feature 51's Lightning Prep. A plan is a curated itinerary across Learn,
+// Practice, FF Collections, Playbook, and FF System Design — real DB rows
+// (unlike Playbook/System Design's filesystem MDX), since the content here
+// is a sequence of links + labels, not long-form prose.
+
+export const studyPlans = pgTable(
+  "study_plans",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull(),
+    durationLabel: text("duration_label").notNull(),
+    hoursCommitment: text("hours_commitment").notNull(),
+    description: text("description").notNull(),
+    isPremium: boolean("is_premium").notNull().default(false),
+    orderIndex: integer("order_index").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    check(
+      "study_plans_slug_check",
+      sql`${table.slug} IN (${sql.join(
+        STUDY_PLAN_SLUGS.map((s) => sql.raw(`'${s}'`)),
+        sql`, `,
+      )})`,
+    ),
+  ],
+).enableRLS();
+
+// ── study_plan_items ─────────────────────────────────────────────────────────
+// One itinerary entry. No foreign key to the content it points at — a day
+// can bundle a whole collection ("FF 75 rapid review"), and Playbook/System
+// Design content is filesystem-only with no row to reference — so items are
+// hand-authored { groupLabel, href, title, description } entries instead.
+// itemType + refId (a parseable slug composite, shape depends on itemType —
+// e.g. "category/concept-slug" for "concept") exist only so the detail page
+// can look up a live completion checkmark from that content's own real
+// progress table where one exists (concept/challenge/playbook chapter);
+// itemTypes with no per-user tracking (collection, system-design-guide,
+// review-session, company-guide) simply render with no checkmark.
+
+export const studyPlanItems = pgTable(
+  "study_plan_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studyPlanId: uuid("study_plan_id")
+      .notNull()
+      .references(() => studyPlans.id, { onDelete: "cascade" }),
+    groupLabel: text("group_label").notNull(),
+    orderIndex: integer("order_index").notNull().default(0),
+    itemType: text("item_type").notNull(),
+    refId: text("ref_id"),
+    href: text("href").notNull(),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+  },
+  (table) => [
+    index("study_plan_items_study_plan_id_idx").on(table.studyPlanId),
+    unique("study_plan_items_plan_order_unique").on(table.studyPlanId, table.orderIndex),
+    check(
+      "study_plan_items_item_type_check",
+      sql`${table.itemType} IN (${sql.join(
+        STUDY_PLAN_ITEM_TYPES.map((t) => sql.raw(`'${t}'`)),
+        sql`, `,
+      )})`,
+    ),
+  ],
+).enableRLS();
+
 // ── relations ─────────────────────────────────────────────────────────────────
 
 export const conceptsRelations = relations(concepts, ({ many }) => ({
@@ -328,5 +400,16 @@ export const roadmapStepsRelations = relations(roadmapSteps, ({ one }) => ({
   concept: one(concepts, {
     fields: [roadmapSteps.conceptId],
     references: [concepts.id],
+  }),
+}));
+
+export const studyPlansRelations = relations(studyPlans, ({ many }) => ({
+  items: many(studyPlanItems),
+}));
+
+export const studyPlanItemsRelations = relations(studyPlanItems, ({ one }) => ({
+  studyPlan: one(studyPlans, {
+    fields: [studyPlanItems.studyPlanId],
+    references: [studyPlans.id],
   }),
 }));

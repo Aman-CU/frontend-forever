@@ -2,8 +2,13 @@ import type { Metadata } from "next";
 
 import { getCachedSession } from "@/lib/auth/server";
 import { COLLECTION_META, type InterviewPrepCollectionKey } from "@/features/interview-prep/lib/collectionMeta";
-import { getCollectionSummaries, getReviewQueuePreview } from "@/features/interview-prep/lib/queries";
+import {
+  getCollectionSummaries,
+  getCompanyGuideSummaries,
+  getReviewQueuePreview,
+} from "@/features/interview-prep/lib/queries";
 import { getPlaybookProgress } from "@/features/interview-prep/lib/playbookQueries";
+import { getStudyPlans } from "@/features/interview-prep/lib/studyPlanQueries";
 import { CollectionRow } from "@/features/interview-prep/components/CollectionRow";
 import { ReviewQueueSection } from "@/features/interview-prep/components/ReviewQueueSection";
 import { PlaybookPreview } from "@/features/interview-prep/components/PlaybookPreview";
@@ -32,11 +37,14 @@ export default async function InterviewPrepGetStartedPage() {
   const session = await getCachedSession();
   const userId = session?.user?.id ?? null;
 
-  const [collectionSummaries, reviewItems, playbookProgress] = await Promise.all([
-    getCollectionSummaries(),
-    getReviewQueuePreview(userId),
-    getPlaybookProgress(userId),
-  ]);
+  const [collectionSummaries, reviewItems, playbookProgress, studyPlans, companySummaries] =
+    await Promise.all([
+      getCollectionSummaries(),
+      getReviewQueuePreview(userId),
+      getPlaybookProgress(userId),
+      getStudyPlans(),
+      getCompanyGuideSummaries(),
+    ]);
 
   const summaryByCollection = new Map(collectionSummaries.map((s) => [s.collection, s]));
 
@@ -70,9 +78,9 @@ export default async function InterviewPrepGetStartedPage() {
 
       <PlaybookPreview progress={playbookProgress} />
 
-      <StudyPlansPreview />
+      <StudyPlansPreview plans={studyPlans} />
 
-      <CompanyGuidesPreview />
+      <CompanyGuidesPreview companies={companySummaries} />
     </div>
   );
 }
