@@ -127,7 +127,8 @@ async function getStudyPlanItemCompletion(
   const playbookItems = items.filter((i) => i.itemType === "playbook-chapter" && i.refId);
 
   if (conceptItems.length > 0) {
-    const conceptSlugs = conceptItems.map((i) => i.refId!.split("/")[1]).filter(Boolean);
+    const conceptSlugByItemId = new Map(conceptItems.map((i) => [i.id, i.refId!.split("/")[1]]));
+    const conceptSlugs = Array.from(conceptSlugByItemId.values()).filter(Boolean);
     const conceptRows = await db
       .select({ id: concepts.id, slug: concepts.slug })
       .from(concepts)
@@ -147,8 +148,8 @@ async function getStudyPlanItemCompletion(
     );
 
     for (const item of conceptItems) {
-      const slug = item.refId!.split("/")[1];
-      const conceptId = conceptIdBySlug.get(slug);
+      const slug = conceptSlugByItemId.get(item.id);
+      const conceptId = slug ? conceptIdBySlug.get(slug) : undefined;
       result.set(item.id, conceptId ? completedConceptIds.has(conceptId) : false);
     }
   }

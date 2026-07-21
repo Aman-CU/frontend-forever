@@ -1,17 +1,9 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 
-import { safeJsonLd } from "@/lib/seo";
+import { getBaseUrl, safeJsonLd } from "@/lib/seo";
 import { getCompanyGuideSummaries } from "@/features/interview-prep/lib/queries";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
 import { CompanyGuideCard } from "@/features/interview-prep/components/CompanyGuideCard";
-
-async function getBaseUrl(): Promise<string> {
-  const h = await headers();
-  const host = h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
 
 const TITLE = "Company Interview Guides | Frontend Forever";
 const DESCRIPTION =

@@ -349,7 +349,7 @@ export const STUDY_PLANS: StudyPlanSeed[] = [
         href: "/interview-prep/ff-75",
         rangeLabel: "Solve Q1 – Q20",
         title: "FF 75 rapid revision",
-        description: "Today's week's slice: the first 20 of the FF 75, spread across JavaScript, React, and Next.js. A continuous thread across all 4 weeks, not a single end-of-month cram.",
+        description: "This week's slice: the first 20 of the FF 75, spread across JavaScript, React, and Next.js. A continuous thread across all 4 weeks, not a single end-of-month cram.",
       },
       {
         groupLabel: "Week 1",

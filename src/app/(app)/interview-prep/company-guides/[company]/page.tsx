@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
-import { safeJsonLd } from "@/lib/seo";
+import { getBaseUrl, safeJsonLd } from "@/lib/seo";
 import { COMPANIES, getCompanyBySlug, isCompanySlug } from "@/features/interview-prep/lib/companies";
 import { getCompanyGuideDetail } from "@/features/interview-prep/lib/queries";
 import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
@@ -12,13 +11,6 @@ import { CompanyBadge } from "@/features/interview-prep/components/CompanyBadge"
 import { CompanyGuideContentRow } from "@/features/interview-prep/components/CompanyGuideContentRow";
 
 type Params = { company: string };
-
-async function getBaseUrl(): Promise<string> {
-  const h = await headers();
-  const host = h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
 
 export function generateStaticParams(): Params[] {
   return COMPANIES.map((c) => ({ company: c.slug }));
