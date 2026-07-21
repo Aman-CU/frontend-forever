@@ -201,6 +201,12 @@ STRIPE_WEBHOOK_SECRET=      (Phase 9 only)
 
 ---
 
+## Known Dev-Server Quirks
+
+**A route 404s in `next dev` even though the file/content is correct — Turbopack route-discovery quirk, not a bug.** Confirmed (2026-07-22, `context/progress-tracker.md` → "Fix — FF Collections Completion Tracking"): a nested dynamic route (`/interview-prep/playbook/[playbookSlug]` and `/interview-prep/playbook/[playbookSlug]/[chapterSlug]`) 404'd on every request — Turbopack's dev server logged `Compiling /_not-found/page`, never even attempting to compile the real route. A full `.next` wipe + cold restart did **not** fix it. What did: a no-op save (add a blank line, save, remove it, save again — byte-identical to the original) of that route's `page.tsx` while the dev server was running. That single save fixed the route for every param value under it (all 6 playbooks, not just the one touched), and the fix survived reverting the edit. **If a route 404s that you know should exist:** open its `page.tsx` and save it once before assuming a real regression — don't just restart the dev server, that alone doesn't fix this specific failure mode.
+
+---
+
 ## Key Architecture Decisions
 
 | Decision | Choice | Why |
