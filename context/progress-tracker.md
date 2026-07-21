@@ -809,7 +809,7 @@ Fixed on its own branch per explicit instruction ("fix it in a separate small fi
 - [x] 32 Spaced Repetition Review Session — real SM-2 scheduling now runs on every rating (both Learn's Interview tab and the new dedicated `/interview-prep/review` session), see the Feature 32 entry in Current Status above.
 - [x] 49 FF System Design — AlgoMaster-Style Practice — fully complete, all 27 topics authored (28 guides with the pilot), sourced from the greatfrontend/awesome-front-end-system-design repo, see the Feature 49 entry in Current Status above.
 - [x] 50 Playbook Section — fully complete, 6 playbooks (38 chapters) authored, competitively audited against real sources, and fixed against the audit's findings — see the Feature 50 entry in Current Status above.
-- [ ] 51 Lightning Prep — Study Plans + Company Guides
+- [x] 51 Lightning Prep — Study Plans + Company Guides — merged to `develop` via PR #89, see the Feature 51 entry in Current Status above.
 
 ### Phase 7 — Explore + Roadmaps
 
