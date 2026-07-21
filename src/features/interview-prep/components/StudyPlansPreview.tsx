@@ -1,42 +1,27 @@
 import Link from "next/link";
 import { ArrowRight, Clock, Flame, Star, Zap } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-// Lightweight static teaser (Feature 30 sign-off) — hardcoded, no schema or
-// live query. Real Study Plans data/pages ship in Feature 51; these 3 cards
-// link to routes that 404 until then. Descriptions and pacing mirror the
-// draft plan structure already agreed for Feature 51 (build-plan.md) —
-// timeCommitment describes each plan's design/cadence, not content stats;
-// unlike a question count, it isn't dependent on real seeded content, so it
-// isn't a fabricated number the way a fake "51 questions" would be. Icons
-// stay monochrome (no per-plan color) to match GreatFrontEnd's own Dashboard.
-const STUDY_PLAN_PREVIEWS = [
-  {
-    slug: "1-week",
-    label: "1 Week",
-    description:
-      "Cramming for an interview coming up fast — rapid FF 75 review, a deep dive into your target role's collection, then the System Design and Behavioural playbooks before a final company-guide run-through.",
-    timeCommitment: "~2 hrs/day",
-    icon: Zap,
-  },
-  {
-    slug: "1-month",
-    label: "1 Month",
-    description:
-      "A balanced pass across your weakest Learn category, Practice reps, a full FF Collections review, and every Playbook — built for steady progress without cramming.",
-    timeCommitment: "~6 hrs/week",
-    icon: Flame,
-  },
-  {
-    slug: "3-months",
-    label: "3 Months",
-    description:
-      "A systematic, category-by-category pass through the full Learn curriculum with real weekly Practice reps, shifting into full interview mode — FF Collections, all 5 Playbooks, and a Company Guide — in the final month.",
-    timeCommitment: "~4 hrs/week",
-    icon: Star,
-  },
-];
+import type { StudyPlanSummary } from "@/features/interview-prep/lib/studyPlanQueries";
 
-export function StudyPlansPreview() {
+// Icon per plan slug — meta only, no per-plan color (matches
+// COLLECTION_META/PLAYBOOK_META's monochrome-icon precedent, GreatFrontEnd's
+// own Dashboard treatment).
+const ICON_BY_SLUG: Record<string, LucideIcon> = {
+  "1-week": Zap,
+  "1-month": Flame,
+  "3-months": Star,
+};
+
+type Props = {
+  plans: StudyPlanSummary[];
+};
+
+// Converted from a static, schema-less teaser (Feature 30) to a real
+// server-rendered row, same conversion Feature 50 did for PlaybookPreview —
+// title/description/hoursCommitment now come from the study_plans table
+// (Feature 51), not hardcoded copy.
+export function StudyPlansPreview({ plans }: Props) {
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
@@ -53,8 +38,8 @@ export function StudyPlansPreview() {
       </div>
 
       <div className="flex flex-col gap-2">
-        {STUDY_PLAN_PREVIEWS.map((plan) => {
-          const Icon = plan.icon;
+        {plans.map((plan) => {
+          const Icon = ICON_BY_SLUG[plan.slug] ?? Zap;
           return (
             <Link
               key={plan.slug}
@@ -66,11 +51,13 @@ export function StudyPlansPreview() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold text-text-primary">{plan.label}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-text-muted">{plan.description}</p>
+                <h3 className="text-sm font-semibold text-text-primary">{plan.title}</h3>
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-text-muted">
+                  {plan.description}
+                </p>
                 <div className="mt-2 flex items-center gap-1.5 text-xs text-text-muted">
                   <Clock className="h-3.5 w-3.5" aria-hidden />
-                  {plan.timeCommitment}
+                  {plan.hoursCommitment}
                 </div>
               </div>
 

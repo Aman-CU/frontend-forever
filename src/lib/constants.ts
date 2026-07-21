@@ -76,6 +76,30 @@ export type XPEventType = (typeof XP_EVENT_TYPES)[number];
 export const CHALLENGE_STATUSES = ["passed", "failed"] as const;
 export type ChallengeStatus = (typeof CHALLENGE_STATUSES)[number];
 
+// Feature 51's 3 Study Plans (build-plan.md, Phase 6). Content (the actual
+// day/week itinerary) is real DB rows (study_plans/study_plan_items) — unlike
+// Playbook/System Design, this isn't filesystem content, since a plan is a
+// curated sequence of links rather than long-form prose.
+export const STUDY_PLAN_SLUGS = ["1-week", "1-month", "3-months"] as const;
+export type StudyPlanSlug = (typeof STUDY_PLAN_SLUGS)[number];
+
+// What kind of content a study_plan_items row points at — used only to pick
+// which existing table (if any) to check for a live per-user completion
+// checkmark. Not a foreign key: "playbook-chapter"/"system-design-guide"
+// content lives on the filesystem with no DB row to reference, and
+// "collection"/"ff75"/"company-guide" items point at a whole browse page,
+// not one row. See study_plan_items.ref_id for the parseable slug composite.
+export const STUDY_PLAN_ITEM_TYPES = [
+  "concept",
+  "practice-category",
+  "collection",
+  "playbook-chapter",
+  "system-design-guide",
+  "review-session",
+  "company-guide",
+] as const;
+export type StudyPlanItemType = (typeof STUDY_PLAN_ITEM_TYPES)[number];
+
 // XP System (context/architecture.md → XP System table). Every tab-completion
 // POST to /api/progress reads its reward from here — never inline an XP amount.
 export const TAB_XP_REWARDS: Record<ConceptTab, number> = {

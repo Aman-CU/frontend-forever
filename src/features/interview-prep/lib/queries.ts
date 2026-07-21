@@ -1,15 +1,16 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import { and, asc, eq, lte, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, lte, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { collectionQuestions, interviewQuestions, profiles, userInterviewReviews } from "@/lib/schema";
+import { challenges, collectionQuestions, interviewQuestions, profiles, userInterviewReviews } from "@/lib/schema";
 import {
   COLLECTION_QUESTION_COLLECTIONS,
   type ChallengeDifficulty,
   type CollectionQuestionCollection,
 } from "@/lib/constants";
 import { getAllSystemDesignGuides } from "@/lib/systemDesignGuides";
+import { COMPANIES } from "@/features/interview-prep/lib/companies";
 
 // COLLECTION_QUESTION_COLLECTIONS's declared order (javascript, react, nextjs)
 // is the intended IA order (build-plan.md's sidebar order) — not alphabetical.
@@ -301,6 +302,133 @@ export const getAdjacentCollectionQuestions = cache(
       next: nextItem
         ? { slug: nextItem.slug, question: nextItem.question, questionNumber: index + 2 }
         : null,
+    };
+  },
+);
+
+// ── Feature 51: Company Guides ───────────────────────────────────────────────
+// Sourced from collection_questions (Feature 31's real 299-question FF
+// Collections content) + challenges (Practice's real, company-tagged
+// standalone content) — not interview_questions, which build-plan.md's
+// original spec text names but which predates Feature 31's dedicated schema
+// and today only feeds Learn's per-concept Interview tab. Both source tables
+// are small enough (low hundreds of rows) to load in full and aggregate in
+// memory, same "load it all, filter in memory" approach as
+// getCollectionQuestionCatalog/Practice's getPracticeCatalog — avoids a raw
+// unnest() query for a one-time-per-hour aggregation.
+
+type CompanyCatalogRow = { companies: string[] };
+
+// Plain Record, not a Map — unstable_cache round-trips its return value
+// through JSON to store it, which silently collapses a Map to `{}` (this was
+// a real bug, caught live: `questionCounts.get is not a function` once the
+// cached value came back deserialized). Same reason getCollectionQuestionCounts
+// above already returns a Record instead of a Map.
+const getCompanyCountsByTable = unstable_cache(
+  async (): Promise<{ questionCounts: Record<string, number>; challengeCounts: Record<string, number> }> => {
+    const [questionRows, challengeRows]: [CompanyCatalogRow[], CompanyCatalogRow[]] = await Promise.all([
+      db.select({ companies: collectionQuestions.companies }).from(collectionQuestions),
+      db.select({ companies: challenges.companies }).from(challenges),
+    ]);
+
+    const tally = (rows: CompanyCatalogRow[]): Record<string, number> => {
+      const counts: Record<string, number> = {};
+      for (const row of rows) {
+        for (const company of row.companies) {
+          counts[company] = (counts[company] ?? 0) + 1;
+        }
+      }
+      return counts;
+    };
+
+    return { questionCounts: tally(questionRows), challengeCounts: tally(challengeRows) };
+  },
+  ["company-guide-counts"],
+  { tags: ["concepts"], revalidate: 3600 },
+);
+
+export type CompanyGuideSummary = {
+  slug: string;
+  name: string;
+  questionCount: number;
+  challengeCount: number;
+};
+
+// Real counts for all 32 companies, including the ones with zero content
+// today — an honest zero, not a fabricated placeholder, same precedent as
+// getCollectionSummaries above.
+export const getCompanyGuideSummaries = cache(async (): Promise<CompanyGuideSummary[]> => {
+  const { questionCounts, challengeCounts } = await getCompanyCountsByTable();
+  return COMPANIES.map((company) => ({
+    slug: company.slug,
+    name: company.name,
+    questionCount: questionCounts[company.name] ?? 0,
+    challengeCount: challengeCounts[company.name] ?? 0,
+  }));
+});
+
+export type CompanyGuideQuestion = {
+  slug: string;
+  collection: CollectionQuestionCollection;
+  question: string;
+  difficulty: ChallengeDifficulty;
+};
+
+export type CompanyGuideChallenge = {
+  slug: string;
+  category: string;
+  title: string;
+  difficulty: ChallengeDifficulty;
+};
+
+export type CompanyGuideDetail = {
+  questions: CompanyGuideQuestion[];
+  challenges: CompanyGuideChallenge[];
+};
+
+// companyName is the real display name (COMPANIES' `name`, e.g. "ByteDance")
+// — the array-contains match is against that, not the slug.
+export const getCompanyGuideDetail = cache(
+  async (companyName: string): Promise<CompanyGuideDetail> => {
+    const [questionRows, challengeRows] = await Promise.all([
+      db
+        .select({
+          slug: collectionQuestions.slug,
+          collection: collectionQuestions.collection,
+          question: collectionQuestions.question,
+          difficulty: collectionQuestions.difficulty,
+        })
+        .from(collectionQuestions)
+        .where(sql`${collectionQuestions.companies} @> ARRAY[${companyName}]::text[]`)
+        .orderBy(asc(collectionQuestions.orderIndex)),
+      db
+        .select({
+          slug: challenges.slug,
+          category: challenges.category,
+          title: challenges.title,
+          difficulty: challenges.difficulty,
+        })
+        .from(challenges)
+        .where(
+          and(
+            sql`${challenges.companies} @> ARRAY[${companyName}]::text[]`,
+            isNotNull(challenges.category),
+          ),
+        )
+        .orderBy(asc(challenges.orderIndex)),
+    ]);
+
+    return {
+      questions: questionRows.map((q) => ({
+        ...q,
+        collection: q.collection as CollectionQuestionCollection,
+        difficulty: q.difficulty as ChallengeDifficulty,
+      })),
+      challenges: challengeRows.map((c) => ({
+        ...c,
+        category: c.category as string,
+        difficulty: c.difficulty as ChallengeDifficulty,
+      })),
     };
   },
 );
