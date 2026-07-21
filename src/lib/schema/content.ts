@@ -344,6 +344,12 @@ export const studyPlanItems = pgTable(
     href: text("href").notNull(),
     title: text("title").notNull(),
     description: text("description").notNull(),
+    // Premium-style "★ Q.01–Q.10" pill (StudyPlanItemRow) — the subset of a
+    // linked collection/category to work through that day, so an item can
+    // point at a whole 75-question collection without implying "do all 75
+    // today." Nullable: only sensible on itemTypes with a numbered list page
+    // (collection, practice-category); every other itemType leaves it null.
+    rangeLabel: text("range_label"),
   },
   (table) => [
     index("study_plan_items_study_plan_id_idx").on(table.studyPlanId),

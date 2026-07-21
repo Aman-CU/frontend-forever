@@ -1,0 +1,1 @@
+ALTER TABLE "study_plan_items" ADD COLUMN "range_label" text;

@@ -302,6 +302,7 @@ async function seed() {
         href: item.href,
         title: item.title,
         description: item.description,
+        rangeLabel: item.rangeLabel ?? null,
       })),
     );
 

@@ -8,6 +8,7 @@ import {
   Network,
   Repeat,
   Sparkles,
+  Star,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -57,7 +58,15 @@ export function StudyPlanItemRow({ item }: Props) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <h4 className="text-sm font-semibold text-text-primary">{item.title}</h4>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <h4 className="text-sm font-semibold text-text-primary">{item.title}</h4>
+          {item.rangeLabel && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-premium-light px-2 py-0.5 text-[0.6875rem] font-semibold text-premium">
+              <Star className="h-2.5 w-2.5 fill-current" aria-hidden />
+              {item.rangeLabel}
+            </span>
+          )}
+        </div>
         <p className="mt-0.5 text-xs leading-relaxed text-text-muted">{item.description}</p>
       </div>
     </Link>

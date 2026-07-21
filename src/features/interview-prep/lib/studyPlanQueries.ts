@@ -55,6 +55,9 @@ export type StudyPlanItemView = {
   href: string;
   title: string;
   description: string;
+  // "★ Q.01–Q.10" style pill — the subset of this item's list page to work
+  // through that day. Null on itemTypes with no numbered list to point into.
+  rangeLabel: string | null;
   // null when this itemType has no per-user progress source to check
   // (collection / system-design-guide / review-session / company-guide) —
   // rendered with no checkmark rather than a fabricated false.
@@ -99,6 +102,7 @@ export const getStudyPlanBySlug = cache(
         href: item.href,
         title: item.title,
         description: item.description,
+        rangeLabel: item.rangeLabel,
         completed: completionByItemId.get(item.id) ?? null,
       })),
     };

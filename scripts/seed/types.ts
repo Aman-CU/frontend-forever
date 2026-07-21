@@ -110,6 +110,10 @@ export type StudyPlanItemSeed = {
   href: string;
   title: string;
   description: string;
+  // Premium-style "★ Q.01–Q.10" range pill — the subset of this item's
+  // linked list page to work through that day. Omitted where there's no
+  // numbered list to point into (system-design-guide, playbook-chapter, etc).
+  rangeLabel?: string;
 };
 
 export type StudyPlanSeed = {
