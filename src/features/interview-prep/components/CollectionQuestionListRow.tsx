@@ -19,6 +19,7 @@ type Props = {
   difficulty: ChallengeDifficulty;
   companies: string[];
   completed: boolean;
+  onToggleComplete: (slug: string, completed: boolean) => void;
 };
 
 // Same row shape as Practice's ChallengeListRow (grid layout, zero-padded
@@ -32,6 +33,7 @@ export function CollectionQuestionListRow({
   difficulty,
   companies,
   completed,
+  onToggleComplete,
 }: Props) {
   return (
     <Link
@@ -43,7 +45,14 @@ export function CollectionQuestionListRow({
       </span>
 
       <span className="flex min-w-0 items-center gap-2">
-        <span className="truncate text-sm font-medium text-text-primary">{question}</span>
+        <span
+          className={cn(
+            "truncate text-sm font-medium",
+            completed ? "text-text-muted" : "text-text-primary",
+          )}
+        >
+          {question}
+        </span>
 
         {companies.length > 0 && (
           <span className="flex shrink-0 items-center gap-1.5">
@@ -68,17 +77,24 @@ export function CollectionQuestionListRow({
         {difficulty}
       </span>
 
-      <span
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggleComplete(slug, !completed);
+        }}
+        aria-pressed={completed}
         className={cn(
-          "flex h-5 w-5 shrink-0 items-center justify-center rounded",
-          completed ? "bg-success" : "border-2 border-border",
+          "flex h-5 w-5 shrink-0 items-center justify-center rounded transition-colors",
+          completed ? "bg-success" : "border-2 border-border hover:border-accent",
         )}
       >
         {completed && (
           <Check className="h-3 w-3 text-success-foreground" strokeWidth={3} aria-hidden />
         )}
-        <span className="sr-only">{completed ? "Completed" : "Not completed"}</span>
-      </span>
+        <span className="sr-only">{completed ? "Mark as not completed" : "Mark as completed"}</span>
+      </button>
     </Link>
   );
 }

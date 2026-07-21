@@ -14,7 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { XP_EVENT_TYPES, CHALLENGE_STATUSES, PLAYBOOK_SLUGS } from "@/lib/constants";
 import { profiles } from "./profiles";
-import { concepts, challenges, interviewQuestions } from "./content";
+import { concepts, challenges, interviewQuestions, collectionQuestions } from "./content";
 
 // Every table below is .enableRLS()'d — this has no bearing on the app itself
 // (the app's DATABASE_URL role has BYPASSRLS); it exists purely to block
@@ -243,6 +243,35 @@ export const playbookReads = pgTable(
         sql`, `,
       )})`,
     ),
+  ],
+).enableRLS();
+
+// ── user_collection_question_progress ─────────────────────────────────────────
+// FF Collections' (FF 75/JavaScript/React/Next.js) per-question "I've already
+// read this" tracker — self-reported, no grading, no XP (matching
+// playbook_reads' precedent above, not user_concept_progress's XP-earning
+// one). Unlike playbook_reads, this toggles both ways (tick and untick), so
+// row presence alone means "completed" — the API route inserts on tick and
+// deletes on untick, rather than writing a boolean column.
+
+export const userCollectionQuestionProgress = pgTable(
+  "user_collection_question_progress",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    questionId: uuid("question_id")
+      .notNull()
+      .references(() => collectionQuestions.id, { onDelete: "cascade" }),
+    completedAt: timestamp("completed_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    unique("user_collection_question_progress_user_question_unique").on(
+      table.userId,
+      table.questionId,
+    ),
+    index("user_collection_question_progress_user_id_idx").on(table.userId),
   ],
 ).enableRLS();
 

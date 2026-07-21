@@ -1,6 +1,7 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Search } from "lucide-react";
 
@@ -24,28 +25,70 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
 type Props = {
   routeCollection: InterviewPrepRouteCollection;
   questions: CollectionQuestionListItem[];
+  isLoggedIn: boolean;
 };
 
 // Same filtering approach as Practice's ChallengeListClient (search + pill
 // filters, client-side over an already-fetched array — small enough dataset
 // per collection that this needs no pagination).
-export function CollectionQuestionListClient({ routeCollection, questions }: Props) {
+export function CollectionQuestionListClient({ routeCollection, questions, isLoggedIn }: Props) {
+  const router = useRouter();
   const reduceMotion = useSafeReducedMotion();
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [difficulty, setDifficulty] = useState<DifficultyFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
 
+  // Owns the completed state locally (initialized from the server-fetched
+  // `questions` prop) so a tick/untick updates the checkbox, the progress
+  // bar, and the "Completed/Not started" filter instantly, without waiting
+  // on a re-fetch.
+  const [completedBySlug, setCompletedBySlug] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(questions.map((q) => [q.slug, q.completed])),
+  );
+
+  const questionsWithState = useMemo(
+    () => questions.map((q) => ({ ...q, completed: completedBySlug[q.slug] ?? q.completed })),
+    [questions, completedBySlug],
+  );
+
+  const completedCount = useMemo(
+    () => questionsWithState.filter((q) => q.completed).length,
+    [questionsWithState],
+  );
+
+  async function handleToggleComplete(slug: string, completed: boolean) {
+    if (!isLoggedIn) {
+      router.push("/login");
+      return;
+    }
+
+    setCompletedBySlug((prev) => ({ ...prev, [slug]: completed }));
+
+    try {
+      const res = await fetch("/api/collection-questions/toggle-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug, completed }),
+      });
+      if (!res.ok) {
+        setCompletedBySlug((prev) => ({ ...prev, [slug]: !completed }));
+      }
+    } catch {
+      setCompletedBySlug((prev) => ({ ...prev, [slug]: !completed }));
+    }
+  }
+
   const filtered = useMemo(() => {
     const query = deferredSearch.trim().toLowerCase();
-    return questions.filter((q) => {
+    return questionsWithState.filter((q) => {
       if (query && !q.question.toLowerCase().includes(query)) return false;
       if (difficulty !== "all" && q.difficulty !== difficulty) return false;
       if (status === "completed" && !q.completed) return false;
       if (status === "not-started" && q.completed) return false;
       return true;
     });
-  }, [questions, deferredSearch, difficulty, status]);
+  }, [questionsWithState, deferredSearch, difficulty, status]);
 
   if (questions.length === 0) {
     return (
@@ -55,8 +98,28 @@ export function CollectionQuestionListClient({ routeCollection, questions }: Pro
     );
   }
 
+  const progressPercent = questions.length > 0 ? (completedCount / questions.length) * 100 : 0;
+
   return (
     <div>
+      <div className="mb-6 flex items-center gap-3">
+        <span className="text-xs font-medium text-text-muted">Progress</span>
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-border">
+          <div
+            className="h-full rounded-full bg-accent transition-all duration-500"
+            style={{ width: `${progressPercent}%` }}
+            role="progressbar"
+            aria-valuenow={completedCount}
+            aria-valuemin={0}
+            aria-valuemax={questions.length}
+            aria-label={`${completedCount} of ${questions.length} questions completed`}
+          />
+        </div>
+        <span className="whitespace-nowrap text-xs tabular-nums text-text-muted">
+          {completedCount} / {questions.length}
+        </span>
+      </div>
+
       <div className="relative mb-3">
         <Search
           className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
@@ -100,7 +163,12 @@ export function CollectionQuestionListClient({ routeCollection, questions }: Pro
                 exit={{ opacity: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.15 }}
               >
-                <CollectionQuestionListRow routeCollection={routeCollection} index={i + 1} {...q} />
+                <CollectionQuestionListRow
+                  routeCollection={routeCollection}
+                  index={i + 1}
+                  {...q}
+                  onToggleComplete={handleToggleComplete}
+                />
               </motion.div>
             ))}
           </AnimatePresence>

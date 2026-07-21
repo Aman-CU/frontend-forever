@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
+import { getCachedSession } from "@/lib/auth/server";
 import { isInterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
 import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
 import { getCollectionQuestionList } from "@/features/interview-prep/lib/queries";
@@ -56,7 +57,9 @@ export default async function CollectionQuestionListPage({
   }
 
   const meta = COLLECTION_META[collection];
-  const questions = await getCollectionQuestionList(collection);
+  const session = await getCachedSession();
+  const isLoggedIn = Boolean(session?.user);
+  const questions = await getCollectionQuestionList(collection, session?.user?.id ?? null);
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/${collection}`;
 
@@ -100,7 +103,11 @@ export default async function CollectionQuestionListPage({
         <p className="mt-1.5 text-sm text-text-secondary">{meta.description}</p>
       </div>
 
-      <CollectionQuestionListClient routeCollection={collection} questions={questions} />
+      <CollectionQuestionListClient
+        routeCollection={collection}
+        questions={questions}
+        isLoggedIn={isLoggedIn}
+      />
     </div>
   );
 }
