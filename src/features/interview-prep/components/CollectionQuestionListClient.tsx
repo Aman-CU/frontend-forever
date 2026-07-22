@@ -46,6 +46,11 @@ export function CollectionQuestionListClient({ routeCollection, questions, isLog
   const [completedBySlug, setCompletedBySlug] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(questions.map((q) => [q.slug, q.completed])),
   );
+  // Serializes toggles per question — a slug's in-flight write blocks
+  // further toggles on that same row until it resolves, so two overlapping
+  // requests for the same question can never resolve out of order and leave
+  // local state diverged from the database.
+  const [pendingSlugs, setPendingSlugs] = useState<Set<string>>(new Set());
 
   const questionsWithState = useMemo(
     () => questions.map((q) => ({ ...q, completed: completedBySlug[q.slug] ?? q.completed })),
@@ -62,7 +67,9 @@ export function CollectionQuestionListClient({ routeCollection, questions, isLog
       router.push("/login");
       return;
     }
+    if (pendingSlugs.has(slug)) return;
 
+    setPendingSlugs((prev) => new Set(prev).add(slug));
     setCompletedBySlug((prev) => ({ ...prev, [slug]: completed }));
 
     try {
@@ -76,6 +83,12 @@ export function CollectionQuestionListClient({ routeCollection, questions, isLog
       }
     } catch {
       setCompletedBySlug((prev) => ({ ...prev, [slug]: !completed }));
+    } finally {
+      setPendingSlugs((prev) => {
+        const next = new Set(prev);
+        next.delete(slug);
+        return next;
+      });
     }
   }
 
@@ -167,6 +180,7 @@ export function CollectionQuestionListClient({ routeCollection, questions, isLog
                   routeCollection={routeCollection}
                   index={i + 1}
                   {...q}
+                  pending={pendingSlugs.has(q.slug)}
                   onToggleComplete={handleToggleComplete}
                 />
               </motion.div>
