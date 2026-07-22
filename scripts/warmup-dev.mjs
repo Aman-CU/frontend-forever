@@ -52,6 +52,15 @@ const ROUTES = [
   "/interview-prep/company-guides/openai",
   "/interview-prep/review",
   "/api/auth/get-session",
+  // Unauthenticated on purpose — this only needs to trigger compilation, not
+  // a real toggle, so a 401 (auth check runs before any DB write) counts as
+  // warmed rather than a 2xx.
+  {
+    path: "/api/collection-questions/toggle-complete",
+    method: "POST",
+    body: { slug: "warmup", completed: true },
+    expectStatus: 401,
+  },
 ];
 
 // Route path -> its page.tsx/route.ts, for routes that need an actual file
@@ -72,16 +81,31 @@ async function touchFile(relPath) {
 // (e.g. an auth-gated route sending a logged-out request to /login), so a
 // 2xx here also covers "compiled fine, just redirected somewhere that also
 // compiled fine," not just a literal 200 on the exact requested path.
-function isOk(status) {
+// expectStatus overrides this for routes where a non-2xx is the actually
+// correct unauthenticated response (e.g. a write route's own auth check).
+function isOk(status, expectStatus) {
+  if (expectStatus) return status === expectStatus;
   return typeof status === "number" && status >= 200 && status < 300;
 }
 
-async function hit(path) {
+// ROUTES entries are either a path string (GET, expects 2xx) or
+// { path, method, body, expectStatus } for anything else.
+function normalizeRoute(route) {
+  return typeof route === "string" ? { path: route, method: "GET" } : route;
+}
+
+async function hit(route) {
+  const { path, method = "GET", body, expectStatus } = normalizeRoute(route);
   const start = Date.now();
   try {
-    const res = await fetch(`${BASE_URL}${path}`, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
     const ms = Date.now() - start;
-    return { path, status: res.status, ms, ok: isOk(res.status) };
+    return { path, status: res.status, ms, ok: isOk(res.status, expectStatus) };
   } catch (err) {
     const ms = Date.now() - start;
     return { path, status: null, ms, ok: false, error: err.message };
@@ -91,11 +115,11 @@ async function hit(path) {
 async function main() {
   console.log(`Warming up ${ROUTES.length} routes against ${BASE_URL}...\n`);
   const results = [];
-  for (const path of ROUTES) {
-    const result = await hit(path);
+  for (const route of ROUTES) {
+    const result = await hit(route);
     results.push(result);
     const label = result.status ?? "ERR";
-    console.log(`${String(label).padStart(3)}  ${(result.ms / 1000).toFixed(1)}s  ${path}`);
+    console.log(`${String(label).padStart(3)}  ${(result.ms / 1000).toFixed(1)}s  ${result.path}`);
   }
 
   let failed = results.filter((r) => !r.ok);
