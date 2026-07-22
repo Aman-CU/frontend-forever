@@ -39,7 +39,7 @@ export default async function InterviewPrepGetStartedPage() {
 
   const [collectionSummaries, reviewItems, playbookProgress, studyPlans, companySummaries] =
     await Promise.all([
-      getCollectionSummaries(),
+      getCollectionSummaries(userId),
       getReviewQueuePreview(userId),
       getPlaybookProgress(userId),
       getStudyPlans(),

@@ -3,7 +3,14 @@ import { unstable_cache } from "next/cache";
 import { and, asc, eq, isNotNull, lte, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { challenges, collectionQuestions, interviewQuestions, profiles, userInterviewReviews } from "@/lib/schema";
+import {
+  challenges,
+  collectionQuestions,
+  interviewQuestions,
+  profiles,
+  userCollectionQuestionProgress,
+  userInterviewReviews,
+} from "@/lib/schema";
 import {
   COLLECTION_QUESTION_COLLECTIONS,
   type ChallengeDifficulty,
@@ -60,28 +67,67 @@ const getCollectionQuestionCounts = unstable_cache(
   { tags: ["concepts"], revalidate: 3600 },
 );
 
-// FF Collections rows for Get Started. completedCount is always 0 today — no
-// per-user completion tracking exists yet for collection_questions (that's
-// Feature 31/32's job) or for the FF System Design guides (Feature 49 has no
-// schema at all). Real, not mocked — genuinely zero until then, same
-// precedent as Practice Hub's bars pre-Feature-29. FF System Design's count
-// comes from the filesystem (Feature 49's MDX guides, no DB row), not a
-// query — CollectionRow only falls back to "Coming soon" when this returns
-// null, which it now does exactly when zero guides are authored yet.
-export const getCollectionSummaries = cache(async (): Promise<CollectionSummary[]> => {
-  const counts = await getCollectionQuestionCounts();
-  const systemDesignGuideCount = getAllSystemDesignGuides().length;
+// Real per-user completed counts, grouped by collection_questions.collection
+// + a separate ff75 tally — mirrors getCollectionQuestionCounts' shape above.
+// A per-request cache() (not unstable_cache) since this is user-scoped, same
+// precedent as getIsPremiumUser/getReviewQueuePreview below.
+const getCompletedQuestionCounts = cache(async (userId: string | null): Promise<CollectionCounts> => {
+  const empty = Object.fromEntries(
+    COLLECTION_QUESTION_COLLECTIONS.map((c) => [c, 0]),
+  ) as Record<CollectionQuestionCollection, number>;
+  if (!userId) return { ...empty, ff75: 0 };
 
-  return [
-    { collection: "ff-75", questionCount: counts.ff75, completedCount: 0 },
-    { collection: "ff-javascript", questionCount: counts["ff-javascript"], completedCount: 0 },
-    { collection: "ff-react", questionCount: counts["ff-react"], completedCount: 0 },
-    { collection: "ff-nextjs", questionCount: counts["ff-nextjs"], completedCount: 0 },
-    ...(systemDesignGuideCount > 0
-      ? [{ collection: "ff-system-design" as const, questionCount: systemDesignGuideCount, completedCount: 0 }]
-      : []),
-  ];
+  const rows = await db
+    .select({
+      collection: collectionQuestions.collection,
+      isFf75: collectionQuestions.isFf75,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(userCollectionQuestionProgress)
+    .innerJoin(collectionQuestions, eq(userCollectionQuestionProgress.questionId, collectionQuestions.id))
+    .where(eq(userCollectionQuestionProgress.userId, userId))
+    .groupBy(collectionQuestions.collection, collectionQuestions.isFf75);
+
+  const counts = { ...empty };
+  let ff75 = 0;
+  for (const row of rows) {
+    counts[row.collection as CollectionQuestionCollection] += row.count;
+    if (row.isFf75) ff75 += row.count;
+  }
+  return { ...counts, ff75 };
 });
+
+// FF Collections rows for Get Started. completedCount is real per-user data
+// once logged in (userCollectionQuestionProgress) — 0 for logged-out users,
+// same as every other personalization on this page. FF System Design still
+// has no per-user tracking (Feature 49 has no schema at all) — its
+// completedCount stays 0. FF System Design's count itself comes from the
+// filesystem (Feature 49's MDX guides, no DB row), not a query — CollectionRow
+// only falls back to "Coming soon" when this returns null, which it now does
+// exactly when zero guides are authored yet.
+export const getCollectionSummaries = cache(
+  async (userId: string | null): Promise<CollectionSummary[]> => {
+    const [counts, completed] = await Promise.all([
+      getCollectionQuestionCounts(),
+      getCompletedQuestionCounts(userId),
+    ]);
+    const systemDesignGuideCount = getAllSystemDesignGuides().length;
+
+    return [
+      { collection: "ff-75", questionCount: counts.ff75, completedCount: completed.ff75 },
+      {
+        collection: "ff-javascript",
+        questionCount: counts["ff-javascript"],
+        completedCount: completed["ff-javascript"],
+      },
+      { collection: "ff-react", questionCount: counts["ff-react"], completedCount: completed["ff-react"] },
+      { collection: "ff-nextjs", questionCount: counts["ff-nextjs"], completedCount: completed["ff-nextjs"] },
+      ...(systemDesignGuideCount > 0
+        ? [{ collection: "ff-system-design" as const, questionCount: systemDesignGuideCount, completedCount: 0 }]
+        : []),
+    ];
+  },
+);
 
 export type ReviewQueueItem = {
   id: string;
@@ -172,6 +218,7 @@ export const getIsPremiumUser = cache(async (userId: string): Promise<boolean> =
 // ── Feature 31: FF Collections list/detail pages ─────────────────────────────
 
 type CollectionQuestionRow = {
+  id: string;
   collection: CollectionQuestionCollection;
   slug: string;
   question: string;
@@ -189,6 +236,7 @@ const getCollectionQuestionCatalog = unstable_cache(
   async (): Promise<CollectionQuestionRow[]> => {
     const rows = await db
       .select({
+        id: collectionQuestions.id,
         collection: collectionQuestions.collection,
         slug: collectionQuestions.slug,
         question: collectionQuestions.question,
@@ -225,26 +273,43 @@ function filterByRouteCollection(
   return rows.filter((r) => r.collection === routeCollection);
 }
 
+// Real per-user completed question ids — a per-request cache() (not
+// unstable_cache) since this is user-scoped, same precedent as
+// getCompletedQuestionCounts above.
+const getCompletedQuestionIds = cache(async (userId: string | null): Promise<Set<string>> => {
+  if (!userId) return new Set();
+  const rows = await db
+    .select({ questionId: userCollectionQuestionProgress.questionId })
+    .from(userCollectionQuestionProgress)
+    .where(eq(userCollectionQuestionProgress.userId, userId));
+  return new Set(rows.map((r) => r.questionId));
+});
+
 export type CollectionQuestionListItem = {
   slug: string;
   question: string;
   difficulty: ChallengeDifficulty;
   companies: string[];
-  // Always false — collection_questions has no per-user completion tracking at
-  // all yet (unlike Practice/Learn, no feature currently scopes to build one).
-  // Honest zero, not mocked, same precedent as getCollectionSummaries above.
+  // Real per-user state (user_collection_question_progress) — false for
+  // logged-out users, same as every other personalization on this page.
   completed: boolean;
 };
 
 export const getCollectionQuestionList = cache(
-  async (routeCollection: InterviewPrepRouteCollection): Promise<CollectionQuestionListItem[]> => {
-    const catalog = await getCollectionQuestionCatalog();
+  async (
+    routeCollection: InterviewPrepRouteCollection,
+    userId: string | null,
+  ): Promise<CollectionQuestionListItem[]> => {
+    const [catalog, completedIds] = await Promise.all([
+      getCollectionQuestionCatalog(),
+      getCompletedQuestionIds(userId),
+    ]);
     return filterByRouteCollection(catalog, routeCollection).map((q) => ({
       slug: q.slug,
       question: q.question,
       difficulty: q.difficulty,
       companies: q.companies,
-      completed: false,
+      completed: completedIds.has(q.id),
     }));
   },
 );
