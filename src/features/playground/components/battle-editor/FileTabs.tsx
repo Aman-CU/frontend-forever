@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export const BATTLE_FILES = ["html", "css", "js"] as const;
 export type BattleFile = (typeof BATTLE_FILES)[number];
 
-const FILE_META: Record<BattleFile, string> = {
+export const FILE_META: Record<BattleFile, string> = {
   html: "index.html",
   css: "style.css",
   js: "script.js",
@@ -90,7 +90,12 @@ export function FileTabs({ activeFile, onFileChange, collapsed, onToggleCollapse
             role="tab"
             id={`battle-file-tab-${file}`}
             aria-selected={isActive}
-            aria-controls={`battle-file-panel-${file}`}
+            // A single stable id, not one per file — only one tabpanel is
+            // ever rendered (BattleEditorWorkspace swaps its content via the
+            // editor's `path`, not by mounting 3 separate panels), so all 3
+            // tabs must point at that same panel rather than 2 of them
+            // referencing an aria-controls id that doesn't exist in the DOM.
+            aria-controls="battle-file-panel"
             tabIndex={isActive ? 0 : -1}
             onClick={() => onFileChange(file)}
             onKeyDown={(event) => handleKeyDown(event, index)}

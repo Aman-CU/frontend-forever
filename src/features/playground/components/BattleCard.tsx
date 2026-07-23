@@ -39,7 +39,13 @@ export function BattleCard({ slug, title, difficulty, targetImageUrl, isPremium 
       <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-surface-secondary to-accent-muted/40 p-3">
         {targetImageUrl ? (
           <div className="relative h-full w-full overflow-hidden rounded-lg shadow-md">
-            <Image src={targetImageUrl} alt="" fill sizes="224px" className="object-contain" />
+            <Image
+              src={targetImageUrl}
+              alt={`Target UI preview for the ${title} battle`}
+              fill
+              sizes="224px"
+              className="object-contain"
+            />
           </div>
         ) : (
           <Target className="size-8 text-text-muted" aria-hidden />

@@ -138,20 +138,22 @@ export function BattleEditorWorkspace({ challenge }: Props) {
                 window is meant to be the bigger of the two. */}
             <div
               className="min-h-0 min-w-0 lg:flex-[2]"
-              id={`battle-file-panel-${activeFile}`}
+              id="battle-file-panel"
               role="tabpanel"
               aria-labelledby={`battle-file-tab-${activeFile}`}
             >
-              {/* One shared editor instance, not one per file — switching
-                  the `value` prop doesn't fire onChange (only real edits
-                  do, per CodeEditor's documented Monaco gotcha), so this
-                  can't leak an edit from one file into another. Lighter
-                  than mounting 3 Monaco instances at once. height="100%"
-                  fills this column's real height (the h-[calc(...)] chain
-                  above gives every ancestor a definite height, so the
-                  percentage actually resolves — see CodeEditor's comment). */}
+              {/* One shared editor instance AND one shared Monaco model per
+                  file — `path` (not `key`) switches between the 3 files'
+                  models without remounting the editor, so each file keeps
+                  its own undo history and view state across switches
+                  (an earlier `key={activeFile}` version silently reset all
+                  of that on every switch, since it discarded and recreated
+                  Monaco from scratch each time). height="100%" fills this
+                  column's real height (the h-[calc(...)] chain above gives
+                  every ancestor a definite height, so the percentage
+                  actually resolves — see CodeEditor's comment). */}
               <CodeEditor
-                key={activeFile}
+                path={activeFile}
                 value={files[activeFile]}
                 onChange={handleEditorChange}
                 language={MONACO_LANGUAGE[activeFile]}

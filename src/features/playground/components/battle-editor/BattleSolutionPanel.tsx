@@ -4,13 +4,7 @@ import { useState } from "react";
 import { Check, Copy, Lock, Unlock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { BATTLE_FILES, type BattleFile } from "./FileTabs";
-
-const FILE_LABEL: Record<BattleFile, string> = {
-  html: "index.html",
-  css: "style.css",
-  js: "script.js",
-};
+import { BATTLE_FILES, FILE_META, type BattleFile } from "./FileTabs";
 
 type Props = {
   solutionHtml: string;
@@ -86,7 +80,7 @@ export function BattleSolutionPanel({ solutionHtml, solutionCss, solutionJs, isL
                     : "text-text-secondary hover:text-text-primary",
                 )}
               >
-                {FILE_LABEL[file]}
+                {FILE_META[file]}
               </button>
             );
           })}
@@ -94,8 +88,8 @@ export function BattleSolutionPanel({ solutionHtml, solutionCss, solutionJs, isL
         <button
           type="button"
           onClick={handleCopy}
-          aria-label={`Copy ${FILE_LABEL[activeFile]}`}
-          title={`Copy ${FILE_LABEL[activeFile]}`}
+          aria-label={`Copy ${FILE_META[activeFile]}`}
+          title={`Copy ${FILE_META[activeFile]}`}
           className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
         >
           {copied ? (
