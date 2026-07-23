@@ -10,6 +10,8 @@ Build order: **Homepage first → Auth → Database → Learn → Practice → I
 
 **Sequencing note (added pre-Feature-30):** Phase 6 — Interview Prep hit the same append-only numbering constraint. Pre-build planning (a deep structural analysis of GreatFrontEnd's `/prepare` page and AlgoMaster's system-design practice format, both user-directed) grew Phase 6 from 3 features to 6. Features 49–51 are numbered at the end but are *scheduled* to run as part of Phase 6, alongside/after Features 30–32, before Phase 7 resumes — see `progress-tracker.md` → Decisions Made, Pre-Feature-30 entry, for the full reasoning and decision trail.
 
+**Sequencing note (added pre-Feature-52, dropping Feature 33):** Feature 33 (Explore Page) was dropped before it was ever built — the user pivoted away from it entirely in favor of a new nav section, **Playground**: a CSSBattle-style UI-recreation coding arena ("UI Battles") plus a CodePen/neal.fun-style gallery of pre-built runnable demos ("Experiments"). That pivot is scoped as a new **Phase 12 — Playground** (Features 52–54, append-only, same constraint Phases 6 and 10 hit) rather than reusing the 33 slot, and is *scheduled* to run immediately — before Phase 7's Roadmaps features (34–35) resume. See `progress-tracker.md` → Decisions Made, pre-Feature-52 entry, for the full architect-session decision trail (editor tech, target format, scoring model, experiments delivery model).
+
 ---
 
 ## Phase 0 — Foundation
@@ -662,11 +664,13 @@ Visual reference: GreatFrontEnd's own "Dashboard" page (screenshots reviewed 202
 
 ---
 
-## Phase 7 — Explore + Roadmaps
+## Phase 7 — Roadmaps
 
-### 33 Explore Page
+### 33 Explore Page — **Dropped, never built. Replaced by Phase 12 — Playground.**
 
-**UI:**
+The spec below is kept for historical reference only — do not build this. See the pre-Feature-52 sequencing note above and `progress-tracker.md` → Decisions Made for why.
+
+**UI (original spec, superseded):**
 
 - 3 sections: "Featured by FF", "Trending This Week", "Recently Added"
 - Each section: horizontal scroll row of concept cards (desktop) / vertical list (mobile)
@@ -1018,6 +1022,53 @@ Every concept eventually gets a hand-built Simulate experience, but each one is 
 
 ---
 
+## Phase 12 — Playground
+
+**Added pre-Feature-52** — see the sequencing note near the top of this file and `progress-tracker.md` → Decisions Made for the full context. A new nav item, **Playground** (`/playground`), replacing the never-built "Explore" link. Two sub-sections: **UI Battles**, a CSSBattle-style coding arena (recreate a target UI from a reference screenshot, vanilla HTML/CSS/JS, visual compare only — no scoring in v1), and **Experiments**, a CodePen/neal.fun-style gallery of pre-built, first-party runnable demos (vanilla, React, three.js, computer-vision libraries — whatever each one needs), viewable read-only as code, not user-editable. Scheduled to run immediately, ahead of Phase 7's Roadmaps features.
+
+### 52 Playground Hub + Nav Rename
+
+**UI:**
+
+- `/playground` hub page: two horizontal-scroll preview rows — "UI Battles" (a few challenge cards + "View all") and "Experiments" (a few project cards + "View all") — same visual precedent as Interview Prep's Get Started hub (Feature 30)
+- Rename "Explore" → "Playground" in `Navbar.tsx`, `AppNavbar.tsx`, `Footer.tsx`; icon swapped from `Compass` to `Gamepad2`; href `/explore` → `/playground`
+
+**Logic:**
+
+- New `ui_battle_challenges` table + migration: `id`, `slug`, `title`, `description`, `difficulty` (easy/medium/hard), `targetImageUrl`, `targetWidth`, `targetHeight`, `starterHtml`, `starterCss`, `starterJs`, `orderIndex`, `isPremium`, `createdAt`
+- No schema/table for Experiments — first-party code + a config registry, not DB rows (see Feature 54)
+- No XP/progress tracking for Playground v1 — neither sub-section has a pass/fail or completion signal yet
+
+---
+
+### 53 UI Battles — List + Editor
+
+**UI:**
+
+- `/playground/battles` — browsable grid/list of challenge cards (target thumbnail, title, difficulty badge)
+- `/playground/battles/[slug]` — 3-column editor: file tree (`index.html` / `style.css` / `script.js`) on the left, Monaco editor (reuses the promoted `CodeEditor` component) in the center, target image + live output split on the right, with a Slide & Compare / Diff toggle
+
+**Logic:**
+
+- Live output is a plain `sandbox="allow-scripts"` iframe (same restriction as Practice/Build, `context/security.md`) whose `srcDoc` is the three files bundled into one HTML document, debounced ~500ms as the user types — no postMessage/test-harness needed, since there's nothing to grade in v1
+- Seed 1 pilot challenge to prove the system end-to-end; remaining challenges supplied by the user as a separate content pass afterward (same precedent as Feature 49's pilot-then-full-run)
+
+---
+
+### 54 Experiments Gallery
+
+**UI:**
+
+- `/playground/experiments` — grid of project cards (thumbnail, title, description, tags), neal.fun-style
+- `/playground/experiments/[slug]` — live running demo, "View Code" toggle (read-only source, syntax-highlighted), Fullscreen button, Share row (X/Facebook real intents, Instagram best-effort copy-caption — reuses Feature 29's Share row pattern), persistent bottom-center `frontendforever.dev` watermark link
+
+**Logic:**
+
+- Each experiment is a real component under `src/features/playground/experiments/[slug]/`, registered in a config file (title, description, tags, thumbnail, source file paths for the read-only code view) — no DB table, no iframe sandbox (first-party code, not user-submitted; camera/mic-needing experiments just use the normal browser permission prompt)
+- Build 1 pilot experiment to prove the system end-to-end; remaining experiments supplied by the user as a separate content pass afterward
+
+---
+
 ## Feature Count
 
 | Phase                                        | Features |
@@ -1029,9 +1080,10 @@ Every concept eventually gets a hand-built Simulate experience, but each one is 
 | Phase 4 — Learn                               | 8        |
 | Phase 5 — Practice                            | 2        |
 | Phase 6 — Interview Prep                      | 6        |
-| Phase 7 — Explore + Roadmaps                  | 3        |
+| Phase 7 — Roadmaps                            | 2        |
 | Phase 8 — Leaderboard                         | 2        |
 | Phase 9 — Premium                             | 2        |
 | Phase 10 — Concept Curriculum                 | 9        |
 | Phase 11 — Simulator Reimagining (long-term)  | TBD — unscheduled, not counted below |
-| **Total**                                     | **51**   |
+| Phase 12 — Playground                         | 3        |
+| **Total**                                     | **53**   |

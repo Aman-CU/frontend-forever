@@ -19,7 +19,7 @@ const FOOTER_GROUPS: FooterGroup[] = [
   {
     heading: "Product",
     links: [
-      { label: "Explore", href: "/explore" },
+      { label: "Playground", href: "/playground" },
       { label: "Learn", href: "/learn" },
       { label: "Practice", href: "/practice" },
       { label: "Roadmaps", href: "/roadmaps" },
