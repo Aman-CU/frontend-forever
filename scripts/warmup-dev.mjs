@@ -51,6 +51,12 @@ const ROUTES = [
   "/interview-prep/company-guides",
   "/interview-prep/company-guides/openai",
   "/interview-prep/review",
+  "/playground",
+  "/playground/battles",
+  // Login-gated (Feature 53) — an unauthenticated request redirects to
+  // /login, which fetch follows by default, so this still compiles both
+  // routes rather than needing a real session.
+  "/playground/battles/login-card-recreate",
   "/api/auth/get-session",
   // Unauthenticated on purpose — this only needs to trigger compilation, not
   // a real toggle, so a 401 (auth check runs before any DB write) counts as

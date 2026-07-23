@@ -24,6 +24,7 @@ import {
   roadmapSteps,
   studyPlans,
   studyPlanItems,
+  uiBattleChallenges,
 } from "../src/lib/schema";
 import { CONCEPTS } from "./seed/concepts";
 import { CHALLENGES } from "./seed/challenges";
@@ -32,6 +33,7 @@ import { COLLECTION_QUESTIONS } from "./seed/collectionQuestions";
 import { PROJECT_BRIEFS } from "./seed/projectBriefs";
 import { ROADMAPS } from "./seed/roadmaps";
 import { STUDY_PLANS } from "./seed/studyPlans";
+import { UI_BATTLE_CHALLENGES } from "./seed/uiBattles";
 
 // ── DB connection (same TLS pattern as drizzle.config.ts) ────────────────────
 
@@ -308,6 +310,45 @@ async function seed() {
 
     console.log(`[seed] Study plan "${plan.slug}" upserted, ${items.length} item(s) replaced`);
   }
+
+  console.log("[seed] Inserting UI Battle challenges...");
+  const insertedUiBattles = await db
+    .insert(uiBattleChallenges)
+    .values(
+      UI_BATTLE_CHALLENGES.map((b) => ({
+        ...b,
+        targetJs: b.targetJs ?? "",
+        starterJs: b.starterJs ?? "",
+        solutionHtml: b.solutionHtml ?? "",
+        solutionCss: b.solutionCss ?? "",
+        solutionJs: b.solutionJs ?? "",
+        isPremium: b.isPremium ?? false,
+      })),
+    )
+    .onConflictDoUpdate({
+      target: uiBattleChallenges.slug,
+      set: {
+        title: sql`excluded.title`,
+        description: sql`excluded.description`,
+        difficulty: sql`excluded.difficulty`,
+        targetImageUrl: sql`excluded.target_image_url`,
+        targetWidth: sql`excluded.target_width`,
+        targetHeight: sql`excluded.target_height`,
+        targetHtml: sql`excluded.target_html`,
+        targetCss: sql`excluded.target_css`,
+        targetJs: sql`excluded.target_js`,
+        starterHtml: sql`excluded.starter_html`,
+        starterCss: sql`excluded.starter_css`,
+        starterJs: sql`excluded.starter_js`,
+        solutionHtml: sql`excluded.solution_html`,
+        solutionCss: sql`excluded.solution_css`,
+        solutionJs: sql`excluded.solution_js`,
+        isPremium: sql`excluded.is_premium`,
+        orderIndex: sql`excluded.order_index`,
+      },
+    })
+    .returning({ slug: uiBattleChallenges.slug });
+  console.log(`[seed] ${insertedUiBattles.length} UI Battle challenge(s) upserted`);
 
   console.log("[seed] Done.");
   await pool.end();
