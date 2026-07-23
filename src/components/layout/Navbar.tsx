@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Code2,
-  Compass,
+  Gamepad2,
   LucideGraduationCap,
   Map,
   Menu,
@@ -30,7 +30,7 @@ type NavLink = {
 };
 
 const NAV_LINKS: NavLink[] = [
-  { label: "Explore", href: "/explore", icon: Compass },
+  { label: "Playground", href: "/playground", icon: Gamepad2 },
   { label: "Learn", href: "/learn", icon: LucideGraduationCap },
   { label: "Roadmaps", href: "/roadmaps", icon: Map },
   { label: "Practice", href: "/practice", icon: Code2 },

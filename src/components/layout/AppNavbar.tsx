@@ -8,7 +8,7 @@ import {
   Bell,
   Code2,
   Command,
-  Compass,
+  Gamepad2,
   LucideGraduationCap,
   Map,
   Menu,
@@ -24,7 +24,7 @@ import { AppNavbarStats } from "./AppNavbarStats";
 import { AppNavLink, AppMobileNavLink, type NavLink } from "./AppNavLinks";
 
 const NAV_LINKS: NavLink[] = [
-  { label: "Explore", href: "/explore", icon: Compass },
+  { label: "Playground", href: "/playground", icon: Gamepad2 },
   { label: "Learn", href: "/learn", icon: LucideGraduationCap },
   { label: "Roadmaps", href: "/roadmaps", icon: Map },
   { label: "Practice", href: "/practice", icon: Code2 },

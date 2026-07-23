@@ -134,6 +134,13 @@
       "when": 1784662423108,
       "tag": "0018_eminent_the_fury",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1784749723686,
+      "tag": "0019_ui_battle_challenges",
+      "breakpoints": true
     }
   ]
 }
