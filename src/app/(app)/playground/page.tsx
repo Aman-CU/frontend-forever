@@ -3,7 +3,10 @@ import Link from "next/link";
 
 import { BattleCard } from "@/features/playground/components/BattleCard";
 import { ExperimentCard } from "@/features/playground/components/ExperimentCard";
-import { BATTLE_PREVIEW_ITEMS, EXPERIMENT_PREVIEW_ITEMS } from "@/features/playground/lib/previewData";
+import { EXPERIMENT_PREVIEW_ITEMS } from "@/features/playground/lib/previewData";
+import { getUiBattleCatalog } from "@/features/playground/lib/queries";
+
+const BATTLE_PREVIEW_LIMIT = 5;
 
 export const metadata: Metadata = {
   title: "Playground | Frontend Forever",
@@ -19,7 +22,12 @@ export const metadata: Metadata = {
 const SCROLL_ROW_CLASS =
   "flex gap-4 overflow-x-auto py-2 [mask-image:linear-gradient(to_right,transparent,black_2%,black_98%,transparent)]";
 
-export default function PlaygroundPage() {
+export default async function PlaygroundPage() {
+  // Real data as of Feature 53 — same conversion Features 50/51 did for their
+  // own hub previews once their feature shipped (see previewData.ts's header
+  // comment). Honestly shows just the 1 pilot challenge until more ship.
+  const battles = (await getUiBattleCatalog()).slice(0, BATTLE_PREVIEW_LIMIT);
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10 lg:px-8">
       <div>
@@ -43,8 +51,10 @@ export default function PlaygroundPage() {
           </Link>
         </div>
         <div className={SCROLL_ROW_CLASS} style={{ scrollbarWidth: "none" }}>
-          {BATTLE_PREVIEW_ITEMS.map((item) => (
-            <BattleCard key={item.slug} {...item} />
+          {battles.map((item) => (
+            <div key={item.slug} className="w-56 shrink-0">
+              <BattleCard {...item} />
+            </div>
           ))}
         </div>
       </section>

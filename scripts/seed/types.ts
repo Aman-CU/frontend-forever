@@ -87,6 +87,34 @@ export type ProjectBriefSeed = {
   orderIndex: number;
 };
 
+// Feature 53's Playground → UI Battles. targetHtml/targetCss/targetJs render
+// live in the editor's compare pane; targetImageUrl is a one-time screenshot
+// of that same target render, used only for the list page's thumbnail.
+export type UiBattleChallengeSeed = {
+  slug: string;
+  title: string;
+  description: string;
+  difficulty: ChallengeDifficulty;
+  targetImageUrl: string;
+  targetWidth: number;
+  targetHeight: number;
+  targetHtml: string;
+  targetCss: string;
+  targetJs?: string;
+  starterHtml: string;
+  starterCss: string;
+  starterJs?: string;
+  // The official recreation — genuinely separate from targetHtml/Css/Js (see
+  // schema/playground.ts's header comment on why gating the target itself
+  // would be security theater). Optional only for a challenge with no
+  // authored solution yet; omitted defaults to "" via the column default.
+  solutionHtml?: string;
+  solutionCss?: string;
+  solutionJs?: string;
+  isPremium?: boolean;
+  orderIndex: number;
+};
+
 export type RoadmapSeed = {
   slug: string;
   title: string;

@@ -141,6 +141,20 @@
       "when": 1784749723686,
       "tag": "0019_ui_battle_challenges",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1784803120004,
+      "tag": "0020_add_ui_battle_target_source",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1784817726566,
+      "tag": "0021_add_ui_battle_solution",
+      "breakpoints": true
     }
   ]
 }
