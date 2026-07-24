@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy } from "lucide-react";
+import { Check, Copy, Lock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { CodeEditor } from "@/components/shared/CodeEditor";
@@ -9,6 +9,10 @@ import type { ExperimentSource } from "@/lib/experimentSource";
 
 type Props = {
   sources: ExperimentSource[];
+  // Premium gate — the source is stripped server-side (never sent to a
+  // non-premium client), so by the time this renders locked, `sources` is
+  // already empty. Same "never client-side only" pattern as BattleSolutionPanel.
+  isLocked: boolean;
 };
 
 // Read-only view of an experiment's real source (read off disk server-side, see
@@ -17,9 +21,18 @@ type Props = {
 // real language-aware highlighting the minimal Markdown.tsx tokenizer can't give,
 // and this keeps the code view visually identical to the editor the rest of the
 // product uses. File tabs appear only when an experiment has more than one file.
-export function ExperimentCodeView({ sources }: Props) {
+export function ExperimentCodeView({ sources, isLocked }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [copied, setCopied] = useState(false);
+
+  if (isLocked) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-surface-secondary/40 px-4 py-3 text-sm text-text-muted">
+        <Lock className="h-4 w-4 shrink-0" aria-hidden />
+        <span>Upgrade to Premium to view the source code for this experiment.</span>
+      </div>
+    );
+  }
 
   if (sources.length === 0) {
     return (

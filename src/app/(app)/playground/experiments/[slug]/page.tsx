@@ -7,6 +7,8 @@ import {
   getExperiment,
 } from "@/features/playground/experiments/registry";
 import { readExperimentSources } from "@/lib/experimentSource";
+import { getCachedSession } from "@/lib/auth/server";
+import { getIsPremiumUser } from "@/features/playground/lib/queries";
 import { ExperimentWorkspace } from "@/features/playground/components/experiment-viewer/ExperimentWorkspace";
 
 type Props = {
@@ -59,9 +61,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// No login gate — experiments are first-party, publicly viewable, with no
-// personalization or grading (build-plan.md, Feature 54), unlike the Battles
-// editor which gates on login.
+// No login gate — the experiment itself is publicly viewable (build-plan.md,
+// Feature 54), unlike the Battles editor which redirects to login. Only the
+// "View Code" source is premium-gated, enforced server-side below.
 export default async function ExperimentDetailPage({ params }: Props) {
   const { slug } = await params;
   const experiment = getExperiment(slug);
@@ -69,17 +71,19 @@ export default async function ExperimentDetailPage({ params }: Props) {
     notFound();
   }
 
-  // Real source, read off disk server-side — single source of truth for the
-  // View Code panel, never a hand-maintained copy.
-  const sources = readExperimentSources(experiment.sourceFiles);
+  // View Code is a premium feature. Gate it server-side — never read/serialize
+  // the real source for a non-premium (or logged-out) viewer, same "never
+  // client-side only" pattern as the Battles solution (BattleSolutionPanel).
+  const session = await getCachedSession();
+  const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
+  const sources = isPremiumUser ? readExperimentSources(experiment.sourceFiles) : [];
 
   return (
     <ExperimentWorkspace
       slug={experiment.slug}
       title={experiment.title}
-      description={experiment.description}
-      tags={experiment.tags}
       sources={sources}
+      isCodeLocked={!isPremiumUser}
     />
   );
 }
