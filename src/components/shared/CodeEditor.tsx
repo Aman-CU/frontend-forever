@@ -16,6 +16,10 @@ type Props = {
   // switch (which would silently reset each file's undo history/view state
   // every time). Existing single-file callers never pass this.
   path?: string;
+  // Optional read-only mode for source-viewing callers (e.g. the Experiments
+  // "View Code" panel, Feature 54) — purely additive, existing editable
+  // callers never pass it and keep the default false.
+  readOnly?: boolean;
 };
 
 // Monaco is always dark regardless of site theme (intentional contrast), minimap
@@ -28,6 +32,7 @@ export function CodeEditor({
   language = "javascript",
   height = 360,
   path,
+  readOnly = false,
 }: Props) {
   return (
     // h-full is a no-op for every existing caller (their ancestors have no
@@ -61,6 +66,7 @@ export function CodeEditor({
           padding: { top: 16, bottom: 16 },
           renderLineHighlight: "line",
           automaticLayout: true,
+          readOnly,
         }}
       />
     </div>
