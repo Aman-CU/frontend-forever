@@ -4,7 +4,7 @@
 // whitespace, `/`, or `>` (case-insensitive) — not just an exact
 // `</script>` — so `</script >` or `</SCRIPT\n>` must be caught too.
 function escapeForScript(code: string): string {
-  return code.replace(/<\/script(?=[\s/>])/gi, "<\\/script");
+  return code.replace(/<\/script(?=[\s/>])/gi, (match) => `<\\${match.slice(1)}`);
 }
 
 /**
