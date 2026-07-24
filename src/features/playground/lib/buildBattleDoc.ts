@@ -1,7 +1,10 @@
 // A literal </script> inside user JS would otherwise close the doc's own
 // <script> tag early — same escape buildSandboxDoc.ts uses for the same reason.
+// The HTML tokenizer ends a script block on `</script` followed by
+// whitespace, `/`, or `>` (case-insensitive) — not just an exact
+// `</script>` — so `</script >` or `</SCRIPT\n>` must be caught too.
 function escapeForScript(code: string): string {
-  return code.replace(/<\/script>/gi, "<\\/script>");
+  return code.replace(/<\/script(?=[\s/>])/gi, "<\\/script");
 }
 
 /**
