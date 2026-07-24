@@ -35,6 +35,7 @@ const MONACO_LANGUAGE: Record<BattleFile, string> = {
 
 type Props = {
   challenge: {
+    slug: string;
     title: string;
     description: string;
     difficulty: ChallengeDifficulty;
@@ -151,9 +152,20 @@ export function BattleEditorWorkspace({ challenge }: Props) {
                   Monaco from scratch each time). height="100%" fills this
                   column's real height (the h-[calc(...)] chain above gives
                   every ancestor a definite height, so the percentage
-                  actually resolves — see CodeEditor's comment). */}
+                  actually resolves — see CodeEditor's comment).
+
+                  Path is prefixed with the challenge's own slug, not just
+                  the bare file name — Monaco's model registry (and
+                  @monaco-editor/react's keepCurrentModel view-state cache)
+                  are both global, keyed only by this path string, and
+                  keepCurrentModel deliberately skips disposing a model on
+                  unmount. Without the slug prefix, navigating from one
+                  battle to another would silently reuse the *previous*
+                  battle's "html"/"css"/"js" models — the get-or-create
+                  lookup finds the old model by path and returns it as-is,
+                  ignoring the new challenge's real starter code entirely. */}
               <CodeEditor
-                path={activeFile}
+                path={`${challenge.slug}/${activeFile}`}
                 value={files[activeFile]}
                 onChange={handleEditorChange}
                 language={MONACO_LANGUAGE[activeFile]}
