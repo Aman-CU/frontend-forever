@@ -13,7 +13,6 @@ export const metadata: Metadata = {
 export default async function RoadmapsPage() {
   const session = await getCachedSession();
   const userId = session?.user?.id ?? null;
-  const isLoggedIn = userId !== null;
 
   const roadmaps = await getRoadmapSummaries(userId);
   const roleRoadmaps = roadmaps.filter((r) => r.roadmapType === "role");
@@ -36,7 +35,7 @@ export default async function RoadmapsPage() {
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {roleRoadmaps.map((roadmap) => (
-              <RoadmapCard key={roadmap.id} roadmap={roadmap} isLoggedIn={isLoggedIn} />
+              <RoadmapCard key={roadmap.id} roadmap={roadmap} />
             ))}
           </div>
         </section>
@@ -49,7 +48,7 @@ export default async function RoadmapsPage() {
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {skillRoadmaps.map((roadmap) => (
-              <RoadmapCard key={roadmap.id} roadmap={roadmap} isLoggedIn={isLoggedIn} />
+              <RoadmapCard key={roadmap.id} roadmap={roadmap} />
             ))}
           </div>
         </section>
