@@ -1,39 +1,49 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+import { COLOR_CLASSES } from "@/features/learn/lib/categoryMeta";
+import { getRoadmapMeta } from "@/features/roadmaps/lib/roadmapMeta";
 import type { RoadmapSummary } from "@/features/roadmaps/lib/queries";
 
 type Props = {
   roadmap: RoadmapSummary;
 };
 
-// Title-only, per direct user request — no icon, description, count, or
-// progress badge in the resting state. The polish comes from motion instead
-// of extra content: a soft accent glow anchored in one corner (invisible at
-// rest, fades in on hover) and an arrow affordance that slides in from the
-// title's baseline, giving the card somewhere to go visually without adding
-// clutter. bg-surface/50 + backdrop-blur-md on real design tokens (not a
-// hardcoded dark navy) for the "blurred, transparent" look, so it still
-// reads correctly in both light and dark theme.
+// Reverted back to the flat, blurred/transparent card (no motion/glow —
+// tried and rejected), title-only content-wise except for one thing added
+// back per direct request: a small icon to the left of the title, always
+// topic-relevant, never decorative — reuses getRoadmapMeta's per-roadmap
+// icon/badge/color (the same mapping onto each skill roadmap's matching
+// Learn category, e.g. the JS/TS letter badges) rather than a generic icon.
+// bg-surface/60 + backdrop-blur-sm on real design tokens (not a hardcoded
+// dark navy) for the "blurred, transparent" look, adapts to light/dark.
 export function RoadmapCard({ roadmap }: Props) {
+  const { icon: Icon, colorKey, badge, badgeStyle } = getRoadmapMeta(roadmap.slug);
+  const { iconBg, iconText } = COLOR_CLASSES[colorKey];
+
   return (
     <Link
       href={`/roadmaps/${roadmap.slug}`}
-      className="group relative flex items-center justify-between gap-3 overflow-hidden rounded-2xl border border-border/70 bg-surface/50 px-6 py-7 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/50 hover:bg-surface/70 hover:shadow-lg hover:shadow-accent/5"
+      className="flex items-center gap-3 rounded-xl border border-border bg-surface/60 px-5 py-5 backdrop-blur-sm transition-colors hover:border-accent hover:bg-surface/80"
     >
       <div
-        aria-hidden
-        className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-accent opacity-0 blur-3xl transition-opacity duration-300 group-hover:opacity-15"
-      />
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+          badgeStyle ? badgeStyle.bg : iconBg,
+        )}
+      >
+        {badge ? (
+          <span
+            className={cn("text-xs font-bold leading-none", badgeStyle ? badgeStyle.text : iconText)}
+          >
+            {badge}
+          </span>
+        ) : (
+          <Icon className={cn("h-4 w-4", iconText)} aria-hidden />
+        )}
+      </div>
 
-      <span className="relative text-base font-semibold tracking-tight text-text-primary">
-        {roadmap.title}
-      </span>
-
-      <ArrowUpRight
-        className="relative h-4 w-4 shrink-0 -translate-x-1 text-text-muted opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:text-accent group-hover:opacity-100"
-        aria-hidden
-      />
+      <span className="text-sm font-medium text-text-primary">{roadmap.title}</span>
     </Link>
   );
 }
