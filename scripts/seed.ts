@@ -12,7 +12,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { drizzle } from "drizzle-orm/node-postgres";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { Pool } from "pg";
 import {
   concepts,
@@ -21,7 +21,8 @@ import {
   collectionQuestions,
   projectBriefs,
   roadmaps,
-  roadmapSteps,
+  roadmapNodes,
+  roadmapNodeLinks,
   studyPlans,
   studyPlanItems,
   uiBattleChallenges,
@@ -120,6 +121,10 @@ async function seed() {
     .returning({ slug: challenges.slug });
   console.log(`[seed] ${insertedChallenges.length} challenge(s) upserted`);
 
+  // Slug → id map for roadmap_node_links' "practice-challenge" links below.
+  const allChallenges = await db.select({ id: challenges.id, slug: challenges.slug }).from(challenges);
+  const challengeBySlug = Object.fromEntries(allChallenges.map((c) => [c.slug, c.id]));
+
   console.log("[seed] Inserting interview questions...");
   const questionValues = INTERVIEW_QUESTIONS.map(({ conceptSlug, ...q }) => {
     // Fail fast: a conceptSlug that doesn't resolve is a seed-data bug, not a
@@ -193,6 +198,14 @@ async function seed() {
     .returning({ slug: collectionQuestions.slug });
   console.log(`[seed] ${insertedCollectionQuestions.length} collection question(s) upserted`);
 
+  // Slug → id map for roadmap_node_links' "interview-question" links below.
+  const allCollectionQuestions = await db
+    .select({ id: collectionQuestions.id, slug: collectionQuestions.slug })
+    .from(collectionQuestions);
+  const collectionQuestionBySlug = Object.fromEntries(
+    allCollectionQuestions.map((q) => [q.slug, q.id]),
+  );
+
   console.log("[seed] Inserting project briefs...");
   const projectBriefValues = PROJECT_BRIEFS.map(({ conceptSlug, ...pb }) => {
     // Fail fast, same as CHALLENGES/INTERVIEW_QUESTIONS above — a project brief
@@ -225,42 +238,127 @@ async function seed() {
   console.log(`[seed] ${insertedProjectBriefs.length} project brief(s) upserted`);
 
   console.log("[seed] Inserting roadmaps...");
+  // Node/link content is small enough (and reordered often enough during
+  // authoring) that re-authoring beats upserting: each roadmap's existing
+  // nodes are deleted (cascades to roadmap_node_links and
+  // user_roadmap_node_progress) and reinserted fresh on every run — same
+  // precedent as study_plan_items' "no stable per-row key, re-author as a
+  // whole" approach. The roadmaps row itself is still upserted on slug so
+  // its id (and any real user_roadmap_node_progress on nodes that survive
+  // unchanged) stays stable across re-seeds where the slug doesn't change.
   for (const roadmap of ROADMAPS) {
-    const { steps: stepSlugs, ...roadmapData } = roadmap;
+    const { nodes: nodeSeeds, ...roadmapData } = roadmap;
 
-    const [inserted] = await db
+    await db
       .insert(roadmaps)
-      .values(roadmapData)
-      .onConflictDoNothing({ target: roadmaps.slug })
-      .returning({ id: roadmaps.id, slug: roadmaps.slug });
+      .values({ ...roadmapData, isPremium: roadmapData.isPremium ?? false })
+      .onConflictDoUpdate({
+        target: roadmaps.slug,
+        set: {
+          title: sql`excluded.title`,
+          description: sql`excluded.description`,
+          roadmapType: sql`excluded.roadmap_type`,
+          isPremium: sql`excluded.is_premium`,
+          orderIndex: sql`excluded.order_index`,
+        },
+      });
 
-    // Fetch the ID whether we just inserted or it pre-existed
-    const allRoadmaps = await db
-      .select({ id: roadmaps.id, slug: roadmaps.slug })
-      .from(roadmaps);
-    const roadmapId = allRoadmaps.find((r) => r.slug === roadmap.slug)?.id;
-    if (!roadmapId) continue;
+    const [{ id: roadmapId }] = await db
+      .select({ id: roadmaps.id })
+      .from(roadmaps)
+      .where(eq(roadmaps.slug, roadmap.slug));
 
-    const stepRows = stepSlugs
-      .map((slug, i) => {
-        const conceptId = conceptBySlug[slug];
-        if (!conceptId) {
-          console.warn(`[seed] No concept found for slug "${slug}" — skipping step`);
-          return null;
-        }
-        return { roadmapId, conceptId, orderIndex: i + 1 };
-      })
-      .filter(Boolean) as { roadmapId: string; conceptId: string; orderIndex: number }[];
+    await db.delete(roadmapNodes).where(eq(roadmapNodes.roadmapId, roadmapId));
 
-    if (stepRows.length) {
+    // Pass 1: insert every node with no parentId yet (parents may not have
+    // an id assigned until this same insert runs — self-referencing FK).
+    const insertedNodes = await db
+      .insert(roadmapNodes)
+      .values(
+        nodeSeeds.map((n) => ({
+          roadmapId,
+          slug: n.slug,
+          title: n.title,
+          description: n.description ?? "",
+          nodeType: n.nodeType ?? "topic",
+          isOptional: n.isOptional ?? false,
+          positionX: n.positionX,
+          positionY: n.positionY,
+          orderIndex: n.orderIndex,
+        })),
+      )
+      .returning({ id: roadmapNodes.id, slug: roadmapNodes.slug });
+    const nodeIdBySlug = Object.fromEntries(insertedNodes.map((n) => [n.slug, n.id]));
+
+    // Pass 2: backfill parentId now that every node in this roadmap has an id.
+    for (const n of nodeSeeds) {
+      if (!n.parentSlug) continue;
+      const parentId = nodeIdBySlug[n.parentSlug];
+      if (!parentId) {
+        throw new Error(
+          `[seed] Roadmap node "${n.slug}" references unknown parentSlug "${n.parentSlug}" in roadmap "${roadmap.slug}". Fix the seed before re-running.`,
+        );
+      }
       await db
-        .insert(roadmapSteps)
-        .values(stepRows)
-        .onConflictDoNothing({ target: [roadmapSteps.roadmapId, roadmapSteps.orderIndex] });
+        .update(roadmapNodes)
+        .set({ parentId })
+        .where(eq(roadmapNodes.id, nodeIdBySlug[n.slug]));
     }
 
-    const action = inserted ? "inserted" : "already existed";
-    console.log(`[seed] Roadmap "${roadmap.slug}" ${action}, ${stepRows.length} step(s) upserted`);
+    // Pass 3: links, resolved against whichever slug field linkType calls for.
+    const linkRows = nodeSeeds.flatMap((n) =>
+      (n.links ?? []).map((link, i) => {
+        const nodeId = nodeIdBySlug[n.slug];
+        let resolvedIds: {
+          conceptId?: string;
+          challengeId?: string;
+          collectionQuestionId?: string;
+        } = {};
+        if (link.linkType === "learn-concept") {
+          const conceptId = link.conceptSlug ? conceptBySlug[link.conceptSlug] : undefined;
+          if (!conceptId) {
+            throw new Error(
+              `[seed] Roadmap node "${n.slug}" links to unknown conceptSlug "${link.conceptSlug}". Fix the seed before re-running.`,
+            );
+          }
+          resolvedIds = { conceptId };
+        } else if (link.linkType === "practice-challenge") {
+          const challengeId = link.challengeSlug ? challengeBySlug[link.challengeSlug] : undefined;
+          if (!challengeId) {
+            throw new Error(
+              `[seed] Roadmap node "${n.slug}" links to unknown challengeSlug "${link.challengeSlug}". Fix the seed before re-running.`,
+            );
+          }
+          resolvedIds = { challengeId };
+        } else if (link.linkType === "interview-question") {
+          const collectionQuestionId = link.collectionQuestionSlug
+            ? collectionQuestionBySlug[link.collectionQuestionSlug]
+            : undefined;
+          if (!collectionQuestionId) {
+            throw new Error(
+              `[seed] Roadmap node "${n.slug}" links to unknown collectionQuestionSlug "${link.collectionQuestionSlug}". Fix the seed before re-running.`,
+            );
+          }
+          resolvedIds = { collectionQuestionId };
+        }
+        return {
+          nodeId,
+          linkType: link.linkType,
+          ...resolvedIds,
+          externalTitle: link.externalTitle ?? null,
+          externalUrl: link.externalUrl ?? null,
+          orderIndex: i + 1,
+        };
+      }),
+    );
+
+    if (linkRows.length) {
+      await db.insert(roadmapNodeLinks).values(linkRows);
+    }
+
+    console.log(
+      `[seed] Roadmap "${roadmap.slug}" upserted, ${insertedNodes.length} node(s) and ${linkRows.length} link(s) reinserted`,
+    );
   }
 
   console.log("[seed] Inserting study plans...");
