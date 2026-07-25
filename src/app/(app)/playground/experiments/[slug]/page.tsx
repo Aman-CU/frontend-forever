@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import {
@@ -8,21 +7,13 @@ import {
 } from "@/features/playground/experiments/registry";
 import { readExperimentSources } from "@/lib/experimentSource";
 import { getCachedSession } from "@/lib/auth/server";
+import { getBaseUrl } from "@/lib/seo";
 import { getIsPremiumUser } from "@/features/playground/lib/queries";
 import { ExperimentWorkspace } from "@/features/playground/components/experiment-viewer/ExperimentWorkspace";
 
 type Props = {
   params: Promise<{ slug: string }>;
 };
-
-// No NEXT_PUBLIC_SITE_URL in this project — derive from the request, same
-// pattern as the Battles editor page and Practice's Editor page.
-async function getBaseUrl(): Promise<string> {
-  const h = await headers();
-  const host = h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
 
 export function generateStaticParams() {
   return EXPERIMENTS.map((experiment) => ({ slug: experiment.slug }));

@@ -23,16 +23,16 @@ type Particle = {
 // Canvas fillStyle needs a concrete color string — it cannot consume a CSS
 // `var(--color-*)` the way a className can, so the brand tokens are resolved to
 // real values via getComputedStyle here (same constraint/approach as Feature
-// 49's RoughDiagram). The literal below is only a last-resort default if a token
-// ever fails to resolve; it's unreachable in practice since these tokens are
-// always defined in globals.css. It mirrors --color-accent's own teal so even
-// that fallback stays on-brand rather than introducing a foreign color.
+// 49's RoughDiagram). Only genuinely-resolved tokens are returned — no hardcoded
+// fallback color (AGENTS.md rule 2). In practice these tokens are always defined
+// in globals.css; if neither ever resolves, the list is empty and spawn() skips
+// (no particles) rather than inventing a literal color.
 function readAccentColors(el: HTMLElement): string[] {
   const styles = getComputedStyle(el);
-  const accent = styles.getPropertyValue("--color-accent").trim();
-  const premium = styles.getPropertyValue("--color-premium").trim();
-  const fallback = "#14b8a6";
-  return [accent || fallback, premium || accent || fallback];
+  return [
+    styles.getPropertyValue("--color-accent").trim(),
+    styles.getPropertyValue("--color-premium").trim(),
+  ].filter(Boolean);
 }
 
 export function ParticleCursorTrail() {
@@ -66,6 +66,9 @@ export function ParticleCursorTrail() {
     }
 
     function spawn(x: number, y: number) {
+      // No resolved brand color (should never happen — tokens are always in
+      // globals.css) → skip rather than draw an invented color.
+      if (colors.length === 0) return;
       const count = 3;
       for (let i = 0; i < count; i += 1) {
         particles.push({
@@ -101,15 +104,25 @@ export function ParticleCursorTrail() {
       spawn(x, y);
     }
 
-    function tick() {
+    // Frame-rate independent: velocity/gravity/decay are authored at 60Hz, so
+    // scale every per-frame update by dt (elapsed frames since the last tick).
+    // Without this, a 120Hz display fades particles twice as fast and a slow
+    // frame moves them too far. dt is clamped so a long pause (tab backgrounded,
+    // where rAF stops) doesn't teleport everything on the first frame back.
+    const FRAME_MS = 1000 / 60;
+    let lastTime = performance.now();
+
+    function tick(now: number) {
       if (!running) return;
+      const dt = Math.min((now - lastTime) / FRAME_MS, 3);
+      lastTime = now;
       ctx!.clearRect(0, 0, width, height);
       for (let i = particles.length - 1; i >= 0; i -= 1) {
         const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.02; // gentle gravity
-        p.life -= 0.016;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 0.02 * dt; // gentle gravity
+        p.life -= 0.016 * dt;
         if (p.life <= 0) {
           particles.splice(i, 1);
           continue;
