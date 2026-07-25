@@ -3,10 +3,11 @@ import Link from "next/link";
 
 import { BattleCard } from "@/features/playground/components/BattleCard";
 import { ExperimentCard } from "@/features/playground/components/ExperimentCard";
-import { EXPERIMENT_PREVIEW_ITEMS } from "@/features/playground/lib/previewData";
+import { EXPERIMENTS } from "@/features/playground/experiments/registry";
 import { getUiBattleCatalog } from "@/features/playground/lib/queries";
 
 const BATTLE_PREVIEW_LIMIT = 5;
+const EXPERIMENT_PREVIEW_LIMIT = 5;
 
 export const metadata: Metadata = {
   title: "Playground | Frontend Forever",
@@ -23,10 +24,12 @@ const SCROLL_ROW_CLASS =
   "flex gap-4 overflow-x-auto py-2 [mask-image:linear-gradient(to_right,transparent,black_2%,black_98%,transparent)]";
 
 export default async function PlaygroundPage() {
-  // Real data as of Feature 53 — same conversion Features 50/51 did for their
-  // own hub previews once their feature shipped (see previewData.ts's header
-  // comment). Honestly shows just the 1 pilot challenge until more ship.
+  // Both preview rows are now real data — Battles from its table (Feature 53),
+  // Experiments from the in-repo registry (Feature 54). Same hub-preview-to-real
+  // conversion Features 50/51/53 did once their own feature shipped. Honestly
+  // shows just the pilot in each row until more ship.
   const battles = (await getUiBattleCatalog()).slice(0, BATTLE_PREVIEW_LIMIT);
+  const experiments = EXPERIMENTS.slice(0, EXPERIMENT_PREVIEW_LIMIT);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-10 lg:px-8">
@@ -72,8 +75,15 @@ export default async function PlaygroundPage() {
           </Link>
         </div>
         <div className={SCROLL_ROW_CLASS} style={{ scrollbarWidth: "none" }}>
-          {EXPERIMENT_PREVIEW_ITEMS.map((item) => (
-            <ExperimentCard key={item.slug} {...item} />
+          {experiments.map((item) => (
+            <div key={item.slug} className="w-56 shrink-0">
+              <ExperimentCard
+                slug={item.slug}
+                title={item.title}
+                description={item.description}
+                thumbnail={item.thumbnail}
+              />
+            </div>
           ))}
         </div>
       </section>
