@@ -119,15 +119,15 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<Pa
       </div>
 
       <div className="mx-auto w-full max-w-6xl px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr]">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_240px]">
+          <div className="min-w-0">
+            <RoadmapDetailView initialNodes={roadmap.nodes} isLoggedIn={userId !== null} />
+          </div>
           <aside className="hidden lg:block">
             <div className="sticky top-20">
               <RoadmapSidebar relatedRoadmaps={relatedRoadmaps} />
             </div>
           </aside>
-          <div className="min-w-0">
-            <RoadmapDetailView initialNodes={roadmap.nodes} isLoggedIn={userId !== null} />
-          </div>
         </div>
       </div>
 
