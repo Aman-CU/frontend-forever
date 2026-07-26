@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CheckCircle2, Circle } from "lucide-react";
 
 import { getRoadmapMeta } from "@/features/roadmaps/lib/roadmapMeta";
+import { isRoadmapComingSoon } from "@/features/roadmaps/lib/comingSoonRoadmaps";
 import type { RoadmapSummary } from "@/features/roadmaps/lib/queries";
 
 type Props = {
@@ -40,6 +41,7 @@ export function RoadmapSidebar({ relatedRoadmaps }: Props) {
           <ul className="space-y-1">
             {relatedRoadmaps.map((roadmap) => {
               const { icon: Icon } = getRoadmapMeta(roadmap.slug);
+              const comingSoon = isRoadmapComingSoon(roadmap.slug);
               return (
                 <li key={roadmap.id}>
                   <Link
@@ -47,7 +49,12 @@ export function RoadmapSidebar({ relatedRoadmaps }: Props) {
                     className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
                   >
                     <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                    <span className="truncate">{roadmap.title}</span>
+                    <span className="min-w-0 flex-1 truncate">{roadmap.title}</span>
+                    {comingSoon && (
+                      <span className="shrink-0 rounded-full bg-surface-secondary px-2 py-0.5 text-[0.6875rem] font-semibold text-text-secondary">
+                        Soon
+                      </span>
+                    )}
                   </Link>
                 </li>
               );

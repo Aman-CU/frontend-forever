@@ -1,8 +1,8 @@
 import type { RoadmapSeed, RoadmapNodeSeed, RoadmapNodeLinkSeed } from "./types";
-import type { ConceptCategory } from "../../src/lib/constants";
+import { PLAYBOOK_SLUGS, type ConceptCategory } from "../../src/lib/constants";
+import { CATEGORY_META } from "../../src/features/learn/lib/categoryMeta";
+import { PLAYBOOK_META } from "../../src/features/interview-prep/lib/playbookMeta";
 import { CONCEPTS } from "./concepts";
-
-const CONCEPT_BY_SLUG = new Map(CONCEPTS.map((c) => [c.slug, c]));
 
 // Skill-based roadmaps (JavaScript/CSS/React/TypeScript) map 1:1 onto a
 // CONCEPT_CATEGORIES value — every node is that category's existing Learn
@@ -56,31 +56,6 @@ type RoadmapEntry = SectionSpec | TopicSpec;
 
 function isSection(entry: RoadmapEntry): entry is SectionSpec {
   return "topics" in entry;
-}
-
-// A topic that reuses an existing Learn concept's own title/description —
-// keeps the roadmap node's copy consistent with the concept page it links
-// to, and avoids re-authoring blurbs by hand. `prefix` disambiguates node
-// slugs across different roadmaps that both reference the same concept
-// (roadmap_nodes' unique constraint is (roadmap_id, slug) — scoped per
-// roadmap, so this isn't strictly required, but a slug like "fd-closures"
-// naming which roadmap authored it beats a bare "closures" once more than
-// one roadmap links the same concept).
-function conceptTopic(
-  slug: string,
-  opts?: { isOptional?: boolean; prefix?: string },
-): TopicSpec {
-  const concept = CONCEPT_BY_SLUG.get(slug);
-  if (!concept) {
-    throw new Error(`[seed] Roadmap references unknown concept slug "${slug}"`);
-  }
-  return {
-    slug: `${opts?.prefix ?? "fd"}-${slug}`,
-    title: concept.title,
-    description: concept.description,
-    isOptional: opts?.isOptional,
-    links: [{ linkType: "learn-concept", conceptSlug: slug }],
-  };
 }
 
 function externalTopic(
@@ -149,6 +124,37 @@ function internalPageTopic(
     title,
     description,
     links: [{ linkType: "internal-page", externalTitle: pageTitle, externalUrl: href }],
+  };
+}
+
+// A topic representing a whole Learn category, not one specific concept —
+// "Learn the Fundamentals" originally branched into 8 individual concepts
+// (one flagship pick per category), which read as "complete these 8 narrow
+// items" rather than "go learn this whole category" (direct user
+// feedback). Links to the category's real entry point — the same first-
+// concept URL the /learn hub's own CategoryCard uses (there's no standalone
+// category index route) — but as an internal-page link, not a
+// learn-concept one, so the node doesn't misleadingly auto-complete off
+// finishing just that one entry concept.
+function learnCategoryTopic(category: ConceptCategory): TopicSpec {
+  const meta = CATEGORY_META[category];
+  const firstConcept = CONCEPTS.filter((c) => c.category === category).sort(
+    (a, b) => a.orderIndex - b.orderIndex,
+  )[0];
+  if (!firstConcept) {
+    throw new Error(`[seed] No concepts found for Learn category "${category}"`);
+  }
+  return {
+    slug: `pt-learn-${category}`,
+    title: meta.label,
+    description: meta.description,
+    links: [
+      {
+        linkType: "internal-page",
+        externalTitle: `${meta.label} — Learn`,
+        externalUrl: `/learn/${category}/${firstConcept.slug}`,
+      },
+    ],
   };
 }
 
@@ -1214,14 +1220,14 @@ const FRONTEND_INTERVIEW_CRACKING_ENTRIES: RoadmapEntry[] = [
     slug: "learn-the-fundamentals",
     title: "Learn the Fundamentals",
     topics: [
-      conceptTopic("hoisting-temporal-dead-zone", { prefix: "pt" }),
-      conceptTopic("dom-vs-bom", { prefix: "pt" }),
-      conceptTopic("the-box-model", { prefix: "pt" }),
-      conceptTopic("basic-types-inference", { prefix: "pt" }),
-      conceptTopic("jsx-virtual-dom", { prefix: "pt" }),
-      conceptTopic("aria-roles-and-semantic-html", { prefix: "pt" }),
-      conceptTopic("image-asset-optimization", { prefix: "pt" }),
-      conceptTopic("component-driven-architecture", { prefix: "pt" }),
+      learnCategoryTopic("javascript-runtime"),
+      learnCategoryTopic("browser-internals"),
+      learnCategoryTopic("react"),
+      learnCategoryTopic("css"),
+      learnCategoryTopic("typescript"),
+      learnCategoryTopic("accessibility"),
+      learnCategoryTopic("performance"),
+      learnCategoryTopic("system-design"),
     ],
   },
   {
@@ -1299,51 +1305,40 @@ const FRONTEND_INTERVIEW_CRACKING_ENTRIES: RoadmapEntry[] = [
     ],
   },
   {
+    // Was 3 branches, each a single specific system-design guide — same
+    // narrow-item problem as the old Learn branches. There's also no
+    // per-section deep link on the real index page (it's one page grouping
+    // 28 guides under 5 dynamic section headings), so multiple branches
+    // would just repeat the same URL. One branch, to the real index.
     slug: "master-system-design",
     title: "Master System Design",
     topics: [
       internalPageTopic(
-        "system-design-infinite-scroll",
-        "Designing an Infinite-Scroll Feed",
-        "One of the most commonly asked frontend system design problems, worked through end to end.",
-        "Infinite-Scroll Feed — FF System Design",
-        "/interview-prep/ff-system-design/infinite-scroll-feed",
-      ),
-      internalPageTopic(
-        "system-design-ecommerce",
-        "E-Commerce Storefront",
-        "Designing the product listing, cart, and checkout flow of a real e-commerce frontend.",
-        "E-Commerce Storefront — FF System Design",
-        "/interview-prep/ff-system-design/ecommerce-storefront",
-      ),
-      internalPageTopic(
-        "system-design-video-conferencing",
-        "Browser Video Conferencing",
-        "Designing a real-time video call UI — the kind of system-design question that tests WebRTC and real-time state at once.",
-        "Browser Video Conferencing — FF System Design",
-        "/interview-prep/ff-system-design/browser-video-conferencing",
+        "system-design-guides",
+        "Front-End System Design Guides",
+        "28 real front-end system design problems — infinite-scroll feeds, real-time collaboration, media players, offline sync — worked through requirements to trade-offs, not abstract distributed-systems trivia.",
+        "FF System Design — Frontend Forever",
+        "/interview-prep/ff-system-design",
       ),
     ],
   },
   {
+    // Was 2 branches into individual chapters of 2 of the 6 playbooks — now
+    // one branch per playbook, linking each to its own index/chapter-list
+    // page rather than one specific chapter, driven directly off the real
+    // PLAYBOOK_SLUGS/PLAYBOOK_META so this can't drift from what the site
+    // actually has.
     slug: "read-the-playbook",
     title: "Read the Playbook",
-    topics: [
+    topics: PLAYBOOK_SLUGS.map((playbookSlug) =>
       internalPageTopic(
-        "playbook-interview-structure",
-        "How Frontend Interviews Are Structured",
-        "What actually happens across a real interview loop — the formats, the rounds, and what each one is actually scoring.",
-        "How Frontend Interviews Are Structured — Playbook",
-        "/interview-prep/playbook/frontend-interview-playbook/how-frontend-interviews-are-structured",
+        `playbook-${playbookSlug}`,
+        PLAYBOOK_META[playbookSlug].label,
+        PLAYBOOK_META[playbookSlug].description,
+        `${PLAYBOOK_META[playbookSlug].label} — Playbook`,
+        `/interview-prep/playbook/${playbookSlug}`,
       ),
-      internalPageTopic(
-        "playbook-react-gotchas",
-        "Classic React Gotchas, Explained",
-        "The React-specific mistakes and misconceptions that come up over and over again in real interview loops.",
-        "Classic React Gotchas, Explained — Playbook",
-        "/interview-prep/playbook/react-interview-playbook/classic-react-gotchas-explained",
-      ),
-    ],
+    ),
   },
   {
     slug: "sharpen-your-skills-in-the-playground",
@@ -1373,23 +1368,28 @@ const FRONTEND_INTERVIEW_CRACKING_NODES: RoadmapNodeSeed[] = layoutColumns([
 
 export const ROADMAPS: RoadmapSeed[] = [
   {
+    // Slug kept as-is (renaming would orphan the old row — seed.ts upserts
+    // roadmaps by slug and never prunes at the roadmap level, only within a
+    // roadmap's own nodes) — only the display title changed, per direct
+    // user request. orderIndex 1 puts this first in the role-based section,
+    // ahead of Frontend Developer below.
+    slug: "frontend-interview-cracking",
+    title: "Frontend Forever Roadmap",
+    description:
+      "A guided tour of Frontend Forever itself — Learn concepts, real Practice challenges, FF Collections interview questions, System Design guides, the Playbook, and the Playground, in the order that actually gets you interview-ready.",
+    roadmapType: "role",
+    orderIndex: 1,
+    nodes: FRONTEND_INTERVIEW_CRACKING_NODES,
+  },
+
+  {
     slug: "frontend-developer",
     title: "Frontend Developer Roadmap",
     description:
       "Step-by-step guide to becoming a job-ready frontend developer — from how the internet works to modern frameworks, tooling, and interview prep.",
     roadmapType: "role",
-    orderIndex: 1,
-    nodes: FRONTEND_DEVELOPER_NODES,
-  },
-
-  {
-    slug: "frontend-interview-cracking",
-    title: "Frontend Interview Cracking Roadmap",
-    description:
-      "A guided tour of Frontend Forever itself — Learn concepts, real Practice challenges, FF Collections interview questions, System Design guides, the Playbook, and the Playground, in the order that actually gets you interview-ready.",
-    roadmapType: "role",
     orderIndex: 2,
-    nodes: FRONTEND_INTERVIEW_CRACKING_NODES,
+    nodes: FRONTEND_DEVELOPER_NODES,
   },
 
   {

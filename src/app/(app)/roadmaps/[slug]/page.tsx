@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,12 +8,51 @@ import { getBaseUrl, safeJsonLd, toPlainTextSummary } from "@/lib/seo";
 import { getCachedSession } from "@/lib/auth/server";
 import { getRoadmapDetail, getRoadmapSummaries } from "@/features/roadmaps/lib/queries";
 import { getRoadmapMeta } from "@/features/roadmaps/lib/roadmapMeta";
+import { isRoadmapComingSoon } from "@/features/roadmaps/lib/comingSoonRoadmaps";
 import { ROADMAP_SEO_CONTENT } from "@/features/roadmaps/lib/roadmapSeoContent";
 import { RoadmapDetailView } from "@/features/roadmaps/components/RoadmapDetailView";
 import { RoadmapFaq } from "@/features/roadmaps/components/RoadmapFaq";
 import { RoadmapSidebar } from "@/features/roadmaps/components/RoadmapSidebar";
+import { RoadmapComingSoonState } from "@/features/roadmaps/components/RoadmapComingSoonState";
 
 type Params = { slug: string };
+
+// Shared between the "coming soon" early return and the real roadmap render
+// below — same back-link/icon/title/description block either way, so it's
+// not duplicated between the two return statements.
+function RoadmapPageHeader({
+  icon: Icon,
+  iconClassName,
+  title,
+  description,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  iconClassName: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="mx-auto w-full max-w-6xl px-6 pt-8 lg:px-8">
+      <Link
+        href="/roadmaps"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-text-primary"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+        Roadmaps
+      </Link>
+
+      <div className="mb-6 flex items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-muted">
+          <Icon className={iconClassName} aria-hidden />
+        </div>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-text-primary">{title}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-text-secondary">{description}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export async function generateMetadata({
   params,
@@ -20,19 +60,25 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const roadmap = await getRoadmapDetail(slug, null);
+  // The cached summaries catalog has everything metadata needs (title,
+  // description) — no reason to pay for getRoadmapDetail's full node/link
+  // join here just to read 2 fields off the parent roadmap row.
+  const roadmap = (await getRoadmapSummaries(null)).find((r) => r.slug === slug);
   if (!roadmap) return {};
 
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/roadmaps/${slug}`;
-  const title = `${roadmap.title} | Frontend Forever`;
+  const comingSoon = isRoadmapComingSoon(slug);
+  const title = comingSoon
+    ? `${roadmap.title} (Coming Soon) | Frontend Forever`
+    : `${roadmap.title} | Frontend Forever`;
   const description = toPlainTextSummary(roadmap.description, 160);
 
   return {
     title,
     description,
     alternates: { canonical: pageUrl },
-    robots: { index: true, follow: true },
+    robots: { index: !comingSoon, follow: true },
     openGraph: { title, description, url: pageUrl, type: "article", siteName: "Frontend Forever" },
     twitter: { card: "summary_large_image", title, description },
   };
@@ -43,18 +89,41 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<Pa
 
   const session = await getCachedSession();
   const userId = session?.user?.id ?? null;
+  const comingSoon = isRoadmapComingSoon(slug);
 
-  const [roadmap, allRoadmaps] = await Promise.all([
-    getRoadmapDetail(slug, userId),
-    getRoadmapSummaries(userId),
-  ]);
-  if (!roadmap) notFound();
-  const relatedRoadmaps = allRoadmaps.filter((r) => r.slug !== roadmap.slug);
+  // A "coming soon" roadmap's detail page renders nothing from the real
+  // node graph (see below) — skip the heavy getRoadmapDetail join entirely
+  // for those slugs and use the summaries catalog's already-cached row
+  // instead. Real roadmaps still fetch the full graph as before.
+  const allRoadmaps = await getRoadmapSummaries(userId);
+  const roadmapSummary = allRoadmaps.find((r) => r.slug === slug);
+  if (!roadmapSummary) notFound();
+  const relatedRoadmaps = allRoadmaps.filter((r) => r.slug !== slug);
 
-  const { icon: Icon } = getRoadmapMeta(roadmap.slug);
-  const seoContent = ROADMAP_SEO_CONTENT[roadmap.slug];
+  const { icon: Icon, iconClassName } = getRoadmapMeta(slug);
+  const seoContent = ROADMAP_SEO_CONTENT[slug];
   const baseUrl = await getBaseUrl();
-  const pageUrl = `${baseUrl}/roadmaps/${roadmap.slug}`;
+  const pageUrl = `${baseUrl}/roadmaps/${slug}`;
+
+  if (comingSoon) {
+    return (
+      <div className="pb-16">
+        <RoadmapPageHeader
+          icon={Icon}
+          iconClassName={iconClassName}
+          title={roadmapSummary.title}
+          description={roadmapSummary.description}
+        />
+
+        <div className="mx-auto w-full max-w-6xl px-6 lg:px-8">
+          <RoadmapComingSoonState />
+        </div>
+      </div>
+    );
+  }
+
+  const roadmap = await getRoadmapDetail(slug, userId);
+  if (!roadmap) notFound();
 
   const topicCount = roadmap.nodes.filter((n) => n.nodeType === "topic").length;
 
@@ -98,25 +167,12 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<Pa
       <script type="application/ld+json">{safeJsonLd(breadcrumbJsonLd)}</script>
       {faqJsonLd && <script type="application/ld+json">{safeJsonLd(faqJsonLd)}</script>}
 
-      <div className="mx-auto w-full max-w-6xl px-6 pt-8 lg:px-8">
-        <Link
-          href="/roadmaps"
-          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-text-primary"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
-          Roadmaps
-        </Link>
-
-        <div className="mb-6 flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-muted">
-            <Icon className="h-5 w-5 text-accent" aria-hidden />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-text-primary">{roadmap.title}</h1>
-            <p className="mt-1 max-w-2xl text-sm text-text-secondary">{roadmap.description}</p>
-          </div>
-        </div>
-      </div>
+      <RoadmapPageHeader
+        icon={Icon}
+        iconClassName={iconClassName}
+        title={roadmap.title}
+        description={roadmap.description}
+      />
 
       <div className="mx-auto w-full max-w-6xl px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_240px]">

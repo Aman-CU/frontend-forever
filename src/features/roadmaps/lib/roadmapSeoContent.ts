@@ -45,6 +45,36 @@ export const ROADMAP_SEO_CONTENT: Record<string, RoadmapSeoContent> = {
         answer:
           "No — they're independent. If you're already comfortable with frontend fundamentals and specifically preparing for interviews, start here directly.",
       },
+      {
+        question: "Do I need a premium account to follow this roadmap?",
+        answer:
+          "No. Most of what this roadmap links to — Learn concepts, most Practice challenges, most FF Collections questions, the Playbook, and the System Design guides — is free. A handful of individual items are premium-gated (UI Battles' official solutions, Experiments' View Code panel, some Study Plans), but they're the exception, not the rule, across this roadmap.",
+      },
+      {
+        question: "Do I have to follow the sections in order?",
+        answer:
+          "No, but the order is deliberate. The sections move from building the fundamentals, to practicing them, to interview-specific prep (FF Collections, System Design, the Playbook) — the sequence most people actually need. Every section links to a real, standalone page though, so you can jump straight to whichever one matches where you already are.",
+      },
+      {
+        question: "How long does this roadmap take to complete?",
+        answer:
+          "There's no fixed length — this isn't a single course, it's a map across Learn, Practice, Interview Prep, and the Playground, and each of those sections is its own body of content you can go as deep on as you need. Treat it as a standing reference for what to do next rather than something with a finish line.",
+      },
+      {
+        question: "Does this roadmap replace Frontend Forever's Study Plans?",
+        answer:
+          "No — they solve different problems. Study Plans (linked from this roadmap's \"Ace the Interview\" section) give you a fixed day-by-day schedule for a specific deadline, 1 week, 1 month, or 3 months. This roadmap is a broader, untimed map of the platform itself, useful whether or not you're working against a deadline.",
+      },
+      {
+        question: "Does finishing a section here track my real progress?",
+        answer:
+          "It depends on what the node links to. Nodes that point at a real Learn concept, Practice challenge, or FF Collections question track your actual completion on that page automatically. Nodes that point elsewhere (Playbook chapters, System Design guides, Company Guides, Study Plans, the Playground) can be marked done manually once you're logged in, since those pages don't have their own completion state for the roadmap to read.",
+      },
+      {
+        question: "Is this roadmap enough on its own to get interview-ready?",
+        answer:
+          "It's a map to real, substantial content, not a replacement for the depth inside each section. Following every link here gets you through Frontend Forever's own Learn concepts, Practice challenges, FF Collections questions, System Design guides, and the Playbook in a sensible order — how interview-ready that leaves you still depends on how thoroughly you work through what each link leads to.",
+      },
     ],
   },
 
