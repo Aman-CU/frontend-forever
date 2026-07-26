@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { BookOpen, Code2, HelpCircle, Newspaper, Video, X, CheckCircle2 } from "lucide-react";
+import { BookOpen, Code2, Compass, HelpCircle, Newspaper, Video, X, CheckCircle2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ const LINK_ICON: Record<RoadmapNodeLinkView["linkType"], LucideIcon> = {
   "interview-question": HelpCircle,
   "external-video": Video,
   "external-article": Newspaper,
+  "internal-page": Compass,
 };
 
 const LINK_GROUP_LABEL: Record<RoadmapNodeLinkView["linkType"], string> = {
@@ -30,6 +31,7 @@ const LINK_GROUP_LABEL: Record<RoadmapNodeLinkView["linkType"], string> = {
   "interview-question": "Interview questions",
   "external-video": "Watch",
   "external-article": "Read",
+  "internal-page": "On Frontend Forever",
 };
 
 export function RoadmapNodePanel({ node, onClose, onToggleComplete, isLoggedIn, isSaving }: Props) {

@@ -60,14 +60,22 @@ function isSection(entry: RoadmapEntry): entry is SectionSpec {
 
 // A topic that reuses an existing Learn concept's own title/description —
 // keeps the roadmap node's copy consistent with the concept page it links
-// to, and avoids re-authoring 30+ blurbs by hand.
-function conceptTopic(slug: string, opts?: { isOptional?: boolean }): TopicSpec {
+// to, and avoids re-authoring blurbs by hand. `prefix` disambiguates node
+// slugs across different roadmaps that both reference the same concept
+// (roadmap_nodes' unique constraint is (roadmap_id, slug) — scoped per
+// roadmap, so this isn't strictly required, but a slug like "fd-closures"
+// naming which roadmap authored it beats a bare "closures" once more than
+// one roadmap links the same concept).
+function conceptTopic(
+  slug: string,
+  opts?: { isOptional?: boolean; prefix?: string },
+): TopicSpec {
   const concept = CONCEPT_BY_SLUG.get(slug);
   if (!concept) {
-    throw new Error(`[seed] Frontend Developer roadmap references unknown concept slug "${slug}"`);
+    throw new Error(`[seed] Roadmap references unknown concept slug "${slug}"`);
   }
   return {
-    slug: `fd-${slug}`,
+    slug: `${opts?.prefix ?? "fd"}-${slug}`,
     title: concept.title,
     description: concept.description,
     isOptional: opts?.isOptional,
@@ -82,12 +90,65 @@ function externalTopic(
   linkType: "external-article" | "external-video",
   externalTitle: string,
   externalUrl: string,
+  opts?: { isOptional?: boolean },
 ): TopicSpec {
   return {
     slug,
     title,
     description,
+    isOptional: opts?.isOptional,
     links: [{ linkType, externalTitle, externalUrl }],
+  };
+}
+
+// A topic pointing at a real Practice challenge — powers "Practice What
+// You Learn" on the platform-tour roadmap (Frontend Developer stays
+// pure-external, matching roadmap.sh, so this helper is unused there).
+function practiceChallengeTopic(
+  slug: string,
+  title: string,
+  description: string,
+  challengeSlug: string,
+): TopicSpec {
+  return {
+    slug: `pt-${slug}`,
+    title,
+    description,
+    links: [{ linkType: "practice-challenge", challengeSlug }],
+  };
+}
+
+// A topic pointing at a real FF Collections interview question.
+function interviewQuestionTopic(
+  slug: string,
+  title: string,
+  description: string,
+  collectionQuestionSlug: string,
+): TopicSpec {
+  return {
+    slug: `pt-${slug}`,
+    title,
+    description,
+    links: [{ linkType: "interview-question", collectionQuestionSlug }],
+  };
+}
+
+// A topic pointing at a same-site FF page with no DB row of its own
+// (Playbook chapter, System Design guide, Company Guides, Study Plans,
+// UI Battles, Experiments) — see constants.ts's ROADMAP_NODE_LINK_TYPES
+// comment on why this reuses the external_title/external_url columns.
+function internalPageTopic(
+  slug: string,
+  title: string,
+  description: string,
+  pageTitle: string,
+  href: string,
+): TopicSpec {
+  return {
+    slug: `pt-${slug}`,
+    title,
+    description,
+    links: [{ linkType: "internal-page", externalTitle: pageTitle, externalUrl: href }],
   };
 }
 
@@ -200,7 +261,14 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
         "Domain — MDN Glossary",
         "https://developer.mozilla.org/en-US/docs/Glossary/Domain",
       ),
-      conceptTopic("the-network-stack"),
+      externalTopic(
+        "dns-and-how-it-works",
+        "DNS and How It Works",
+        "The lookup that turns a human-readable domain name into the IP address a browser actually connects to.",
+        "external-article",
+        "DNS — MDN Glossary",
+        "https://developer.mozilla.org/en-US/docs/Glossary/DNS",
+      ),
       externalTopic(
         "how-the-web-works",
         "How the Web Works",
@@ -223,29 +291,106 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
         "Structuring content with HTML — MDN",
         "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content",
       ),
-      conceptTopic("aria-roles-and-semantic-html"),
+      externalTopic(
+        "aria-roles-and-semantic-html",
+        "Semantic HTML & ARIA Roles",
+        "Using the HTML element that already means what you're building, and reaching for ARIA only when no native element does.",
+        "external-article",
+        "WAI-ARIA basics — MDN",
+        "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility/WAI-ARIA_basics",
+      ),
     ],
   },
   {
     slug: "css-fundamentals",
     title: "CSS Fundamentals",
     topics: [
-      conceptTopic("the-box-model"),
-      conceptTopic("units-sizing"),
-      conceptTopic("the-cascade-inheritance"),
-      conceptTopic("css-specificity"),
-      conceptTopic("flexbox-vs-grid"),
+      externalTopic(
+        "the-box-model",
+        "The Box Model",
+        "Every element on a page is a box — content, padding, border, and margin, in that order.",
+        "external-article",
+        "Introduction to the CSS box model — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_box_model/Introduction_to_the_CSS_box_model",
+      ),
+      externalTopic(
+        "units-sizing",
+        "Units & Sizing",
+        "Pixels, percentages, rem/em, viewport units — the data types every CSS value is measured in.",
+        "external-article",
+        "CSS values and units — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Values_and_Units",
+      ),
+      externalTopic(
+        "the-cascade-inheritance",
+        "The Cascade & Inheritance",
+        "How the browser resolves conflicting style declarations, and which properties a child element inherits from its parent by default.",
+        "external-article",
+        "CSS cascading and inheritance — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Cascade",
+      ),
+      externalTopic(
+        "css-specificity",
+        "CSS Specificity",
+        "The weight the browser assigns to a selector to decide which of several conflicting rules actually wins.",
+        "external-article",
+        "Specificity — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity",
+      ),
+      externalTopic(
+        "flexbox-vs-grid",
+        "Flexbox",
+        "A one-dimensional layout model for distributing space between items in a row or a column.",
+        "external-article",
+        "Basic concepts of flexbox — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout/Basic_concepts_of_flexbox",
+      ),
     ],
   },
   {
     slug: "javascript-fundamentals",
     title: "JavaScript Fundamentals",
     topics: [
-      conceptTopic("hoisting-temporal-dead-zone"),
-      conceptTopic("equality-type-coercion"),
-      conceptTopic("closures"),
-      conceptTopic("callbacks-higher-order-functions"),
-      conceptTopic("array-object-methods-immutability"),
+      externalTopic(
+        "hoisting-temporal-dead-zone",
+        "Hoisting & the Temporal Dead Zone",
+        "Why a var, let, const, or function declaration behaves as if it were available before the line it's written on.",
+        "external-article",
+        "Hoisting — MDN Glossary",
+        "https://developer.mozilla.org/en-US/docs/Glossary/Hoisting",
+      ),
+      externalTopic(
+        "equality-type-coercion",
+        "Equality & Type Coercion",
+        "== converts types before comparing, === doesn't — the difference that causes most of JavaScript's infamous equality surprises.",
+        "external-article",
+        "Equality comparisons and sameness — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Equality_comparisons_and_sameness",
+      ),
+      externalTopic(
+        "closures",
+        "Closures",
+        "A function that remembers the variables from the scope it was created in, even after that outer function has already returned.",
+        "external-article",
+        "Closures — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Closures",
+      ),
+      externalTopic(
+        "callbacks-higher-order-functions",
+        "Callbacks & Higher-Order Functions",
+        "A function passed into another function, to be called back later — the pattern underlying array methods, events, and most async code.",
+        "external-article",
+        "Callback function — MDN Glossary",
+        "https://developer.mozilla.org/en-US/docs/Glossary/Callback_function",
+      ),
+      externalTopic(
+        "array-object-methods-immutability",
+        "Array & Object Methods",
+        "map/filter/reduce and friends — transforming data by returning a new array instead of mutating the original in place.",
+        "external-article",
+        "Array — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array",
+      ),
     ],
   },
   {
@@ -360,18 +505,6 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
         "Docs — SolidJS",
         "https://docs.solidjs.com/",
       ),
-    ],
-  },
-  {
-    slug: "react-fundamentals",
-    title: "React Fundamentals",
-    topics: [
-      conceptTopic("jsx-virtual-dom"),
-      conceptTopic("usestate-useeffect-fundamentals"),
-      conceptTopic("controlled-vs-uncontrolled-forms"),
-      conceptTopic("context-api-prop-drilling"),
-      conceptTopic("react-rendering"),
-      conceptTopic("custom-hooks-composition"),
     ],
   },
   {
@@ -498,23 +631,102 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
     slug: "css-beyond-the-basics",
     title: "CSS Beyond the Basics",
     topics: [
-      conceptTopic("positioning-stacking-contexts"),
-      conceptTopic("responsive-design-container-queries"),
-      conceptTopic("custom-properties-theming"),
-      conceptTopic("pseudo-classes-pseudo-elements-has"),
-      conceptTopic("animation-performance", { isOptional: true }),
+      externalTopic(
+        "positioning-stacking-contexts",
+        "Positioning & Stacking Contexts",
+        "static/relative/absolute/fixed/sticky, and the z-axis rules that decide which overlapping element actually renders on top.",
+        "external-article",
+        "Stacking context — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Positioned_layout/Stacking_context",
+      ),
+      externalTopic(
+        "responsive-design-container-queries",
+        "Responsive Design & Container Queries",
+        "Media queries respond to the viewport; container queries let a component respond to the size of its own parent instead.",
+        "external-article",
+        "CSS container queries — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Containment/Container_queries",
+      ),
+      externalTopic(
+        "custom-properties-theming",
+        "Custom Properties & Theming",
+        "CSS variables (--*) — define a value once, reuse it everywhere, and swap a whole theme by changing it in one place.",
+        "external-article",
+        "Using CSS custom properties (variables) — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Cascading_variables/Using_custom_properties",
+      ),
+      externalTopic(
+        "pseudo-classes-pseudo-elements-has",
+        "Selectors: Pseudo-classes & Pseudo-elements",
+        ":hover/:focus target a state an element is already in; ::before/::after insert content that isn't part of the real DOM.",
+        "external-article",
+        "Pseudo-classes and pseudo-elements — MDN",
+        "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Pseudo_classes_and_elements",
+      ),
+      externalTopic(
+        "animation-performance",
+        "Animation Performance",
+        "Animating transform/opacity stays on the compositor thread; animating layout-affecting properties forces the browser to repaint every frame.",
+        "external-article",
+        "Animations and performance — web.dev",
+        "https://web.dev/articles/animations-and-performance",
+        { isOptional: true },
+      ),
     ],
   },
   {
     slug: "javascript-in-depth",
     title: "JavaScript In Depth",
     topics: [
-      conceptTopic("this-binding-execution-context"),
-      conceptTopic("prototypal-inheritance"),
-      conceptTopic("esm-vs-commonjs"),
-      conceptTopic("event-loop"),
-      conceptTopic("promises-async-await"),
-      conceptTopic("debouncing-throttling", { isOptional: true }),
+      externalTopic(
+        "this-binding-execution-context",
+        "this Binding & Execution Context",
+        "The value of `this` is decided by how a function is called, not where it's defined — the single rule behind most `this`-related bugs.",
+        "external-article",
+        "this — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this",
+      ),
+      externalTopic(
+        "prototypal-inheritance",
+        "Prototypal Inheritance",
+        "Every JS object has a hidden link to another object it inherits properties from — the prototype chain, not classical class-based inheritance.",
+        "external-article",
+        "Object — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object",
+      ),
+      externalTopic(
+        "esm-vs-commonjs",
+        "Modules: ESM vs. CommonJS",
+        "import/export is the standardized, statically-analyzable module system; require()/module.exports is Node's older, dynamic one.",
+        "external-article",
+        "JavaScript modules — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules",
+      ),
+      externalTopic(
+        "event-loop",
+        "Event Loop",
+        "How single-threaded JavaScript still handles thousands of concurrent I/O operations without blocking.",
+        "external-article",
+        "Concurrency model and Event Loop — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/EventLoop",
+      ),
+      externalTopic(
+        "promises-async-await",
+        "Promises & Async/Await",
+        "A Promise represents a value that isn't ready yet; async/await is just cleaner syntax for working with one.",
+        "external-article",
+        "Using promises — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises",
+      ),
+      externalTopic(
+        "debouncing-throttling",
+        "Debouncing & Throttling",
+        "Two different ways to limit how often a function runs in response to a rapid-fire event like scroll or keystroke.",
+        "external-article",
+        "Debouncing and Throttling Explained Through Examples — CSS-Tricks",
+        "https://css-tricks.com/debouncing-throttling-explained-examples/",
+        { isOptional: true },
+      ),
     ],
   },
   {
@@ -558,13 +770,37 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
   {
     slug: "web-apis",
     title: "Web APIs",
-    topics: [conceptTopic("storage-apis"), conceptTopic("web-workers-concurrency")],
+    topics: [
+      externalTopic(
+        "storage-apis",
+        "Storage APIs",
+        "localStorage and sessionStorage — storing key/value data directly in the browser, no server round-trip needed.",
+        "external-article",
+        "Web Storage API — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/API/Web_Storage_API",
+      ),
+      externalTopic(
+        "web-workers-concurrency",
+        "Web Workers",
+        "Runs a script on a background thread, so heavy computation doesn't block the main thread the UI runs on.",
+        "external-article",
+        "Web Workers API — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API",
+      ),
+    ],
   },
   {
     slug: "web-security",
     title: "Web Security",
     topics: [
-      conceptTopic("cors-same-origin-policy"),
+      externalTopic(
+        "cors-same-origin-policy",
+        "CORS & the Same-Origin Policy",
+        "The browser default that blocks a page from reading a response from a different origin, and the headers a server sends to explicitly allow it.",
+        "external-article",
+        "Cross-Origin Resource Sharing (CORS) — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS",
+      ),
       externalTopic(
         "web-security-https",
         "HTTPS",
@@ -573,7 +809,14 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
         "HTTP — MDN (see the HTTPS/TLS section)",
         "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview",
       ),
-      conceptTopic("web-security-fundamentals"),
+      externalTopic(
+        "web-security-fundamentals",
+        "Web Security Fundamentals",
+        "XSS, CSRF, and CSP — the three attack classes and the one response header (Content-Security-Policy) most commonly used to defend against them.",
+        "external-article",
+        "Web security — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/Security",
+      ),
       externalTopic(
         "web-security-owasp-top-10",
         "OWASP Top 10 Risks",
@@ -588,14 +831,38 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
     slug: "type-checkers",
     title: "Type Checkers",
     topics: [
-      conceptTopic("basic-types-inference"),
-      conceptTopic("interfaces-vs-type-aliases"),
-      conceptTopic("generics"),
-      conceptTopic("utility-types"),
-      conceptTopic("type-narrowing"),
-      conceptTopic("discriminated-unions"),
-      conceptTopic("conditional-mapped-types", { isOptional: true }),
-      conceptTopic("template-literal-branded-types", { isOptional: true }),
+      externalTopic(
+        "basic-types-inference",
+        "Basic Types",
+        "TypeScript's primitive types, and how much of a variable's type it can infer without ever being told explicitly.",
+        "external-article",
+        "The Basics — TypeScript",
+        "https://www.typescriptlang.org/docs/handbook/2/basic-types.html",
+      ),
+      externalTopic(
+        "interfaces-vs-type-aliases",
+        "Interfaces vs. Type Aliases",
+        "Two different syntaxes for naming an object shape — almost interchangeable, but an interface can be extended later and a type alias can't.",
+        "external-article",
+        "Object Types — TypeScript",
+        "https://www.typescriptlang.org/docs/handbook/2/objects.html",
+      ),
+      externalTopic(
+        "generics",
+        "Generics",
+        "A type-level placeholder that lets one function or component work correctly across many concrete types, not just one.",
+        "external-article",
+        "Generics — TypeScript",
+        "https://www.typescriptlang.org/docs/handbook/2/generics.html",
+      ),
+      externalTopic(
+        "type-narrowing",
+        "Type Narrowing",
+        "typeof checks, `in`, and other guards that let TypeScript deduce a more specific type than the one a variable was declared with.",
+        "external-article",
+        "Narrowing — TypeScript",
+        "https://www.typescriptlang.org/docs/handbook/2/narrowing.html",
+      ),
     ],
   },
   {
@@ -636,7 +903,14 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
       ),
     ],
   },
-  conceptTopic("streaming-ssr-hydration"),
+  externalTopic(
+    "streaming-ssr-hydration",
+    "Streaming SSR & Hydration",
+    "The server sends real HTML immediately, then the client attaches interactivity to it in the background instead of rendering everything from scratch.",
+    "external-article",
+    "Server-side rendering (SSR) — MDN Glossary",
+    "https://developer.mozilla.org/en-US/docs/Glossary/SSR",
+  ),
   externalTopic(
     "ssg-overview",
     "Static Site Generation (SSG)",
@@ -687,21 +961,85 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
     slug: "browser-internals",
     title: "Browser Internals",
     topics: [
-      conceptTopic("dom-vs-bom"),
-      conceptTopic("event-delegation-bubbling-capturing"),
-      conceptTopic("browser-rendering-pipeline"),
+      externalTopic(
+        "dom-vs-bom",
+        "DOM vs. BOM",
+        "The DOM is the page's content as a tree of objects; the BOM (window, navigator, location) is everything else the browser exposes around it.",
+        "external-article",
+        "Document Object Model (DOM) — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model",
+      ),
+      externalTopic(
+        "event-delegation-bubbling-capturing",
+        "Event Delegation, Bubbling & Capturing",
+        "An event fired on a child element travels back up through every ancestor — the mechanism that lets one listener on a parent handle clicks from any of its children.",
+        "external-article",
+        "Event bubbling — MDN",
+        "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Event_bubbling",
+      ),
+      externalTopic(
+        "browser-rendering-pipeline",
+        "Browser Rendering Pipeline",
+        "Parse → style → layout → paint → composite — the pipeline a browser runs every time it turns HTML/CSS into pixels on screen.",
+        "external-article",
+        "How browsers work — web.dev",
+        "https://web.dev/articles/howbrowserswork",
+      ),
     ],
   },
-  conceptTopic("component-driven-architecture"),
+  externalTopic(
+    "component-driven-architecture",
+    "Design Systems",
+    "A shared library of reusable components and design tokens — the thing that keeps a product's UI consistent as more than one person builds it.",
+    "external-article",
+    "Atomic Design — Brad Frost",
+    "https://atomicdesign.bradfrost.com/",
+  ),
   {
     slug: "performance",
     title: "Performance",
     topics: [
-      conceptTopic("image-asset-optimization"),
-      conceptTopic("bundle-size-code-splitting"),
-      conceptTopic("core-web-vitals"),
-      conceptTopic("profiling-with-devtools"),
-      conceptTopic("performance-budgets", { isOptional: true }),
+      externalTopic(
+        "image-asset-optimization",
+        "Image & Asset Optimization",
+        "Serving an image at the right format, size, and compression level for how it's actually displayed, instead of shipping the original file as-is.",
+        "external-article",
+        "Image performance — web.dev",
+        "https://web.dev/learn/performance/image-performance",
+      ),
+      externalTopic(
+        "bundle-size-code-splitting",
+        "Bundle Size & Code Splitting",
+        "Splitting a JS bundle into smaller chunks loaded on demand, instead of shipping the entire app's code on the very first page load.",
+        "external-article",
+        "Reduce JavaScript payloads with code splitting — web.dev",
+        "https://web.dev/articles/reduce-javascript-payloads-with-code-splitting",
+      ),
+      externalTopic(
+        "core-web-vitals",
+        "Core Web Vitals",
+        "LCP, INP, and CLS — Google's three standardized metrics for a page's real-world loading speed, responsiveness, and visual stability.",
+        "external-article",
+        "Web Vitals — web.dev",
+        "https://web.dev/articles/vitals",
+      ),
+      externalTopic(
+        "profiling-with-devtools",
+        "Profiling with DevTools",
+        "Recording a real page interaction and reading the resulting flame chart to find exactly which function is actually slow.",
+        "external-article",
+        "Analyze runtime performance — Chrome DevTools",
+        "https://developer.chrome.com/docs/devtools/performance",
+      ),
+      externalTopic(
+        "performance-budgets",
+        "Performance Budgets",
+        "A hard limit on a metric like total page weight or load time, enforced in CI so a page can't quietly get slower over time.",
+        "external-article",
+        "Performance budgets 101 — web.dev",
+        "https://web.dev/articles/performance-budgets-101",
+        { isOptional: true },
+      ),
     ],
   },
   {
@@ -760,13 +1098,48 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
     slug: "accessibility",
     title: "Accessibility",
     topics: [
-      conceptTopic("color-contrast-visual-accessibility"),
-      conceptTopic("keyboard-navigation-focus-management"),
-      conceptTopic("accessible-forms"),
-      conceptTopic("automated-a11y-testing"),
+      externalTopic(
+        "color-contrast-visual-accessibility",
+        "Color Contrast & Visual Accessibility",
+        "Text needs enough contrast against its background to be readable by people with low vision or color blindness — WCAG sets the minimum ratios.",
+        "external-article",
+        "Contrast and Color Accessibility — WebAIM",
+        "https://webaim.org/articles/contrast/evaluating",
+      ),
+      externalTopic(
+        "keyboard-navigation-focus-management",
+        "Keyboard Navigation & Focus Management",
+        "Every interactive element needs to be reachable and operable with only a keyboard — no mouse assumed.",
+        "external-article",
+        "Keyboard-navigable JavaScript widgets — MDN",
+        "https://developer.mozilla.org/en-US/docs/Web/Accessibility/Guides/Keyboard-navigable_JavaScript_widgets",
+      ),
+      externalTopic(
+        "accessible-forms",
+        "Accessible Forms",
+        "A <label> tied to its input is the single most impactful accessibility fix a form can have — screen readers announce it, sighted users get a bigger click target.",
+        "external-article",
+        "HTML: A good basis for accessibility — MDN",
+        "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility/HTML",
+      ),
+      externalTopic(
+        "automated-a11y-testing",
+        "Automated a11y Testing",
+        "Tools like axe-core catch a real, meaningful chunk of accessibility issues automatically — but never all of them; manual testing still matters.",
+        "external-article",
+        "Axe-core Documentation — Deque",
+        "https://www.deque.com/axe/core-documentation/",
+      ),
     ],
   },
-  conceptTopic("service-workers-caching-strategies"),
+  externalTopic(
+    "service-workers-caching-strategies",
+    "PWAs",
+    "A service worker running in the background is what lets a web app cache assets, work offline, and be installed to a home screen like a native app.",
+    "external-article",
+    "Service Worker API — MDN",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API",
+  ),
   {
     slug: "desktop-apps",
     title: "Desktop Apps",
@@ -827,6 +1200,177 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
 // column-major sort), not real 2D canvas coordinates anymore.
 const FRONTEND_DEVELOPER_NODES: RoadmapNodeSeed[] = layoutColumns([FRONTEND_DEVELOPER_ENTRIES]);
 
+// ── Frontend Interview Cracking role roadmap ────────────────────────────────
+// A second, deliberately different role roadmap from Frontend Developer
+// above — that one is a pure roadmap.sh mirror (100% external links, no FF
+// content at all, direct user request). This one is the opposite: a guided
+// tour of Frontend Forever's own platform, linking to a real Learn concept,
+// Practice challenge, or FF Collections question everywhere one exists, and
+// a same-site page (via the "internal-page" link type) everywhere the
+// content is real but has no DB row of its own (Playbook chapters, System
+// Design guides, Company Guides, Study Plans, UI Battles, Experiments).
+const FRONTEND_INTERVIEW_CRACKING_ENTRIES: RoadmapEntry[] = [
+  {
+    slug: "learn-the-fundamentals",
+    title: "Learn the Fundamentals",
+    topics: [
+      conceptTopic("hoisting-temporal-dead-zone", { prefix: "pt" }),
+      conceptTopic("dom-vs-bom", { prefix: "pt" }),
+      conceptTopic("the-box-model", { prefix: "pt" }),
+      conceptTopic("basic-types-inference", { prefix: "pt" }),
+      conceptTopic("jsx-virtual-dom", { prefix: "pt" }),
+      conceptTopic("aria-roles-and-semantic-html", { prefix: "pt" }),
+      conceptTopic("image-asset-optimization", { prefix: "pt" }),
+      conceptTopic("component-driven-architecture", { prefix: "pt" }),
+    ],
+  },
+  {
+    slug: "practice-what-you-learn",
+    title: "Practice What You Learn",
+    topics: [
+      practiceChallengeTopic(
+        "practice-javascript",
+        "JavaScript Coding Questions",
+        "Real coding challenges, run in a live editor with real test cases — not multiple-choice trivia.",
+        "improve-full-name-formatter",
+      ),
+      practiceChallengeTopic(
+        "practice-react",
+        "React Coding Questions",
+        "Build and fix real React components under the same constraints an interview whiteboard round gives you.",
+        "react-counter-app",
+      ),
+      practiceChallengeTopic(
+        "practice-css",
+        "CSS Questions",
+        "The specific CSS quirks ('why is my box wider than I set it') that trip people up in real interviews.",
+        "box-sizing-content-vs-border",
+      ),
+      practiceChallengeTopic(
+        "practice-typescript",
+        "TypeScript Puzzles",
+        "Implement TypeScript's own utility types by hand — the fastest way to actually understand what they do.",
+        "implement-partial",
+      ),
+      practiceChallengeTopic(
+        "practice-system-design",
+        "Front-End System Design Questions",
+        "Component-level system design — state, data flow, and architecture, not distributed-systems trivia.",
+        "nested-checkboxes-tree-state",
+      ),
+    ],
+  },
+  {
+    slug: "ace-the-interview",
+    title: "Ace the Interview",
+    topics: [
+      interviewQuestionTopic(
+        "ff-javascript",
+        "FF JavaScript Collection",
+        "101 real JavaScript interview questions with full written answers, not just a question bank.",
+        "what-is-the-event-loop",
+      ),
+      interviewQuestionTopic(
+        "ff-react",
+        "FF React Collection",
+        "99 React-specific interview questions, kept current with how React is actually written today.",
+        "usememo-when-to-use",
+      ),
+      interviewQuestionTopic(
+        "ff-nextjs",
+        "FF Next.js Collection",
+        "99 Next.js interview questions covering the App Router, rendering strategies, and the Pages-Router history interviewers still ask about.",
+        "incremental-static-regeneration",
+      ),
+      internalPageTopic(
+        "company-guides",
+        "Company Guides",
+        "Real, company-tagged interview questions and challenges, organized by the company that actually asked them.",
+        "Company Guides — Frontend Forever",
+        "/interview-prep/company-guides",
+      ),
+      internalPageTopic(
+        "study-plans",
+        "Study Plans",
+        "A day-by-day itinerary across Learn, Practice, and FF Collections for whoever has 1 week, 1 month, or 3 months before an interview.",
+        "Study Plans — Frontend Forever",
+        "/interview-prep/study-plans",
+      ),
+    ],
+  },
+  {
+    slug: "master-system-design",
+    title: "Master System Design",
+    topics: [
+      internalPageTopic(
+        "system-design-infinite-scroll",
+        "Designing an Infinite-Scroll Feed",
+        "One of the most commonly asked frontend system design problems, worked through end to end.",
+        "Infinite-Scroll Feed — FF System Design",
+        "/interview-prep/ff-system-design/infinite-scroll-feed",
+      ),
+      internalPageTopic(
+        "system-design-ecommerce",
+        "E-Commerce Storefront",
+        "Designing the product listing, cart, and checkout flow of a real e-commerce frontend.",
+        "E-Commerce Storefront — FF System Design",
+        "/interview-prep/ff-system-design/ecommerce-storefront",
+      ),
+      internalPageTopic(
+        "system-design-video-conferencing",
+        "Browser Video Conferencing",
+        "Designing a real-time video call UI — the kind of system-design question that tests WebRTC and real-time state at once.",
+        "Browser Video Conferencing — FF System Design",
+        "/interview-prep/ff-system-design/browser-video-conferencing",
+      ),
+    ],
+  },
+  {
+    slug: "read-the-playbook",
+    title: "Read the Playbook",
+    topics: [
+      internalPageTopic(
+        "playbook-interview-structure",
+        "How Frontend Interviews Are Structured",
+        "What actually happens across a real interview loop — the formats, the rounds, and what each one is actually scoring.",
+        "How Frontend Interviews Are Structured — Playbook",
+        "/interview-prep/playbook/frontend-interview-playbook/how-frontend-interviews-are-structured",
+      ),
+      internalPageTopic(
+        "playbook-react-gotchas",
+        "Classic React Gotchas, Explained",
+        "The React-specific mistakes and misconceptions that come up over and over again in real interview loops.",
+        "Classic React Gotchas, Explained — Playbook",
+        "/interview-prep/playbook/react-interview-playbook/classic-react-gotchas-explained",
+      ),
+    ],
+  },
+  {
+    slug: "sharpen-your-skills-in-the-playground",
+    title: "Sharpen Your Skills in the Playground",
+    topics: [
+      internalPageTopic(
+        "playground-ui-battles",
+        "UI Battles",
+        "Recreate a real UI pixel-for-pixel from a screenshot, then compare your result against the official solution side by side.",
+        "Login Card — UI Battles",
+        "/playground/battles/login-card-recreate",
+      ),
+      internalPageTopic(
+        "playground-experiments",
+        "Experiments",
+        "Playable, open-source visual demos — canvas, animation, and interaction experiments with real, readable source code.",
+        "Particle Cursor Trail — Experiments",
+        "/playground/experiments/particle-cursor-trail",
+      ),
+    ],
+  },
+];
+
+const FRONTEND_INTERVIEW_CRACKING_NODES: RoadmapNodeSeed[] = layoutColumns([
+  FRONTEND_INTERVIEW_CRACKING_ENTRIES,
+]);
+
 export const ROADMAPS: RoadmapSeed[] = [
   {
     slug: "frontend-developer",
@@ -836,6 +1380,16 @@ export const ROADMAPS: RoadmapSeed[] = [
     roadmapType: "role",
     orderIndex: 1,
     nodes: FRONTEND_DEVELOPER_NODES,
+  },
+
+  {
+    slug: "frontend-interview-cracking",
+    title: "Frontend Interview Cracking Roadmap",
+    description:
+      "A guided tour of Frontend Forever itself — Learn concepts, real Practice challenges, FF Collections interview questions, System Design guides, the Playbook, and the Playground, in the order that actually gets you interview-ready.",
+    roadmapType: "role",
+    orderIndex: 2,
+    nodes: FRONTEND_INTERVIEW_CRACKING_NODES,
   },
 
   {

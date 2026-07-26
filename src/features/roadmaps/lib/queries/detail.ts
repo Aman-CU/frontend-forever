@@ -195,7 +195,10 @@ function toLinkView(row: {
       href: `/interview-prep/${row.questionCollection}/${row.questionSlug}`,
     };
   }
-  if ((linkType === "external-video" || linkType === "external-article") && row.externalUrl) {
+  if (
+    (linkType === "external-video" || linkType === "external-article" || linkType === "internal-page") &&
+    row.externalUrl
+  ) {
     return {
       id: row.id,
       linkType,

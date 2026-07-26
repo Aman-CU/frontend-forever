@@ -128,7 +128,13 @@ export type RoadmapNodeLinkSeed =
   | { linkType: "learn-concept"; conceptSlug: string }
   | { linkType: "practice-challenge"; challengeSlug: string }
   | { linkType: "interview-question"; collectionQuestionSlug: string }
-  | { linkType: "external-video" | "external-article"; externalTitle: string; externalUrl: string };
+  | { linkType: "external-video" | "external-article"; externalTitle: string; externalUrl: string }
+  // A same-site FF page with no DB row to resolve (Playbook chapter, System
+  // Design guide, Study Plan, UI Battle, Experiment) — reuses the same
+  // externalTitle/externalUrl columns as external-video/-article, just
+  // stays on-site (no target="_blank") since href is already an internal
+  // path like "/playbooks/interview-fundamentals".
+  | { linkType: "internal-page"; externalTitle: string; externalUrl: string };
 
 export type RoadmapNodeSeed = {
   // Unique within the roadmap only (roadmap_nodes' unique constraint is

@@ -159,5 +159,12 @@ export const ROADMAP_NODE_LINK_TYPES = [
   "interview-question",
   "external-video",
   "external-article",
+  // A same-site FF page with no dedicated DB row to link against —
+  // Playbook chapters, System Design guides, Study Plans, UI Battles, and
+  // Experiments are filesystem/registry content, not concepts/challenges/
+  // collection_questions. Reuses external_title/external_url (no new
+  // columns needed); "internal" only in the sense of staying on-site
+  // (no target="_blank", unlike external-video/external-article).
+  "internal-page",
 ] as const;
 export type RoadmapNodeLinkType = (typeof ROADMAP_NODE_LINK_TYPES)[number];

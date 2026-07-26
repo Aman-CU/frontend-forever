@@ -31,6 +31,23 @@ export const ROADMAP_SEO_CONTENT: Record<string, RoadmapSeoContent> = {
     ],
   },
 
+  "frontend-interview-cracking": {
+    intro:
+      "Cracking a frontend interview takes more than knowing syntax — it takes real practice under constraints, exposure to the exact questions companies actually ask, and a system for reviewing all of it before the interview. This roadmap is a guided path through Frontend Forever's own platform for exactly that: Learn concepts, real Practice challenges, FF Collections interview questions, System Design guides, the Playbook, and the Playground.",
+    faqs: [
+      {
+        question: "How is this different from the Frontend Developer roadmap?",
+        answer:
+          "The Frontend Developer roadmap teaches frontend development itself, the same way roadmap.sh's does, and links out to external resources for that. This roadmap instead links to Frontend Forever's own content — it's a map of what to do on this platform, in what order, not a general learning path.",
+      },
+      {
+        question: "Do I need to finish the Frontend Developer roadmap first?",
+        answer:
+          "No — they're independent. If you're already comfortable with frontend fundamentals and specifically preparing for interviews, start here directly.",
+      },
+    ],
+  },
+
   javascript: {
     intro:
       "JavaScript is the programming language that runs in every web browser, making pages interactive rather than static documents. This roadmap moves through its runtime model in difficulty order — from hoisting and closures up through generators and memory management — the same sequence Frontend Forever's own JavaScript Runtime concepts use.",
