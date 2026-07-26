@@ -1,0 +1,2 @@
+ALTER TABLE "roadmap_nodes" ADD CONSTRAINT "roadmap_nodes_parent_id_roadmap_nodes_id_fk" FOREIGN KEY ("parent_id") REFERENCES "public"."roadmap_nodes"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "roadmap_node_links" ADD CONSTRAINT "roadmap_node_links_exactly_one_target_check" CHECK (("roadmap_node_links"."concept_id" IS NOT NULL)::int + ("roadmap_node_links"."challenge_id" IS NOT NULL)::int + ("roadmap_node_links"."collection_question_id" IS NOT NULL)::int + ("roadmap_node_links"."external_url" IS NOT NULL)::int = 1);

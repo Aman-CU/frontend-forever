@@ -4,15 +4,14 @@ type Props = {
   className?: string;
 };
 
-// Hand-inlined from devicon.dev (MIT licensed) — see JavascriptIcon.tsx's
-// comment for the fill-color rationale (deliberate exception to
-// AGENTS.md's no-hardcoded-color rule: this icon's job is brand
-// recognizability, not theme-token consistency).
+// Hand-inlined from devicon.dev (MIT licensed) — fill is CSS3's real brand
+// color via --color-css3-badge-bg (globals.css), a new token added
+// alongside the existing JS/TS badge tokens (no CSS3 token existed yet).
 export function Css3Icon({ className }: Props) {
   return (
     <svg viewBox="0 0 128 128" aria-hidden="true" className={cn("h-5 w-5", className)}>
       <path
-        fill="#1572B6"
+        fill="var(--color-css3-badge-bg)"
         d="M8.76 1l10.055 112.883 45.118 12.58 45.244-12.626L119.24 1H8.76zm89.591 25.862l-3.347 37.605.01.203-.014.467v-.004l-2.378 26.294-.262 2.336L64 101.607v.001l-.022.019-28.311-7.888L33.75 72h13.883l.985 11.054 15.386 4.17-.004.008v-.002l15.443-4.229L81.075 65H48.792l-.277-3.043-.631-7.129L47.553 51h34.749l1.264-14H30.64l-.277-3.041-.63-7.131L29.401 23h69.281l-.331 3.862z"
       />
     </svg>

@@ -8,7 +8,6 @@ import type {
   StudyPlanItemType,
   RoadmapType,
   RoadmapNodeType,
-  RoadmapNodeLinkType,
 } from "../../src/lib/constants";
 import type { PracticeCategory } from "../../src/features/practice/lib/practiceCategories";
 
@@ -121,16 +120,15 @@ export type UiBattleChallengeSeed = {
 // Feature 34/35's rescoped Roadmaps — a roadmap.sh-style node graph, not a
 // flat FF-concept-only sequence. See build-plan.md's Phase 7 rescoping note.
 
-export type RoadmapNodeLinkSeed = {
-  linkType: RoadmapNodeLinkType;
-  // Exactly one of these is set, matching linkType — enforced in seed.ts,
-  // not the DB (see roadmap_node_links' schema comment in content.ts).
-  conceptSlug?: string; // linkType: "learn-concept"
-  challengeSlug?: string; // linkType: "practice-challenge"
-  collectionQuestionSlug?: string; // linkType: "interview-question"
-  externalTitle?: string; // linkType: "external-video" | "external-article"
-  externalUrl?: string; // linkType: "external-video" | "external-article"
-};
+// Discriminated union on linkType — each variant carries only the field(s)
+// that type actually needs, so a seed entry with e.g. linkType:
+// "learn-concept" but no conceptSlug is a compile error instead of a
+// runtime "unknown conceptSlug undefined" thrown by seed.ts.
+export type RoadmapNodeLinkSeed =
+  | { linkType: "learn-concept"; conceptSlug: string }
+  | { linkType: "practice-challenge"; challengeSlug: string }
+  | { linkType: "interview-question"; collectionQuestionSlug: string }
+  | { linkType: "external-video" | "external-article"; externalTitle: string; externalUrl: string };
 
 export type RoadmapNodeSeed = {
   // Unique within the roadmap only (roadmap_nodes' unique constraint is

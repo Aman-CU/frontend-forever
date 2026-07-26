@@ -12,7 +12,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { drizzle } from "drizzle-orm/node-postgres";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and, inArray, notInArray } from "drizzle-orm";
 import { Pool } from "pg";
 import {
   concepts,
@@ -238,127 +238,179 @@ async function seed() {
   console.log(`[seed] ${insertedProjectBriefs.length} project brief(s) upserted`);
 
   console.log("[seed] Inserting roadmaps...");
-  // Node/link content is small enough (and reordered often enough during
-  // authoring) that re-authoring beats upserting: each roadmap's existing
-  // nodes are deleted (cascades to roadmap_node_links and
-  // user_roadmap_node_progress) and reinserted fresh on every run — same
-  // precedent as study_plan_items' "no stable per-row key, re-author as a
-  // whole" approach. The roadmaps row itself is still upserted on slug so
-  // its id (and any real user_roadmap_node_progress on nodes that survive
-  // unchanged) stays stable across re-seeds where the slug doesn't change.
+  // Nodes are upserted on their real (roadmap_id, slug) unique key, not
+  // deleted-and-reinserted — a node's id, and any real
+  // user_roadmap_node_progress row hanging off it, now survives a re-seed
+  // unless that node's slug is genuinely removed from the authored content.
+  // (An earlier version deleted every node on every run "for simplicity,"
+  // which would have silently wiped real user progress on the next content
+  // update once this feature has real users — caught in CodeRabbit review.)
+  // Slugs no longer present in the seed get pruned, which does cascade to
+  // their links/progress — that's correct, just scoped to genuine removals
+  // now instead of the whole roadmap every time. Each roadmap's writes run
+  // inside one transaction so a crash mid-run can't leave it half-updated.
   for (const roadmap of ROADMAPS) {
     const { nodes: nodeSeeds, ...roadmapData } = roadmap;
 
-    await db
-      .insert(roadmaps)
-      .values({ ...roadmapData, isPremium: roadmapData.isPremium ?? false })
-      .onConflictDoUpdate({
-        target: roadmaps.slug,
-        set: {
-          title: sql`excluded.title`,
-          description: sql`excluded.description`,
-          roadmapType: sql`excluded.roadmap_type`,
-          isPremium: sql`excluded.is_premium`,
-          orderIndex: sql`excluded.order_index`,
-        },
-      });
+    await db.transaction(async (tx) => {
+      await tx
+        .insert(roadmaps)
+        .values({ ...roadmapData, isPremium: roadmapData.isPremium ?? false })
+        .onConflictDoUpdate({
+          target: roadmaps.slug,
+          set: {
+            title: sql`excluded.title`,
+            description: sql`excluded.description`,
+            roadmapType: sql`excluded.roadmap_type`,
+            isPremium: sql`excluded.is_premium`,
+            orderIndex: sql`excluded.order_index`,
+          },
+        });
 
-    const [{ id: roadmapId }] = await db
-      .select({ id: roadmaps.id })
-      .from(roadmaps)
-      .where(eq(roadmaps.slug, roadmap.slug));
+      const [{ id: roadmapId }] = await tx
+        .select({ id: roadmaps.id })
+        .from(roadmaps)
+        .where(eq(roadmaps.slug, roadmap.slug));
 
-    await db.delete(roadmapNodes).where(eq(roadmapNodes.roadmapId, roadmapId));
+      // Pass 1: upsert every node. Parents may not have a settled id until
+      // every node in this roadmap has been upserted at least once — the
+      // self-referencing parent_id FK is backfilled separately in Pass 2.
+      const insertedNodes = nodeSeeds.length
+        ? await tx
+            .insert(roadmapNodes)
+            .values(
+              nodeSeeds.map((n) => ({
+                roadmapId,
+                slug: n.slug,
+                title: n.title,
+                description: n.description ?? "",
+                nodeType: n.nodeType ?? "topic",
+                isOptional: n.isOptional ?? false,
+                positionX: n.positionX,
+                positionY: n.positionY,
+                orderIndex: n.orderIndex,
+              })),
+            )
+            .onConflictDoUpdate({
+              target: [roadmapNodes.roadmapId, roadmapNodes.slug],
+              set: {
+                title: sql`excluded.title`,
+                description: sql`excluded.description`,
+                nodeType: sql`excluded.node_type`,
+                isOptional: sql`excluded.is_optional`,
+                positionX: sql`excluded.position_x`,
+                positionY: sql`excluded.position_y`,
+                orderIndex: sql`excluded.order_index`,
+              },
+            })
+            .returning({ id: roadmapNodes.id, slug: roadmapNodes.slug })
+        : [];
+      const nodeIdBySlug = Object.fromEntries(insertedNodes.map((n) => [n.slug, n.id]));
 
-    // Pass 1: insert every node with no parentId yet (parents may not have
-    // an id assigned until this same insert runs — self-referencing FK).
-    const insertedNodes = await db
-      .insert(roadmapNodes)
-      .values(
-        nodeSeeds.map((n) => ({
-          roadmapId,
-          slug: n.slug,
-          title: n.title,
-          description: n.description ?? "",
-          nodeType: n.nodeType ?? "topic",
-          isOptional: n.isOptional ?? false,
-          positionX: n.positionX,
-          positionY: n.positionY,
-          orderIndex: n.orderIndex,
-        })),
-      )
-      .returning({ id: roadmapNodes.id, slug: roadmapNodes.slug });
-    const nodeIdBySlug = Object.fromEntries(insertedNodes.map((n) => [n.slug, n.id]));
-
-    // Pass 2: backfill parentId now that every node in this roadmap has an id.
-    for (const n of nodeSeeds) {
-      if (!n.parentSlug) continue;
-      const parentId = nodeIdBySlug[n.parentSlug];
-      if (!parentId) {
-        throw new Error(
-          `[seed] Roadmap node "${n.slug}" references unknown parentSlug "${n.parentSlug}" in roadmap "${roadmap.slug}". Fix the seed before re-running.`,
-        );
-      }
-      await db
-        .update(roadmapNodes)
-        .set({ parentId })
-        .where(eq(roadmapNodes.id, nodeIdBySlug[n.slug]));
-    }
-
-    // Pass 3: links, resolved against whichever slug field linkType calls for.
-    const linkRows = nodeSeeds.flatMap((n) =>
-      (n.links ?? []).map((link, i) => {
-        const nodeId = nodeIdBySlug[n.slug];
-        let resolvedIds: {
-          conceptId?: string;
-          challengeId?: string;
-          collectionQuestionId?: string;
-        } = {};
-        if (link.linkType === "learn-concept") {
-          const conceptId = link.conceptSlug ? conceptBySlug[link.conceptSlug] : undefined;
-          if (!conceptId) {
-            throw new Error(
-              `[seed] Roadmap node "${n.slug}" links to unknown conceptSlug "${link.conceptSlug}". Fix the seed before re-running.`,
-            );
-          }
-          resolvedIds = { conceptId };
-        } else if (link.linkType === "practice-challenge") {
-          const challengeId = link.challengeSlug ? challengeBySlug[link.challengeSlug] : undefined;
-          if (!challengeId) {
-            throw new Error(
-              `[seed] Roadmap node "${n.slug}" links to unknown challengeSlug "${link.challengeSlug}". Fix the seed before re-running.`,
-            );
-          }
-          resolvedIds = { challengeId };
-        } else if (link.linkType === "interview-question") {
-          const collectionQuestionId = link.collectionQuestionSlug
-            ? collectionQuestionBySlug[link.collectionQuestionSlug]
-            : undefined;
-          if (!collectionQuestionId) {
-            throw new Error(
-              `[seed] Roadmap node "${n.slug}" links to unknown collectionQuestionSlug "${link.collectionQuestionSlug}". Fix the seed before re-running.`,
-            );
-          }
-          resolvedIds = { collectionQuestionId };
+      // Pass 2: backfill parentId for every retained/new node *before*
+      // pruning below. Order matters here: a retained node whose
+      // parentSlug changed (its old parent renamed/restructured, e.g. a
+      // section split into two) still has its *old* parent_id pointing at
+      // the now-stale parent until this runs. Pruning first would delete
+      // that stale parent and, thanks to parent_id's ON DELETE CASCADE,
+      // collaterally delete the retained child right along with it — the
+      // child's id would still be sitting in nodeIdBySlug, causing an FK
+      // violation on the Pass 3 link insert.
+      for (const n of nodeSeeds) {
+        if (!n.parentSlug) continue;
+        const parentId = nodeIdBySlug[n.parentSlug];
+        if (!parentId) {
+          throw new Error(
+            `[seed] Roadmap node "${n.slug}" references unknown parentSlug "${n.parentSlug}" in roadmap "${roadmap.slug}". Fix the seed before re-running.`,
+          );
         }
-        return {
-          nodeId,
-          linkType: link.linkType,
-          ...resolvedIds,
-          externalTitle: link.externalTitle ?? null,
-          externalUrl: link.externalUrl ?? null,
-          orderIndex: i + 1,
-        };
-      }),
-    );
+        await tx
+          .update(roadmapNodes)
+          .set({ parentId })
+          .where(eq(roadmapNodes.id, nodeIdBySlug[n.slug]));
+      }
 
-    if (linkRows.length) {
-      await db.insert(roadmapNodeLinks).values(linkRows);
-    }
+      // Prune nodes this roadmap no longer seeds (a topic removed from the
+      // authored content) — cascades to their links/progress, scoped to
+      // genuine removals. Runs after the parentId backfill above, not
+      // before — see that pass's comment for why the order matters.
+      const currentSlugs = nodeSeeds.map((n) => n.slug);
+      await tx
+        .delete(roadmapNodes)
+        .where(
+          currentSlugs.length
+            ? and(eq(roadmapNodes.roadmapId, roadmapId), notInArray(roadmapNodes.slug, currentSlugs))
+            : eq(roadmapNodes.roadmapId, roadmapId),
+        );
 
-    console.log(
-      `[seed] Roadmap "${roadmap.slug}" upserted, ${insertedNodes.length} node(s) and ${linkRows.length} link(s) reinserted`,
-    );
+      // Pass 3: links have no stable per-row key of their own (unlike nodes
+      // now), so they're still cleared and rebuilt — scoped to this
+      // roadmap's current node set, not a blanket delete across the table.
+      const nodeIds = insertedNodes.map((n) => n.id);
+      if (nodeIds.length) {
+        await tx.delete(roadmapNodeLinks).where(inArray(roadmapNodeLinks.nodeId, nodeIds));
+      }
+
+      // RoadmapNodeLinkSeed is a discriminated union on linkType, so each
+      // branch below has direct, non-optional access to its own field — no
+      // `?.`/`??` guards for "is this field even provided," only the real
+      // runtime check of "does this slug resolve to an actual DB row."
+      const linkRows = nodeSeeds.flatMap((n) =>
+        (n.links ?? []).map((link, i) => {
+          const nodeId = nodeIdBySlug[n.slug];
+          let conceptId: string | null = null;
+          let challengeId: string | null = null;
+          let collectionQuestionId: string | null = null;
+          let externalTitle: string | null = null;
+          let externalUrl: string | null = null;
+
+          if (link.linkType === "learn-concept") {
+            conceptId = conceptBySlug[link.conceptSlug] ?? null;
+            if (!conceptId) {
+              throw new Error(
+                `[seed] Roadmap node "${n.slug}" links to unknown conceptSlug "${link.conceptSlug}". Fix the seed before re-running.`,
+              );
+            }
+          } else if (link.linkType === "practice-challenge") {
+            challengeId = challengeBySlug[link.challengeSlug] ?? null;
+            if (!challengeId) {
+              throw new Error(
+                `[seed] Roadmap node "${n.slug}" links to unknown challengeSlug "${link.challengeSlug}". Fix the seed before re-running.`,
+              );
+            }
+          } else if (link.linkType === "interview-question") {
+            collectionQuestionId = collectionQuestionBySlug[link.collectionQuestionSlug] ?? null;
+            if (!collectionQuestionId) {
+              throw new Error(
+                `[seed] Roadmap node "${n.slug}" links to unknown collectionQuestionSlug "${link.collectionQuestionSlug}". Fix the seed before re-running.`,
+              );
+            }
+          } else {
+            externalTitle = link.externalTitle;
+            externalUrl = link.externalUrl;
+          }
+
+          return {
+            nodeId,
+            linkType: link.linkType,
+            conceptId,
+            challengeId,
+            collectionQuestionId,
+            externalTitle,
+            externalUrl,
+            orderIndex: i + 1,
+          };
+        }),
+      );
+
+      if (linkRows.length) {
+        await tx.insert(roadmapNodeLinks).values(linkRows);
+      }
+
+      console.log(
+        `[seed] Roadmap "${roadmap.slug}" upserted, ${insertedNodes.length} node(s) upserted, ${linkRows.length} link(s) rebuilt`,
+      );
+    });
   }
 
   console.log("[seed] Inserting study plans...");

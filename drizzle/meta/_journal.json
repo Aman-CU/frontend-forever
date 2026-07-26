@@ -169,6 +169,13 @@
       "when": 1784995616367,
       "tag": "0023_add_roadmap_node_graph",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1785062125696,
+      "tag": "0024_roadmap_node_parent_fk_and_link_check",
+      "breakpoints": true
     }
   ]
 }

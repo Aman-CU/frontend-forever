@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { and, eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import type { RoadmapType } from "@/lib/constants";
+import { ROADMAP_TYPES, type RoadmapType } from "@/lib/constants";
 import {
   roadmaps,
   roadmapNodes,
@@ -32,6 +32,15 @@ type CatalogNode = {
 };
 
 type CatalogRoadmap = Omit<RoadmapSummary, "completedCount">;
+
+// roadmaps.roadmap_type is a DB text column (CHECK-constrained, but the
+// driver still hands it back as a plain string) — validate against the real
+// value set instead of a blind `as RoadmapType` cast, so a data-integrity
+// bug surfaces here as a loud error rather than silently mistyped data.
+function parseRoadmapType(value: string): RoadmapType {
+  if ((ROADMAP_TYPES as readonly string[]).includes(value)) return value as RoadmapType;
+  throw new Error(`[roadmaps] Unexpected roadmap_type "${value}" — not in ROADMAP_TYPES.`);
+}
 
 // The static roadmap catalog (roadmaps + their topic node/concept-link
 // shape) — identical for every user, so it's cached across requests
@@ -82,7 +91,7 @@ const getRoadmapCatalog = unstable_cache(
     return {
       roadmaps: allRoadmaps.map((r) => ({
         ...r,
-        roadmapType: r.roadmapType as RoadmapType,
+        roadmapType: parseRoadmapType(r.roadmapType),
         topicCount: nodes.filter((n) => n.roadmapId === r.id).length,
       })),
       nodes,

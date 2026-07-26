@@ -10,6 +10,7 @@ import {
   index,
   unique,
   check,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import {
   CONCEPT_CATEGORIES,
@@ -306,7 +307,12 @@ export const roadmapNodes = pgTable(
     roadmapId: uuid("roadmap_id")
       .notNull()
       .references(() => roadmaps.id, { onDelete: "cascade" }),
-    parentId: uuid("parent_id"),
+    // Self-referencing FK — callback form (AnyPgColumn) sidesteps the
+    // temporal-dead-zone issue of referencing roadmapNodes.id before the
+    // const it's defined in has finished initializing.
+    parentId: uuid("parent_id").references((): AnyPgColumn => roadmapNodes.id, {
+      onDelete: "cascade",
+    }),
     slug: text("slug").notNull(),
     title: text("title").notNull(),
     description: text("description").notNull().default(""),
@@ -336,9 +342,8 @@ export const roadmapNodes = pgTable(
 // link, one or two Practice challenges, and a couple of FF Collections
 // interview questions all at once (explicit user request — see build-plan.md).
 // Exactly one of conceptId/challengeId/collectionQuestionId/externalUrl is
-// set per row, chosen by linkType; enforced at the seed layer (same looseness
-// as this codebase's other mixed-shape content tables — no DB CHECK across
-// nullable FK columns).
+// set per row, chosen by linkType — enforced by a DB CHECK below, same
+// "exactly one target" pattern as bookmarks_exactly_one_target_check.
 
 export const roadmapNodeLinks = pgTable(
   "roadmap_node_links",
@@ -360,6 +365,10 @@ export const roadmapNodeLinks = pgTable(
   },
   (table) => [
     index("roadmap_node_links_node_id_idx").on(table.nodeId),
+    check(
+      "roadmap_node_links_exactly_one_target_check",
+      sql`(${table.conceptId} IS NOT NULL)::int + (${table.challengeId} IS NOT NULL)::int + (${table.collectionQuestionId} IS NOT NULL)::int + (${table.externalUrl} IS NOT NULL)::int = 1`,
+    ),
     check(
       "roadmap_node_links_link_type_check",
       sql`${table.linkType} IN (${sql.join(
