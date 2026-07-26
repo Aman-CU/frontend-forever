@@ -6,6 +6,8 @@ import type {
   CollectionQuestionCollection,
   StudyPlanSlug,
   StudyPlanItemType,
+  RoadmapType,
+  RoadmapNodeType,
 } from "../../src/lib/constants";
 import type { PracticeCategory } from "../../src/features/practice/lib/practiceCategories";
 
@@ -115,12 +117,51 @@ export type UiBattleChallengeSeed = {
   orderIndex: number;
 };
 
+// Feature 34/35's rescoped Roadmaps — a roadmap.sh-style node graph, not a
+// flat FF-concept-only sequence. See build-plan.md's Phase 7 rescoping note.
+
+// Discriminated union on linkType — each variant carries only the field(s)
+// that type actually needs, so a seed entry with e.g. linkType:
+// "learn-concept" but no conceptSlug is a compile error instead of a
+// runtime "unknown conceptSlug undefined" thrown by seed.ts.
+export type RoadmapNodeLinkSeed =
+  | { linkType: "learn-concept"; conceptSlug: string }
+  | { linkType: "practice-challenge"; challengeSlug: string }
+  | { linkType: "interview-question"; collectionQuestionSlug: string }
+  | { linkType: "external-video" | "external-article"; externalTitle: string; externalUrl: string };
+
+export type RoadmapNodeSeed = {
+  // Unique within the roadmap only (roadmap_nodes' unique constraint is
+  // (roadmap_id, slug)), not globally.
+  slug: string;
+  title: string;
+  description?: string;
+  // Defaults to "topic". "section" nodes are non-clickable group headers —
+  // they carry no links of their own and exist only as a parentSlug target.
+  nodeType?: RoadmapNodeType;
+  isOptional?: boolean;
+  // Hand-authored canvas coordinates (roadmap.sh's own source works the same
+  // way — no auto-layout algorithm).
+  positionX: number;
+  positionY: number;
+  orderIndex: number;
+  // References another node's `slug` within this same roadmap — resolved to
+  // that node's real id at seed time. One level deep only.
+  parentSlug?: string;
+  links?: RoadmapNodeLinkSeed[];
+};
+
 export type RoadmapSeed = {
   slug: string;
   title: string;
   description: string;
+  // "role": a full job-role path (e.g. Frontend Developer), mixed
+  // internal/external links. "skill": a single-technology deep dive that
+  // maps onto one CONCEPT_CATEGORIES value, almost entirely internal-linked.
+  roadmapType: RoadmapType;
+  isPremium?: boolean;
   orderIndex: number;
-  steps: string[];
+  nodes: RoadmapNodeSeed[];
 };
 
 // Feature 51's Lightning Prep. No conceptSlug/challengeSlug-style resolution

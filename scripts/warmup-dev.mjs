@@ -59,6 +59,7 @@ const ROUTES = [
   "/playground/battles/login-card-recreate",
   "/playground/experiments",
   "/playground/experiments/particle-cursor-trail",
+  "/roadmaps",
   "/api/auth/get-session",
   // Unauthenticated on purpose — this only needs to trigger compilation, not
   // a real toggle, so a 401 (auth check runs before any DB write) counts as

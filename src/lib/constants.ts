@@ -134,3 +134,30 @@ export const CHALLENGE_SOLVED_XP = 10;
 // 20 XP tab-completion reward (TAB_XP_REWARDS.interview), so awarding this too
 // would double-reward the same rating action two different ways.
 export const INTERVIEW_ANSWERED_XP = 10;
+
+// Feature 34/35's rescoped Roadmaps (build-plan.md, Phase 7). "role" is a
+// full job-role path (e.g. Frontend Developer) mixing internal + external
+// links; "skill" is a single-technology deep dive that maps onto one of
+// CONCEPT_CATEGORIES and is almost entirely internal-linked. Drives the
+// Role-based / Skill-based grouping on the /roadmaps list page, same visual
+// split as roadmap.sh's own homepage.
+export const ROADMAP_TYPES = ["role", "skill"] as const;
+export type RoadmapType = (typeof ROADMAP_TYPES)[number];
+
+// A roadmap_node is either a non-clickable grouping header ("section") or a
+// real topic box on the canvas ("topic"). Sections have no links of their own.
+export const ROADMAP_NODE_TYPES = ["section", "topic"] as const;
+export type RoadmapNodeType = (typeof ROADMAP_NODE_TYPES)[number];
+
+// What a roadmap_node_links row points at. Practice/Interview content is
+// mostly standalone (challenges.conceptId and collection_questions have no
+// reliable concept link — see content.ts), so these are hand-curated per
+// node rather than derived from a shared concept_id.
+export const ROADMAP_NODE_LINK_TYPES = [
+  "learn-concept",
+  "practice-challenge",
+  "interview-question",
+  "external-video",
+  "external-article",
+] as const;
+export type RoadmapNodeLinkType = (typeof ROADMAP_NODE_LINK_TYPES)[number];

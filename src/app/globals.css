@@ -112,6 +112,15 @@
   --color-js-badge-text: #111827;
   --color-ts-badge-bg: #3178C6;
   --color-ts-badge-text: #FFFFFF;
+  /*
+   * Real devicon.dev brand fills (Feature 34's Roadmap card icons,
+   * components/shared/devicons/*) — CSS3 and React have no existing badge
+   * token to reuse, unlike JS/TS above, so these are new. Theme-invariant
+   * for the same reason the badges above are: a technology's brand color
+   * doesn't flip with light/dark.
+   */
+  --color-css3-badge-bg: #1572B6;
+  --color-react-badge-bg: #61DAFB;
 
   /* ─── Border Radius ─── */
   --radius-xs: 4px;

@@ -10,6 +10,7 @@ import {
   index,
   unique,
   check,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import {
   CONCEPT_CATEGORIES,
@@ -19,6 +20,9 @@ import {
   COLLECTION_QUESTION_COLLECTIONS,
   STUDY_PLAN_SLUGS,
   STUDY_PLAN_ITEM_TYPES,
+  ROADMAP_TYPES,
+  ROADMAP_NODE_TYPES,
+  ROADMAP_NODE_LINK_TYPES,
 } from "@/lib/constants";
 
 // Every table below is .enableRLS()'d — this has no bearing on the app itself
@@ -257,34 +261,121 @@ export const projectBriefs = pgTable(
 ).enableRLS();
 
 // ── roadmaps ──────────────────────────────────────────────────────────────────
+// Rescoped pre-Feature-34 from a flat FF-concept-only sequence to a
+// roadmap.sh-style node graph — see build-plan.md's Phase 7 rescoping note.
+// roadmapType splits the /roadmaps list into Role-based (a full job-role
+// path, e.g. "Frontend Developer", mixing internal FF links with external
+// video/article links where FF has no lesson) vs Skill-based (a single
+// technology deep dive that maps onto one CONCEPT_CATEGORIES value and is
+// almost entirely internal-linked, e.g. "JavaScript", "CSS").
 
-export const roadmaps = pgTable("roadmaps", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  slug: text("slug").notNull().unique(),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  isPremium: boolean("is_premium").notNull().default(false),
-  orderIndex: integer("order_index").notNull().default(0),
-}).enableRLS();
+export const roadmaps = pgTable(
+  "roadmaps",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: text("slug").notNull().unique(),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    roadmapType: text("roadmap_type").notNull().default("role"),
+    isPremium: boolean("is_premium").notNull().default(false),
+    orderIndex: integer("order_index").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("roadmaps_roadmap_type_idx").on(table.roadmapType),
+    check(
+      "roadmaps_roadmap_type_check",
+      sql`${table.roadmapType} IN (${sql.join(
+        ROADMAP_TYPES.map((t) => sql.raw(`'${t}'`)),
+        sql`, `,
+      )})`,
+    ),
+  ],
+).enableRLS();
 
-// ── roadmap_steps ─────────────────────────────────────────────────────────────
+// ── roadmap_nodes ─────────────────────────────────────────────────────────────
+// One box on the canvas. parentId groups topics under a "section" header node
+// (self-reference, one level deep — app code never nests a section under
+// another section). positionX/Y are hand-authored canvas coordinates (same
+// approach roadmap.sh's own source uses), not computed by a layout algorithm.
+// A "section" node has no links of its own; only "topic" nodes do.
 
-export const roadmapSteps = pgTable(
-  "roadmap_steps",
+export const roadmapNodes = pgTable(
+  "roadmap_nodes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     roadmapId: uuid("roadmap_id")
       .notNull()
       .references(() => roadmaps.id, { onDelete: "cascade" }),
-    conceptId: uuid("concept_id")
-      .notNull()
-      .references(() => concepts.id, { onDelete: "cascade" }),
-    orderIndex: integer("order_index").notNull().default(0),
+    // Self-referencing FK — callback form (AnyPgColumn) sidesteps the
+    // temporal-dead-zone issue of referencing roadmapNodes.id before the
+    // const it's defined in has finished initializing.
+    parentId: uuid("parent_id").references((): AnyPgColumn => roadmapNodes.id, {
+      onDelete: "cascade",
+    }),
+    slug: text("slug").notNull(),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    nodeType: text("node_type").notNull().default("topic"),
     isOptional: boolean("is_optional").notNull().default(false),
+    positionX: integer("position_x").notNull().default(0),
+    positionY: integer("position_y").notNull().default(0),
+    orderIndex: integer("order_index").notNull().default(0),
   },
   (table) => [
-    index("roadmap_steps_roadmap_id_idx").on(table.roadmapId),
-    unique("roadmap_steps_roadmap_order_unique").on(table.roadmapId, table.orderIndex),
+    index("roadmap_nodes_roadmap_id_idx").on(table.roadmapId),
+    index("roadmap_nodes_parent_id_idx").on(table.parentId),
+    unique("roadmap_nodes_roadmap_slug_unique").on(table.roadmapId, table.slug),
+    check(
+      "roadmap_nodes_node_type_check",
+      sql`${table.nodeType} IN (${sql.join(
+        ROADMAP_NODE_TYPES.map((t) => sql.raw(`'${t}'`)),
+        sql`, `,
+      )})`,
+    ),
+  ],
+).enableRLS();
+
+// ── roadmap_node_links ────────────────────────────────────────────────────────
+// What a topic node points at — deliberately many-per-node and mixed-type,
+// not a single concept_id: a node like "Closures" can carry a Learn concept
+// link, one or two Practice challenges, and a couple of FF Collections
+// interview questions all at once (explicit user request — see build-plan.md).
+// Exactly one of conceptId/challengeId/collectionQuestionId/externalUrl is
+// set per row, chosen by linkType — enforced by a DB CHECK below, same
+// "exactly one target" pattern as bookmarks_exactly_one_target_check.
+
+export const roadmapNodeLinks = pgTable(
+  "roadmap_node_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    nodeId: uuid("node_id")
+      .notNull()
+      .references(() => roadmapNodes.id, { onDelete: "cascade" }),
+    linkType: text("link_type").notNull(),
+    conceptId: uuid("concept_id").references(() => concepts.id, { onDelete: "cascade" }),
+    challengeId: uuid("challenge_id").references(() => challenges.id, { onDelete: "cascade" }),
+    collectionQuestionId: uuid("collection_question_id").references(
+      () => collectionQuestions.id,
+      { onDelete: "cascade" },
+    ),
+    externalTitle: text("external_title"),
+    externalUrl: text("external_url"),
+    orderIndex: integer("order_index").notNull().default(0),
+  },
+  (table) => [
+    index("roadmap_node_links_node_id_idx").on(table.nodeId),
+    check(
+      "roadmap_node_links_exactly_one_target_check",
+      sql`(${table.conceptId} IS NOT NULL)::int + (${table.challengeId} IS NOT NULL)::int + (${table.collectionQuestionId} IS NOT NULL)::int + (${table.externalUrl} IS NOT NULL)::int = 1`,
+    ),
+    check(
+      "roadmap_node_links_link_type_check",
+      sql`${table.linkType} IN (${sql.join(
+        ROADMAP_NODE_LINK_TYPES.map((t) => sql.raw(`'${t}'`)),
+        sql`, `,
+      )})`,
+    ),
   ],
 ).enableRLS();
 
@@ -370,7 +461,7 @@ export const conceptsRelations = relations(concepts, ({ many }) => ({
   challenges: many(challenges),
   interviewQuestions: many(interviewQuestions),
   projectBriefs: many(projectBriefs),
-  roadmapSteps: many(roadmapSteps),
+  roadmapNodeLinks: many(roadmapNodeLinks),
 }));
 
 export const challengesRelations = relations(challenges, ({ one }) => ({
@@ -395,17 +486,39 @@ export const interviewQuestionsRelations = relations(interviewQuestions, ({ one 
 }));
 
 export const roadmapsRelations = relations(roadmaps, ({ many }) => ({
-  steps: many(roadmapSteps),
+  nodes: many(roadmapNodes),
 }));
 
-export const roadmapStepsRelations = relations(roadmapSteps, ({ one }) => ({
+export const roadmapNodesRelations = relations(roadmapNodes, ({ one, many }) => ({
   roadmap: one(roadmaps, {
-    fields: [roadmapSteps.roadmapId],
+    fields: [roadmapNodes.roadmapId],
     references: [roadmaps.id],
   }),
+  parent: one(roadmapNodes, {
+    fields: [roadmapNodes.parentId],
+    references: [roadmapNodes.id],
+    relationName: "roadmapNodeChildren",
+  }),
+  children: many(roadmapNodes, { relationName: "roadmapNodeChildren" }),
+  links: many(roadmapNodeLinks),
+}));
+
+export const roadmapNodeLinksRelations = relations(roadmapNodeLinks, ({ one }) => ({
+  node: one(roadmapNodes, {
+    fields: [roadmapNodeLinks.nodeId],
+    references: [roadmapNodes.id],
+  }),
   concept: one(concepts, {
-    fields: [roadmapSteps.conceptId],
+    fields: [roadmapNodeLinks.conceptId],
     references: [concepts.id],
+  }),
+  challenge: one(challenges, {
+    fields: [roadmapNodeLinks.challengeId],
+    references: [challenges.id],
+  }),
+  collectionQuestion: one(collectionQuestions, {
+    fields: [roadmapNodeLinks.collectionQuestionId],
+    references: [collectionQuestions.id],
   }),
 }));
 

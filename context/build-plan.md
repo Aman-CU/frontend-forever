@@ -680,7 +680,14 @@ The spec below is kept for historical reference only — do not build this. See 
 
 ### 34 Roadmaps List Page
 
-**UI:**
+**Rescoped before any code was written** — see `progress-tracker.md` → Decisions Made / the Feature 34 entry in Current Status for the full architect-session decision trail. The spec below (a flat grid of FF-concept-only roadmaps) is kept for historical reference; what actually shipped is a roadmap.sh-style system: roadmaps split into **Role-based** (a full job-role path mixing internal FF links with external article/video links where FF has no matching lesson) and **Skill-based** (a single-technology deep dive mapping 1:1 onto one Learn category, almost entirely internal-linked). A roadmap node can link to a Learn concept, Practice challenges, and FF Collections interview questions all at once, not just one concept — explicit user request. Schema replaced `roadmaps`/`roadmap_steps` with `roadmaps` (+ `roadmap_type`), `roadmap_nodes` (hierarchical, hand-authored canvas coordinates), `roadmap_node_links` (polymorphic, many per node), and `user_roadmap_node_progress`.
+
+**UI (as shipped):**
+
+- Grid of roadmap cards grouped under "Role-based" / "Skill-based" headings: title, topic count, completion % for logged-in users, premium badge if applicable
+- Brief description per roadmap
+
+**UI (original spec, superseded):**
 
 - Grid of roadmap cards: title, concept count, estimated time, difficulty, premium badge if applicable
 - Brief description per roadmap
@@ -689,7 +696,9 @@ The spec below is kept for historical reference only — do not build this. See 
 
 ### 35 Roadmap Detail Page
 
-**UI:**
+**Rescoped alongside Feature 34** — see above. The spec below (an ordered list with a connecting line) is superseded by a full interactive pan/zoom node-graph canvas, roadmap.sh's actual visual format, built in-house (no new dependency — pointer-drag + wheel-zoom over a CSS transform, connector lines as plain SVG paths computed from each node's authored coordinates). Scope: the canvas engine, a click-to-open node side panel (Learn/Practice/Interview links, or external video/article links, plus a manual done-toggle for external nodes), a mobile list fallback, the `POST /api/roadmap-progress` write route, the full "Frontend Developer" content-authoring pass (every section beyond Feature 34's 2-section pilot), and the Feature 31-style SEO/GEO pass (answer-first intro, FAQ + `FAQPage` JSON-LD, canonical/OG metadata).
+
+**UI (original spec, superseded):**
 
 - Roadmap title + description
 - Ordered list of concepts (steps) with connecting line

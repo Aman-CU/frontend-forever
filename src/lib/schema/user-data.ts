@@ -14,7 +14,13 @@ import {
 } from "drizzle-orm/pg-core";
 import { XP_EVENT_TYPES, CHALLENGE_STATUSES, PLAYBOOK_SLUGS } from "@/lib/constants";
 import { profiles } from "./profiles";
-import { concepts, challenges, interviewQuestions, collectionQuestions } from "./content";
+import {
+  concepts,
+  challenges,
+  interviewQuestions,
+  collectionQuestions,
+  roadmapNodes,
+} from "./content";
 
 // Every table below is .enableRLS()'d — this has no bearing on the app itself
 // (the app's DATABASE_URL role has BYPASSRLS); it exists purely to block
@@ -275,6 +281,34 @@ export const userCollectionQuestionProgress = pgTable(
   ],
 ).enableRLS();
 
+// ── user_roadmap_node_progress ────────────────────────────────────────────────
+// Feature 35's manual "Mark as done" toggle — but only ever written for
+// external-link roadmap_nodes (Learn-linked nodes derive their completed
+// state from user_concept_progress instead, since that's real signal and
+// this table would just duplicate it). Same insert-on-tick/delete-on-untick
+// shape as user_collection_question_progress above: row presence means
+// done. No XP — Feature 32's spaced-repetition XP-farming bug is exactly the
+// class of mistake this is avoiding by not attaching a reward to a
+// self-reported, unverifiable-completion action.
+
+export const userRoadmapNodeProgress = pgTable(
+  "user_roadmap_node_progress",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    nodeId: uuid("node_id")
+      .notNull()
+      .references(() => roadmapNodes.id, { onDelete: "cascade" }),
+    completedAt: timestamp("completed_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    unique("user_roadmap_node_progress_user_node_unique").on(table.userId, table.nodeId),
+    index("user_roadmap_node_progress_user_id_idx").on(table.userId),
+  ],
+).enableRLS();
+
 // ── relations ─────────────────────────────────────────────────────────────────
 
 export const userConceptProgressRelations = relations(userConceptProgress, ({ one }) => ({
@@ -369,5 +403,16 @@ export const playbookReadsRelations = relations(playbookReads, ({ one }) => ({
   profile: one(profiles, {
     fields: [playbookReads.userId],
     references: [profiles.id],
+  }),
+}));
+
+export const userRoadmapNodeProgressRelations = relations(userRoadmapNodeProgress, ({ one }) => ({
+  profile: one(profiles, {
+    fields: [userRoadmapNodeProgress.userId],
+    references: [profiles.id],
+  }),
+  node: one(roadmapNodes, {
+    fields: [userRoadmapNodeProgress.nodeId],
+    references: [roadmapNodes.id],
   }),
 }));
