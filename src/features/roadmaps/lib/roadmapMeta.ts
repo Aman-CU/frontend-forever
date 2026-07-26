@@ -1,33 +1,32 @@
-import { Briefcase } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
 
-import type { ConceptCategory } from "@/lib/constants";
-import { CATEGORY_META, type ColorKey } from "@/features/learn/lib/categoryMeta";
+import { JavascriptIcon } from "@/components/shared/devicons/JavascriptIcon";
+import { Css3Icon } from "@/components/shared/devicons/Css3Icon";
+import { ReactIcon } from "@/components/shared/devicons/ReactIcon";
+import { TypescriptIcon } from "@/components/shared/devicons/TypescriptIcon";
+import { Html5Icon } from "@/components/shared/devicons/Html5Icon";
 
 export type RoadmapMeta = {
-  icon: LucideIcon;
-  colorKey: ColorKey;
-  badge?: string;
-  badgeStyle?: { bg: string; text: string };
+  icon: ComponentType<{ className?: string }>;
 };
 
-// Skill-based roadmap slugs map onto the matching Learn category, reusing
-// its existing icon/color/badge rather than inventing a second palette for
-// the same technology. Role-based roadmaps (currently just
-// "frontend-developer") fall through to the default below.
-const SKILL_ROADMAP_CATEGORY: Record<string, ConceptCategory> = {
-  javascript: "javascript-runtime",
-  css: "css",
-  react: "react",
-  typescript: "typescript",
+// Real devicon.dev marks (see components/shared/devicons/*), not generic
+// lucide icons — direct user request, so every roadmap card icon is
+// instantly recognizable as its actual technology rather than an
+// approximation (Zap for JS, Atom for React, etc.). Each skill roadmap
+// slug maps onto its matching language/framework mark; "frontend-developer"
+// (a role, not one technology) uses HTML5 as the closest devicon has to a
+// general "frontend" mark, same fallback for any future roadmap slug with
+// no specific icon of its own.
+const ROADMAP_ICON: Record<string, ComponentType<{ className?: string }>> = {
+  javascript: JavascriptIcon,
+  css: Css3Icon,
+  react: ReactIcon,
+  typescript: TypescriptIcon,
 };
 
-const DEFAULT_ROLE_META: RoadmapMeta = { icon: Briefcase, colorKey: "accent" };
+const DEFAULT_ICON = Html5Icon;
 
 export function getRoadmapMeta(slug: string): RoadmapMeta {
-  const category = SKILL_ROADMAP_CATEGORY[slug];
-  if (!category) return DEFAULT_ROLE_META;
-
-  const { icon, colorKey, badge, badgeStyle } = CATEGORY_META[category];
-  return { icon, colorKey, badge, badgeStyle };
+  return { icon: ROADMAP_ICON[slug] ?? DEFAULT_ICON };
 }
