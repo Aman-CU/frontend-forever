@@ -301,6 +301,11 @@ async function seed() {
                 positionX: sql`excluded.position_x`,
                 positionY: sql`excluded.position_y`,
                 orderIndex: sql`excluded.order_index`,
+                // Reset to NULL on every upsert, not just left alone — a node
+                // that drops its parentSlug (promoted to a root) would
+                // otherwise keep pointing at its old, stale parent, since
+                // Pass 2 below only ever *sets* parentId, never clears it.
+                parentId: null,
               },
             })
             .returning({ id: roadmapNodes.id, slug: roadmapNodes.slug })
