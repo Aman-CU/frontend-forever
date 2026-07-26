@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { RoadmapCanvas } from "@/features/roadmaps/components/RoadmapCanvas";
+import { RoadmapFlowDiagram } from "@/features/roadmaps/components/RoadmapFlowDiagram";
 import { RoadmapMobileList } from "@/features/roadmaps/components/RoadmapMobileList";
 import { RoadmapNodePanel } from "@/features/roadmaps/components/RoadmapNodePanel";
 import type { RoadmapNodeView } from "@/features/roadmaps/lib/queries";
@@ -12,7 +12,7 @@ type Props = {
   isLoggedIn: boolean;
 };
 
-// Owns node/selection/completion state so the desktop canvas and the
+// Owns node/selection/completion state so the desktop flow diagram and the
 // mobile list (rendered side by side, toggled via a CSS breakpoint rather
 // than JS viewport detection — avoids an SSR/client hydration mismatch)
 // share one source of truth instead of each fetching/mutating independently.
@@ -48,7 +48,7 @@ export function RoadmapDetailView({ initialNodes, isLoggedIn }: Props) {
   return (
     <>
       <div className="hidden md:block">
-        <RoadmapCanvas nodes={nodes} onSelectNode={(n) => setSelectedNodeId(n.id)} />
+        <RoadmapFlowDiagram nodes={nodes} onSelectNode={(n) => setSelectedNodeId(n.id)} />
       </div>
       <div className="md:hidden">
         <RoadmapMobileList nodes={nodes} onSelectNode={(n) => setSelectedNodeId(n.id)} />

@@ -5,11 +5,12 @@ import { ArrowLeft } from "lucide-react";
 
 import { getBaseUrl, safeJsonLd, toPlainTextSummary } from "@/lib/seo";
 import { getCachedSession } from "@/lib/auth/server";
-import { getRoadmapDetail } from "@/features/roadmaps/lib/queries";
+import { getRoadmapDetail, getRoadmapSummaries } from "@/features/roadmaps/lib/queries";
 import { getRoadmapMeta } from "@/features/roadmaps/lib/roadmapMeta";
 import { ROADMAP_SEO_CONTENT } from "@/features/roadmaps/lib/roadmapSeoContent";
 import { RoadmapDetailView } from "@/features/roadmaps/components/RoadmapDetailView";
 import { RoadmapFaq } from "@/features/roadmaps/components/RoadmapFaq";
+import { RoadmapSidebar } from "@/features/roadmaps/components/RoadmapSidebar";
 
 type Params = { slug: string };
 
@@ -43,8 +44,12 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<Pa
   const session = await getCachedSession();
   const userId = session?.user?.id ?? null;
 
-  const roadmap = await getRoadmapDetail(slug, userId);
+  const [roadmap, allRoadmaps] = await Promise.all([
+    getRoadmapDetail(slug, userId),
+    getRoadmapSummaries(userId),
+  ]);
   if (!roadmap) notFound();
+  const relatedRoadmaps = allRoadmaps.filter((r) => r.slug !== roadmap.slug);
 
   const { icon: Icon } = getRoadmapMeta(roadmap.slug);
   const seoContent = ROADMAP_SEO_CONTENT[roadmap.slug];
@@ -114,7 +119,16 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<Pa
       </div>
 
       <div className="mx-auto w-full max-w-6xl px-6 lg:px-8">
-        <RoadmapDetailView initialNodes={roadmap.nodes} isLoggedIn={userId !== null} />
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[240px_1fr]">
+          <aside className="hidden lg:block">
+            <div className="sticky top-20">
+              <RoadmapSidebar relatedRoadmaps={relatedRoadmaps} />
+            </div>
+          </aside>
+          <div className="min-w-0">
+            <RoadmapDetailView initialNodes={roadmap.nodes} isLoggedIn={userId !== null} />
+          </div>
+        </div>
       </div>
 
       {seoContent && <RoadmapFaq content={seoContent} />}
