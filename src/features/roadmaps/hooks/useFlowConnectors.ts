@@ -53,7 +53,7 @@ export function useFlowConnectors(rows: FlowRow[]) {
     }
 
     measure();
-    let raf = requestAnimationFrame(measure);
+    const raf = requestAnimationFrame(measure);
 
     // Coalesced through rAF, not called directly — a live window-resize
     // drag can fire the native resize event dozens of times per frame, and
