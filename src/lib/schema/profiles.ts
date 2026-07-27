@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, integer, boolean, date, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, date, timestamp, index } from "drizzle-orm/pg-core";
 import { user } from "./auth-schema";
 import {
   userConceptProgress,
@@ -17,27 +17,34 @@ import {
 // has BYPASSRLS); it exists purely to block Supabase's auto-generated
 // PostgREST API from reading/writing this table via the anon/authenticated
 // roles. See security.md's RLS section.
-export const profiles = pgTable("profiles", {
-  id: text("id")
-    .primaryKey()
-    .references(() => user.id, { onDelete: "cascade" }),
-  username: text("username").notNull().unique(),
-  fullName: text("full_name"),
-  email: text("email"),
-  avatarUrl: text("avatar_url"),
-  bio: text("bio"),
-  xp: integer("xp").notNull().default(0),
-  streakCurrent: integer("streak_current").notNull().default(0),
-  streakLongest: integer("streak_longest").notNull().default(0),
-  streakLastActivity: date("streak_last_activity"),
-  isPremium: boolean("is_premium").notNull().default(false),
-  premiumExpiresAt: timestamp("premium_expires_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-}).enableRLS();
+export const profiles = pgTable(
+  "profiles",
+  {
+    id: text("id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    username: text("username").notNull().unique(),
+    fullName: text("full_name"),
+    email: text("email"),
+    avatarUrl: text("avatar_url"),
+    bio: text("bio"),
+    xp: integer("xp").notNull().default(0),
+    streakCurrent: integer("streak_current").notNull().default(0),
+    streakLongest: integer("streak_longest").notNull().default(0),
+    streakLastActivity: date("streak_last_activity"),
+    isPremium: boolean("is_premium").notNull().default(false),
+    premiumExpiresAt: timestamp("premium_expires_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  // Feature 36's Leaderboard: getLeaderboardEntries orders All Time by xp
+  // desc, and getUserRank counts rows where xp > a given value — both scan
+  // this index instead of a full table sort/scan.
+  (table) => [index("profiles_xp_idx").on(table.xp)],
+).enableRLS();
 
 export const profilesRelations = relations(profiles, ({ one, many }) => ({
   user: one(user, {

@@ -82,6 +82,11 @@ export const xpEvents = pgTable(
   (table) => [
     index("xp_events_user_id_idx").on(table.userId),
     index("xp_events_created_at_idx").on(table.createdAt),
+    // Feature 36's Leaderboard: getUserRank's Week/Month path filters by
+    // both userId and createdAt in one query (a user's own range-scoped XP
+    // sum) — the composite serves that directly, rather than relying on the
+    // planner to bitmap-AND the two single-column indexes above.
+    index("xp_events_user_id_created_at_idx").on(table.userId, table.createdAt),
     check(
       "xp_events_event_type_check",
       sql`${table.eventType} IN (${sql.join(
