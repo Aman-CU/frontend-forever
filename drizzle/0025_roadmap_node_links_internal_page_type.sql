@@ -1,0 +1,2 @@
+ALTER TABLE "roadmap_node_links" DROP CONSTRAINT "roadmap_node_links_link_type_check";--> statement-breakpoint
+ALTER TABLE "roadmap_node_links" ADD CONSTRAINT "roadmap_node_links_link_type_check" CHECK ("roadmap_node_links"."link_type" IN ('learn-concept', 'practice-challenge', 'interview-question', 'external-video', 'external-article', 'internal-page'));
