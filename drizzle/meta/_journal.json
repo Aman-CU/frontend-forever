@@ -183,6 +183,13 @@
       "when": 1785085495761,
       "tag": "0025_roadmap_node_links_internal_page_type",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1785170372364,
+      "tag": "0026_leaderboard_query_indexes",
+      "breakpoints": true
     }
   ]
 }
