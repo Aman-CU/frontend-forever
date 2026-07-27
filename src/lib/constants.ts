@@ -153,6 +153,13 @@ export type RoadmapNodeType = (typeof ROADMAP_NODE_TYPES)[number];
 // mostly standalone (challenges.conceptId and collection_questions have no
 // reliable concept link — see content.ts), so these are hand-curated per
 // node rather than derived from a shared concept_id.
+// Feature 36's Leaderboard filter tabs. "all-time" ranks by profiles.xp
+// directly; "week"/"month" rank by a live sum over xp_events scoped to the
+// current UTC calendar week (Monday start) / calendar month — see
+// features/leaderboard/lib/dateRanges.ts.
+export const LEADERBOARD_RANGES = ["all-time", "week", "month"] as const;
+export type LeaderboardRange = (typeof LEADERBOARD_RANGES)[number];
+
 export const ROADMAP_NODE_LINK_TYPES = [
   "learn-concept",
   "practice-challenge",
