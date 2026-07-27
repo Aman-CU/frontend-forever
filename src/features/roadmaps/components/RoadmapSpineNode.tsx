@@ -6,7 +6,15 @@ import type { RoadmapNodeView } from "@/features/roadmaps/lib/queries";
 type Props = {
   node: RoadmapNodeView;
   onSelect: (node: RoadmapNodeView) => void;
-  ref?: React.Ref<HTMLDivElement>;
+  // RefCallback<HTMLElement>, not Ref<HTMLDivElement> — a "section" node
+  // renders as a <div>, a "topic" node as a <button>, and the caller
+  // (RoadmapFlowDiagram, into a Map<string, HTMLElement>) only ever passes
+  // a callback ref, never a RefObject. RefCallback's parameter position is
+  // contravariant, so a callback accepting the shared HTMLElement base type
+  // safely satisfies both the <div ref> and <button ref> JSX slots below
+  // with no unsafe cast — plain Ref<HTMLElement> doesn't work here because
+  // RefObject<T>'s `current` field isn't contravariant the same way.
+  ref?: React.RefCallback<HTMLElement>;
 };
 
 // The bold, high-contrast box every reading row centers on — a "section"
@@ -29,7 +37,7 @@ export function RoadmapSpineNode({ node, onSelect, ref }: Props) {
 
   return (
     <button
-      ref={ref as React.Ref<HTMLButtonElement>}
+      ref={ref}
       type="button"
       onClick={() => onSelect(node)}
       className={cn(

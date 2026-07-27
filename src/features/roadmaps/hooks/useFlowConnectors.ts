@@ -53,11 +53,25 @@ export function useFlowConnectors(rows: FlowRow[]) {
     }
 
     measure();
-    const raf = requestAnimationFrame(measure);
-    window.addEventListener("resize", measure);
+    let raf = requestAnimationFrame(measure);
+
+    // Coalesced through rAF, not called directly — a live window-resize
+    // drag can fire the native resize event dozens of times per frame, and
+    // each measure() does a getBoundingClientRect() per branch pill plus 2
+    // setState calls, so calling it unthrottled was real jank risk on a
+    // roadmap with many branches. At most one measurement per frame either
+    // way, regardless of how many resize events land in between.
+    let resizeRaf: number | null = null;
+    function handleResize() {
+      if (resizeRaf !== null) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(measure);
+    }
+
+    window.addEventListener("resize", handleResize);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", measure);
+      if (resizeRaf !== null) cancelAnimationFrame(resizeRaf);
+      window.removeEventListener("resize", handleResize);
     };
   }, [rows]);
 

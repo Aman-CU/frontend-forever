@@ -6,6 +6,13 @@ import { db } from "@/lib/db";
 import { roadmapNodes, roadmapNodeLinks, userRoadmapNodeProgress } from "@/lib/schema";
 import { getPostgresErrorCode } from "@/lib/dbErrors";
 
+// Same pattern as every other route that takes a client-supplied row id
+// directly (interview-rating, interview-review-rating, progress,
+// practice/discussion, practice/submit) — nodeId hits roadmapNodes.id (a
+// real uuid column) unguarded otherwise, so a malformed value would throw a
+// Postgres type-cast error instead of a clean 400.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(req: Request) {
   // 1. Auth
   const session = await auth.api.getSession({ headers: req.headers });
@@ -31,7 +38,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
   const { nodeId, completed } = (body ?? {}) as { nodeId?: unknown; completed?: unknown };
-  if (typeof nodeId !== "string" || typeof completed !== "boolean") {
+  if (typeof nodeId !== "string" || !UUID_RE.test(nodeId) || typeof completed !== "boolean") {
     return Response.json({ error: "Invalid nodeId or completed value" }, { status: 400 });
   }
 

@@ -37,7 +37,9 @@ type CatalogRoadmap = Omit<RoadmapSummary, "completedCount">;
 // driver still hands it back as a plain string) — validate against the real
 // value set instead of a blind `as RoadmapType` cast, so a data-integrity
 // bug surfaces here as a loud error rather than silently mistyped data.
-function parseRoadmapType(value: string): RoadmapType {
+// Exported so queries/detail.ts's getRoadmapDetail can reuse the same
+// validation instead of its own blind cast.
+export function parseRoadmapType(value: string): RoadmapType {
   if ((ROADMAP_TYPES as readonly string[]).includes(value)) return value as RoadmapType;
   throw new Error(`[roadmaps] Unexpected roadmap_type "${value}" — not in ROADMAP_TYPES.`);
 }

@@ -2,7 +2,12 @@ import { cache } from "react";
 import { eq, inArray, and } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import type { RoadmapType, RoadmapNodeType, RoadmapNodeLinkType } from "@/lib/constants";
+import {
+  ROADMAP_NODE_TYPES,
+  type RoadmapType,
+  type RoadmapNodeType,
+  type RoadmapNodeLinkType,
+} from "@/lib/constants";
 import {
   roadmaps,
   roadmapNodes,
@@ -13,6 +18,16 @@ import {
   userConceptProgress,
   userRoadmapNodeProgress,
 } from "@/lib/schema";
+import { parseRoadmapType } from "./summaries";
+
+// roadmap_nodes.node_type is a DB text column (CHECK-constrained, but the
+// driver still hands it back as a plain string) — same reasoning as
+// summaries.ts's parseRoadmapType, which this mirrors rather than a blind
+// `as RoadmapNodeType` cast.
+function parseRoadmapNodeType(value: string): RoadmapNodeType {
+  if ((ROADMAP_NODE_TYPES as readonly string[]).includes(value)) return value as RoadmapNodeType;
+  throw new Error(`[roadmaps] Unexpected node_type "${value}" — not in ROADMAP_NODE_TYPES.`);
+}
 
 export type RoadmapNodeLinkView = {
   id: string;
@@ -101,6 +116,7 @@ export const getRoadmapDetail = cache(
             externalTitle: roadmapNodeLinks.externalTitle,
             externalUrl: roadmapNodeLinks.externalUrl,
             orderIndex: roadmapNodeLinks.orderIndex,
+            conceptId: roadmapNodeLinks.conceptId,
             conceptSlug: concepts.slug,
             conceptCategory: concepts.category,
             conceptTitle: concepts.title,
@@ -134,10 +150,10 @@ export const getRoadmapDetail = cache(
 
     return {
       ...roadmap,
-      roadmapType: roadmap.roadmapType as RoadmapType,
+      roadmapType: parseRoadmapType(roadmap.roadmapType),
       nodes: nodeRows.map((n) => ({
         ...n,
-        nodeType: n.nodeType as RoadmapNodeType,
+        nodeType: parseRoadmapNodeType(n.nodeType),
         isCompleted: completedNodeIds.has(n.id),
         links: linksByNode.get(n.id) ?? [],
       })),
@@ -219,22 +235,24 @@ function toLinkView(row: {
 async function getCompletedNodeIds(
   userId: string,
   nodeRows: { id: string }[],
-  linkRows: { nodeId: string; linkType: string; conceptSlug: string | null }[],
+  linkRows: { nodeId: string; linkType: string; conceptId: string | null }[],
 ): Promise<Set<string>> {
-  const conceptSlugsByNode = new Map<string, string[]>();
+  const conceptIdsByNode = new Map<string, string[]>();
   for (const row of linkRows) {
-    if (row.linkType !== "learn-concept" || !row.conceptSlug) continue;
-    const list = conceptSlugsByNode.get(row.nodeId) ?? [];
-    list.push(row.conceptSlug);
-    conceptSlugsByNode.set(row.nodeId, list);
+    if (row.linkType !== "learn-concept" || !row.conceptId) continue;
+    const list = conceptIdsByNode.get(row.nodeId) ?? [];
+    list.push(row.conceptId);
+    conceptIdsByNode.set(row.nodeId, list);
   }
 
   const nodeIds = nodeRows.map((n) => n.id);
   const [completedConcepts, doneNodes] = await Promise.all([
+    // Compared by id, not slug — the linkRows above already carry the real
+    // conceptId off roadmapNodeLinks, so there's no need to join back
+    // through concepts just to translate id -> slug -> id again.
     db
-      .select({ slug: concepts.slug })
+      .select({ conceptId: userConceptProgress.conceptId })
       .from(userConceptProgress)
-      .innerJoin(concepts, eq(userConceptProgress.conceptId, concepts.id))
       .where(and(eq(userConceptProgress.userId, userId), eq(userConceptProgress.fullyCompleted, true))),
     nodeIds.length
       ? db
@@ -248,12 +266,12 @@ async function getCompletedNodeIds(
           )
       : Promise.resolve([]),
   ]);
-  const completedConceptSlugs = new Set(completedConcepts.map((c) => c.slug));
+  const completedConceptIds = new Set(completedConcepts.map((c) => c.conceptId));
   const doneNodeIds = new Set(doneNodes.map((n) => n.nodeId));
 
   const completed = new Set<string>(doneNodeIds);
-  for (const [nodeId, slugs] of conceptSlugsByNode) {
-    if (slugs.some((s) => completedConceptSlugs.has(s))) completed.add(nodeId);
+  for (const [nodeId, conceptIds] of conceptIdsByNode) {
+    if (conceptIds.some((id) => completedConceptIds.has(id))) completed.add(nodeId);
   }
   return completed;
 }

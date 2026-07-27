@@ -344,7 +344,7 @@ const FRONTEND_DEVELOPER_ENTRIES: RoadmapEntry[] = [
         "https://developer.mozilla.org/en-US/docs/Web/CSS/Specificity",
       ),
       externalTopic(
-        "flexbox-vs-grid",
+        "flexbox",
         "Flexbox",
         "A one-dimensional layout model for distributing space between items in a row or a column.",
         "external-article",

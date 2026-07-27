@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpen, Code2, Compass, HelpCircle, Newspaper, Video, X, CheckCircle2 } from "lucide-react";
@@ -7,6 +8,8 @@ import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { RoadmapNodeLinkView, RoadmapNodeView } from "@/features/roadmaps/lib/queries";
+
+const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 type Props = {
   node: RoadmapNodeView | null;
@@ -43,6 +46,59 @@ export function RoadmapNodePanel({ node, onClose, onToggleComplete, isLoggedIn, 
     linksByType.set(link.linkType, list);
   }
 
+  const panelRef = useRef<HTMLElement>(null);
+  // Read through a ref, not a direct effect dependency — RoadmapDetailView
+  // passes a fresh onClose closure every render (it's an inline arrow
+  // function), so depending on it directly would re-run this effect (and
+  // re-steal focus into the panel) on every unrelated parent re-render,
+  // including the optimistic re-render a "Mark as done" click itself causes.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Dialog semantics for a hand-rolled drawer — no side-drawer primitive
+  // exists in this codebase's Dialog/base-ui setup yet (see the comment on
+  // the aside below), so this doesn't get Base UI's built-in focus-trap/
+  // Escape/aria wiring for free. Moves focus into the panel on open, traps
+  // Tab/Shift+Tab inside it, closes on Escape, and restores focus to
+  // whatever triggered the panel on close.
+  useEffect(() => {
+    if (!node) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
+
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus();
+    };
+    // Keyed on node.id (a stable primitive), not the node object itself —
+    // the currently-open node's own fields (e.g. isCompleted) can mutate in
+    // place from the toggle above without this re-running and stealing
+    // focus back to the panel mid-interaction.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node?.id]);
+
   return (
     <AnimatePresence>
       {node && (
@@ -55,14 +111,21 @@ export function RoadmapNodePanel({ node, onClose, onToggleComplete, isLoggedIn, 
             onClick={onClose}
           />
           <motion.aside
-            className="fixed right-0 top-0 z-50 h-full w-full max-w-sm overflow-y-auto border-l border-border bg-surface p-6 shadow-xl"
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="roadmap-node-panel-title"
+            tabIndex={-1}
+            className="fixed right-0 top-0 z-50 h-full w-full max-w-sm overflow-y-auto border-l border-border bg-surface p-6 shadow-xl outline-none"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "tween", duration: 0.2 }}
           >
             <div className="flex items-start justify-between gap-3">
-              <h2 className="text-lg font-semibold text-text-primary">{node.title}</h2>
+              <h2 id="roadmap-node-panel-title" className="text-lg font-semibold text-text-primary">
+                {node.title}
+              </h2>
               <button
                 type="button"
                 onClick={onClose}
