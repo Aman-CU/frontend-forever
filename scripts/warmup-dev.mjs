@@ -61,6 +61,10 @@ const ROUTES = [
   "/playground/experiments/particle-cursor-trail",
   "/roadmaps",
   "/roadmaps/frontend-developer",
+  // Login-gated (Feature 36, proxy.ts's matcher) — same as the Battles editor
+  // above, an unauthenticated request redirects to /login and fetch follows
+  // it by default, so this still compiles the route.
+  "/leaderboard",
   "/api/auth/get-session",
   // Unauthenticated on purpose — this only needs to trigger compilation, not
   // a real toggle, so a 401 (auth check runs before any DB write) counts as
