@@ -8,8 +8,23 @@ type Props = {
   displayName: string;
 };
 
-function subscribe() {
-  return () => {};
+// Schedules one callback right at the next hour boundary, then reschedules
+// itself — so a dashboard tab left open across, say, 11:59am -> 12:01pm
+// actually flips from "Good morning" to "Good afternoon" instead of freezing
+// on whatever greeting was current at mount.
+function subscribe(callback: () => void) {
+  const scheduleNext = (): ReturnType<typeof setTimeout> => {
+    const now = new Date();
+    const msUntilNextHour =
+      (60 - now.getMinutes()) * 60_000 - now.getSeconds() * 1000 - now.getMilliseconds();
+    return setTimeout(() => {
+      callback();
+      timeoutId = scheduleNext();
+    }, msUntilNextHour);
+  };
+
+  let timeoutId = scheduleNext();
+  return () => clearTimeout(timeoutId);
 }
 
 function getSnapshot(): string {

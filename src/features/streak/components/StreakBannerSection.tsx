@@ -24,6 +24,7 @@ export function StreakBannerSection({ userId, streakCurrent, streakLastActivity 
       <MilestoneCelebration
         userId={userId}
         streakCurrent={streakCurrent}
+        streakLastActivity={streakLastActivity}
         isMilestoneDay={isMilestoneDay(streakCurrent, streakLastActivity)}
       />
     </div>

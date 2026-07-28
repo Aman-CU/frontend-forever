@@ -39,6 +39,7 @@ export function LevelCard({
               className="h-full rounded-full bg-xp"
               style={{ width: `${progressPct}%` }}
               role="progressbar"
+              aria-label="Level progress"
               aria-valuenow={progressPct}
               aria-valuemin={0}
               aria-valuemax={100}

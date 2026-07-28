@@ -83,7 +83,7 @@ export function DashboardActivityHeatmap({ activity, activeDays, months }: Props
         </div>
       </div>
 
-      <div className="flex w-full gap-1" role="img" aria-label={`Last ${months} months of activity`}>
+      <div className="flex w-full gap-1" role="list" aria-label={`Last ${months} months of activity`}>
         {weeks.map((week, weekIndex) => (
           <div key={weekIndex} className="relative flex flex-1 flex-col gap-1 pt-4">
             {monthLabels[weekIndex] && (

@@ -36,7 +36,7 @@ export function StreakHeatMap({ activity, streakCurrent, streakLongest }: Props)
 
       <div
         className="grid auto-cols-max grid-flow-col grid-rows-7 justify-start gap-1"
-        role="img"
+        role="list"
         aria-label="Last 30 days of activity"
       >
         {cells.map((day, i) =>

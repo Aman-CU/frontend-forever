@@ -7,6 +7,7 @@ import { Celebration } from "@/features/practice/components/playground/Celebrati
 type Props = {
   userId: string;
   streakCurrent: number;
+  streakLastActivity: string | null;
   isMilestoneDay: boolean;
 };
 
@@ -25,8 +26,17 @@ function getServerSnapshot() {
 // SSR/hydration render "not yet shown" and the client re-reads the real
 // value on mount; subscribe is a no-op since nothing outside this component
 // changes the flag mid-session, so the snapshot is stable for this mount.
-export function MilestoneCelebration({ userId, streakCurrent, isMilestoneDay }: Props) {
-  const key = `ff:streakMilestoneSeen:${userId}:${streakCurrent}`;
+export function MilestoneCelebration({
+  userId,
+  streakCurrent,
+  streakLastActivity,
+  isMilestoneDay,
+}: Props) {
+  // Includes the occurrence date so breaking a streak and later reaching the
+  // same threshold again (e.g. hitting 7 days twice, months apart) still
+  // celebrates the second time — without the date, the first celebration's
+  // key would silently suppress every future one at that same streak length.
+  const key = `ff:streakMilestoneSeen:${userId}:${streakCurrent}:${streakLastActivity}`;
   const alreadySeen = useSyncExternalStore(
     noopSubscribe,
     () => window.localStorage.getItem(key) !== null,
