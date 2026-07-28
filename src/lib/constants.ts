@@ -120,6 +120,10 @@ export const TAB_XP_EVENT_TYPE: Record<ConceptTab, XPEventType> = {
 
 export const CONCEPT_COMPLETED_BONUS_XP = 50;
 export const STREAK_BONUS_XP = 5;
+
+// Feature 37's milestone confetti (features/streak/lib/milestones.ts) — fires
+// once, on the day streakCurrent newly reaches one of these values.
+export const STREAK_MILESTONES = [7, 30, 100] as const;
 // Awarded once, on a user's first-ever passing submission for a given
 // Practice challenge (Feature 29). Deliberately below TAB_XP_REWARDS.challenge
 // (25) — Practice has ~620 standalone challenges vs. ~76 Learn concepts, so

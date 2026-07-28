@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, LogOut, Moon, Settings, Sun, User } from "lucide-react";
+import { LayoutDashboard, Loader2, LogOut, Moon, Settings, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -93,11 +93,14 @@ export function UserDropdown({ user }: UserDropdownProps) {
           <p className="truncate text-xs text-text-muted">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push("/settings/profile")}>
-          <User className="mr-2 size-4" />
-          Profile
+        <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+          <LayoutDashboard className="mr-2 size-4" />
+          Dashboard
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push("/settings")}>
+        {/* Opens the Settings modal (Next.js Parallel + Intercepting Routes —
+            see app/(app)/@settingsModal), which holds the Profile/streak
+            section built so far. */}
+        <DropdownMenuItem onClick={() => router.push("/settings/profile")}>
           <Settings className="mr-2 size-4" />
           Settings
         </DropdownMenuItem>
