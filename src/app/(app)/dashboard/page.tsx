@@ -11,6 +11,7 @@ import {
 } from "@/features/dashboard/lib/queries";
 import { getDailyActivity } from "@/features/streak/lib/queries";
 import { getLevelProgress } from "@/features/dashboard/lib/level";
+import { getCalendarWindowDays } from "@/features/dashboard/lib/dateWindow";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { LevelCard } from "@/features/dashboard/components/LevelCard";
 import { StatTiles } from "@/features/dashboard/components/StatTiles";
@@ -24,7 +25,6 @@ export const metadata: Metadata = {
 };
 
 const ACTIVITY_MONTHS = 6;
-const ACTIVITY_DAYS = 183; // ~6 months — see DashboardActivityHeatmap's month-label logic
 
 export default async function DashboardPage() {
   const session = await getCachedSession();
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
       getWeeklyDashboardStats(userId),
       getTotalUserCount(),
       hasAnyLearningProgress(userId),
-      getDailyActivity(userId, ACTIVITY_DAYS),
+      getDailyActivity(userId, getCalendarWindowDays(ACTIVITY_MONTHS)),
       getLeaderboardEntries("week"),
       getUserRank(userId, "week"),
     ]);

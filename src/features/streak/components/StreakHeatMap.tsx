@@ -1,5 +1,5 @@
 import type { DailyActivity } from "@/features/streak/lib/queries";
-import { intensityClass } from "@/features/streak/lib/intensity";
+import { HeatmapCell } from "@/features/streak/components/HeatmapCell";
 
 type Props = {
   activity: DailyActivity[];
@@ -43,11 +43,7 @@ export function StreakHeatMap({ activity, streakCurrent, streakLongest }: Props)
           day === null ? (
             <div key={`pad-${i}`} className="size-3.5" aria-hidden />
           ) : (
-            <div
-              key={day.date}
-              title={`${day.date} — ${day.xp} XP`}
-              className={`size-3.5 rounded-[2px] ${intensityClass(day.xp)}`}
-            />
+            <HeatmapCell key={day.date} date={day.date} xp={day.xp} className="size-3.5" />
           ),
         )}
       </div>

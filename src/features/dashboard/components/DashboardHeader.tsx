@@ -1,18 +1,15 @@
 import { getQuoteOfTheDay } from "@/features/dashboard/lib/quotes";
+import { GreetingLine } from "@/features/dashboard/components/GreetingLine";
 
 type Props = {
   displayName: string;
 };
 
-// UTC-based greeting/date — this app has no per-user timezone system today
-// (see architecture.md), same convention the streak system already uses.
-function getGreeting(): string {
-  const hour = new Date().getUTCHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-}
-
+// The date stays UTC-based — this app has no per-user timezone system today
+// (see architecture.md), same convention the streak system already uses. The
+// greeting is the one exception: "Good afternoon" at the visitor's actual
+// evening reads as flat-out wrong, so GreetingLine reads the visitor's real
+// local hour client-side (see its own comment for why).
 function getFormattedDate(): string {
   return new Intl.DateTimeFormat("en-US", {
     weekday: "long",
@@ -32,7 +29,7 @@ export function DashboardHeader({ displayName }: Props) {
       <div>
         <p className="text-xs font-semibold tracking-wide text-text-muted">{getFormattedDate()}</p>
         <h1 className="mt-1 text-2xl font-bold text-text-primary">
-          {getGreeting()}, {displayName}
+          <GreetingLine displayName={displayName} />
         </h1>
         <p className="mt-1 text-sm text-text-secondary">Everything about your learning in one place.</p>
       </div>

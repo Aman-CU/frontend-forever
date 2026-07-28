@@ -1,5 +1,5 @@
 import type { DailyActivity } from "@/features/streak/lib/queries";
-import { intensityClass } from "@/features/streak/lib/intensity";
+import { HeatmapCell } from "@/features/streak/components/HeatmapCell";
 
 type Props = {
   activity: DailyActivity[];
@@ -13,49 +13,57 @@ const MONTH_NAMES = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-// Aligns the first activity day to its real UTC weekday column, same
-// convention as StreakHeatMap (Settings > Profile's 30-day version).
-function leadingPadding(firstDate: string): number {
-  return new Date(`${firstDate}T00:00:00Z`).getUTCDay();
+function addDays(date: Date, amount: number): Date {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() + amount);
+  return next;
 }
 
-function chunkIntoColumns(cells: Cell[]): Cell[][] {
-  const columns: Cell[][] = [];
-  for (let i = 0; i < cells.length; i += 7) {
-    columns.push(cells.slice(i, i + 7));
+function toKey(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+// Lays the whole window out as one continuous run of Sunday-to-Saturday
+// week columns — real GitHub-style, not separate per-month blocks. Only the
+// partial week at each end (before the window start / after today) is
+// padded with null cells; every real day in between is a genuine cell, so a
+// "short" week or month just has fewer colored cells, same as GitHub.
+function buildWeeks(activity: DailyActivity[]): Cell[][] {
+  if (activity.length === 0) return [];
+
+  const byDate = new Map(activity.map((day) => [day.date, day]));
+  const firstDay = new Date(`${activity[0].date}T00:00:00Z`);
+  const lastDay = new Date(`${activity[activity.length - 1].date}T00:00:00Z`);
+
+  const gridStart = addDays(firstDay, -firstDay.getUTCDay());
+  const gridEnd = addDays(lastDay, 6 - lastDay.getUTCDay());
+
+  const weeks: Cell[][] = [];
+  for (let cursor = gridStart; cursor <= gridEnd; cursor = addDays(cursor, 7)) {
+    const week: Cell[] = [];
+    for (let i = 0; i < 7; i++) {
+      const key = toKey(addDays(cursor, i));
+      week.push(byDate.get(key) ?? null);
+    }
+    weeks.push(week);
   }
-  return columns;
+  return weeks;
 }
 
-function columnMonth(column: Cell[]): number | null {
-  const firstReal = column.find((c): c is DailyActivity => c !== null);
-  if (!firstReal) return null;
-  return new Date(`${firstReal.date}T00:00:00Z`).getUTCMonth();
-}
-
-// A column gets a month label only when it's the first column whose first
-// real day falls in a new month — avoids repeating the same label on every
-// column within that month. Every month transition gets a label, no
-// exceptions — an earlier version skipped a label if it sat too close to
-// the previous one (to avoid overlapping text at the old fixed-width cell
-// size), but that silently dropped whole months from the calendar, which is
-// a correctness bug, not a cosmetic one. Cells now fill the card's width
-// (see below), which gives every column enough room for its label anyway.
-function computeColumnLabels(columns: Cell[][]): (string | null)[] {
-  let lastMonth: number | null = null;
-  return columns.map((column) => {
-    const month = columnMonth(column);
-    if (month === null || month === lastMonth) return null;
-    lastMonth = month;
-    return MONTH_NAMES[month];
+// A week gets a month label only when it contains that month's 1st — the
+// same point GitHub's own graph switches labels — so each label marks
+// exactly where a new month begins in the continuous grid.
+function buildMonthLabels(weeks: Cell[][]): (string | null)[] {
+  return weeks.map((week) => {
+    const firstOfMonth = week.find((day) => day !== null && day.date.slice(8, 10) === "01");
+    if (!firstOfMonth) return null;
+    return MONTH_NAMES[new Date(`${firstOfMonth.date}T00:00:00Z`).getUTCMonth()];
   });
 }
 
 export function DashboardActivityHeatmap({ activity, activeDays, months }: Props) {
-  const padding = activity.length > 0 ? leadingPadding(activity[0].date) : 0;
-  const cells: Cell[] = [...Array.from({ length: padding }, () => null), ...activity];
-  const columns = chunkIntoColumns(cells);
-  const columnLabels = computeColumnLabels(columns);
+  const weeks = buildWeeks(activity);
+  const monthLabels = buildMonthLabels(weeks);
 
   return (
     <div className="rounded-xl border border-border bg-surface p-6">
@@ -75,33 +83,19 @@ export function DashboardActivityHeatmap({ activity, activeDays, months }: Props
         </div>
       </div>
 
-      {/* Unlike StreakHeatMap (Settings > Profile's compact 30-day view,
-          deliberately GitHub-sized fixed cells), this card has real room to
-          spare — flex-1 columns + aspect-square cells stretch to fill the
-          card's full width instead of hugging their content and leaving a
-          dead gap on the right (caught from a real screenshot). */}
       <div className="flex w-full gap-1" role="img" aria-label={`Last ${months} months of activity`}>
-        {columns.map((column, colIndex) => (
-          <div key={colIndex} className="relative flex flex-1 flex-col gap-1 pt-4">
-            {columnLabels[colIndex] && (
-              // Capped to this column's own width (never the neighboring
-              // column's space) so a narrow card clips a label ("Ja") rather
-              // than letting two adjacent months' text visually overlap
-              // ("JanFeb") — every month still gets a label, it just
-              // shrinks instead of colliding.
-              <span className="absolute top-0 left-0 w-full overflow-hidden text-[10px] font-medium whitespace-nowrap text-ellipsis text-text-muted">
-                {columnLabels[colIndex]}
+        {weeks.map((week, weekIndex) => (
+          <div key={weekIndex} className="relative flex flex-1 flex-col gap-1 pt-4">
+            {monthLabels[weekIndex] && (
+              <span className="absolute top-0 left-0 z-10 text-[10px] font-medium whitespace-nowrap text-text-muted">
+                {monthLabels[weekIndex]}
               </span>
             )}
-            {column.map((day, i) =>
+            {week.map((day, dayIndex) =>
               day === null ? (
-                <div key={i} className="aspect-square w-full" aria-hidden />
+                <div key={dayIndex} className="aspect-square w-full" aria-hidden />
               ) : (
-                <div
-                  key={day.date}
-                  title={`${day.date} — ${day.xp} XP`}
-                  className={`aspect-square w-full rounded-[2px] ${intensityClass(day.xp)}`}
-                />
+                <HeatmapCell key={day.date} date={day.date} xp={day.xp} className="aspect-square w-full" />
               ),
             )}
           </div>
