@@ -65,6 +65,13 @@ const ROUTES = [
   // above, an unauthenticated request redirects to /login and fetch follows
   // it by default, so this still compiles the route.
   "/leaderboard",
+  // Login-gated (Feature 37, proxy.ts's matcher) — same redirect-follows
+  // behavior as /leaderboard above. /settings itself redirects to
+  // /settings/profile; both are warmed since they're separate route files
+  // (bare /settings, and the dynamic /settings/[section]).
+  "/settings",
+  "/settings/profile",
+  "/dashboard",
   "/api/auth/get-session",
   // Unauthenticated on purpose — this only needs to trigger compilation, not
   // a real toggle, so a 401 (auth check runs before any DB write) counts as

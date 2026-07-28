@@ -49,7 +49,7 @@ export function LearnSidebar({ categories, isPremiumUser }: Props) {
       <div className="border-t border-border">
         <nav className="px-2 py-1" aria-label="Sidebar settings">
           <Link
-            href="/settings"
+            href="/settings/profile"
             className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
           >
             <Settings className="h-4 w-4 shrink-0" aria-hidden />
