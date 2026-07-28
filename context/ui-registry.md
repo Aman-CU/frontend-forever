@@ -1046,7 +1046,7 @@ Built on Feature 34's schema; branched off `feature/34-roadmaps-list-page` direc
 
 ### Streak System Polish (Feature 37)
 
-`/settings/profile` + a Learn-page banner. Built on `feature/37-streak-system-polish`, PR #107 open. See `progress-tracker.md`'s Feature 37 entry for the full build/decision narrative, including the CSS bug fixes and the two rebuilds of the Settings routing (first collapsed to one page, then rebuilt again as a real modal — see "Settings Modal" below).
+`/settings/profile` + a Learn-page banner. **Merged to `develop` via PR #107.** See `progress-tracker.md`'s Feature 37 entry for the full build/decision narrative, including the CSS bug fixes and the two rebuilds of the Settings routing (first collapsed to one page, then rebuilt again as a real modal — see "Settings Modal" below).
 
 - **`features/streak/lib/queries.ts`** — `getStreakSummary(userId)` (`cache()`-wrapped, reads `profiles.streakCurrent`/`streakLongest`/`streakLastActivity`) and `getDailyActivity(userId, days = 30)` (this codebase's second raw-SQL-in-Drizzle query after Feature 36's `rank()` — groups `xp_events` by `(created_at at time zone 'utc')::date::text` over the last `days` days, zero-filled for days with no rows so callers never backfill gaps themselves). `days` was generalized from a hardcoded 30 so the Dashboard's 6-month activity graph (see "Dashboard Page" below) reuses this exact query with a wider window instead of a near-duplicate one.
 - **`features/streak/lib/intensity.ts`** — `intensityClass(xp)`, the 3-level `bg-border`/`bg-streak-light`/`bg-streak` bucketing, pulled out of `StreakHeatMap.tsx` so the Dashboard's 6-month heatmap shares the exact same color bands rather than risking drift between two copies.
