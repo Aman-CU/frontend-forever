@@ -280,7 +280,7 @@ Verified: `tsc --noEmit` + `eslint` clean; a clean production `next build`; grep
 
 **Merged:** PR #100 opened (no `gh` CLI in this environment, opened manually by the user) and merged into `develop`; local `develop` fast-forwarded to the merge commit. Post-merge smoke test done — `tsc --noEmit` clean, full production `next build` clean (133 routes, `/roadmaps` and `/roadmaps/[slug]` both present), and a live dev-server sweep of the list page, the Frontend Forever Roadmap, all 5 gated "coming soon" roadmaps, and an unknown-slug 404 — all correct with no error boundaries. `feature/35-roadmap-detail-page` kept, not deleted, per this project's never-delete-a-merged-branch convention.
 
-**Next (as of this entry, now superseded — see Current Status at the top of this file):** Phase 7 is complete. Phase 8 — Leaderboard + Gamification (Features 36–37) is next per `build-plan.md`. Feature 36 has since merged via PR #102; Feature 37 is next.
+**Next (as of this entry, now superseded — see Current Status at the top of this file):** Phase 7 is complete. Phase 8 — Leaderboard + Gamification (Features 36–37) is next per `build-plan.md`. Feature 36 has since merged via PR #102; Feature 37 has since merged via PR #107. Phase 8 is complete.
 
 ---
 
