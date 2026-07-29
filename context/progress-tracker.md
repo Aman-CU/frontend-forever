@@ -6,8 +6,8 @@ Update this file after every completed feature. Any AI agent reading this should
 
 ## Current Status
 
-**Phase:** Phase 8 — Leaderboard + Gamification. **Feature 37 (Streak System Polish) built and verified on `feature/37-streak-system-polish`, PR #107 open** — see the Feature 37 entry below. The same branch grew, via direct user request beyond `build-plan.md`'s original Feature 37 scope, to also add a modal-based Settings system and a new `/dashboard` page — neither is a numbered `build-plan.md` feature; both are documented in the Feature 37 entry below since they shipped on its branch. Phase 9 — Premium + Stripe (Feature 38, Premium Content Gating) is next per `build-plan.md` once this merges.
-**Currently building:** Nothing. Feature 37 (plus the Settings modal and Dashboard additions) is built and verified, PR #107 open, awaiting CodeRabbit/merge. Feature 38 (Premium Content Gating) is next per `build-plan.md`.
+**Phase:** Phase 8 — Leaderboard + Gamification is complete. **Feature 37 (Streak System Polish) merged to `develop` via PR #107** — see the Feature 37 entry below. The same branch grew, via direct user request beyond `build-plan.md`'s original Feature 37 scope, to also add a modal-based Settings system and a new `/dashboard` page — neither is a numbered `build-plan.md` feature; both are documented in the Feature 37 entry below since they shipped on its branch. Phase 9 — Premium + Stripe (Feature 38, Premium Content Gating) is next per `build-plan.md`.
+**Currently building:** Nothing. Feature 37 (plus the Settings modal and Dashboard additions) merged to `develop` via PR #107. Feature 38 (Premium Content Gating) is next per `build-plan.md`.
 
 **Last completed:** 37 Streak System Polish — ran the `architect` skill before building; 3 decisions confirmed via `AskUserQuestion` (the 30-day heat map is graded by daily XP into 3 intensity bands — 0 / 1–24 / 25+ — rather than a flat binary lit/unlit cell; the 7/30/100-day milestone confetti fires on the Learn page banner, deduped via a `localStorage` key so it doesn't replay on refresh, rather than on the settings/profile page; the Learn page streak banner only shows once `streakCurrent >= 2`, not from day 1). No schema changes — every value comes from `profiles` (`streak_current`, `streak_longest`, `streak_last_activity`) and `xp_events` (`created_at`, `xp_amount`), both already written by the existing streak system (`applyProgressUpdate.ts`, Feature 27). Real gap found during planning: `build-plan.md` calls for the calendar on "profile/settings," but neither route existed yet — `UserDropdown.tsx`'s Profile/Settings items (Feature 17) already linked to `/settings/profile`/`/settings` and `proxy.ts` already login-gated both (Feature 14). First attempt built `/settings/profile` as the real page and `/settings` as a `redirect()` to it — **corrected after real user feedback** (see below): the streak calendar now lives directly at `/settings` (no `/settings/profile` route at all), and both dropdown items point there. There's still only one real settings page — a second, distinct `/settings` (Account info, preferences, etc.) is explicitly deferred to a future feature, not invented now.
 
@@ -280,7 +280,7 @@ Verified: `tsc --noEmit` + `eslint` clean; a clean production `next build`; grep
 
 **Merged:** PR #100 opened (no `gh` CLI in this environment, opened manually by the user) and merged into `develop`; local `develop` fast-forwarded to the merge commit. Post-merge smoke test done — `tsc --noEmit` clean, full production `next build` clean (133 routes, `/roadmaps` and `/roadmaps/[slug]` both present), and a live dev-server sweep of the list page, the Frontend Forever Roadmap, all 5 gated "coming soon" roadmaps, and an unknown-slug 404 — all correct with no error boundaries. `feature/35-roadmap-detail-page` kept, not deleted, per this project's never-delete-a-merged-branch convention.
 
-**Next (as of this entry, now superseded — see Current Status at the top of this file):** Phase 7 is complete. Phase 8 — Leaderboard + Gamification (Features 36–37) is next per `build-plan.md`. Feature 36 has since merged via PR #102; Feature 37 is next.
+**Next (as of this entry, now superseded — see Current Status at the top of this file):** Phase 7 is complete. Phase 8 — Leaderboard + Gamification (Features 36–37) is next per `build-plan.md`. Feature 36 has since merged via PR #102; Feature 37 has since merged via PR #107. Phase 8 is complete.
 
 ---
 
@@ -1076,7 +1076,7 @@ Built `scripts/warmup-dev.mjs` instead (`npm run warmup`) — hits one real URL 
 ### Phase 8 — Leaderboard + Gamification
 
 - [x] 36 Leaderboard Page — see the Feature 36 entry in Current Status above. **Merged to `develop` via PR #102.**
-- [x] 37 Streak System Polish — see the Feature 37 entry in Current Status above. **Built and verified on `feature/37-streak-system-polish`, PR #107 open.**
+- [x] 37 Streak System Polish — see the Feature 37 entry in Current Status above. **Merged to `develop` via PR #107.**
 
 ### Phase 9 — Premium + Stripe
 
