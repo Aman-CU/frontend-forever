@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { authClient } from "@/lib/auth/client";
 
@@ -16,6 +16,16 @@ type UseUserResult = {
   isLoading: boolean;
 };
 
+function subscribeNoop() {
+  return () => {};
+}
+function getHasMountedSnapshot() {
+  return true;
+}
+function getHasMountedServerSnapshot() {
+  return false;
+}
+
 export function useUser(initialUser?: SessionUser | null): UseUserResult {
   const { data: session, isPending } = authClient.useSession();
   // authClient's session store is a module-level singleton shared across
@@ -28,9 +38,17 @@ export function useUser(initialUser?: SessionUser | null): UseUserResult {
   // read the stale store and rendered the logged-out Login link instead.
   // Forcing the first render to always equal initialUser, then only
   // switching to the live store post-mount, guarantees the first client
-  // render is byte-for-byte what the server sent.
-  const [hasMounted, setHasMounted] = useState(false);
-  useEffect(() => setHasMounted(true), []);
+  // render is byte-for-byte what the server sent. A naive useState+useEffect
+  // flag here would trip the react-hooks/set-state-in-effect lint rule and
+  // is the wrong tool for this anyway — same reasoning as
+  // useSafeReducedMotion.ts: getServerSnapshot (always false) vs getSnapshot
+  // (always true once called on the client) gives the same "false on first
+  // render, true right after" behavior with no manual setState.
+  const hasMounted = useSyncExternalStore(
+    subscribeNoop,
+    getHasMountedSnapshot,
+    getHasMountedServerSnapshot,
+  );
 
   if (!hasMounted) {
     return { user: initialUser ?? null, isLoading: initialUser === undefined };

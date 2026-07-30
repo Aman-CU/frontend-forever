@@ -38,7 +38,7 @@ export function ExperimentCard({ slug, title, description, thumbnail, priority }
             fill
             sizes="224px"
             className="object-cover"
-            priority={priority}
+            preload={priority}
           />
         ) : (
           <Sparkles className="size-8 text-premium" aria-hidden />

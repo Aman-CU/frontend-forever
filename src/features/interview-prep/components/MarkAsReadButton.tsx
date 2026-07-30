@@ -26,7 +26,9 @@ export function MarkAsReadButton({ playbookSlug, chapterSlug, isLoggedIn, initia
   async function handleClick() {
     // Sent to sign in, then back to this chapter.
     if (!isLoggedIn) {
-      router.push(`/login?callbackURL=${encodeURIComponent(window.location.pathname)}`);
+      router.push(
+        `/login?callbackURL=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+      );
       return;
     }
     if (isRead || isSaving) return;

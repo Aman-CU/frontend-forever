@@ -56,7 +56,7 @@ export function BattleCard({
               fill
               sizes="224px"
               className="object-contain"
-              priority={priority}
+              preload={priority}
             />
           </div>
         ) : (

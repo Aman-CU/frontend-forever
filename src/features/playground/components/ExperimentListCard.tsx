@@ -44,7 +44,7 @@ export function ExperimentListCard({
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover"
-            priority={priority}
+            preload={priority}
           />
         ) : (
           <Sparkles className="size-8 text-premium" aria-hidden />

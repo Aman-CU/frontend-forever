@@ -22,7 +22,9 @@ export function MarkUnderstoodButton({ conceptId, isLoggedIn, initialUnderstood 
   async function handleClick() {
     // Logged-out visitors are sent to sign in, then back to this page.
     if (!isLoggedIn) {
-      router.push(`/login?callbackURL=${encodeURIComponent(window.location.pathname)}`);
+      router.push(
+        `/login?callbackURL=${encodeURIComponent(window.location.pathname + window.location.search)}`,
+      );
       return;
     }
     if (understood || isSaving) return;
