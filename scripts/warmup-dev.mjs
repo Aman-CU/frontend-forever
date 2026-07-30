@@ -72,6 +72,12 @@ const ROUTES = [
   "/settings",
   "/settings/profile",
   "/dashboard",
+  "/feedback",
+  "/changelog",
+  // Login-gated via its own in-page session check (nests under /learn,
+  // which is publicly browsable, so it isn't in proxy.ts's matcher) — same
+  // redirect-follows-through behavior as /leaderboard and /dashboard above.
+  "/learn/stats",
   "/api/auth/get-session",
   // Unauthenticated on purpose — this only needs to trigger compilation, not
   // a real toggle, so a 401 (auth check runs before any DB write) counts as

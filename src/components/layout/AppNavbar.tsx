@@ -45,7 +45,7 @@ export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: App
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface dark:bg-background">
-      <div className="mx-auto flex h-14 max-w-screen-2xl items-center gap-5 px-6 md:px-8">
+      <div className="mx-auto flex h-14 max-w-screen-2xl items-center gap-3 px-6 md:px-8 xl:gap-5">
         {/* Logo */}
         <Link
           href="/"
@@ -61,7 +61,7 @@ export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: App
         </Link>
 
         {/* Desktop nav links — text only, no pill container */}
-        <nav className="hidden shrink-0 items-center lg:flex ml-10 gap-2">
+        <nav className="hidden shrink-0 items-center lg:flex ml-4 gap-2 xl:ml-10">
           {NAV_LINKS.map((link) => (
             <AppNavLink key={link.href} link={link} pathname={pathname} />
           ))}
@@ -69,16 +69,21 @@ export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: App
 
         <div className="flex-1" />
 
-        {/* Search trigger */}
+        {/* Search trigger — compact icon + shortcut-hint pill (no placeholder
+            text), not the wide labeled box this used to be. Opening a real
+            search overlay is future work (no onClick yet); this is just the
+            trigger's visual shape. Much smaller than before, but the nav
+            links + stats + avatar cluster alone already fill the exact
+            1024px lg: breakpoint with no slack (confirmed: adding this back
+            in at lg: pushes the avatar ~55px off-viewport at exactly 1024px,
+            while every width from 1152px up has room to spare) — xl: (1280px)
+            is the first point with enough margin. */}
         <button
           type="button"
           aria-label="Search"
-          className="hidden w-52 items-center gap-2 rounded-md border border-border bg-surface-secondary px-3 py-1.5 transition-colors hover:border-border-light hover:bg-surface lg:flex xl:w-72"
+          className="hidden h-8 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-secondary px-2 transition-colors hover:border-border-light hover:bg-surface xl:flex"
         >
-          <Search className="size-3.5 shrink-0 text-text-muted" />
-          <span className="flex-1 text-left text-xs text-text-muted">
-            Search labs, topics, questions...
-          </span>
+          <Search className="size-3.5 text-text-muted" />
           <kbd className="inline-flex items-center gap-px rounded border border-border bg-surface px-1 py-0.5 leading-none text-text-muted">
             <Command className="size-2.5" />
             <span className="font-mono text-[10px]">K</span>

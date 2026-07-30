@@ -11,13 +11,17 @@ type Props = {
   // Optional — the hub's scroll-row teaser now passes a real screenshot; falls
   // back to the Sparkles placeholder tile when absent.
   thumbnail?: string;
+  // Set on the first card in a row/grid — that image is reliably the page's
+  // Largest Contentful Paint element (above the fold, sizable), and next/image
+  // lazy-loads by default. priority disables that and preloads it instead.
+  priority?: boolean;
 };
 
 // The compact hub scroll-row card (deliberate sibling of the richer
 // ExperimentListCard used on /playground/experiments, matching the
 // BattleCard/BattleListCard precedent). Fixed width lives on the caller (same as
 // BattleCard) so the same card works in the hub's w-56 row and anywhere else.
-export function ExperimentCard({ slug, title, description, thumbnail }: Props) {
+export function ExperimentCard({ slug, title, description, thumbnail, priority }: Props) {
   return (
     <Link
       href={`/playground/experiments/${slug}`}
@@ -34,6 +38,7 @@ export function ExperimentCard({ slug, title, description, thumbnail }: Props) {
             fill
             sizes="224px"
             className="object-cover"
+            priority={priority}
           />
         ) : (
           <Sparkles className="size-8 text-premium" aria-hidden />

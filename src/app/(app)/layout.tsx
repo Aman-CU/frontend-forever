@@ -6,8 +6,7 @@ import { AppNavbar } from "@/components/layout/AppNavbar";
 
 export default async function AppLayout({
   children,
-  settingsModal,
-}: Readonly<{ children: React.ReactNode; settingsModal: React.ReactNode }>) {
+}: Readonly<{ children: React.ReactNode }>) {
   let initialUser: import("@/hooks/useUser").SessionUser | null | undefined;
   let initialStreak = 0;
   let initialXp = 0;
@@ -25,7 +24,6 @@ export default async function AppLayout({
     <>
       <AppNavbar initialUser={initialUser} initialStreak={initialStreak} initialXp={initialXp} />
       <main className="flex flex-1 flex-col">{children}</main>
-      {settingsModal}
     </>
   );
 }

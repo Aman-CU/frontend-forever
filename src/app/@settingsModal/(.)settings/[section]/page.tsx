@@ -15,6 +15,13 @@ type PageProps = {
 // Parallel + Intercepting Routes convention for modals). A hard
 // navigation/refresh never hits this file; it renders
 // app/(app)/settings/[section]/page.tsx instead.
+//
+// Lives at the shared root (app/@settingsModal), not nested inside (app),
+// so this same slot correctly overlays pages in both (app) and (main) — the
+// two top-level layout trees, sibling to each other, that this app has. A
+// slot nested in just one of them can only ever recover the previous page's
+// state (and thus only ever show a real overlay, not a blank body) for
+// navigations that already started inside that same tree.
 export default async function InterceptedSettingsSectionPage({ params }: PageProps) {
   const { section } = await params;
   if (!isSettingsSection(section)) {

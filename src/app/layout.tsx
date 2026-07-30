@@ -25,8 +25,10 @@ const themeInitScript = `(function(){try{var t=localStorage.getItem('theme');if(
 
 export default function RootLayout({
   children,
+  settingsModal,
 }: Readonly<{
   children: React.ReactNode;
+  settingsModal: React.ReactNode;
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
@@ -40,7 +42,16 @@ export default function RootLayout({
         </Script>
         <DevAbortSuppressor />
         <ThemeProvider>
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            {children}
+            {/* Lives at the true shared root (not nested in (app)) so the
+                Settings modal (Next.js Parallel + Intercepting Routes) can
+                overlay pages in (main) too, not just (app) — see
+                app/@settingsModal and progress-tracker.md's Feature 55 entry
+                for why a slot duplicated into both route groups doesn't
+                work, and why this single shared-root slot does. */}
+            {settingsModal}
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

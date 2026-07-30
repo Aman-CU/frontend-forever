@@ -63,8 +63,9 @@ export function CollectionQuestionListClient({ routeCollection, questions, isLog
   );
 
   async function handleToggleComplete(slug: string, completed: boolean) {
+    // Sent to sign in, then back to this collection.
     if (!isLoggedIn) {
-      router.push("/login");
+      router.push(`/login?callbackURL=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
     if (pendingSlugs.has(slug)) return;

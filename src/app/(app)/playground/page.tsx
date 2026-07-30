@@ -54,9 +54,9 @@ export default async function PlaygroundPage() {
           </Link>
         </div>
         <div className={SCROLL_ROW_CLASS} style={{ scrollbarWidth: "none" }}>
-          {battles.map((item) => (
+          {battles.map((item, index) => (
             <div key={item.slug} className="w-56 shrink-0">
-              <BattleCard {...item} />
+              <BattleCard {...item} priority={index === 0} />
             </div>
           ))}
         </div>

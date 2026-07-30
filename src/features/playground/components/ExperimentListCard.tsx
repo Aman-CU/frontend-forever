@@ -10,13 +10,24 @@ type Props = {
   description: string;
   tags: string[];
   thumbnail?: string;
+  // Set on the first card in the grid — that image is reliably the page's
+  // Largest Contentful Paint element (above the fold, sizable), and next/image
+  // lazy-loads by default. priority disables that and preloads it instead.
+  priority?: boolean;
 };
 
 // The richer grid-listing card for /playground/experiments (neal.fun-style:
 // cover thumbnail → title → description → tags). A deliberate sibling of the
 // hub's compact ExperimentCard, not a shared/generalized version — different
 // shape, same precedent as BattleCard/BattleListCard.
-export function ExperimentListCard({ slug, title, description, tags, thumbnail }: Props) {
+export function ExperimentListCard({
+  slug,
+  title,
+  description,
+  tags,
+  thumbnail,
+  priority,
+}: Props) {
   return (
     <Link
       href={`/playground/experiments/${slug}`}
@@ -33,6 +44,7 @@ export function ExperimentListCard({ slug, title, description, tags, thumbnail }
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover"
+            priority={priority}
           />
         ) : (
           <Sparkles className="size-8 text-premium" aria-hidden />

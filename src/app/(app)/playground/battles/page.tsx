@@ -29,7 +29,7 @@ export default async function UiBattlesListPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {battles.map((battle) => (
+          {battles.map((battle, index) => (
             <BattleListCard
               key={battle.slug}
               slug={battle.slug}
@@ -38,6 +38,7 @@ export default async function UiBattlesListPage() {
               difficulty={battle.difficulty}
               targetImageUrl={battle.targetImageUrl}
               isPremium={battle.isPremium}
+              priority={index === 0}
             />
           ))}
         </div>

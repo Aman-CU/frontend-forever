@@ -13,7 +13,7 @@ type Props = {
 export function SettingsShell({ activeSection, children }: Props) {
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-6 py-10 md:flex-row lg:px-8">
-      <div className="w-full shrink-0 md:w-48">
+      <div className="w-full shrink-0 md:w-56">
         <SettingsSidebar activeSection={activeSection} />
       </div>
       <div className="min-w-0 flex-1">{children}</div>

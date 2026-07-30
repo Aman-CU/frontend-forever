@@ -26,7 +26,7 @@ export default function ExperimentsListPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {EXPERIMENTS.map((experiment) => (
+          {EXPERIMENTS.map((experiment, index) => (
             <ExperimentListCard
               key={experiment.slug}
               slug={experiment.slug}
@@ -34,6 +34,7 @@ export default function ExperimentsListPage() {
               description={experiment.description}
               tags={experiment.tags}
               thumbnail={experiment.thumbnail}
+              priority={index === 0}
             />
           ))}
         </div>

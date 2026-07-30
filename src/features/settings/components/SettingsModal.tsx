@@ -23,12 +23,12 @@ export function SettingsModal({ activeSection, children }: Props) {
     <Dialog open onOpenChange={(open) => !open && router.back()}>
       <DialogContent
         showCloseButton
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl md:flex-row"
+        className="flex h-160 max-h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl md:flex-row"
       >
-        <div className="w-full shrink-0 border-b border-border p-4 md:w-48 md:border-r md:border-b-0">
+        <div className="w-full shrink-0 border-b border-border p-5 md:w-56 md:border-r md:border-b-0">
           <SettingsSidebar activeSection={activeSection} />
         </div>
-        <div className="min-w-0 flex-1 overflow-y-auto p-6">{children}</div>
+        <div className="min-w-0 flex-1 overflow-y-auto p-8">{children}</div>
       </DialogContent>
     </Dialog>
   );
