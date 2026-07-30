@@ -18,6 +18,10 @@ type Props = {
   difficulty: ChallengeDifficulty;
   targetImageUrl: string;
   isPremium?: boolean;
+  // Set on the first card in the grid — that image is reliably the page's
+  // Largest Contentful Paint element (above the fold, sizable), and next/image
+  // lazy-loads by default. priority disables that and preloads it instead.
+  priority?: boolean;
 };
 
 // The richer grid-listing card for /playground/battles — a deliberate
@@ -34,6 +38,7 @@ export function BattleListCard({
   difficulty,
   targetImageUrl,
   isPremium,
+  priority,
 }: Props) {
   return (
     <Link
@@ -59,6 +64,7 @@ export function BattleListCard({
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-contain"
+              preload={priority}
             />
           </div>
         ) : (

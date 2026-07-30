@@ -20,9 +20,20 @@ type Props = {
   // back to the generic icon, same as before this feature's real data existed.
   targetImageUrl?: string;
   isPremium?: boolean;
+  // Set on the first card in a row/grid — that image is reliably the page's
+  // Largest Contentful Paint element (above the fold, sizable), and next/image
+  // lazy-loads by default. priority disables that and preloads it instead.
+  priority?: boolean;
 };
 
-export function BattleCard({ slug, title, difficulty, targetImageUrl, isPremium }: Props) {
+export function BattleCard({
+  slug,
+  title,
+  difficulty,
+  targetImageUrl,
+  isPremium,
+  priority,
+}: Props) {
   return (
     <Link
       href={`/playground/battles/${slug}`}
@@ -45,6 +56,7 @@ export function BattleCard({ slug, title, difficulty, targetImageUrl, isPremium 
               fill
               sizes="224px"
               className="object-contain"
+              preload={priority}
             />
           </div>
         ) : (
