@@ -61,6 +61,28 @@ export const auth = betterAuth({
       clientSecret: env.githubClientSecret,
     },
   },
+  // Real emails commonly differ between a user's Google and GitHub accounts —
+  // without this, linking a second provider from Settings > Account fails
+  // with LINKING_DIFFERENT_EMAILS_NOT_ALLOWED for most real users. Safe here
+  // specifically because linking is always explicit and initiated by an
+  // already-authenticated user (not an implicit merge during sign-in).
+  account: {
+    accountLinking: {
+      allowDifferentEmails: true,
+    },
+  },
+  // Disabled by default. Feature 57 (Settings > Account) needs this for
+  // real account deletion. No password exists on any account (OAuth-only)
+  // and no email-sending infra exists in this project (same constraint that
+  // made Feedback a plain mailto: link, not a form) — so deletion relies on
+  // Better Auth's built-in session-freshness check instead of a verification
+  // email. See AccountSection.tsx for how a stale/non-fresh session is
+  // handled.
+  user: {
+    deleteUser: {
+      enabled: true,
+    },
+  },
   advanced: {
     database: {
       // Keep ids uuid, consistent with every other table's PK (see architecture.md).

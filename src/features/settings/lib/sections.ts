@@ -1,11 +1,12 @@
 import type { ComponentType } from "react";
-import { User } from "lucide-react";
+import { User, UserCog } from "lucide-react";
 
-// Only "profile" is real today (Feature 37's streak calendar). Add a new
-// entry here only once that section has real content behind it — Billing
-// (Feature 39) and others are deliberately not scaffolded yet, since a nav
-// item that opens to nothing is worse than not showing it at all.
-export const SETTINGS_SECTIONS = ["profile"] as const;
+// Add a new entry here only once that section has real content behind it —
+// Security (58), Appearance (59), and Billing (Feature 39) are deliberately
+// not scaffolded yet, since a nav item that opens to nothing is worse than
+// not showing it at all. See the Pre-Feature-56 decision entry in
+// progress-tracker.md for the full Phase 13 settings roadmap.
+export const SETTINGS_SECTIONS = ["profile", "account"] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 export const SETTINGS_SECTION_META: Record<
@@ -13,6 +14,7 @@ export const SETTINGS_SECTION_META: Record<
   { label: string; icon: ComponentType<{ className?: string }> }
 > = {
   profile: { label: "Profile", icon: User },
+  account: { label: "Account", icon: UserCog },
 };
 
 export function isSettingsSection(value: string): value is SettingsSection {

@@ -1,17 +1,22 @@
-import { getProfileForEdit } from "@/features/settings/lib/queries";
+import { getProfileForEdit, getConnectedAccounts } from "@/features/settings/lib/queries";
 import { ProfileEditForm } from "@/features/settings/components/ProfileEditForm";
+import { AccountSection } from "@/features/settings/components/AccountSection";
 import type { SettingsSection } from "@/features/settings/lib/sections";
 
 type Props = {
   section: SettingsSection;
   userId: string;
+  // Only "account" reads this — a failed provider-link attempt (e.g. that
+  // GitHub identity already belongs to a different Frontend Forever account)
+  // redirects back here via errorCallbackURL=/settings/account?error=<code>.
+  linkErrorCode?: string;
 };
 
-// Only "profile" exists today — add a branch here as each new section
-// (Account, Security, Appearance — see the Pre-Feature-56 decision entry in
+// Only "profile" and "account" exist today — add a branch here as each new
+// section (Security, Appearance — see the Pre-Feature-56 decision entry in
 // progress-tracker.md) actually ships real content, rather than scaffolding
 // one ahead of time.
-export async function SettingsSectionContent({ section, userId }: Props) {
+export async function SettingsSectionContent({ section, userId, linkErrorCode }: Props) {
   if (section === "profile") {
     const profile = await getProfileForEdit(userId);
     // provisionProfile.ts inserts this row synchronously on account
@@ -29,6 +34,16 @@ export async function SettingsSectionContent({ section, userId }: Props) {
         <ProfileEditForm initialProfile={profile} />
       </div>
     );
+  }
+
+  if (section === "account") {
+    const [profile, accounts] = await Promise.all([
+      getProfileForEdit(userId),
+      getConnectedAccounts(),
+    ]);
+    if (!profile) return null;
+
+    return <AccountSection accounts={accounts} username={profile.username} linkErrorCode={linkErrorCode} />;
   }
 
   return null;

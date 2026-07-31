@@ -2,11 +2,12 @@ import { notFound, redirect } from "next/navigation";
 
 import { getCachedSession } from "@/lib/auth/server";
 import { isSettingsSection } from "@/features/settings/lib/sections";
-import { SettingsModal } from "@/features/settings/components/SettingsModal";
 import { SettingsSectionContent } from "@/features/settings/components/SettingsSectionContent";
 
 type PageProps = {
   params: Promise<{ section: string }>;
+  // Only read by the "account" section — see SettingsSectionContent.tsx.
+  searchParams: Promise<{ error?: string }>;
 };
 
 // Intercepts client-side navigation to /settings/[section] and renders it as
@@ -16,13 +17,14 @@ type PageProps = {
 // navigation/refresh never hits this file; it renders
 // app/(app)/settings/[section]/page.tsx instead.
 //
-// Lives at the shared root (app/@settingsModal), not nested inside (app),
-// so this same slot correctly overlays pages in both (app) and (main) — the
-// two top-level layout trees, sibling to each other, that this app has. A
-// slot nested in just one of them can only ever recover the previous page's
-// state (and thus only ever show a real overlay, not a blank body) for
-// navigations that already started inside that same tree.
-export default async function InterceptedSettingsSectionPage({ params }: PageProps) {
+// The Dialog itself (SettingsModal) lives in ../layout.tsx — one level up
+// from this [section] folder, not inside it — so it survives a sidebar
+// navigation between sections instead of remounting (see that file's
+// comment for why it has to be one level higher, not right here). This page
+// is the only place that can validate section/session (a parent layout
+// structurally can't see this segment's own param) and renders the
+// section-specific content.
+export default async function InterceptedSettingsSectionPage({ params, searchParams }: PageProps) {
   const { section } = await params;
   if (!isSettingsSection(section)) {
     notFound();
@@ -33,9 +35,7 @@ export default async function InterceptedSettingsSectionPage({ params }: PagePro
     redirect(`/login?callbackURL=/settings/${section}`);
   }
 
-  return (
-    <SettingsModal activeSection={section}>
-      <SettingsSectionContent section={section} userId={session.user.id} />
-    </SettingsModal>
-  );
+  const { error } = await searchParams;
+
+  return <SettingsSectionContent section={section} userId={session.user.id} linkErrorCode={error} />;
 }

@@ -9,9 +9,15 @@ import {
 
 type Props = {
   activeSection: SettingsSection;
+  // The modal passes true: switching sections there should replace the
+  // current history entry, not push a new one, so the close button's single
+  // router.back() always lands on the page behind the modal instead of the
+  // previously-viewed section. The full-page shell (hard navigation, no
+  // modal/back semantics) leaves this false for normal browsing history.
+  replace?: boolean;
 };
 
-export function SettingsSidebar({ activeSection }: Props) {
+export function SettingsSidebar({ activeSection, replace = false }: Props) {
   return (
     <nav aria-label="Settings sections">
       <p className="mb-2 px-2 text-xs font-semibold tracking-wide text-text-muted uppercase">
@@ -25,6 +31,7 @@ export function SettingsSidebar({ activeSection }: Props) {
             <li key={section}>
               <Link
                 href={`/settings/${section}`}
+                replace={replace}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors",
