@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { and, desc, eq, gt, gte, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
@@ -57,7 +58,16 @@ async function getConceptsCompletedCounts(userIds: string[]): Promise<Record<str
 // intended behavior (there's no value in padding the table with tied-at-zero
 // rows). rank() (not row_number()) so tied scores share a rank, matching
 // getUserRank's count-based formula below.
-export const getLeaderboardEntries = cache(
+//
+// Identical for every viewer at a given range (no userId param, unlike
+// getUserRank below) — unstable_cache instead of a plain request-scoped
+// cache() so concurrent visitors share one query instead of each re-running
+// the full ranking + per-user concept-count aggregation. Time-based
+// revalidate (not the "concepts" tag other unstable_cache calls in this repo
+// use) since this data changes continuously from live XP events, not from a
+// content reseed — a short window trades a little staleness for a lot fewer
+// DB round trips.
+export const getLeaderboardEntries = unstable_cache(
   async (range: LeaderboardRange): Promise<LeaderboardEntry[]> => {
     const rangeStart = getRangeStart(range);
 
@@ -102,6 +112,8 @@ export const getLeaderboardEntries = cache(
       conceptsCompleted: conceptsCompleted[row.id] ?? 0,
     }));
   },
+  ["leaderboard-entries"],
+  { tags: ["leaderboard"], revalidate: 60 },
 );
 
 // The logged-in user's real rank, even when they're outside the top
