@@ -40,19 +40,24 @@ export function DeleteAccountDialog({ username }: Props) {
   async function handleDelete() {
     setSubmitting(true);
     setError(null);
-    const { error: deleteError } = await authClient.deleteUser();
-    if (deleteError) {
-      setError(
-        isSessionNotFreshError(deleteError.code)
-          ? REAUTH_MESSAGE
-          : (deleteError.message ?? "Could not delete your account. Please try again."),
-      );
+    try {
+      const { error: deleteError } = await authClient.deleteUser();
+      if (deleteError) {
+        setError(
+          isSessionNotFreshError(deleteError.code)
+            ? REAUTH_MESSAGE
+            : (deleteError.message ?? "Could not delete your account. Please try again."),
+        );
+        return;
+      }
+      // The session cookie is already cleared server-side by this point — a
+      // hard navigation (not router.push) gives a fresh, fully logged-out load.
+      window.location.replace("/");
+    } catch {
+      setError("Could not delete your account. Please try again.");
+    } finally {
       setSubmitting(false);
-      return;
     }
-    // The session cookie is already cleared server-side by this point — a
-    // hard navigation (not router.push) gives a fresh, fully logged-out load.
-    window.location.replace("/");
   }
 
   return (

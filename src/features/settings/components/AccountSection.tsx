@@ -66,15 +66,20 @@ export function AccountSection({ accounts, username, linkErrorCode }: Props) {
   async function handleDisconnect(provider: Provider) {
     setPendingProvider(provider);
     setUnlinkError(null);
-    const { error } = await authClient.unlinkAccount({ providerId: provider });
-    if (error) {
-      setUnlinkError(
-        isSessionNotFreshError(error.code)
-          ? REAUTH_MESSAGE
-          : (error.message ?? "Could not disconnect that account. Please try again."),
-      );
+    try {
+      const { error } = await authClient.unlinkAccount({ providerId: provider });
+      if (error) {
+        setUnlinkError(
+          isSessionNotFreshError(error.code)
+            ? REAUTH_MESSAGE
+            : (error.message ?? "Could not disconnect that account. Please try again."),
+        );
+      }
+    } catch {
+      setUnlinkError("Could not disconnect that account. Please try again.");
+    } finally {
+      setPendingProvider(null);
     }
-    setPendingProvider(null);
   }
 
   return (
