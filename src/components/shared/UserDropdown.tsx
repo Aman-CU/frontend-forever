@@ -108,8 +108,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
         </DropdownMenuItem>
         {/* Opens the Settings modal (Next.js Parallel + Intercepting Routes —
             see app/@settingsModal, at the shared root so it correctly
-            overlays pages in both (app) and (main)), which holds the
-            Profile/streak section built so far. */}
+            overlays pages in both (app) and (main)). */}
         <DropdownMenuItem onClick={() => router.push("/settings/profile")}>
           <Settings className="mr-2 size-4" />
           Settings
