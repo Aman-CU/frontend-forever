@@ -9,6 +9,11 @@ import { validateProfileInput, type ProfileFormInput } from "@/features/settings
 
 const POSTGRES_UNIQUE_VIOLATION = "23505";
 const PROFILES_USERNAME_CONSTRAINT = "profiles_username_unique";
+// This route's whole payload is 4 short strings (see validateProfileInput.ts's
+// own per-field caps) — a legitimate request is always tiny. Rejecting an
+// oversized one via Content-Length avoids buffering/parsing it into memory
+// first just to have validation reject it afterward.
+const MAX_REQUEST_BYTES = 10_000;
 
 function isUsernameConflict(error: unknown): boolean {
   return (
@@ -38,7 +43,13 @@ export async function POST(req: Request) {
     );
   }
 
-  // 3. Parse + validate
+  // 3. Reject oversized bodies before ever parsing them.
+  const contentLength = Number(req.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
+    return Response.json({ error: "Request body too large" }, { status: 413 });
+  }
+
+  // 4. Parse + validate
   let body: unknown;
   try {
     body = await req.json();
@@ -65,7 +76,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid input", fieldErrors }, { status: 400 });
   }
 
-  // 4. Write profiles (authoritative — errors here fail the request).
+  // 5. Write profiles (authoritative — errors here fail the request).
   try {
     await db
       .update(profiles)

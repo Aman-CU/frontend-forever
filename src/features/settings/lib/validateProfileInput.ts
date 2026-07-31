@@ -10,6 +10,10 @@ const USERNAME_MIN = 3;
 const USERNAME_MAX = 24;
 const FULL_NAME_MAX = 80;
 const BIO_MAX = 280;
+// Generous but bounded — well past any real image-host URL, just closes off
+// an arbitrarily long string (which would otherwise pass as "a valid URL"
+// and get written straight to a Postgres text column) as a storage/DoS vector.
+const AVATAR_URL_MAX = 2048;
 
 export type ProfileFormInput = {
   fullName: string;
@@ -43,6 +47,7 @@ export function validateBio(value: string): string | undefined {
 
 export function validateAvatarUrl(value: string): string | undefined {
   if (value.length === 0) return undefined;
+  if (value.length > AVATAR_URL_MAX) return `URL must be ${AVATAR_URL_MAX} characters or fewer.`;
   let parsed: URL;
   try {
     parsed = new URL(value);

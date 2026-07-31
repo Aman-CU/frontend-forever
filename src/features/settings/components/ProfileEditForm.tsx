@@ -55,7 +55,16 @@ export function ProfileEditForm({ initialProfile }: Props) {
     setFormError(null);
     setSaved(false);
 
-    const input: ProfileFormInput = { fullName, username, bio, avatarUrl };
+    // Trim before validating/submitting — the route trims too (readField), so
+    // validating raw, untrimmed state here could reject input (e.g. a valid
+    // name with trailing whitespace pushing it just over the max length) that
+    // the server would have happily accepted post-trim.
+    const input: ProfileFormInput = {
+      fullName: fullName.trim(),
+      username: username.trim(),
+      bio: bio.trim(),
+      avatarUrl: avatarUrl.trim(),
+    };
     const errors = validateProfileInput(input);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -118,12 +127,15 @@ export function ProfileEditForm({ initialProfile }: Props) {
             type="text"
             inputMode="url"
             value={avatarUrl}
-            onChange={(event) => setAvatarUrl(event.target.value.trim())}
+            onChange={(event) => setAvatarUrl(event.target.value)}
             placeholder="https://…"
             aria-invalid={Boolean(fieldErrors.avatarUrl)}
+            aria-describedby={fieldErrors.avatarUrl ? "avatarUrl-error" : undefined}
           />
           {fieldErrors.avatarUrl && (
-            <p className="mt-1 text-xs text-error">{fieldErrors.avatarUrl}</p>
+            <p id="avatarUrl-error" className="mt-1 text-xs text-error">
+              {fieldErrors.avatarUrl}
+            </p>
           )}
         </div>
       </div>
@@ -139,8 +151,13 @@ export function ProfileEditForm({ initialProfile }: Props) {
           onChange={(event) => setFullName(event.target.value)}
           maxLength={80}
           aria-invalid={Boolean(fieldErrors.fullName)}
+          aria-describedby={fieldErrors.fullName ? "fullName-error" : undefined}
         />
-        {fieldErrors.fullName && <p className="mt-1 text-xs text-error">{fieldErrors.fullName}</p>}
+        {fieldErrors.fullName && (
+          <p id="fullName-error" className="mt-1 text-xs text-error">
+            {fieldErrors.fullName}
+          </p>
+        )}
       </div>
 
       <div>
@@ -154,8 +171,13 @@ export function ProfileEditForm({ initialProfile }: Props) {
           onChange={(event) => setUsername(event.target.value.toLowerCase())}
           maxLength={24}
           aria-invalid={Boolean(fieldErrors.username)}
+          aria-describedby={fieldErrors.username ? "username-error" : undefined}
         />
-        {fieldErrors.username && <p className="mt-1 text-xs text-error">{fieldErrors.username}</p>}
+        {fieldErrors.username && (
+          <p id="username-error" className="mt-1 text-xs text-error">
+            {fieldErrors.username}
+          </p>
+        )}
       </div>
 
       <div>
@@ -170,8 +192,13 @@ export function ProfileEditForm({ initialProfile }: Props) {
           rows={3}
           placeholder="Tell people a bit about yourself…"
           aria-invalid={Boolean(fieldErrors.bio)}
+          aria-describedby={fieldErrors.bio ? "bio-error" : undefined}
         />
-        {fieldErrors.bio && <p className="mt-1 text-xs text-error">{fieldErrors.bio}</p>}
+        {fieldErrors.bio && (
+          <p id="bio-error" className="mt-1 text-xs text-error">
+            {fieldErrors.bio}
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
