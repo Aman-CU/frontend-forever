@@ -36,10 +36,9 @@ export const getStreakSummary = cache(async (userId: string): Promise<StreakSumm
 
 // Last `days` UTC calendar days (oldest first), zero-filled for days with no
 // xp_events row — callers render every cell regardless of activity, so they
-// never have to backfill gaps themselves. `days` defaults to the Settings
-// Profile section's 30-day view; the Dashboard's 6-month activity graph
-// (Feature "Dashboard") reuses this same query with a wider window instead
-// of a second, near-duplicate one.
+// never have to backfill gaps themselves. `days` defaults to a 30-day view;
+// the Dashboard's 6-month activity graph passes a wider window explicitly
+// instead of a second, near-duplicate query.
 export const getDailyActivity = cache(
   async (userId: string, days: number = DEFAULT_HEATMAP_DAYS): Promise<DailyActivity[]> => {
     const start = new Date();

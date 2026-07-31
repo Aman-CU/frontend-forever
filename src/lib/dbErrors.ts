@@ -9,3 +9,14 @@ export function getPostgresErrorCode(error: unknown): string | undefined {
     typeof cause === "object" && cause !== null ? (cause as { code?: unknown }).code : undefined;
   return typeof code === "string" ? code : undefined;
 }
+
+// A constraint name (e.g. "profiles_username_unique") is also safe to log —
+// it identifies which column collided, never the row's actual data.
+export function getPostgresErrorConstraint(error: unknown): string | undefined {
+  const cause = error instanceof Error ? error.cause : undefined;
+  const constraint =
+    typeof cause === "object" && cause !== null
+      ? (cause as { constraint?: unknown }).constraint
+      : undefined;
+  return typeof constraint === "string" ? constraint : undefined;
+}
