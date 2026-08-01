@@ -6,7 +6,9 @@ type Props = {
 
 // Official Google "G" mark, full brand color — OAuth buttons conventionally
 // use the colored mark rather than a monochrome one (unlike shared/logos/GoogleLogo,
-// which is intentionally monochrome for the homepage company strip).
+// which is intentionally monochrome for the homepage company strip). Lives in
+// components/shared/ (not features/auth/) since features/settings needs it
+// too, and "features never import from other features" is a hard invariant.
 export function GoogleIcon({ className }: Props) {
   return (
     <svg

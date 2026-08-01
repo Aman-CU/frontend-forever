@@ -13,6 +13,8 @@ export const metadata: Metadata = {
 
 type PageProps = {
   params: Promise<{ section: string }>;
+  // Only read by the "account" section — see SettingsSectionContent.tsx.
+  searchParams: Promise<{ error?: string }>;
 };
 
 // Full-page render — hit on a hard navigation/refresh to /settings/[section]
@@ -20,7 +22,7 @@ type PageProps = {
 // client-side navigation from within the app; a direct/shared URL or a
 // refresh always renders the real page). See @settingsModal for the
 // intercepted, same-content overlay version of this route.
-export default async function SettingsSectionPage({ params }: PageProps) {
+export default async function SettingsSectionPage({ params, searchParams }: PageProps) {
   const { section } = await params;
   if (!isSettingsSection(section)) {
     notFound();
@@ -34,9 +36,11 @@ export default async function SettingsSectionPage({ params }: PageProps) {
     redirect(`/login?callbackURL=/settings/${section}`);
   }
 
+  const { error } = await searchParams;
+
   return (
     <SettingsShell activeSection={section}>
-      <SettingsSectionContent section={section} userId={session.user.id} />
+      <SettingsSectionContent section={section} userId={session.user.id} linkErrorCode={error} />
     </SettingsShell>
   );
 }

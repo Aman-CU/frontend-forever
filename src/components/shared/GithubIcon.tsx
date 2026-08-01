@@ -6,7 +6,9 @@ type Props = {
 
 // GitHub Octocat brand glyph — lucide-react ships no brand icons in this
 // project's pinned version, so the official mark is inlined (same pattern as
-// src/components/shared/XLogo.tsx). currentColor so it inherits theme color.
+// components/shared/XLogo.tsx). currentColor so it inherits theme color.
+// Lives here (not features/auth/) since features/settings needs it too, and
+// "features never import from other features" is a hard invariant.
 export function GithubIcon({ className }: Props) {
   return (
     <svg

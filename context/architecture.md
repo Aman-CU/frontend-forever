@@ -633,6 +633,22 @@ Verified via repeated `curl` bursts against the running dev server: before the f
 
 ---
 
+## Caching Strategy
+
+Three layers, each solving a different problem — picking the wrong one for a given query is the actual risk (a request-scoped dedupe when you meant real caching just looks like it works until a second visitor shows up; real caching on user-scoped data leaks one user's state into another's).
+
+**1. React `cache()` — per-request dedupe, never persists.** Use when the same query might run more than once while building a single response (e.g. a layout and a page both need the session), or when the query result is user-scoped and must always reflect that user's live state (progress, premium status, profile data, anything read right after a mutation). This is the default for anything touching `userId`.
+
+**2. `unstable_cache` — real cross-request caching, tagged for invalidation.** Use only for queries that return the *same result for every caller* — no `userId`, no `headers()`/`cookies()` inside. Two sub-patterns already in use:
+- **Content catalogs** (Learn's concepts, Practice's challenges, FF Collections, roadmap summaries): `{ tags: ["concepts"], revalidate: 3600 }` — a 1-hour ceiling backstopping manual `revalidateTag("concepts")` after a content reseed. These pages then merge the cached catalog with a per-user `cache()` call (e.g. `getPracticeCatalog()` + `getSolvedChallengeIds(userId)`) — never fold the per-user part into the same `unstable_cache` call, or every visitor gets whoever happened to populate the cache first.
+- **Live aggregate data with no per-user angle** (`getLeaderboardEntries`): a short time-based `revalidate` (60s) instead of a content tag, since there's no reseed event to hang invalidation on — the data changes continuously from ordinary app activity. The tradeoff is explicit: up to `revalidate` seconds of staleness in exchange for not re-running the query on every single page view.
+
+**3. Redis (Upstash)** — rate-limiting counters and Better-Auth's session storage/cookie cache only (see above and `env-tls-interception-supabase` in the auth-server config). Not used as a general query cache — don't reach for it to cache DB reads; that's `unstable_cache`'s job.
+
+**Deciding which layer a new query needs:** does the result depend on who's asking (a `userId`, a session, `headers()`)? If yes → `cache()`, full stop, no exceptions — caching user-scoped data across requests is a data-leak/stale-data bug, not a performance win. If no → does it change from ordinary app usage (XP, submissions) or only from a deliberate content update (a reseed script)? Ordinary usage → `unstable_cache` with a short `revalidate`. Content update → `unstable_cache` with `{ tags: ["concepts"], revalidate: 3600 }`, matching the existing catalogs.
+
+---
+
 ## XP System
 
 | Action | XP Reward |

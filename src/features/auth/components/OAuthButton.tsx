@@ -6,8 +6,8 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth/client";
-import { GoogleIcon } from "@/features/auth/components/GoogleIcon";
-import { GithubIcon } from "@/features/auth/components/GithubIcon";
+import { GoogleIcon } from "@/components/shared/GoogleIcon";
+import { GithubIcon } from "@/components/shared/GithubIcon";
 
 type Provider = "google" | "github";
 
