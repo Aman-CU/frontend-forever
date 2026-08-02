@@ -3,6 +3,7 @@ import { getProfileForEdit, getConnectedAccounts, getActiveSessions } from "@/fe
 import { ProfileEditForm } from "@/features/settings/components/ProfileEditForm";
 import { AccountSection } from "@/features/settings/components/AccountSection";
 import { SecuritySection } from "@/features/settings/components/SecuritySection";
+import { AppearanceSection } from "@/features/settings/components/AppearanceSection";
 import type { SettingsSection } from "@/features/settings/lib/sections";
 
 type Props = {
@@ -14,10 +15,9 @@ type Props = {
   linkErrorCode?: string;
 };
 
-// Only "profile", "account", and "security" exist today — add a branch here
-// as each new section (Appearance — see the Pre-Feature-56 decision entry in
-// progress-tracker.md) actually ships real content, rather than scaffolding
-// one ahead of time.
+// Add a branch here as each new section actually ships real content, rather
+// than scaffolding one ahead of time — see the Pre-Feature-56 decision entry
+// in progress-tracker.md for the full Phase 13 settings roadmap.
 export async function SettingsSectionContent({ section, userId, linkErrorCode }: Props) {
   if (section === "profile") {
     const profile = await getProfileForEdit(userId);
@@ -60,6 +60,12 @@ export async function SettingsSectionContent({ section, userId, linkErrorCode }:
     ]);
 
     return <SecuritySection sessions={sessions} currentSessionId={currentSession?.session.id} />;
+  }
+
+  if (section === "appearance") {
+    // Pure client-side state (localStorage-backed) — no server data to
+    // fetch, unlike every other section above.
+    return <AppearanceSection />;
   }
 
   return null;
