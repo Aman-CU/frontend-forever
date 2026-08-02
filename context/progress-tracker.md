@@ -7,7 +7,7 @@ Update this file after every completed feature. Any AI agent reading this should
 ## Current Status
 
 **Phase:** Phase 8 — Leaderboard + Gamification is complete. Feature 36 merged via PR #102; **Feature 37 (Streak System Polish) — built on `feature/37-streak-system-polish`, merged via PR #107** — see the Feature 37 entry below. The same branch grew, via direct user request beyond `build-plan.md`'s original Feature 37 scope, to also add a modal-based Settings system and a new `/dashboard` page — neither is a numbered `build-plan.md` feature; both are documented in the Feature 37 entry below since they shipped on its branch. Phase 9 — Premium + Stripe (Feature 38, Premium Content Gating) is next per `build-plan.md`.
-**Currently building:** Nothing on the `build-plan.md` track (Feature 38, Premium Content Gating, is next whenever that track is picked up). **On the Phase 13 extras track (not `build-plan.md` — see the Pre-Feature-56 decision entry below for full scope): 56, 57, and 58 are merged; 59 (Appearance, rescoped to Reduced Motion only — see the Feature 59 entry below) is built on `feature/59-settings-appearance`, not yet merged.**
+**Currently building:** Nothing on the `build-plan.md` track (Feature 38, Premium Content Gating, is next whenever that track is picked up). **The Phase 13 extras track (not `build-plan.md` — see the Pre-Feature-56 decision entry below for full scope) is complete: 56, 57, 58, and 59 (Appearance, rescoped to Reduced Motion only — see the Feature 59 entry below) are all merged to `develop`.**
 
 **Also built, not a `build-plan.md` feature — see the Feature 55 entry below:** Settings overlay resized to Claude.ai-like proportions, plus real Feedback/Changelog/View-Progress pages replacing three long-dead `LearnSidebar` links. **Same branch, a full pre-commit regression pass then found and fixed 5 unrelated real bugs** — a `callbackURL`-dropping redirect bug (`proxy.ts` + 3 client components), a `useUser.ts` hydration-mismatch regression, missing `priority` on 4 above-the-fold gallery images, and — the significant one — `AppNavbar`'s account-menu avatar rendering completely off-screen at common laptop widths (1024–1366px), fixed alongside a compact search-trigger redesign. **Merged to `develop` via PR #109 (merge commit `84fbfbe`)**, branch `feature/55-settings-overlay-feedback-changelog-progress` (kept, not deleted, per this project's never-delete-a-merged-branch convention). See the Feature 55 entry below for the full narrative.
 
@@ -1153,7 +1153,7 @@ Built `scripts/warmup-dev.mjs` instead (`npm run warmup`) — hits one real URL 
 - [x] 56 Settings — Profile Edit Form — see the Feature 56 entry in Current Status above. **Merged to `develop` via PR #111 (merge commit `c9a283f`).**
 - [x] 57 Settings — Account (Connected Providers + Delete Account) — see the Feature 57 entry in Current Status above. **Merged to `develop` via PR #113 (merge commit `e07932d`).**
 - [x] 58 Settings — Security (Active Sessions) — see the Feature 58 entry in Current Status above. **Merged to `develop` via PR #115 (merge commit `be47452`).**
-- [ ] 59 Settings — Appearance (Reduced Motion only — theme dropped as duplicate of the existing navbar/dropdown/sidebar toggle). See the Feature 59 entry below for the rescoping decision.
+- [x] 59 Settings — Appearance (Reduced Motion only — theme dropped as duplicate of the existing navbar/dropdown/sidebar toggle). See the Feature 59 entry below for the rescoping decision. **Merged to `develop` via PR #117 (merge commit `293547f`).**
 
 ---
 
