@@ -5,14 +5,19 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth/client";
 import { isSessionNotFreshError, REAUTH_MESSAGE } from "@/features/settings/lib/authErrorMessages";
 import { parseUserAgent } from "@/features/settings/lib/parseUserAgent";
 import type { ActiveSession } from "@/features/settings/lib/queries";
 
 type Props = {
   sessions: ActiveSession[];
-  currentToken: string | undefined;
+  currentSessionId: string | undefined;
+};
+
+type RevokeApiResponse = {
+  success?: boolean;
+  error?: string;
+  code?: string;
 };
 
 function formatLastActive(date: Date): string {
@@ -25,31 +30,35 @@ function formatLastActive(date: Date): string {
   return `Active ${diffDays}d ago`;
 }
 
-export function SecuritySection({ sessions, currentToken }: Props) {
+export function SecuritySection({ sessions, currentSessionId }: Props) {
   const router = useRouter();
-  const [revokingToken, setRevokingToken] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
   const [revokingOthers, setRevokingOthers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const otherSessions = sessions.filter((s) => s.token !== currentToken);
+  const otherSessions = sessions.filter((s) => s.id !== currentSessionId);
   // Serializes every revoke action (individual or bulk) into a single
   // in-flight mutation at a time — without this, clicking one row's Revoke
   // while another row's Revoke or "sign out of all other devices" is still
-  // in flight could fire overlapping authClient.revokeSession() calls
-  // against the same token, or leave a different row's button confusingly
-  // enabled mid-mutation.
-  const isBusy = revokingToken !== null || revokingOthers;
+  // in flight could fire overlapping requests, or leave a different row's
+  // button confusingly enabled mid-mutation.
+  const isBusy = revokingId !== null || revokingOthers;
 
-  async function handleRevoke(token: string) {
-    setRevokingToken(token);
+  async function handleRevoke(sessionId: string) {
+    setRevokingId(sessionId);
     setError(null);
     try {
-      const { error: revokeError } = await authClient.revokeSession({ token });
-      if (revokeError) {
+      const res = await fetch("/api/settings/security/revoke", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      const data = (await res.json().catch(() => null)) as RevokeApiResponse | null;
+      if (!res.ok) {
         setError(
-          isSessionNotFreshError(revokeError.code)
+          isSessionNotFreshError(data?.code)
             ? REAUTH_MESSAGE
-            : (revokeError.message ?? "Could not end that session. Please try again."),
+            : (data?.error ?? "Could not end that session. Please try again."),
         );
         return;
       }
@@ -57,39 +66,27 @@ export function SecuritySection({ sessions, currentToken }: Props) {
     } catch {
       setError("Could not end that session. Please try again.");
     } finally {
-      setRevokingToken(null);
+      setRevokingId(null);
     }
   }
 
-  // Deliberately not authClient.revokeOtherSessions() — that endpoint revokes
-  // whatever Better Auth's own Redis session index (`active-sessions-{userId}`)
-  // knows about, not the list this page actually shows. With secondaryStorage
-  // configured, internal-adapter.mjs's listSessions() reads Redis only, no
-  // Postgres fallback (confirmed by reading the source) — while this page's
-  // list comes straight from Postgres (see getActiveSessions's comment for
-  // why). If Redis's index ever drifts from Postgres, revokeOtherSessions()
-  // would silently under-revoke relative to what's on screen. Revoking each
-  // listed session's own token individually instead — revokeSession() *does*
-  // fall back to Postgres per-token (storeSessionInDatabase: true) — keeps
-  // "sign out of all other devices" honest about exactly what it signed out.
   async function handleRevokeOthers() {
     setRevokingOthers(true);
     setError(null);
     try {
-      const results = await Promise.all(
-        otherSessions.map((s) => authClient.revokeSession({ token: s.token })),
-      );
-      const firstError = results.find((result) => result.error)?.error;
-      if (firstError) {
+      const res = await fetch("/api/settings/security/revoke-others", { method: "POST" });
+      const data = (await res.json().catch(() => null)) as RevokeApiResponse | null;
+      if (!res.ok) {
         setError(
-          isSessionNotFreshError(firstError.code)
+          isSessionNotFreshError(data?.code)
             ? REAUTH_MESSAGE
-            : (firstError.message ?? "Could not sign out of other devices. Please try again."),
+            : (data?.error ?? "Could not sign out of other devices. Please try again."),
         );
       }
-      // Refresh even on a partial failure — some of the parallel calls above
-      // may have genuinely succeeded server-side, and the list should reflect
-      // that regardless of whether one of the others also failed.
+      // Refresh even when the route reports an error — it attempts every
+      // other session's revoke before reporting anything back (see the
+      // route's own comment), so a reported failure doesn't mean nothing
+      // happened; the list should reflect whatever actually succeeded.
       router.refresh();
     } catch {
       setError("Could not sign out of other devices. Please try again.");
@@ -128,8 +125,8 @@ export function SecuritySection({ sessions, currentToken }: Props) {
 
       <ul className="flex flex-col gap-2">
         {sessions.map((s) => {
-          const isCurrent = s.token === currentToken;
-          const isRevoking = revokingToken === s.token;
+          const isCurrent = s.id === currentSessionId;
+          const isRevoking = revokingId === s.id;
           return (
             <li
               key={s.id}
@@ -151,7 +148,7 @@ export function SecuritySection({ sessions, currentToken }: Props) {
                   variant="outline"
                   size="sm"
                   disabled={isBusy}
-                  onClick={() => handleRevoke(s.token)}
+                  onClick={() => handleRevoke(s.id)}
                 >
                   {isRevoking && <Loader2 className="size-3.5 animate-spin" aria-hidden />}
                   Revoke

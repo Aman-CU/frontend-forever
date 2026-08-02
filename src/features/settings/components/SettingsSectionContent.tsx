@@ -53,13 +53,13 @@ export async function SettingsSectionContent({ section, userId, linkErrorCode }:
       getActiveSessions(userId),
       // Already deduped against the auth-check call in page.tsx — this is
       // React's cache(), not an extra request. Only needed here for the
-      // current request's own session token (see getActiveSessions's comment
-      // on why the session *list* itself deliberately isn't sourced from
-      // Better Auth's freshness-gated listSessions() endpoint).
+      // current request's own session id (not its token — see
+      // getActiveSessions's comment on why a session token never reaches the
+      // client at all).
       getCachedSession(),
     ]);
 
-    return <SecuritySection sessions={sessions} currentToken={currentSession?.session.token} />;
+    return <SecuritySection sessions={sessions} currentSessionId={currentSession?.session.id} />;
   }
 
   return null;

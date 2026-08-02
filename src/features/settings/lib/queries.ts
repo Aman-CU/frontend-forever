@@ -42,29 +42,35 @@ export const getConnectedAccounts = cache(async (): Promise<ConnectedAccount[]> 
 
 export type ActiveSession = {
   id: string;
-  token: string;
   ipAddress: string | null;
   userAgent: string | null;
   createdAt: Date;
   updatedAt: Date;
 };
 
+const MAX_ACTIVE_SESSIONS = 50;
+
 // A direct Drizzle read of the `session` table, not auth.api.listSessions() —
 // that endpoint runs behind Better Auth's freshSessionMiddleware (freshAge
 // defaults to 1 day, unset in auth/server.ts), so it throws SESSION_NOT_FRESH
 // for any session older than a day even though sessions themselves last 7
-// days by default. That's the right protection for the *mutations* below
-// (revoking a session is exactly what freshness-gating exists to protect),
-// but it would wall most returning users out of merely *viewing* their own
-// session list. Reading the table directly, scoped to `userId`, is the same
-// app-level authorization pattern every other user-owned-table query in this
-// codebase already uses (see architecture.md → Authorization Model) — safe
-// here specifically because this is a read, with no state-changing effect.
+// days by default. That's the right protection for the *mutations* (see
+// app/api/settings/security/revoke*), but it would wall most returning users
+// out of merely *viewing* their own session list. Reading the table
+// directly, scoped to `userId`, is the same app-level authorization pattern
+// every other user-owned-table query in this codebase already uses (see
+// architecture.md → Authorization Model) — safe here specifically because
+// this is a read, with no state-changing effect.
+//
+// Deliberately never selects `token` — a session token is a bearer
+// credential (the same value Better Auth signs into the cookie), so it must
+// never reach the client. Revoking a session goes through
+// app/api/settings/security/revoke(-others), which look the token up
+// server-side by `id` instead.
 export const getActiveSessions = cache(async (userId: string): Promise<ActiveSession[]> => {
   return db
     .select({
       id: session.id,
-      token: session.token,
       ipAddress: session.ipAddress,
       userAgent: session.userAgent,
       createdAt: session.createdAt,
@@ -72,5 +78,6 @@ export const getActiveSessions = cache(async (userId: string): Promise<ActiveSes
     })
     .from(session)
     .where(and(eq(session.userId, userId), gt(session.expiresAt, new Date())))
-    .orderBy(desc(session.updatedAt));
+    .orderBy(desc(session.updatedAt))
+    .limit(MAX_ACTIVE_SESSIONS);
 });
