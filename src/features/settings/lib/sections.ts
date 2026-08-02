@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { User, UserCog, ShieldCheck, Accessibility } from "lucide-react";
+import { User, UserCog, ShieldCheck, Wind } from "lucide-react";
 
 // Add a new entry here only once that section has real content behind it —
 // Billing (Feature 39) is deliberately not scaffolded yet, since a nav item
@@ -16,7 +16,7 @@ export const SETTINGS_SECTION_META: Record<
   profile: { label: "Profile", icon: User },
   account: { label: "Account", icon: UserCog },
   security: { label: "Security", icon: ShieldCheck },
-  appearance: { label: "Appearance", icon: Accessibility },
+  appearance: { label: "Appearance", icon: Wind },
 };
 
 export function isSettingsSection(value: string): value is SettingsSection {
