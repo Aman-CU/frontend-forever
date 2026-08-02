@@ -25,7 +25,18 @@ export const auth = betterAuth({
     storeSessionInDatabase: true,
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60, // 5 minutes — get-session reads from signed cookie, no DB hit
+      // 30s, not the 5-10min default — get-session reads from the signed
+      // cookie with no DB hit, but a revoked/stolen session stays valid for
+      // up to this long regardless (Better Auth's own documented caveat:
+      // "revoked sessions may remain active on other devices until the
+      // cookie cache expires"). Confirmed for real via Feature 58's Security
+      // page: with the old 5min value, revoking a session from another
+      // device left it fully functional for 5-10 minutes after a fresh
+      // reload — not just an idle-tab staleness issue, an actual bypass of
+      // the revoke feature's entire purpose. 30s keeps most of the
+      // DB-hit-avoidance benefit for ordinary fast browsing while bounding
+      // that window to something a security feature can actually promise.
+      maxAge: 30,
     },
   },
   rateLimit: {

@@ -89,7 +89,8 @@ export function ProfileEditForm({ initialProfile }: Props) {
       // wrapper triggers Better Auth's automatic session-store refetch on an
       // /update-user response, which is what makes the Navbar/UserDropdown
       // (read from the live session, not `profiles`) update immediately
-      // instead of waiting out the 5-minute cookie-cache window. Best-effort:
+      // instead of waiting out the cookie-cache window (`auth.ts`'s
+      // `cookieCache.maxAge`). Best-effort:
       // the profiles write already succeeded and is what the user asked to
       // save, so a failure here is logged, not surfaced as a save failure.
       try {

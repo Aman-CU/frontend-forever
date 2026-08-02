@@ -107,7 +107,8 @@ export async function POST(req: Request) {
     // session-store refetch when its own $fetch wrapper sees the /update-user
     // response — a server-side auth.api.updateUser call here would write the
     // row but leave the client's already-cached session stale until the next
-    // cookie-cache expiry (5 min), so the Navbar wouldn't update on save.
+    // cookie-cache expiry (`auth.ts`'s `cookieCache.maxAge`), so the Navbar
+    // wouldn't update on save.
     return Response.json({ success: true });
   } catch (error) {
     // Catch-all for auth.api.getSession/ratelimit.limit failures and any
