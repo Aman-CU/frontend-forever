@@ -158,7 +158,7 @@ export function ChallengeListClient({ challenges, isPremiumUser }: Props) {
                 exit={{ opacity: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.15 }}
               >
-                <ChallengeListRow index={i + 1} {...challenge} />
+                <ChallengeListRow index={i + 1} {...challenge} isPremiumUser={isPremiumUser} />
               </motion.div>
             ))}
           </AnimatePresence>
