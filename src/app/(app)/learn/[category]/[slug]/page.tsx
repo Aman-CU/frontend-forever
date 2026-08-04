@@ -79,16 +79,14 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
   const clientChallenge =
     challenge && isPremiumLocked ? { ...challenge, solutionCode: "" } : challenge;
 
-  // Same server-side gate, applied uniformly per question now that the whole
-  // Interview tab locks together — strip every answer (never send it to a
-  // non-premium client) and flag isLocked so QuestionCard renders its existing
-  // "question visible, answer locked" teaser instead of silently omitting the
-  // question.
-  const clientInterviewQuestions = interviewQuestions.map((q) => ({
-    ...q,
-    answer: isPremiumLocked ? "" : q.answer,
-    isLocked: isPremiumLocked,
-  }));
+  // Interview shows a full PremiumLocked wall when the concept is locked, not
+  // a per-question teaser — even the question text (not just the answer) has
+  // to stay off the client for a locked concept, since a visible question is
+  // enough for someone to Google the answer elsewhere. An empty array is the
+  // simplest way to guarantee that: ConceptInterview never receives real row
+  // data to accidentally serialize when locked, rather than trusting every
+  // future code path inside it to keep redacting individual fields correctly.
+  const clientInterviewQuestions = isPremiumLocked ? [] : interviewQuestions;
 
   // Same server-side gate for the Build tab: never serialize the brief,
   // starter code, solution, or tests into the client payload for a locked
@@ -138,6 +136,7 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
       isLoggedIn={userId !== null}
       initialCompleted={initialInterviewed}
       initialRatings={initialInterviewRatings}
+      isPremiumLocked={isPremiumLocked}
     />
   );
 
