@@ -3,8 +3,14 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { getCachedSession } from "@/lib/auth/server";
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { isPracticeCategory, PRACTICE_CATEGORY_LABELS } from "@/features/practice/lib/practiceCategories";
-import { getAdjacentChallenges, getChallengeBySlug, hasPassedChallenge } from "@/features/practice/lib/queries";
+import {
+  getAdjacentChallenges,
+  getChallengeBySlug,
+  getIsPremiumUser,
+  hasPassedChallenge,
+} from "@/features/practice/lib/queries";
 import { getDiscussionPosts } from "@/features/practice/lib/discussionQueries";
 import { toPlainTextSummary, safeJsonLd } from "@/lib/seo";
 import { ChallengeEditorHeader } from "@/features/practice/components/editor/ChallengeEditorHeader";
@@ -70,15 +76,42 @@ export default async function ChallengeEditorPage({ params }: { params: Promise<
   const session = await getCachedSession();
   const userId = session?.user?.id ?? null;
 
+  const isPremiumUser = userId ? await getIsPremiumUser(userId) : false;
+  const isChallengeLocked = challenge.isPremium && !isPremiumUser;
+
   const [initialHasPassed, discussionPosts, { prev, next }, baseUrl] = await Promise.all([
     hasPassedChallenge(userId, challenge.id),
-    getDiscussionPosts(challenge.id),
+    // Discussion posts can carry a full shared solution (challenge_discussion_
+    // posts.code — architecture.md's "no spoiler gate" was decided for free
+    // challenges, before Feature 38 existed). Skip the fetch entirely for a
+    // locked challenge rather than trust every render path downstream to keep
+    // redacting it — the same reasoning that moved Interview to a full wall.
+    isChallengeLocked ? Promise.resolve([]) : getDiscussionPosts(challenge.id),
     getAdjacentChallenges(category, slug),
     getBaseUrl(),
   ]);
 
   const label = PRACTICE_CATEGORY_LABELS[category];
   const pageUrl = `${baseUrl}/practice/${category}/${slug}`;
+
+  // Company tags are invisible until premium regardless of this challenge's
+  // own isPremium (Feature 38); starterCode/solutionCode/testCases/hints/
+  // description are additionally stripped when the challenge itself is
+  // locked — never serialize real content to a non-premium client
+  // (security.md).
+  const clientChallenge = isChallengeLocked
+    ? {
+        ...challenge,
+        companies: [],
+        description: "",
+        starterCode: "",
+        solutionCode: "",
+        testCases: [],
+        hints: [],
+      }
+    : isPremiumUser
+      ? challenge
+      : { ...challenge, companies: [] };
 
   // Structured data for both classic search rich results and AI answer
   // engines (GEO) — a LearningResource for the challenge itself, plus a
@@ -88,12 +121,12 @@ export default async function ChallengeEditorPage({ params }: { params: Promise<
     "@context": "https://schema.org",
     "@type": "LearningResource",
     name: challenge.title,
-    description: toPlainTextSummary(challenge.description, 300),
+    description: toPlainTextSummary(clientChallenge.description, 300),
     educationalLevel: challenge.difficulty,
     learningResourceType: "Coding Challenge",
     about: label,
     inLanguage: "en",
-    isAccessibleForFree: true,
+    isAccessibleForFree: !isChallengeLocked,
     url: pageUrl,
     provider: { "@type": "Organization", name: "Frontend Forever", url: baseUrl },
   };
@@ -127,12 +160,20 @@ export default async function ChallengeEditorPage({ params }: { params: Promise<
         next={next}
       />
 
-      <ChallengeEditorWorkspace
-        challenge={challenge}
-        isLoggedIn={!!userId}
-        initialHasPassed={initialHasPassed}
-        discussionPosts={discussionPosts}
-      />
+      {isChallengeLocked ? (
+        <PremiumLocked
+          title="Premium challenge"
+          description="Upgrade to Premium to unlock this challenge."
+          isLoggedIn={!!userId}
+        />
+      ) : (
+        <ChallengeEditorWorkspace
+          challenge={clientChallenge}
+          isLoggedIn={!!userId}
+          initialHasPassed={initialHasPassed}
+          discussionPosts={discussionPosts}
+        />
+      )}
     </div>
   );
 }

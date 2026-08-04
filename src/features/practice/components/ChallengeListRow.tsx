@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Lock } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { ChallengeDifficulty, ConceptCategory } from "@/lib/constants";
@@ -18,6 +18,9 @@ type Props = {
   category: ConceptCategory;
   completed: boolean;
   companies: string[];
+  // Feature 38 — cosmetic here, same as every other list-row premium pill
+  // (StudyPlanCard, BattleCard); the real gate lives on the detail page.
+  isPremium: boolean;
 };
 
 // Each row is its own bordered card (the list container is a gap-2 stack,
@@ -37,6 +40,7 @@ export function ChallengeListRow({
   category,
   completed,
   companies,
+  isPremium,
 }: Props) {
   return (
     <Link
@@ -57,6 +61,13 @@ export function ChallengeListRow({
 
       <span className="flex min-w-0 items-center gap-2">
         <span className="truncate text-sm font-medium text-text-primary">{title}</span>
+
+        {isPremium && (
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-premium-light px-2 py-0.5 text-[0.6875rem] font-semibold text-premium">
+            <Lock className="h-2.5 w-2.5" aria-hidden />
+            Premium
+          </span>
+        )}
 
         {companies.length > 0 && (
           <span className="flex shrink-0 items-center gap-1.5">

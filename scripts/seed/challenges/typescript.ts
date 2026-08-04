@@ -658,6 +658,7 @@ type Result2 = FirstChar<"">
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `type FirstChar<T extends string> = unknown;`,
     solutionCode: `type FirstChar<T extends string> = T extends \`\${infer F}\${string}\` ? F : "";`,
     testCases: [
@@ -691,6 +692,7 @@ type Result2 = LastChar<"a">
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type LastChar<T extends string> = unknown;`,
     solutionCode: `type LastChar<T extends string> = T extends \`\${infer First}\${infer Rest}\`
   ? Rest extends "" ? First : LastChar<Rest>
@@ -970,6 +972,7 @@ type Result2 = Prefix<"a" | "b", "x">
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `type Prefix<T extends string, P extends string> = unknown;`,
     solutionCode: `type Prefix<T extends string, P extends string> = \`\${P}\${T}\`;`,
     testCases: [
@@ -1079,6 +1082,7 @@ type Result2 = FirstItem<[]>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `type FirstItem<T extends unknown[]> = unknown;`,
     solutionCode: `type FirstItem<T extends unknown[]> = T extends [infer F, ...unknown[]] ? F : never;`,
     testCases: [
@@ -1112,6 +1116,7 @@ type Result2 = LastItem<[]>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `type LastItem<T extends unknown[]> = unknown;`,
     solutionCode: `type LastItem<T extends unknown[]> = T extends [...unknown[], infer L] ? L : never;`,
     testCases: [
@@ -1261,6 +1266,7 @@ type Result = ReverseTuple<[1, 2, 3]>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type ReverseTuple<T extends unknown[]> = unknown;`,
     solutionCode: `type ReverseTuple<T extends unknown[]> = T extends [infer F, ...infer Rest] ? [...ReverseTuple<Rest>, F] : [];`,
     testCases: [
@@ -1291,6 +1297,7 @@ type Result = Slice<[1, 2, 3, 4, 5], 1, 3>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `type Slice<A extends unknown[], S extends number, E extends number> = unknown;`,
     solutionCode: `type Take<A extends unknown[], N extends number, Acc extends unknown[] = []> =
   Acc["length"] extends N ? Acc : A extends [infer F, ...infer Rest] ? Take<Rest, N, [...Acc, F]> : Acc;
@@ -1361,6 +1368,7 @@ type Result = Includes<[1, 2, 3], 2>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type Includes<T extends readonly unknown[], U> = unknown;`,
     solutionCode: `type Includes<T extends readonly unknown[], U> = T extends [infer F, ...infer Rest]
   ? Equal<F, U> extends true ? true : Includes<Rest, U>
@@ -1428,6 +1436,7 @@ type Empty = Repeat<0, 0>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type Repeat<T, C extends number> = unknown;`,
     solutionCode: `type Repeat<T, C extends number, Acc extends unknown[] = []> =
   Acc["length"] extends C ? Acc : Repeat<T, C, [...Acc, T]>;`,
@@ -1462,6 +1471,7 @@ type Empty = RepeatString<'x', 0>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type RepeatString<S extends string, C extends number> = unknown;`,
     solutionCode: `type RepeatString<S extends string, C extends number, Acc extends string = "", I extends unknown[] = []> =
   I["length"] extends C ? Acc : RepeatString<S, C, \`\${Acc}\${S}\`, [...I, unknown]>;`,
@@ -1493,6 +1503,7 @@ type Result = TupleToString<['a', 'b', 'c']>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type TupleToString<T extends readonly string[]> = unknown;`,
     solutionCode: `type TupleToString<T extends readonly string[]> = T extends [infer F extends string, ...infer Rest extends string[]]
   ? \`\${F}\${TupleToString<Rest>}\`
@@ -1530,6 +1541,7 @@ type NotNever = IsNever<string>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type IsNever<T> = unknown;`,
     solutionCode: `type IsNever<T> = [T] extends [never] ? true : false;`,
     testCases: [
@@ -1560,6 +1572,7 @@ type Result = IsAny<any>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `type IsAny<T> = unknown;`,
     solutionCode: `type IsAny<T> = 0 extends 1 & T ? true : false;`,
     testCases: [
@@ -1590,6 +1603,7 @@ type Result = IsEmptyType<{}>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `type IsEmptyType<T> = unknown;`,
     solutionCode: `type IsEmptyType<T> = keyof T extends never ? true : false;`,
     testCases: [
@@ -1688,6 +1702,7 @@ type Result = ToNumber<'5'>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type ToNumber<T extends string> = unknown;`,
     solutionCode: `type ToNumber<T extends string, Acc extends unknown[] = []> =
   T extends \`\${Acc["length"]}\` ? Acc["length"] : ToNumber<T, [...Acc, unknown]>;`,
@@ -1719,6 +1734,7 @@ type Result = StringToNumber<'12'>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type StringToNumber<S extends string> = unknown;`,
     solutionCode: `type StringToNumber<S extends string, Acc extends unknown[] = []> =
   S extends \`\${Acc["length"]}\` ? Acc["length"] : StringToNumber<S, [...Acc, unknown]>;`,
@@ -1753,6 +1769,7 @@ type AlreadyPositive = Abs<5>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type Abs<N extends number> = unknown;`,
     solutionCode: `type StrToNum<S extends string, Acc extends unknown[] = []> =
   S extends \`\${Acc["length"]}\` ? Acc["length"] : StrToNum<S, [...Acc, unknown]>;
@@ -1789,6 +1806,7 @@ type SameValue = LargerThan<3, 3>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type LargerThan<A extends number, B extends number> = unknown;`,
     solutionCode: `type LargerThan<A extends number, B extends number, C extends unknown[] = []> =
   A extends B ? false :
@@ -1827,6 +1845,7 @@ type SameValue = SmallerThan<3, 3>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type SmallerThan<A extends number, B extends number> = unknown;`,
     solutionCode: `type SmallerThan<A extends number, B extends number, C extends unknown[] = []> =
   A extends B ? false :
@@ -1862,6 +1881,7 @@ type Result = Add<3, 4>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type Add<A extends number, B extends number> = unknown;`,
     solutionCode: `type BuildTuple<L extends number, T extends unknown[] = []> = T["length"] extends L ? T : BuildTuple<L, [...T, unknown]>;
 
@@ -1897,6 +1917,7 @@ type SameValue = Subtract<5, 5>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type Subtract<A extends number, B extends number> = unknown;`,
     solutionCode: `type BuildTuple<L extends number, T extends unknown[] = []> = T["length"] extends L ? T : BuildTuple<L, [...T, unknown]>;
 
@@ -1929,6 +1950,7 @@ type Result = Multiply<3, 4>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `type Multiply<A extends number, B extends number> = unknown;`,
     solutionCode: `type BuildTuple<L extends number, T extends unknown[] = []> = T["length"] extends L ? T : BuildTuple<L, [...T, unknown]>;
 
@@ -1962,6 +1984,7 @@ type Result = Divide<12, 4>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `type Divide<A extends number, B extends number> = unknown;`,
     solutionCode: `type BuildTuple<L extends number, T extends unknown[] = []> = T["length"] extends L ? T : BuildTuple<L, [...T, unknown]>;
 
@@ -2002,6 +2025,7 @@ type NotFound = FindIndex<[1, 2, 3], 5>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type FindIndex<T extends readonly unknown[], E> = unknown;`,
     solutionCode: `type FindIndex<T extends readonly unknown[], E, Idx extends unknown[] = []> =
   T extends [infer F, ...infer Rest]
@@ -2100,6 +2124,7 @@ type Result = MapStringUnionToObjectUnion<'circle' | 'square'>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type MapStringUnionToObjectUnion<U extends string> = unknown;`,
     solutionCode: `type MapStringUnionToObjectUnion<U extends string> = U extends U ? { type: U } : never;`,
     testCases: [
@@ -2200,6 +2225,7 @@ type Result = Sort<[3, 1, 2]>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `type Sort<T extends number[]> = unknown;`,
     solutionCode: `type Compare<A extends number, B extends number, C extends unknown[] = []> =
   A extends B ? 0 :
@@ -2246,6 +2272,7 @@ type Result = Unique<[1, 1, 2, 3, 3, 3]>
 
 Graded by real TypeScript type-checking — write a type alias, not JavaScript.`,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `type Unique<T extends readonly unknown[]> = unknown;`,
     solutionCode: `type IsIncluded<T extends readonly unknown[], U> = T extends [infer F, ...infer Rest]
   ? Equal<F, U> extends true ? true : IsIncluded<Rest, U>

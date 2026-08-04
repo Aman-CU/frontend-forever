@@ -30,6 +30,7 @@ getFullName({ first: "Ada", last: "Lovelace" }) // "Ada Lovelace"
 getFullName({ last: "Turing" }) // "Turing"
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function getFullName(user) {
   // user: { first, middle, last } — any of these may be missing or falsy
 }`,
@@ -589,6 +590,7 @@ counter.increment().increment().get() // 2
 createCounter(10).increment(3).reset().get() // 10 — reset() returns to the starting value, not 0
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function createCounter(start = 0) {
 }`,
     solutionCode: `function createCounter(start = 0) {
@@ -631,6 +633,7 @@ count.reset();
 count() // 1 — reset() starts the sequence over
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function createCountFunction() {
 }`,
     solutionCode: `function createCountFunction() {
@@ -1886,6 +1889,7 @@ compareSemver("2.0.0", "1.9.9")   // 1  — higher major version wins regardless
 compareSemver("1.10.0", "1.9.0")  // 1  — 10 > 9 numerically, not string-wise
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function compareSemver(a, b) {
 }`,
     solutionCode: `function compareSemver(a, b) {
@@ -2302,6 +2306,7 @@ removeChars("abcdef", "")        // "abcdef" — nothing to remove
 removeChars("aaa", "a")          // ""       — removing every character leaves an empty string
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function removeChars(str, charsToRemove) {
 }`,
     solutionCode: `function removeChars(str, charsToRemove) {
@@ -2389,6 +2394,7 @@ trackedSetTimeout(() => console.log("c"), 100);
 // "c" still logs normally — it was scheduled after clearAllTimeout()
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `const timeoutIds = [];
 function trackedSetTimeout(fn, delay) {
 }
@@ -2432,6 +2438,7 @@ log("a"); log("b"); log("c");
 // only "c" logs, 300ms after the last call — "a" and "b" are discarded
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function debounce(fn, delay) {
 }`,
     solutionCode: `function debounce(fn, delay) {
@@ -2470,6 +2477,7 @@ onScroll(); // dropped — called within 100ms of the last run
 onScroll(); // runs — the interval has fully elapsed
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function throttle(fn, interval) {
 }`,
     solutionCode: `function throttle(fn, interval) {
@@ -2695,6 +2703,7 @@ const stop = createInterval(() => console.log("tick"), 1000);
 stop(); // no further "tick" logs after this
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createInterval(fn, delay) {
 }`,
     solutionCode: `function createInterval(fn, delay) {
@@ -2798,6 +2807,7 @@ queue.add(() => delay(50).then(() => "second"));  // waits for "first" to finish
 // never both in flight at once, even though "second" has the shorter delay
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `class AsyncTaskQueue {
   add(taskFn) {
   }
@@ -2931,6 +2941,7 @@ raceWithTimeout(fetch("/slow-api"), 3000)
 // otherwise resolves normally with the fetch's own result
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function raceWithTimeout(promise, ms) {
 }`,
     solutionCode: `function raceWithTimeout(promise, ms) {
@@ -3228,6 +3239,7 @@ Promise.reject("error")
 // logs "done", then "error" — the rejection still propagates
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `Promise.prototype.myFinally = function (onFinally) {
 };`,
     solutionCode: `Promise.prototype.myFinally = function (onFinally) {
@@ -3345,6 +3357,7 @@ flattenThunk(outer)((err, result) => {
 });
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function flattenThunk(thunk) {
 }`,
     solutionCode: `function flattenThunk(thunk) {
@@ -3575,6 +3588,7 @@ Promise.resolve().then(() => console.log("2: microtask"));
 // logs "1: sync", then "2: microtask", then "3: scheduled task"
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function scheduleTask(callback) {
 }`,
     solutionCode: `function scheduleTask(callback) {
@@ -3706,6 +3720,7 @@ invertBinaryTree(root);
 // root.left.value === 3, root.right.value === 2 — children swapped
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function invertBinaryTree(root) {
 }`,
     solutionCode: `function invertBinaryTree(root) {
@@ -3800,6 +3815,7 @@ s.pop(); // 3 — LIFO order, even though it's built from queue rotations
 s.pop(); // 2
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `class StackViaQueues {
   push(value) {
   }
@@ -4067,6 +4083,7 @@ verticalTraversal(withTie)
 // [[2], [1, 4, 5], [3]] — 4 and 5 land at the same row AND column, so ascending value (4 before 5) breaks the tie
 \`\`\``,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `function verticalTraversal(root) {
 }`,
     solutionCode: `function verticalTraversal(root) {
@@ -4120,6 +4137,7 @@ bubbleSort([5, 3, 8, 1, 2])
 // [1, 2, 3, 5, 8]
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function bubbleSort(arr) {
 }`,
     solutionCode: `function bubbleSort(arr) {
@@ -4160,6 +4178,7 @@ insertionSort([5, 3, 8, 1, 2])
 // [1, 2, 3, 5, 8]
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function insertionSort(arr) {
 }`,
     solutionCode: `function insertionSort(arr) {
@@ -4201,6 +4220,7 @@ selectionSort([5, 3, 8, 1, 2])
 // [1, 2, 3, 5, 8]
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function selectionSort(arr) {
 }`,
     solutionCode: `function selectionSort(arr) {
@@ -4240,6 +4260,7 @@ mergeSort([5, 3, 8, 1, 2])
 // [1, 2, 3, 5, 8]
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function mergeSort(arr) {
 }`,
     solutionCode: `function mergeSort(arr) {
@@ -4286,6 +4307,7 @@ quickSort([1, 1, 1])
 // [1, 1, 1] — duplicate values are kept, not deduplicated
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function quickSort(arr) {
 }`,
     solutionCode: `function quickSort(arr) {
@@ -4327,6 +4349,7 @@ binarySearch([], 4)
 // -1 — an empty array has nothing to find
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function binarySearch(arr, target) {
 }`,
     solutionCode: `function binarySearch(arr, target) {
@@ -4368,6 +4391,7 @@ searchFirstIndex([1, 2, 3], 5)
 // -1 — not present in the array
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function searchFirstIndex(arr, target) {
 }`,
     solutionCode: `function searchFirstIndex(arr, target) {
@@ -4415,6 +4439,7 @@ searchLastIndex([1, 2, 3], 5)
 // -1 — not present in the array
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function searchLastIndex(arr, target) {
 }`,
     solutionCode: `function searchLastIndex(arr, target) {
@@ -4462,6 +4487,7 @@ findElementBefore([1, 3, 5, 7, 9], 1)
 // undefined — nothing in the array is smaller than the smallest value
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function findElementBefore(arr, target) {
 }`,
     solutionCode: `function findElementBefore(arr, target) {
@@ -4507,6 +4533,7 @@ findElementAfter([1, 3, 5, 7, 9], 9)
 // undefined — nothing in the array is larger than the largest value
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function findElementAfter(arr, target) {
 }`,
     solutionCode: `function findElementAfter(arr, target) {
@@ -4551,6 +4578,7 @@ firstBadVersion(10, isBad)
 // 5 — the first version where isBad(version) becomes true
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function firstBadVersion(n, isBad) {
 }`,
     solutionCode: `function firstBadVersion(n, isBad) {
@@ -4594,6 +4622,7 @@ findMedianSortedArrays([], [1])
 // 1 — one input array may be empty; the median comes entirely from the other
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function findMedianSortedArrays(nums1, nums2) {
 }`,
     solutionCode: `function findMedianSortedArrays(nums1, nums2) {
@@ -5349,6 +5378,7 @@ myPow(2, -2)
 // 0.25 — a negative exponent inverts the result
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function myPow(base, exponent) {
 }`,
     solutionCode: `function myPow(base, exponent) {
@@ -5387,6 +5417,7 @@ mySqrt(-4)
 // NaN — negative numbers have no real square root
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function mySqrt(x) {
 }`,
     solutionCode: `function mySqrt(x) {
@@ -5428,6 +5459,7 @@ myClz32(0)
 // 32 — no bits are set at all
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function myClz32(x) {
 }`,
     solutionCode: `function myClz32(x) {
@@ -5514,6 +5546,7 @@ bigIntSubtract("1000", "999")
 // "1" — a borrow cascades through multiple digits
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function bigIntSubtract(a, b) {
 }`,
     solutionCode: `function bigIntSubtract(a, b) {
@@ -5566,6 +5599,7 @@ bigIntAddSigned("5", "-8")
 // "-3" — a positive plus a larger-magnitude negative goes negative
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function bigIntAddSigned(a, b) {
 }`,
     solutionCode: `function bigIntAddSigned(a, b) {
@@ -5654,6 +5688,7 @@ bigIntSubtractSigned("3", "5")
 // "-2" — subtracting a larger number goes negative
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function bigIntSubtractSigned(a, b) {
 }`,
     solutionCode: `function bigIntSubtractSigned(a, b) {
@@ -5742,6 +5777,7 @@ bigIntMultiply("123", "456")
 // "56088"
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function bigIntMultiply(a, b) {
 }`,
     solutionCode: `function bigIntMultiply(a, b) {
@@ -5789,6 +5825,7 @@ bigIntDivide("7", "0")
 // throws an error — division by zero
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function bigIntDivide(a, b) {
 }`,
     solutionCode: `function bigIntDivide(a, b) {
@@ -5859,6 +5896,7 @@ bigDecimalAdd("0.1", "0.2")
 // "0.3" — exact, unlike native floating-point 0.1 + 0.2
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function bigDecimalAdd(a, b) {
 }`,
     solutionCode: `function bigDecimalAdd(a, b) {
@@ -5920,6 +5958,7 @@ bigDecimalSubtract("5.00", "1.25")
 // "3.75" — a borrow crosses from the fractional part into the integer part
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function bigDecimalSubtract(a, b) {
 }`,
     solutionCode: `function bigDecimalSubtract(a, b) {
@@ -5985,6 +6024,7 @@ bigDecimalMultiply("0.1", "0.2")
 // "0.02" — stays exact, unlike native floating-point multiplication
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function bigDecimalMultiply(a, b) {
 }`,
     solutionCode: `function bigDecimalMultiply(a, b) {
@@ -6040,6 +6080,7 @@ bigDecimalDivide("1", "3", 4)
 // "0.3333" — a repeating decimal, truncated at the requested precision
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function bigDecimalDivide(a, b, precision) {
 }`,
     solutionCode: `function bigDecimalDivide(a, b, precision) {
@@ -6130,6 +6171,7 @@ findNextRightSibling(root, "e")
 // "f" — e and f are on the same level even though they have different parents
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function findNextRightSibling(root, targetId) {
 }`,
     solutionCode: `function findNextRightSibling(root, targetId) {
@@ -6266,6 +6308,7 @@ store.get(el)
 // { count: 1 }
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function createElementStore() {
 }`,
     solutionCode: `function createElementStore() {
@@ -6313,6 +6356,7 @@ findCorrespondingNode(rootA, rootB, rootA.children[1])
 // rootB.children[1] — the second <li> in the second tree
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function findCorrespondingNode(rootA, rootB, target) {
 }`,
     solutionCode: `function findCorrespondingNode(rootA, rootB, target) {
@@ -6363,6 +6407,7 @@ inputEl.value
 // "new" — setValue() updates the actual DOM input too
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function createTwoWayBinding(inputEl, initialValue) {
 }`,
     solutionCode: `function createTwoWayBinding(inputEl, initialValue) {
@@ -6444,6 +6489,7 @@ getAllTags(root)
 // ["div", "span", "span"]
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function getAllTags(root) {
 }`,
     solutionCode: `function getAllTags(root) {
@@ -6512,6 +6558,7 @@ extractAnchors("<a href='/x'>X</a><p>text</p><a href='/y'>Y</a>")
 // [{ href: "/x", text: "X" }, { href: "/y", text: "Y" }]
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function extractAnchors(html) {
 }`,
     solutionCode: `function extractAnchors(html) {
@@ -6593,6 +6640,7 @@ findPreviousLeftSibling(root, "f")
 // "e" — e and f are on the same level even though they have different parents
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function findPreviousLeftSibling(root, targetId) {
 }`,
     solutionCode: `function findPreviousLeftSibling(root, targetId) {
@@ -6637,6 +6685,7 @@ generateSelector(secondLi)
 // "#app > ul:nth-child(1) > li:nth-child(2)" — no id on the <li> or <ul>, so a full path is built up to the #app anchor
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function generateSelector(el) {
 }`,
     solutionCode: `function generateSelector(el) {
@@ -6679,6 +6728,7 @@ stringifyCookie("name", "v", { days: 1, path: "/" })
 // "name=v; max-age=86400; path=/" — options.days converts to max-age in seconds, options.path is appended after
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function parseCookies(cookieString) {
 }
 function stringifyCookie(name, value, options = {}) {
@@ -6784,6 +6834,7 @@ cache.get("b")
 // undefined — "b" was evicted
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createLRUCache(capacity) {
 }`,
     solutionCode: `function createLRUCache(capacity) {
@@ -7010,6 +7061,7 @@ unsubscribe();
 bus.publish("order:created", { id: 43 }); // nothing logged — this subscriber is gone
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createPubSub() {
 }`,
     solutionCode: `function createPubSub() {
@@ -7055,6 +7107,7 @@ interpolate("{{missing}}", {});
 // "" — an unresolvable path becomes an empty string, not left as "{{missing}}"
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function interpolate(template, data) {
 }`,
     solutionCode: `function interpolate(template, data) {
@@ -7180,6 +7233,7 @@ LazyMan("Hank").eat("dinner").sleep(1).eat("supper");
 // "Eat supper"
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function LazyMan(name) {
 }`,
     solutionCode: `function LazyMan(name) {
@@ -7407,6 +7461,7 @@ subscription.unsubscribe();
 // no further values are emitted
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function interval(ms) {
 }`,
     solutionCode: `class Observable {
@@ -7455,6 +7510,7 @@ subscription.unsubscribe();
 // removes the underlying "click" listener from button — no further emissions
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function fromEvent(target, eventType) {
 }`,
     solutionCode: `class Observable {
@@ -7504,6 +7560,7 @@ filterOperator(mapOperator(source, (x) => x + 1), (x) => x > 2);
 // source -> mapOperator produces 2, 3, 4 -> filterOperator keeps only 3, 4
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function mapOperator(source, project) {
 }
 function filterOperator(source, predicate) {
@@ -7566,6 +7623,7 @@ from([1, 2, 3]).subscribe({
 // done
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function from(iterable) {
 }`,
     solutionCode: `class Observable {
@@ -7615,6 +7673,7 @@ subB.unsubscribe();
 subject.next(3); // A: 3 — B already unsubscribed
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `class Subject {
   subscribe(observer) {
   }
@@ -7668,6 +7727,7 @@ myBtoa("a");
 // "YQ==" — a 1-byte final group needs two '=' padding characters
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function myBtoa(str) {
 }`,
     solutionCode: `function myBtoa(str) {
@@ -7716,6 +7776,7 @@ myAtob("dGVzdDEyMw==");
 // "test123" — round-trips a longer alphanumeric string
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function myAtob(str) {
 }`,
     solutionCode: `function myAtob(str) {
@@ -8000,6 +8061,7 @@ q.toString();
 // "q=hello%20world" — toString() percent-encodes the value
 \`\`\``,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `class MyURLSearchParams {
   constructor(init = "") {
   }
@@ -8096,6 +8158,7 @@ createElement("ul", null, "a", "b");
 // { type: 'ul', props: { children: ['a', 'b'] } }
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function createElement(type, props, ...children) {
 }`,
     solutionCode: `function createElement(type, props, ...children) {
@@ -8136,6 +8199,7 @@ render(html\`<p>\${'<script>bad</script>'}</p>\`);
 // '<p>&lt;script&gt;bad&lt;/script&gt;</p>' — interpolated values are HTML-escaped, never injected as raw markup
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function html(strings, ...values) {
 }
 function render(template) {
@@ -8192,6 +8256,7 @@ renderComponent({ type: Greeting, props: { name: "Ada" } });
 // { type: 'span', props: { children: 'Hi Ada' } } — the component function is resolved down to a plain element
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function renderComponent(vnode) {
 }`,
     solutionCode: `function renderComponent(vnode) {
@@ -8237,6 +8302,7 @@ classNames("btn", { active: true, disabled: false }, ["extra", null]);
 // "btn active extra" — the truthy "active" key is included, "disabled" and the null entry are skipped
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function classNames(...args) {
 }`,
     solutionCode: `function classNames(...args) {
@@ -8291,6 +8357,7 @@ uglify("card-header-title");
 // "a" — a repeat call for the same original name returns the same short name
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createClassNameUglifier() {
 }`,
     solutionCode: `function createClassNameUglifier() {
@@ -8356,6 +8423,7 @@ diff({ type: "div", props: {} }, { type: "span", props: {} });
 // { type: 'REPLACE', vnode: { type: 'span', props: {} } } — a different element type forces a full replace
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function diff(oldVNode, newVNode) {
 }`,
     solutionCode: `function diff(oldVNode, newVNode) {
@@ -8412,6 +8480,7 @@ jsxCreateElement("input", { ref: someRef, value: "x" });
 // { type: 'input', key: null, props: { value: 'x', children: [] } } — no ref key anywhere in the result
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function jsxCreateElement(type, config, ...children) {
 }`,
     solutionCode: `function jsxCreateElement(type, config, ...children) {
@@ -8464,6 +8533,7 @@ jsxCreateElementV2("ul", null, "header", rows);
 // props.children === ['header', 'row1', 'row2'] — the nested array from .map() is flattened into one list
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `const Fragment = Symbol("Fragment");
 function jsxCreateElementV2(type, config, ...children) {
 }`,
@@ -8525,6 +8595,7 @@ setCount((c) => c + 1);
 // automatically re-renders Counter, logging 1
 \`\`\``,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `function createHooksRuntime() {
 }`,
     solutionCode: `function createHooksRuntime() {
@@ -8599,6 +8670,7 @@ state.count = 1;
 state.other = "ignored"; // never read by the effect, so it doesn't trigger a re-run
 \`\`\``,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `function createReactiveSystem() {
 }`,
     solutionCode: `function createReactiveSystem() {
@@ -8672,6 +8744,7 @@ countDecodeWays("06");
 // 0 — a leading zero can never start a valid letter code
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function countDecodeWays(s) {
 }`,
     solutionCode: `function countDecodeWays(s) {
@@ -8718,6 +8791,7 @@ tokenize("3.5-1");
 // ['3.5', '-', '1'] — a multi-character decimal number stays a single token
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function tokenize(expr) {
 }`,
     solutionCode: `function tokenize(expr) {
@@ -8840,6 +8914,7 @@ placeItemsDense(
 // c → col 4, row 1 — dense packing fills that leftover gap instead of only placing forward
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function placeItemsDense(items, columns) {
 }`,
     solutionCode: `function placeItemsDense(items, columns) {
@@ -8905,6 +8980,7 @@ placeItemsSparse(
 // c → col 3, row 2 — the forward-only cursor continues from where b left off, never backtracking to row 1's leftover gap
 \`\`\``,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `function placeItemsSparse(items, columns) {
 }`,
     solutionCode: `function placeItemsSparse(items, columns) {
