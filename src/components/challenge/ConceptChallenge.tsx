@@ -7,11 +7,9 @@ import { CheckCircle2, Loader2, Play, RotateCcw } from "lucide-react";
 
 import { ChallengeDescription } from "@/features/practice/components/ChallengeDescription";
 import { CodeEditor } from "@/components/shared/CodeEditor";
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { ChallengePrompt } from "@/features/practice/components/ChallengePrompt";
-import {
-  ChallengeEmptyState,
-  ChallengePremiumLocked,
-} from "@/features/practice/components/ChallengeStates";
+import { ChallengeEmptyState } from "@/features/practice/components/ChallengeStates";
 import { ChallengePlayground } from "@/features/practice/components/ChallengePlayground";
 import { HintsPanel } from "@/features/practice/components/HintsPanel";
 import { SolutionPanel } from "@/components/shared/SolutionPanel";
@@ -42,7 +40,14 @@ export function ConceptChallenge({
   isPremiumLocked,
 }: Props) {
   if (!challenge) return <ChallengeEmptyState />;
-  if (isPremiumLocked) return <ChallengePremiumLocked />;
+  if (isPremiumLocked)
+    return (
+      <PremiumLocked
+        title="Premium challenge"
+        description="Upgrade to Premium to unlock this coding challenge."
+        isLoggedIn={isLoggedIn}
+      />
+    );
   return (
     <ChallengeWorkspace
       challenge={challenge}

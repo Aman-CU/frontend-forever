@@ -53,6 +53,13 @@ export const uiBattleChallenges = pgTable(
     solutionCss: text("solution_css").notNull().default(""),
     solutionJs: text("solution_js").notNull().default(""),
     isPremium: boolean("is_premium").notNull().default(false),
+    // Feature 38: a small hand-picked flagship set of free (Easy, non-premium)
+    // challenges also gets a free solution — everything else's solution stays
+    // gated on the viewer's own premium status regardless of the challenge's
+    // own isPremium. Meaningless (ignored) on a challenge where isPremium is
+    // true — the whole challenge is locked before solution visibility is ever
+    // considered.
+    isSolutionFree: boolean("is_solution_free").notNull().default(false),
     orderIndex: integer("order_index").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },

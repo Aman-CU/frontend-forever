@@ -190,6 +190,13 @@
       "when": 1785170372364,
       "tag": "0026_leaderboard_query_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1785866459499,
+      "tag": "0027_feature38_premium_gating_schema",
+      "breakpoints": true
     }
   ]
 }

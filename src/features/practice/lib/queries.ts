@@ -3,9 +3,23 @@ import { unstable_cache } from "next/cache";
 import { and, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { challenges, userChallengeSubmissions } from "@/lib/schema";
+import { challenges, profiles, userChallengeSubmissions } from "@/lib/schema";
 import type { ChallengeDifficulty } from "@/lib/constants";
 import { PRACTICE_CATEGORIES, type PracticeCategory } from "@/features/practice/lib/practiceCategories";
+
+// Duplicated locally rather than imported from features/learn or any other
+// feature — features never import other features. Same precedent as
+// features/interview-prep and features/playground's own copies (see either
+// file's queries.ts header comment). This is the *viewer's* premium status,
+// independent of a challenge's own isPremium flag (Feature 38's real gate).
+export const getIsPremiumUser = cache(async (userId: string): Promise<boolean> => {
+  const row = await db.query.profiles.findFirst({
+    columns: { isPremium: true, premiumExpiresAt: true },
+    where: eq(profiles.id, userId),
+  });
+  if (!row?.isPremium) return false;
+  return !row.premiumExpiresAt || row.premiumExpiresAt > new Date();
+});
 
 export type PracticeChallengeSummary = {
   id: string;
