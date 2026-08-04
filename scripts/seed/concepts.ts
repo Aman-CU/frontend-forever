@@ -79,6 +79,7 @@ export const CONCEPTS: ConceptSeed[] = [
       "Compare ES Modules' static import/export syntax to CommonJS's dynamic require, and why the difference matters for tree-shaking and interop.",
     category: "javascript-runtime",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 8,
   },
 
@@ -99,6 +100,7 @@ export const CONCEPTS: ConceptSeed[] = [
       "Understand how Promises model a future value through pending/fulfilled/rejected states, and how async/await is syntax over that same mechanism.",
     category: "javascript-runtime",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 10,
   },
 
@@ -109,6 +111,7 @@ export const CONCEPTS: ConceptSeed[] = [
       "Learn the two standard fixes for handlers that fire too often — debounce waits for a pause, throttle caps the rate — and when to reach for each.",
     category: "javascript-runtime",
     difficulty: "intermediate",
+    isPremium: true,
     orderIndex: 11,
   },
 
@@ -119,6 +122,7 @@ export const CONCEPTS: ConceptSeed[] = [
       "See how composing small functions together and transforming multi-argument functions into chained single-argument calls leads to more reusable, pipeline-style code.",
     category: "javascript-runtime",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 12,
   },
 
@@ -129,6 +133,7 @@ export const CONCEPTS: ConceptSeed[] = [
       "Understand how JavaScript's garbage collector reclaims unreachable objects, and the common patterns — stray closures, detached DOM nodes, forgotten listeners — that leak memory anyway.",
     category: "javascript-runtime",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 13,
   },
 
@@ -139,6 +144,7 @@ export const CONCEPTS: ConceptSeed[] = [
       "Learn how function* and yield produce values lazily on demand, and how the iterator protocol powers for...of and the spread operator.",
     category: "javascript-runtime",
     difficulty: "advanced",
+    isPremium: true,
     orderIndex: 14,
   },
 
@@ -171,7 +177,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Compare localStorage, sessionStorage, cookies, and IndexedDB — their capacity, lifetime, and when each is the right tool for persisting client-side data.",
     category: "browser-internals",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 3,
   },
 
@@ -192,7 +197,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Understand why the browser blocks cross-origin requests by default, what a preflight request checks, and how CORS headers opt back in safely.",
     category: "browser-internals",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 5,
   },
 
@@ -279,7 +283,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Understand how useRef holds a mutable value across renders without triggering one, and how useImperativeHandle exposes an imperative API from a child component.",
     category: "react",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 4,
   },
 
@@ -290,7 +293,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "See how prop drilling forces data through components that don't need it, and how the Context API lets any descendant read shared state directly.",
     category: "react",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 5,
   },
 
@@ -311,7 +313,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Compare render props, children, and compound components — three patterns for sharing behavior between components without prop drilling or inheritance.",
     category: "react",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 7,
   },
 
@@ -429,7 +430,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Trace how position: relative/absolute/fixed/sticky place elements, and how z-index only compares within the same stacking context.",
     category: "css",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 6,
   },
 
@@ -506,7 +506,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "See how generic type parameters let a function or type work across many concrete types while still catching mismatches at compile time.",
     category: "typescript",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 3,
   },
 
@@ -517,7 +516,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Learn how Partial, Pick, Omit, and Record transform existing types instead of redefining them by hand, and how they compose together.",
     category: "typescript",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 4,
   },
 
@@ -528,7 +526,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Use control-flow analysis, type guards, and discriminated unions to refine wide types to precise ones at compile time.",
     category: "typescript",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 5,
   },
 
@@ -604,7 +601,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Learn how tab order, focus traps, and visible focus indicators let a keyboard-only user operate every interactive element on a page.",
     category: "accessibility",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 4,
   },
 
@@ -615,7 +611,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "See how labels, error messaging, and aria-describedby connect a form control to the information a screen reader needs to announce it correctly.",
     category: "accessibility",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 5,
   },
 
@@ -671,7 +666,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "See how splitting a bundle by route or component lets the browser download only the code a page actually needs, and how to measure what's bloating it.",
     category: "performance",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 2,
   },
 
@@ -682,7 +676,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Understand preload/prefetch/preconnect hints and async/defer script loading, and how each changes what the browser fetches early versus what it can defer.",
     category: "performance",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 3,
   },
 
@@ -693,7 +686,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Measure and optimize LCP, INP, and CLS — Google's metrics for real-world page experience and search ranking.",
     category: "performance",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 4,
   },
 
@@ -704,7 +696,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "See how windowing renders only the visible rows of a huge list, keeping the DOM node count — and scroll performance — constant regardless of list size.",
     category: "performance",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 5,
   },
 
@@ -750,7 +741,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "See how building a UI from small, independently testable components — often backed by a shared design system — scales better than one big page-level component.",
     category: "system-design",
     difficulty: "intermediate",
-    isPremium: true,
     orderIndex: 1,
   },
 
@@ -761,7 +751,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Compare REST, GraphQL, and RPC-style APIs, and the client-side tradeoffs of fetching data on the server, on mount, or via a cache-aware library.",
     category: "system-design",
     difficulty: "advanced",
-    isPremium: true,
     orderIndex: 2,
   },
 
@@ -772,7 +761,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Compare polling, Server-Sent Events, and WebSockets for pushing live updates to a client, and when each one's tradeoffs make it the right choice.",
     category: "system-design",
     difficulty: "advanced",
-    isPremium: true,
     orderIndex: 3,
   },
 
@@ -783,7 +771,6 @@ export const CONCEPTS: ConceptSeed[] = [
       "Design the pagination, caching, and scroll-position contract behind a feed that loads more content as the user scrolls, without janky re-fetches or lost position.",
     category: "system-design",
     difficulty: "advanced",
-    isPremium: true,
     orderIndex: 4,
   },
 

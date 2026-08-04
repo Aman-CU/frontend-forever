@@ -63,34 +63,40 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
     userId ? getIsPremiumUser(userId) : Promise.resolve(false),
   ]);
 
-  // Server-side premium gate seam (Feature 38 fleshes this out). Always false
-  // today for challenges (no challenge is premium yet); real for Build tab as
-  // of Feature 26 — 3 of the 4 seeded project briefs are premium.
-  const isPremiumLocked = (challenge?.isPremium ?? false) && !isPremiumUser;
-  const isBuildPremiumLocked = (projectBrief?.isPremium ?? false) && !isPremiumUser;
+  // Feature 38: one concept-level gate drives Simulate/Challenge/Interview/
+  // Build together — replaces the old per-item isPremium checks on
+  // challenge/projectBrief/interviewQuestions (those columns are now dead for
+  // concept-linked rows; challenges.isPremium still matters for Practice's
+  // standalone rows). Understand is never gated — see progress-tracker.md's
+  // Feature 38 entry: the SEO/GEO crawl story and the product's stated
+  // differentiator (the simulator) both depend on every concept staying
+  // browsable, so only the other 4 tabs lock.
+  const isPremiumLocked = concept.isPremium && !isPremiumUser;
 
   // Never serialize the reference solution into the client payload for a locked
-  // challenge — premium content is gated server-side (security.md), the client
+  // concept — premium content is gated server-side (security.md), the client
   // UI is cosmetic only.
   const clientChallenge =
     challenge && isPremiumLocked ? { ...challenge, solutionCode: "" } : challenge;
 
-  // Same server-side gate, per question: strip the answer (never send it to a
-  // non-premium client) and flag isLocked so the tab can render a teaser instead
-  // of silently omitting the question. Currently unreachable — no concept-linked
-  // question is premium yet — but every future one is gated the moment it's added.
-  const clientInterviewQuestions = interviewQuestions.map((q) => {
-    const isLocked = q.isPremium && !isPremiumUser;
-    return isLocked ? { ...q, answer: "", isLocked } : { ...q, isLocked };
-  });
+  // Same server-side gate, applied uniformly per question now that the whole
+  // Interview tab locks together — strip every answer (never send it to a
+  // non-premium client) and flag isLocked so QuestionCard renders its existing
+  // "question visible, answer locked" teaser instead of silently omitting the
+  // question.
+  const clientInterviewQuestions = interviewQuestions.map((q) => ({
+    ...q,
+    answer: isPremiumLocked ? "" : q.answer,
+    isLocked: isPremiumLocked,
+  }));
 
   // Same server-side gate for the Build tab: never serialize the brief,
   // starter code, solution, or tests into the client payload for a locked
-  // project — ConceptBuild renders BuildPremiumLocked instead and ignores this
+  // concept — ConceptBuild renders PremiumLocked instead and ignores this
   // data, but it must never reach the client bundle in the first place
   // (security.md).
   const clientProjectBrief =
-    projectBrief && isBuildPremiumLocked
+    projectBrief && isPremiumLocked
       ? { ...projectBrief, description: "", starterCode: "", solutionCode: "", testCases: [] }
       : projectBrief;
 
@@ -111,6 +117,7 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
       conceptId={concept.id}
       isLoggedIn={userId !== null}
       initialCompleted={initialSimulated}
+      isPremiumLocked={isPremiumLocked}
     />
   );
 
@@ -140,7 +147,7 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
       conceptId={concept.id}
       isLoggedIn={userId !== null}
       initialCompleted={initialBuilt}
-      isPremiumLocked={isBuildPremiumLocked}
+      isPremiumLocked={isPremiumLocked}
     />
   );
 
