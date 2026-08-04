@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronRight, Lock } from "lucide-react";
+import { Check, ChevronRight, Lock, LockOpen } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { CategoryMeta, ColorKey } from "@/features/learn/lib/categoryMeta";
@@ -125,9 +125,13 @@ export function CategoryAccordionItem({ category, meta, pathname, isPremiumUser 
 
                       <span className="flex-1 truncate">{concept.title}</span>
 
-                      {concept.isPremium && !isPremiumUser && !isActive && (
-                        <Lock className="h-3 w-3 shrink-0 text-text-muted" aria-label="Premium" />
-                      )}
+                      {concept.isPremium &&
+                        !isActive &&
+                        (isPremiumUser ? (
+                          <LockOpen className="h-3 w-3 shrink-0 text-premium" aria-label="Premium (unlocked)" />
+                        ) : (
+                          <Lock className="h-3 w-3 shrink-0 text-text-muted" aria-label="Premium" />
+                        ))}
                     </Link>
                   );
                 })
