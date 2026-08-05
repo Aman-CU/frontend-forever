@@ -73,14 +73,27 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
   // browsable, so only the other 4 tabs lock.
   const isPremiumLocked = concept.isPremium && !isPremiumUser;
 
-  // Never serialize the description, starter code, tests, hints, or reference
-  // solution into the client payload for a locked concept — ConceptChallenge's
-  // locked branch never reads these fields, but React still serializes every
-  // prop that crosses the server->client boundary regardless of what actually
-  // renders. Mirrors clientProjectBrief's redaction below.
+  // Never serialize the title, description, starter code, tests, hints, or
+  // reference solution into the client payload for a locked concept —
+  // ConceptChallenge's locked branch renders a fully generic "Premium
+  // challenge" heading and never reads these fields, but React still
+  // serializes every prop that crosses the server->client boundary regardless
+  // of what actually renders. `title` included as of a later regression pass
+  // — a specific challenge title (e.g. "Build a Mini Redux-Style Store") is
+  // exactly the kind of thing someone could Google straight to an outside
+  // walkthrough, so it's real value, not incidental metadata. Mirrors
+  // clientProjectBrief's redaction below.
   const clientChallenge =
     challenge && isPremiumLocked
-      ? { ...challenge, description: "", starterCode: "", solutionCode: "", testCases: [], hints: [] }
+      ? {
+          ...challenge,
+          title: "",
+          description: "",
+          starterCode: "",
+          solutionCode: "",
+          testCases: [],
+          hints: [],
+        }
       : challenge;
 
   // Interview shows a full PremiumLocked wall when the concept is locked, not
@@ -92,14 +105,16 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
   // future code path inside it to keep redacting individual fields correctly.
   const clientInterviewQuestions = isPremiumLocked ? [] : interviewQuestions;
 
-  // Same server-side gate for the Build tab: never serialize the brief,
-  // starter code, solution, or tests into the client payload for a locked
-  // concept — ConceptBuild renders PremiumLocked instead and ignores this
-  // data, but it must never reach the client bundle in the first place
-  // (security.md).
+  // Same server-side gate for the Build tab: never serialize the title,
+  // brief, starter code, solution, or tests into the client payload for a
+  // locked concept — ConceptBuild renders PremiumLocked instead (a fully
+  // generic "Premium build project" heading, never projectBrief.title) and
+  // ignores this data, but it must never reach the client bundle in the
+  // first place (security.md). `title` added in a later regression pass —
+  // same gap, same fix, as clientChallenge above.
   const clientProjectBrief =
     projectBrief && isPremiumLocked
-      ? { ...projectBrief, description: "", starterCode: "", solutionCode: "", testCases: [] }
+      ? { ...projectBrief, title: "", description: "", starterCode: "", solutionCode: "", testCases: [] }
       : projectBrief;
 
   // Built on the server (MDX needs the server) and passed into the client tab
