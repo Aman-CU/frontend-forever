@@ -13,6 +13,14 @@ export const UI_BATTLE_CHALLENGES: UiBattleChallengeSeed[] = [
     description:
       "Recreate this login card pixel-for-pixel using vanilla HTML, CSS, and JavaScript. Pay attention to spacing, the input focus states, and the button's click interaction — clicking \"Sign In\" should change its own label.",
     difficulty: "easy",
+    // Feature 38: the flagship free-solution pick — only 2 UI Battle
+    // challenges exist today, so with the whole catalog at Easy/free there's
+    // nothing to actually gate yet. This flag is the honest amount of
+    // premium story available at this content volume: one free solution as
+    // the norm, the other (profile-card-recreate) gated on isPremiumUser
+    // like every future non-flagship challenge will be. Revisit the split
+    // once a real Medium/Hard catalog exists.
+    isSolutionFree: true,
     targetImageUrl: "/playground/battles/login-card-recreate.png",
     targetWidth: 400,
     targetHeight: 480,

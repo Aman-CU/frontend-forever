@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Lock, Target } from "lucide-react";
+import { ArrowRight, Target } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
 import type { ChallengeDifficulty } from "@/lib/constants";
 
 const DIFFICULTY_STYLES: Record<ChallengeDifficulty, string> = {
@@ -18,6 +19,8 @@ type Props = {
   difficulty: ChallengeDifficulty;
   targetImageUrl: string;
   isPremium?: boolean;
+  // Drives PremiumBadge's icon only — the real gate lives on the detail page.
+  isPremiumUser: boolean;
   // Set on the first card in the grid — that image is reliably the page's
   // Largest Contentful Paint element (above the fold, sizable), and next/image
   // lazy-loads by default. priority disables that and preloads it instead.
@@ -38,6 +41,7 @@ export function BattleListCard({
   difficulty,
   targetImageUrl,
   isPremium,
+  isPremiumUser,
   priority,
 }: Props) {
   return (
@@ -82,12 +86,7 @@ export function BattleListCard({
           >
             {difficulty}
           </span>
-          {isPremium && (
-            <span className="flex items-center gap-1 rounded-full bg-premium-light px-2 py-0.5 text-xs font-semibold text-premium">
-              <Lock className="size-3" aria-hidden />
-              Premium
-            </span>
-          )}
+          {isPremium && <PremiumBadge isPremiumUser={isPremiumUser} />}
         </div>
 
         <h3 className="text-base font-semibold text-text-primary">{title}</h3>

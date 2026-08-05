@@ -31,6 +31,10 @@ export type UiBattleDetail = UiBattleSummary & {
   solutionHtml: string;
   solutionCss: string;
   solutionJs: string;
+  // Feature 38: only meaningful when isPremium is false — a small flagship
+  // set of free challenges also keeps a free solution; every other free
+  // challenge's solution still gates on the viewer's own premium status.
+  isSolutionFree: boolean;
 };
 
 // Same "concepts" tag reuse pattern would be wrong here — this table has
@@ -84,6 +88,7 @@ export const getUiBattleBySlug = unstable_cache(
       solutionCss: row.solutionCss,
       solutionJs: row.solutionJs,
       isPremium: row.isPremium,
+      isSolutionFree: row.isSolutionFree,
     };
   },
   ["ui-battle-by-slug"],

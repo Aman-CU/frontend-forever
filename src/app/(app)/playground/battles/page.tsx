@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
+import { getCachedSession } from "@/lib/auth/server";
 import { BattleListCard } from "@/features/playground/components/BattleListCard";
-import { getUiBattleCatalog } from "@/features/playground/lib/queries";
+import { getIsPremiumUser, getUiBattleCatalog } from "@/features/playground/lib/queries";
 
 export const metadata: Metadata = {
   title: "UI Battles | Frontend Forever",
@@ -9,7 +10,11 @@ export const metadata: Metadata = {
 };
 
 export default async function UiBattlesListPage() {
-  const battles = await getUiBattleCatalog();
+  const session = await getCachedSession();
+  const [battles, isPremiumUser] = await Promise.all([
+    getUiBattleCatalog(),
+    session?.user ? getIsPremiumUser(session.user.id) : Promise.resolve(false),
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-10 lg:px-8">
@@ -38,6 +43,7 @@ export default async function UiBattlesListPage() {
               difficulty={battle.difficulty}
               targetImageUrl={battle.targetImageUrl}
               isPremium={battle.isPremium}
+              isPremiumUser={isPremiumUser}
               priority={index === 0}
             />
           ))}

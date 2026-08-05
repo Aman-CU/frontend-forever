@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { getCachedSession } from "@/lib/auth/server";
 import { BattleCard } from "@/features/playground/components/BattleCard";
 import { ExperimentCard } from "@/features/playground/components/ExperimentCard";
 import { EXPERIMENTS } from "@/features/playground/experiments/registry";
-import { getUiBattleCatalog } from "@/features/playground/lib/queries";
+import { getIsPremiumUser, getUiBattleCatalog } from "@/features/playground/lib/queries";
 
 const BATTLE_PREVIEW_LIMIT = 5;
 const EXPERIMENT_PREVIEW_LIMIT = 5;
@@ -28,7 +29,12 @@ export default async function PlaygroundPage() {
   // Experiments from the in-repo registry (Feature 54). Same hub-preview-to-real
   // conversion Features 50/51/53 did once their own feature shipped. Honestly
   // shows just the pilot in each row until more ship.
-  const battles = (await getUiBattleCatalog()).slice(0, BATTLE_PREVIEW_LIMIT);
+  const session = await getCachedSession();
+  const [battlesFull, isPremiumUser] = await Promise.all([
+    getUiBattleCatalog(),
+    session?.user ? getIsPremiumUser(session.user.id) : Promise.resolve(false),
+  ]);
+  const battles = battlesFull.slice(0, BATTLE_PREVIEW_LIMIT);
   const experiments = EXPERIMENTS.slice(0, EXPERIMENT_PREVIEW_LIMIT);
 
   return (
@@ -56,7 +62,7 @@ export default async function PlaygroundPage() {
         <div className={SCROLL_ROW_CLASS} style={{ scrollbarWidth: "none" }}>
           {battles.map((item, index) => (
             <div key={item.slug} className="w-56 shrink-0">
-              <BattleCard {...item} priority={index === 0} />
+              <BattleCard {...item} isPremiumUser={isPremiumUser} priority={index === 0} />
             </div>
           ))}
         </div>
