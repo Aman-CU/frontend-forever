@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Moon,
   Settings,
+  Sparkles,
   Sun,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -45,9 +46,14 @@ function getInitials(name: string | null, email: string): string {
 
 type UserDropdownProps = {
   user: DropdownUser;
+  // Feature 38 Stage 9. Display-only, never a gate — the real premium checks
+  // all live server-side on the routes that own the content. Optional and
+  // defaulting to false so the marketing Navbar, which has no profile read,
+  // simply doesn't show the item rather than showing a wrong one.
+  isPremiumUser?: boolean;
 };
 
-export function UserDropdown({ user }: UserDropdownProps) {
+export function UserDropdown({ user, isPremiumUser = false }: UserDropdownProps) {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -102,6 +108,20 @@ export function UserDropdown({ user }: UserDropdownProps) {
           <p className="truncate text-xs text-text-muted">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
+        {/* The one upgrade entry point that exists at every viewport width.
+            AppNavbar's pill can only appear from 1366px up without pushing
+            the avatar off-screen, and the mobile menu stops at 1024px — which
+            left 1024–1365px with no navbar route to pricing at all. This
+            dropdown is present at every width, so it closes that gap. */}
+        {!isPremiumUser && (
+          <DropdownMenuItem
+            onClick={() => router.push("/pricing")}
+            className="text-premium focus:bg-premium-light focus:text-premium [&_svg]:!text-premium"
+          >
+            <Sparkles className="mr-2 size-4" />
+            Upgrade to Premium
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => router.push("/dashboard")}>
           <LayoutDashboard className="mr-2 size-4" />
           Dashboard

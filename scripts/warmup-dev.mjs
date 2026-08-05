@@ -31,6 +31,7 @@ const TIMEOUT_MS = 180_000;
 const ROUTES = [
   "/",
   "/login",
+  "/pricing",
   "/learn",
   "/learn/accessibility/accessible-forms",
   "/practice",

@@ -13,6 +13,7 @@ import {
   Map,
   Menu,
   Search,
+  Sparkles,
   Trophy,
   Users,
   X,
@@ -36,9 +37,17 @@ type AppNavbarProps = {
   initialUser?: SessionUser | null;
   initialStreak?: number;
   initialXp?: number;
+  // Display-only: hides the upgrade pill from people who already paid. Never
+  // a gate — every locked surface re-checks premium server-side for itself.
+  isPremiumUser?: boolean;
 };
 
-export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: AppNavbarProps = {}) {
+export function AppNavbar({
+  initialUser,
+  initialStreak = 0,
+  initialXp = 0,
+  isPremiumUser = false,
+}: AppNavbarProps = {}) {
   const pathname = usePathname();
   const { user, isLoading } = useUser(initialUser);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -90,6 +99,31 @@ export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: App
           </kbd>
         </button>
 
+        {/* Upgrade pill (Feature 38 Stage 9) — build-plan.md calls for an
+            "Upgrade to Premium" pill in the logged-in navbar routing to the
+            pricing page. Hidden entirely once the user is premium: there's
+            nothing left to sell them, and it buys back this pill's width.
+
+            Breakpoint is min-[1366px], NOT xl: — measured, not chosen. This
+            row already has no slack (see the search trigger's note above);
+            adding this 90px pill at xl: pushed the account avatar to
+            x=1307–1339 in a 1280px viewport, i.e. clean off-screen, for
+            every non-premium user. That is the same class of bug the
+            ui-registry entry for this file warns about, and it reproduced
+            immediately on the sweep it tells you to run. 1366px is the first
+            width where the pill fits with the avatar fully on-screen
+            (verified 1024/1152/1280/1366/1440/1536/1920, free and premium).
+            Do not lower it without re-running that sweep. */}
+        {!isLoading && user && !isPremiumUser && (
+          <Link
+            href="/pricing"
+            className="hidden h-8 shrink-0 items-center gap-1.5 rounded-lg bg-premium-light px-2.5 text-xs font-semibold text-premium transition-colors hover:bg-premium hover:text-premium-foreground min-[1366px]:flex"
+          >
+            <Sparkles className="size-3.5" aria-hidden />
+            Upgrade
+          </Link>
+        )}
+
         {/* Right cluster (desktop) — only once session resolves */}
         {!isLoading && user && (
           <div className="hidden shrink-0 items-center gap-5 lg:flex">
@@ -107,7 +141,7 @@ export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: App
               />
             </button>
 
-            <UserDropdown user={user} />
+            <UserDropdown user={user} isPremiumUser={isPremiumUser} />
           </div>
         )}
 
@@ -136,10 +170,24 @@ export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: App
             ))}
           </nav>
 
+          {/* The desktop pill is xl:-only for width reasons, so the mobile
+              menu carries its own copy — otherwise everything below 1280px
+              has no navbar route to pricing at all. */}
+          {!isLoading && user && !isPremiumUser && (
+            <Link
+              href="/pricing"
+              onClick={() => setIsMenuOpen(false)}
+              className="mt-3 flex items-center gap-2 rounded-lg bg-premium-light px-2 py-3 text-sm font-semibold text-premium"
+            >
+              <Sparkles className="size-4" aria-hidden />
+              Upgrade to Premium
+            </Link>
+          )}
+
           {!isLoading && user && (
             <div className="mt-3 flex items-center justify-between border-t border-border pt-4">
               <AppNavbarStats xp={initialXp} streak={initialStreak} />
-              <UserDropdown user={user} />
+              <UserDropdown user={user} isPremiumUser={isPremiumUser} />
             </div>
           )}
         </div>
