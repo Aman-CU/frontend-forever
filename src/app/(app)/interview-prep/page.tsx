@@ -73,6 +73,7 @@ export default async function InterviewPrepGetStartedPage() {
               collectionKey={key}
               meta={COLLECTION_META[key]}
               summary={summaryByCollection.get(key) ?? null}
+              isPremiumUser={isPremiumUser}
             />
           ))}
         </div>

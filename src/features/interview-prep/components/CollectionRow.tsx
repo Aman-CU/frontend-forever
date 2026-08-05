@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
 import type { CollectionMeta, InterviewPrepCollectionKey } from "@/features/interview-prep/lib/collectionMeta";
 import type { CollectionSummary } from "@/features/interview-prep/lib/queries";
+
+// The one fully-premium collection (Feature 38) — same constant as the
+// [collection]/page.tsx routes' FF_75_KEY check.
+const PREMIUM_COLLECTION_KEY: InterviewPrepCollectionKey = "ff-75";
 
 type Props = {
   collectionKey: InterviewPrepCollectionKey;
@@ -11,11 +16,12 @@ type Props = {
   // System Design only until its first MDX guide (Feature 49) is authored;
   // it has no row in collection_questions itself either way.
   summary: CollectionSummary | null;
+  isPremiumUser: boolean;
 };
 
 // Row pattern reused for every list in Phase 6 (build-plan.md, Feature 30):
 // icon square → title → description → count + progress bar → chevron.
-export function CollectionRow({ collectionKey, meta, summary }: Props) {
+export function CollectionRow({ collectionKey, meta, summary, isPremiumUser }: Props) {
   const { icon: Icon, label, description } = meta;
   const isComingSoon = summary === null;
   const questionCount = summary?.questionCount ?? 0;
@@ -32,7 +38,12 @@ export function CollectionRow({ collectionKey, meta, summary }: Props) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <h3 className="text-sm font-semibold text-text-primary">{label}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="truncate text-sm font-semibold text-text-primary">{label}</h3>
+          {collectionKey === PREMIUM_COLLECTION_KEY && (
+            <PremiumBadge isPremiumUser={isPremiumUser} size="xs" />
+          )}
+        </div>
         <p className="mt-0.5 truncate text-xs text-text-muted">{description}</p>
 
         {!isComingSoon && (
