@@ -9,7 +9,7 @@ import { toPlainTextSummary, safeJsonLd } from "@/lib/seo";
 import { Markdown } from "@/components/shared/Markdown";
 import { getCachedSession } from "@/lib/auth/server";
 import { PremiumLocked } from "@/components/shared/PremiumLocked";
-import { isInterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
+import { FF_75_KEY, isInterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
 import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
 import {
   getAdjacentCollectionQuestions,
@@ -150,7 +150,10 @@ export async function generateMetadata({
 
   const session = await getCachedSession();
   const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
-  const isLocked = detail.isPremium && !isPremiumUser;
+  // FF 75 is fully premium regardless of the underlying question's own
+  // isPremium flag (that flag drives the 60/40 split in the question's real
+  // collection — ff-javascript/react/nextjs — not FF 75's all-locked bundle).
+  const isLocked = (collection === FF_75_KEY || detail.isPremium) && !isPremiumUser;
 
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/${collection}/${slug}`;
@@ -204,7 +207,8 @@ export default async function CollectionQuestionPage({
 
   const session = await getCachedSession();
   const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
-  const isQuestionLocked = detail.isPremium && !isPremiumUser;
+  // Same FF 75 override as generateMetadata above.
+  const isQuestionLocked = (collection === FF_75_KEY || detail.isPremium) && !isPremiumUser;
 
   const [{ prev, next }, baseUrl] = await Promise.all([
     getAdjacentCollectionQuestions(collection, slug),
