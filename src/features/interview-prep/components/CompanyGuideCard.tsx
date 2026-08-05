@@ -30,9 +30,9 @@ export function CompanyGuideCard({ company, isPremiumUser }: Props) {
       <CompanyBadge name={company.name} />
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <h3 className="truncate text-sm font-semibold text-text-primary">{company.name}</h3>
-          <PremiumBadge isPremiumUser={isPremiumUser} size="xs" />
+          <PremiumBadge isPremiumUser={isPremiumUser} size="xs" iconOnly />
         </div>
         {isComingSoon ? (
           <span className="mt-0.5 inline-block rounded-full bg-surface-secondary px-2 py-0.5 text-[0.6875rem] font-semibold text-text-secondary">
