@@ -3,13 +3,14 @@
 import { useId, useState } from "react";
 
 import Link from "next/link";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { PRICING_LOGIN_HREF, type PricingViewerState } from "@/features/pricing/lib/viewer";
 
 type Props = {
-  label: string;
+  /** Plan name only — the verb depends on who's looking. */
+  planName: string;
   viewerState: PricingViewerState;
   /** Filled treatment for the plans we're steering people toward. */
   emphasis?: boolean;
@@ -26,26 +27,25 @@ const BASE =
 // that would 404, or fake a payment flow, the logged-in-free path states
 // plainly that payments aren't live yet. `startCheckout` below is the single
 // seam Feature 39 replaces; nothing else on this page needs to change.
-export function PlanCtaButton({ label, viewerState, emphasis, className }: Props) {
+export function PlanCtaButton({ planName, viewerState, emphasis, className }: Props) {
   const [checkoutRequested, setCheckoutRequested] = useState(false);
   // Four of these render on one page — the note's id has to be unique per
   // instance or aria-describedby points every button at the first note.
   const noteId = useId();
 
-  if (viewerState === "premium") {
-    return (
-      <div
-        className={cn(
-          BASE,
-          "cursor-default border border-success/30 bg-success-light text-success",
-          className,
-        )}
-      >
-        <Check className="size-4" aria-hidden />
-        You already have full access
-      </div>
-    );
-  }
+  // An existing subscriber is not done with this page. Someone on Monthly has
+  // a real reason to move to Annual or Lifetime, and an earlier version of
+  // this component locked all four cards behind an inert "you already have
+  // full access" state, which left them no way to do it. They get working
+  // CTAs, just phrased as a change of plan rather than a first purchase.
+  //
+  // Note what is deliberately NOT claimed: which plan they are currently on.
+  // Nothing in the schema records it — `profiles` has `isPremium` and
+  // `premiumExpiresAt` and nothing else — so no card is marked "your current
+  // plan" and no card is disabled. Feature 39 (Stripe) is what will know the
+  // subscription's real plan; that's when this can get smarter.
+  const isExistingSubscriber = viewerState === "premium";
+  const label = isExistingSubscriber ? `Switch to ${planName}` : `Get ${planName}`;
 
   if (viewerState === "anonymous") {
     return (
@@ -65,7 +65,8 @@ export function PlanCtaButton({ label, viewerState, emphasis, className }: Props
     );
   }
 
-  // Logged in, not premium — the only path that needs real checkout.
+  // Logged in — either upgrading for the first time or changing plan. Both
+  // land in the same place: the checkout Feature 39 will build.
   return (
     <div className={cn("w-full", className)}>
       <button
@@ -88,8 +89,9 @@ export function PlanCtaButton({ label, viewerState, emphasis, className }: Props
           role="status"
           className="mt-2.5 text-center text-xs leading-relaxed text-text-secondary"
         >
-          Card payments aren&apos;t switched on just yet — you&apos;ll be able to complete
-          checkout right here shortly.
+          {isExistingSubscriber
+            ? "Changing plan isn't switched on just yet — your current access carries on unaffected in the meantime."
+            : "Card payments aren't switched on just yet — you'll be able to complete checkout right here shortly."}
         </p>
       )}
     </div>

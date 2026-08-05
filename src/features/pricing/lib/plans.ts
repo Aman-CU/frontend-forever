@@ -30,7 +30,6 @@ export type PricingPlan = {
   /** Cycle length in months — also the divisor behind `pricePerMonth`. */
   months: number;
   cadenceLabel: string;
-  ctaLabel: string;
   /** Plan-specific lines, appended to the shared unlock list. */
   perks: string[];
   isRecommended?: boolean;
@@ -44,7 +43,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     billedTotal: 29,
     months: 1,
     cadenceLabel: "Billed monthly",
-    ctaLabel: "Get Monthly",
     perks: ["Renews monthly — cancel anytime"],
   },
   {
@@ -54,7 +52,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     billedTotal: 57,
     months: 3,
     cadenceLabel: "Billed $57 every 3 months",
-    ctaLabel: "Get Quarterly",
     perks: ["Renews quarterly — cancel anytime", "Enough runway for a full interview loop"],
   },
   {
@@ -64,7 +61,6 @@ export const PRICING_PLANS: PricingPlan[] = [
     billedTotal: 120,
     months: 12,
     cadenceLabel: "Billed $120 per year",
-    ctaLabel: "Get Annual",
     perks: [
       "Renews yearly — cancel anytime",
       "Best value if you're preparing over a few months",
@@ -77,7 +73,6 @@ export type LifetimePlan = {
   id: "lifetime";
   name: string;
   price: number;
-  ctaLabel: string;
   perks: string[];
 };
 
@@ -85,7 +80,6 @@ export const LIFETIME_PLAN: LifetimePlan = {
   id: "lifetime",
   name: "Lifetime",
   price: 180,
-  ctaLabel: "Get Lifetime",
   perks: [
     "One payment — never renews, never expires",
     "Every premium feature we ship from here on is included",

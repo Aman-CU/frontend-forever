@@ -78,7 +78,7 @@ export function LifetimePlanCard({ viewerState }: Props) {
           </p>
 
           <div className="mt-6">
-            <PlanCtaButton label={LIFETIME_PLAN.ctaLabel} viewerState={viewerState} emphasis />
+            <PlanCtaButton planName={LIFETIME_PLAN.name} viewerState={viewerState} emphasis />
           </div>
         </div>
 

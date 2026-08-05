@@ -89,7 +89,7 @@ export function PlanCard({ plan, viewerState, delay = 0 }: Props) {
 
       <div className="mt-6">
         <PlanCtaButton
-          label={plan.ctaLabel}
+          planName={plan.name}
           viewerState={viewerState}
           emphasis={plan.isRecommended}
         />

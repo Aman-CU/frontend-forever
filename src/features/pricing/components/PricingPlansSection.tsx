@@ -34,6 +34,14 @@ export function PricingPlansSection({ viewerState }: Props) {
         ))}
       </div>
 
+      {/* Existing subscribers see the switch-plan note; nobody else needs it. */}
+      {viewerState === "premium" && (
+        <p className="mt-2 text-center text-sm text-text-secondary">
+          You&apos;re already on Premium — picking a plan above changes your billing term, not
+          what you can access. Your current access carries on either way.
+        </p>
+      )}
+
       <p className="mt-2 text-center text-xs leading-relaxed text-text-muted">
         Prices in USD. Every plan unlocks exactly the same premium content — they differ only
         in how long access lasts. Discounts are calculated against the{" "}

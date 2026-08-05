@@ -8,6 +8,7 @@ import {
   Network,
   RefreshCw,
   Repeat,
+  Swords,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -32,9 +33,12 @@ import type { LucideIcon } from "lucide-react";
 // premium, which makes it the single clearest thing Premium buys, so it leads
 // the unlock list below.
 //
-// Counts are stated exactly rather than rounded up. Deliberately NOT claimed
-// anywhere on this page: UI Battles — only 2 exist, and selling a catalogue
-// of two would be overstating it.
+// Counts are stated exactly rather than rounded up. The Playground is the one
+// entry described by capability rather than by number, on purpose: the
+// catalogue is genuinely small today (2 UI Battles, 1 experiment), so "full
+// access to the Playground, its challenges and their official solutions" is
+// true and will stay true as it grows, where any figure printed here would
+// undersell it now and go stale later.
 export const CATALOG = {
   interviewQuestions: 299,
   ff75Questions: 75,
@@ -58,6 +62,7 @@ export const PREMIUM_INCLUDES: string[] = [
   `All ${CATALOG.interviewQuestions} interview questions across FF JavaScript, React and Next.js`,
   `All ${CATALOG.codingChallenges} coding challenges with official solutions`,
   `Every locked concept's Simulate, Challenge, Interview and Build tabs`,
+  "Full Playground access — UI live-coding battles and experiments, with their official solutions and source",
   `All ${CATALOG.systemDesignGuides} frontend system design guides`,
   `Company-tagged questions and filtering across ${CATALOG.companies} companies`,
   `All ${CATALOG.studyPlans} guided study plans — 1 week, 1 month and 3 months`,
@@ -72,7 +77,7 @@ export const PREMIUM_INCLUDES: string[] = [
 // 12.4k pixels tall) while telling the reader nothing new by the second
 // repeat. The Lifetime card above them carries the full itemised list, and
 // each card links back to it — so nothing is hidden, it's just said once.
-export const PREMIUM_INCLUDES_HIGHLIGHTS = PREMIUM_INCLUDES.slice(0, 4);
+export const PREMIUM_INCLUDES_HIGHLIGHTS = PREMIUM_INCLUDES.slice(0, 5);
 
 export const PREMIUM_INCLUDES_REMAINDER =
   PREMIUM_INCLUDES.length - PREMIUM_INCLUDES_HIGHLIGHTS.length;
@@ -106,6 +111,13 @@ export const PLATFORM_FEATURES: PlatformFeature[] = [
     description:
       "Solve challenges in a real editor with instant test feedback, running in a sandboxed iframe. Nothing to install, nothing to configure.",
     icon: Code2,
+  },
+  {
+    id: "playground",
+    title: "The Playground, unlocked",
+    description:
+      "UI live-coding battles — rebuild a real interface pixel-for-pixel against the spec — plus interactive experiments. Premium opens the challenges and every official solution and source file behind them.",
+    icon: Swords,
   },
   {
     id: "system-design",

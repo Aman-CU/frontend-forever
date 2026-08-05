@@ -25,17 +25,18 @@ const FOOTER_GROUPS: FooterGroup[] = [
       { label: "Roadmaps", href: "/roadmaps" },
       { label: "Interview Prep", href: "/interview-prep" },
       { label: "Leaderboard", href: "/leaderboard" },
-      // Pricing lives here rather than in the marketing navbar (Feature 38
-      // Stage 9): that nav is already six pills and documented as
-      // width-fragile between 1024 and 1100px. The conversion paths that
-      // matter are the PremiumLocked walls and the in-app upgrade CTAs
-      // anyway — this is the browsable route in, not the primary one.
-      { label: "Pricing", href: "/pricing" },
     ],
   },
   {
     heading: "Company",
     links: [
+      // Pricing leads this column, and lives in the footer rather than the
+      // marketing navbar (Feature 38 Stage 9): that nav is already six pills
+      // and documented as width-fragile between 1024 and 1100px. The
+      // conversion paths that matter are the PremiumLocked walls and the
+      // in-app upgrade CTAs anyway — this is the browsable route in, not the
+      // primary one.
+      { label: "Pricing", href: "/pricing" },
       { label: "About", href: "#" },
       { label: "Blog", href: "#" },
       { label: "Careers", href: "#" },
