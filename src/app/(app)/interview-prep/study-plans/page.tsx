@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 
 import { safeJsonLd } from "@/lib/seo";
+import { getCachedSession } from "@/lib/auth/server";
+import { getIsPremiumUser } from "@/features/interview-prep/lib/queries";
 import { getStudyPlans } from "@/features/interview-prep/lib/studyPlanQueries";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
 import { StudyPlanCard } from "@/features/interview-prep/components/StudyPlanCard";
@@ -31,6 +33,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function StudyPlansIndexPage() {
+  const session = await getCachedSession();
+  const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
   const plans = await getStudyPlans();
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/study-plans`;
@@ -74,7 +78,7 @@ export default async function StudyPlansIndexPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {plans.map((plan) => (
-          <StudyPlanCard key={plan.slug} plan={plan} />
+          <StudyPlanCard key={plan.slug} plan={plan} isPremiumUser={isPremiumUser} />
         ))}
       </div>
     </div>

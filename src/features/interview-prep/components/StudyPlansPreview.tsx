@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Clock, Flame, Star, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
 import type { StudyPlanSummary } from "@/features/interview-prep/lib/studyPlanQueries";
 
 // Icon per plan slug — meta only, no per-plan color (matches
@@ -15,13 +16,14 @@ const ICON_BY_SLUG: Record<string, LucideIcon> = {
 
 type Props = {
   plans: StudyPlanSummary[];
+  isPremiumUser: boolean;
 };
 
 // Converted from a static, schema-less teaser (Feature 30) to a real
 // server-rendered row, same conversion Feature 50 did for PlaybookPreview —
 // title/description/hoursCommitment now come from the study_plans table
 // (Feature 51), not hardcoded copy.
-export function StudyPlansPreview({ plans }: Props) {
+export function StudyPlansPreview({ plans, isPremiumUser }: Props) {
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
@@ -51,7 +53,10 @@ export function StudyPlansPreview({ plans }: Props) {
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold text-text-primary">{plan.title}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="truncate text-sm font-semibold text-text-primary">{plan.title}</h3>
+                  {plan.isPremium && <PremiumBadge isPremiumUser={isPremiumUser} size="xs" />}
+                </div>
                 <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-text-muted">
                   {plan.description}
                 </p>

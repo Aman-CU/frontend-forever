@@ -81,9 +81,9 @@ export default async function InterviewPrepGetStartedPage() {
 
       <PlaybookPreview progress={playbookProgress} isPremiumUser={isPremiumUser} />
 
-      <StudyPlansPreview plans={studyPlans} />
+      <StudyPlansPreview plans={studyPlans} isPremiumUser={isPremiumUser} />
 
-      <CompanyGuidesPreview companies={companySummaries} />
+      <CompanyGuidesPreview companies={companySummaries} isPremiumUser={isPremiumUser} />
     </div>
   );
 }

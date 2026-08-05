@@ -6,6 +6,9 @@ import { Clock, ListChecks } from "lucide-react";
 import { safeJsonLd } from "@/lib/seo";
 import { getCachedSession } from "@/lib/auth/server";
 import { STUDY_PLAN_SLUGS } from "@/lib/constants";
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
+import { getIsPremiumUser } from "@/features/interview-prep/lib/queries";
 import { getStudyPlanBySlug, isStudyPlanSlug } from "@/features/interview-prep/lib/studyPlanQueries";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
 import { StudyPlanItemRow } from "@/features/interview-prep/components/StudyPlanItemRow";
@@ -65,25 +68,40 @@ export default async function StudyPlanDetailPage({ params }: { params: Promise<
 
   const session = await getCachedSession();
   const userId = session?.user?.id ?? null;
+  const isPremiumUser = userId ? await getIsPremiumUser(userId) : false;
   const plan = await getStudyPlanBySlug(slug, userId);
   if (!plan) {
     notFound();
   }
 
+  // The whole plan is one bundle, not a per-item split — a real itinerary
+  // (concept slugs, challenge names, exact hrefs) is exactly the value being
+  // sold, so a locked plan renders a wall in place of the item list below
+  // instead of a partial/blurred one. This page is fully server-rendered
+  // (StudyPlanItemRow has no "use client" boundary), so simply not
+  // rendering the items section is enough — there's no client-component
+  // props serialization to redact separately.
+  const isPlanLocked = plan.isPremium && !isPremiumUser;
+
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/study-plans/${slug}`;
   const groupedItems = groupItems(plan.items);
 
+  // Real item titles/hrefs are the itinerary itself — excluded from
+  // structured data entirely when locked, same reasoning as the rendered
+  // list above.
   const itemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     name: `${plan.title} Frontend Interview Study Plan`,
-    itemListElement: plan.items.map((item, index) => ({
-      "@type": "ListItem",
-      position: index + 1,
-      name: item.title,
-      url: `${baseUrl}${item.href}`,
-    })),
+    itemListElement: isPlanLocked
+      ? []
+      : plan.items.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: item.title,
+          url: `${baseUrl}${item.href}`,
+        })),
   };
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
@@ -112,11 +130,7 @@ export default async function StudyPlanDetailPage({ params }: { params: Promise<
       <div className="mb-8">
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-2xl font-bold text-text-primary">{plan.title} Study Plan</h1>
-          {plan.isPremium && (
-            <span className="shrink-0 rounded-full bg-premium-light px-2.5 py-1 text-xs font-semibold text-premium">
-              Premium
-            </span>
-          )}
+          {plan.isPremium && <PremiumBadge isPremiumUser={isPremiumUser} />}
         </div>
         <p className="mt-1.5 text-sm text-text-secondary">{plan.description}</p>
         <div className="mt-4 flex items-center gap-4 text-xs text-text-muted">
@@ -131,20 +145,28 @@ export default async function StudyPlanDetailPage({ params }: { params: Promise<
         </div>
       </div>
 
-      <div className="flex flex-col gap-8">
-        {groupedItems.map(([groupLabel, items]) => (
-          <section key={groupLabel}>
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-text-muted">
-              {groupLabel}
-            </h2>
-            <div className="flex flex-col gap-2">
-              {items.map((item) => (
-                <StudyPlanItemRow key={item.id} item={item} />
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
+      {isPlanLocked ? (
+        <PremiumLocked
+          title="This study plan is Premium"
+          description="Upgrade to Premium to unlock the full itinerary."
+          isLoggedIn={!!userId}
+        />
+      ) : (
+        <div className="flex flex-col gap-8">
+          {groupedItems.map(([groupLabel, items]) => (
+            <section key={groupLabel}>
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-text-muted">
+                {groupLabel}
+              </h2>
+              <div className="flex flex-col gap-2">
+                {items.map((item) => (
+                  <StudyPlanItemRow key={item.id} item={item} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

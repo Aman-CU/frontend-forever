@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Lock, LockOpen } from "lucide-react";
 
 import { AmazonLogo } from "@/components/shared/logos/AmazonLogo";
 import { AnthropicLogo } from "@/components/shared/logos/AnthropicLogo";
@@ -7,6 +7,7 @@ import { GoogleLogo } from "@/components/shared/logos/GoogleLogo";
 import { MetaLogo } from "@/components/shared/logos/MetaLogo";
 import { MicrosoftLogo } from "@/components/shared/logos/MicrosoftLogo";
 import { StripeLogo } from "@/components/shared/logos/StripeLogo";
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
 import type { CompanyGuideSummary } from "@/features/interview-prep/lib/queries";
 
 // The 6 real logo components from Feature 04's homepage strip — kept as-is
@@ -27,18 +28,28 @@ const TOTAL_COMPANY_COUNT = 32;
 
 type Props = {
   companies: CompanyGuideSummary[];
+  isPremiumUser: boolean;
 };
 
-export function CompanyGuidesPreview({ companies }: Props) {
+// Every company guide is premium — no per-company split (unlike, say,
+// Practice's per-challenge isPremium), so each of the 6 preview pills below
+// gets the same small lock icon rather than a full PremiumBadge repeated 6
+// times, which would be redundant next to the one real badge already on the
+// section heading.
+export function CompanyGuidesPreview({ companies, isPremiumUser }: Props) {
   const remaining = TOTAL_COMPANY_COUNT - COMPANY_PREVIEWS.length;
   const totalQuestions = companies.reduce((sum, c) => sum + c.questionCount + c.challengeCount, 0);
+  const LockIcon = isPremiumUser ? LockOpen : Lock;
 
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">
-          Company Guides
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">
+            Company Guides
+          </h2>
+          <PremiumBadge isPremiumUser={isPremiumUser} size="xs" />
+        </div>
         <Link
           href="/interview-prep/company-guides"
           className="flex items-center gap-1 text-xs font-semibold text-accent transition-colors hover:text-accent-dark"
@@ -56,14 +67,16 @@ export function CompanyGuidesPreview({ companies }: Props) {
           {COMPANY_PREVIEWS.map(({ name, Logo }) => (
             <span
               key={name}
-              className="flex h-11 items-center rounded-lg bg-surface-secondary px-4 text-text-primary"
+              className="flex h-11 items-center gap-1.5 rounded-lg bg-surface-secondary px-4 text-text-primary"
             >
               <span className="sr-only">{name}</span>
               <Logo className="h-5 w-auto" />
+              <LockIcon className="h-3 w-3 text-premium" aria-hidden />
             </span>
           ))}
-          <span className="flex h-11 items-center rounded-lg bg-accent-muted px-4 text-xs font-semibold text-accent">
+          <span className="flex h-11 items-center gap-1.5 rounded-lg bg-accent-muted px-4 text-xs font-semibold text-accent">
             +{remaining} more
+            <LockIcon className="h-3 w-3" aria-hidden />
           </span>
         </div>
         <p className="text-xs text-text-muted">

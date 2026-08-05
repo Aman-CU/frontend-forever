@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
 import { getBaseUrl, safeJsonLd } from "@/lib/seo";
-import { getCompanyGuideSummaries } from "@/features/interview-prep/lib/queries";
+import { getCachedSession } from "@/lib/auth/server";
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
+import { getCompanyGuideSummaries, getIsPremiumUser } from "@/features/interview-prep/lib/queries";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
 import { CompanyGuideCard } from "@/features/interview-prep/components/CompanyGuideCard";
 
@@ -23,6 +25,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CompanyGuidesIndexPage() {
+  const session = await getCachedSession();
+  const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
   const companies = await getCompanyGuideSummaries();
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/company-guides`;
@@ -64,14 +68,12 @@ export default async function CompanyGuidesIndexPage() {
             them.
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-premium-light px-2.5 py-1 text-xs font-semibold text-premium">
-          Premium
-        </span>
+        <PremiumBadge isPremiumUser={isPremiumUser} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {companies.map((company) => (
-          <CompanyGuideCard key={company.slug} company={company} />
+          <CompanyGuideCard key={company.slug} company={company} isPremiumUser={isPremiumUser} />
         ))}
       </div>
     </div>

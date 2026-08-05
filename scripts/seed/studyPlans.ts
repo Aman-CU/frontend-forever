@@ -15,6 +15,7 @@ export const STUDY_PLANS: StudyPlanSeed[] = [
     hoursCommitment: "~2 hrs/day",
     description:
       "Cramming for a frontend interview coming up fast. Rapid-fire review of the highest-frequency questions, a focused deep dive into JavaScript, React, and Next.js, then a full day each on system design, behavioural prep, and your target company before the real thing.",
+    isPremium: true,
     orderIndex: 1,
     items: [
       // Days 1-4: FF 75 (10/day), JS coding reps (5/day), React coding reps
@@ -298,6 +299,7 @@ export const STUDY_PLANS: StudyPlanSeed[] = [
     hoursCommitment: "~6 hrs/week",
     description:
       "Goal: go from shaky fundamentals to interview-ready in 4 weeks — Week 1 locks down the JavaScript concepts that gate everything else, Week 2 does the same for React, Week 3 broadens into TypeScript and Next.js, and Week 4 shifts fully into interview mode. Every week also carries 3 real FF Frontend System Design questions and a slice of the FF 75, so system design and rapid review build continuously rather than landing all at once at the end.",
+    isPremium: true,
     orderIndex: 2,
     items: [
       // Week 1 — JavaScript foundations. The 5 concepts below gate almost
@@ -605,6 +607,7 @@ export const STUDY_PLANS: StudyPlanSeed[] = [
     hoursCommitment: "~2 hrs/day",
     description:
       "Goal: build real depth, not just breadth. Month 1 gives JavaScript and React a full core-then-advanced pass each — the two categories that dominate real interview loops. Month 2 covers every remaining Learn category and walks all 3 real FF Collections (JavaScript, React, Next.js) straight through, once, with zero repeats — no FF 75 here, that's a 1-2 week cram tool, not a 3-month depth plan. Month 3 shifts fully into interview mode: System Design concepts and guides, a Playbook sweep, your target Company Guide, and a final review.",
+    isPremium: true,
     orderIndex: 3,
     items: [
       // ── Month 1 — JavaScript & React, core then advanced. These two
