@@ -5,6 +5,7 @@ import { COLLECTION_META, type InterviewPrepCollectionKey } from "@/features/int
 import {
   getCollectionSummaries,
   getCompanyGuideSummaries,
+  getIsPremiumUser,
   getReviewQueuePreview,
 } from "@/features/interview-prep/lib/queries";
 import { getPlaybookProgress } from "@/features/interview-prep/lib/playbookQueries";
@@ -37,13 +38,14 @@ export default async function InterviewPrepGetStartedPage() {
   const session = await getCachedSession();
   const userId = session?.user?.id ?? null;
 
-  const [collectionSummaries, reviewItems, playbookProgress, studyPlans, companySummaries] =
+  const [collectionSummaries, reviewItems, playbookProgress, studyPlans, companySummaries, isPremiumUser] =
     await Promise.all([
       getCollectionSummaries(userId),
       getReviewQueuePreview(userId),
       getPlaybookProgress(userId),
       getStudyPlans(),
       getCompanyGuideSummaries(),
+      userId ? getIsPremiumUser(userId) : Promise.resolve(false),
     ]);
 
   const summaryByCollection = new Map(collectionSummaries.map((s) => [s.collection, s]));
@@ -76,7 +78,7 @@ export default async function InterviewPrepGetStartedPage() {
         </div>
       </section>
 
-      <PlaybookPreview progress={playbookProgress} />
+      <PlaybookPreview progress={playbookProgress} isPremiumUser={isPremiumUser} />
 
       <StudyPlansPreview plans={studyPlans} />
 

@@ -1,18 +1,24 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-import { PLAYBOOK_SLUGS } from "@/lib/constants";
+import { PLAYBOOK_SLUGS, type PlaybookSlug } from "@/lib/constants";
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
 import { PLAYBOOK_META } from "@/features/interview-prep/lib/playbookMeta";
 import type { PlaybookProgress } from "@/features/interview-prep/lib/playbookQueries";
 
+// The one fully-premium playbook (Feature 38) — same constant as the
+// index/chapter pages' PREMIUM_PLAYBOOK_SLUG.
+const PREMIUM_PLAYBOOK_SLUG: PlaybookSlug = "build-in-public-playbook";
+
 type Props = {
   progress: PlaybookProgress[];
+  isPremiumUser: boolean;
 };
 
 // Real chapter counts + real per-user read progress (Feature 50) — same
 // "honest, not mocked" precedent as CollectionRow's bars. Was a static
 // teaser with no progress data until this feature shipped real content.
-export function PlaybookPreview({ progress }: Props) {
+export function PlaybookPreview({ progress, isPremiumUser }: Props) {
   const progressBySlug = new Map(progress.map((p) => [p.playbookSlug, p]));
 
   return (
@@ -40,7 +46,12 @@ export function PlaybookPreview({ progress }: Props) {
               </div>
 
               <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold text-text-primary">{meta.label}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="truncate text-sm font-semibold text-text-primary">{meta.label}</h3>
+                  {slug === PREMIUM_PLAYBOOK_SLUG && (
+                    <PremiumBadge isPremiumUser={isPremiumUser} size="xs" />
+                  )}
+                </div>
                 <p className="mt-0.5 truncate text-xs text-text-muted">{meta.description}</p>
 
                 {chapterCount > 0 && (
