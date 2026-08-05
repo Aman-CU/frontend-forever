@@ -10,7 +10,6 @@ import {
   LucideGraduationCap,
   Map,
   Menu,
-  Tag,
   Trophy,
   Users,
   X,
@@ -73,21 +72,6 @@ export function Navbar({ initialUser }: NavbarProps = {}) {
 
         {/* Desktop right cluster — Follow on X + ThemeToggle always visible; last slot swaps on auth state */}
         <div className="hidden items-center gap-1.5 lg:flex xl:gap-3">
-          {/* Pricing sits here rather than in the pill nav above: that nav is
-              already six items and documented as width-fragile between 1024
-              and 1100px (see the arbitrary min-[] bounds on the wordmark), and
-              a seventh pill is exactly what would tip it over. */}
-          <Link
-            href="/pricing"
-            className={cn(
-              "rounded-lg px-2 py-2 text-sm font-medium transition-colors xl:px-3",
-              pathname === "/pricing"
-                ? "text-accent"
-                : "text-text-primary hover:bg-surface-secondary",
-            )}
-          >
-            Pricing
-          </Link>
           <a
             href="#"
             aria-label="Follow Frontend Forever on X"
@@ -133,12 +117,6 @@ export function Navbar({ initialUser }: NavbarProps = {}) {
               onClick={() => setIsMenuOpen(false)}
             />
           ))}
-
-          <NavbarMobileLink
-            link={{ label: "Pricing", href: "/pricing", icon: Tag }}
-            pathname={pathname}
-            onClick={() => setIsMenuOpen(false)}
-          />
 
           <div className="mt-3 flex items-center gap-3 border-t border-border pt-4">
             <a
