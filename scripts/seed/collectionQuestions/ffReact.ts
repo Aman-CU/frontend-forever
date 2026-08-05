@@ -100,6 +100,7 @@ Most real forms end up controlled for validation UX, but file inputs are always 
 
 **Related:** How do you handle forms in React? · What is the difference between state and props? · [Forms: Controlled vs. Uncontrolled](/learn/react/controlled-vs-uncontrolled-forms) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Airbnb"],
     isFf75: true,
     orderIndex: 22,
@@ -139,6 +140,7 @@ Write plain code first and let the compiler handle memoization. Reach for \`useM
 
 **Sources checked:** react.dev/reference/react/useMemo, react.dev — React Compiler introduction`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Stripe"],
     isFf75: true,
     orderIndex: 9,
@@ -174,6 +176,7 @@ The Virtual DOM isn't inherently "faster than the DOM" in some absolute sense �
 
 **Related:** [JSX & the Virtual DOM](/learn/react/jsx-virtual-dom) (Learn concept) · [What is reconciliation in React?](/interview-prep/ff-react/what-is-reconciliation-in-react)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Meta", "Google"],
     isFf75: true,
     orderIndex: 1,
@@ -245,6 +248,7 @@ The "automatic" JSX runtime (default since React 17) is why modern React files n
 
 **Related:** [What is React and how does the Virtual DOM work?](/interview-prep/ff-react/what-is-react-and-virtual-dom) · [JSX & the Virtual DOM](/learn/react/jsx-virtual-dom) (Learn concept)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Google", "Adobe"],
     isFf75: true,
     orderIndex: 3,
@@ -285,6 +289,7 @@ The functional-update form (\`setCount(prev => prev + 1)\`) fixes this by always
 
 **Related:** [What is useReducer and when to prefer it over useState?](/interview-prep/ff-react/usereducer-vs-usestate) · [useState & useEffect Fundamentals](/learn/react/usestate-useeffect-fundamentals) (Learn concept)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Meta", "Netflix"],
     isFf75: true,
     orderIndex: 4,
@@ -327,6 +332,7 @@ useEffect(() => {
 
 **Sources checked:** react.dev/reference/react/useEffect, react.dev/blog/2025/10/01/react-19-2 (useEffectEvent)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Airbnb"],
     isFf75: true,
     orderIndex: 5,
@@ -364,6 +370,7 @@ Mutating \`ref.current\` does **not** trigger a re-render, and reading it during
 
 **Related:** [What is the difference between useState and useRef for storing values?](/interview-prep/ff-react/usestate-vs-useref-for-values) · [useRef & Imperative Handles](/learn/react/useref-imperative-handles) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Amazon", "Uber"],
     isFf75: true,
     orderIndex: 6,
@@ -442,6 +449,7 @@ function Counter() {
 
 **Related:** [Explain useState hook with examples.](/interview-prep/ff-react/usestate-hook-explained) · [State Management Tradeoffs](/learn/react/state-management-tradeoffs) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Bloomberg"],
     isFf75: true,
     orderIndex: 8,
@@ -470,6 +478,7 @@ function ParentWithCallback({ items }) {
 
 **Related:** [What is \`useMemo\` and when should you use it?](/interview-prep/ff-react/usememo-when-to-use) · [What is React.memo and how does it work?](/interview-prep/ff-react/react-memo-explained) · [Render Performance: memo, useMemo, useCallback](/learn/react/render-performance-memoization) (Learn concept)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Stripe"],
     isFf75: true,
     orderIndex: 10,
@@ -504,6 +513,7 @@ Reaching for \`useLayoutEffect\` when \`useEffect\` would do is a genuinely comm
 
 **Related:** [Explain useEffect hook and its dependency array.](/interview-prep/ff-react/useeffect-hook-and-dependency-array) · [What is React and how does the Virtual DOM work?](/interview-prep/ff-react/what-is-react-and-virtual-dom)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Netflix"],
     isFf75: true,
     orderIndex: 11,
@@ -544,6 +554,7 @@ A custom hook doesn't share *state* between the components that call it — each
 
 **Related:** [What is useContext and how does it solve prop drilling?](/interview-prep/ff-react/usecontext-and-prop-drilling) · [Explain debouncing and throttling with examples.](/interview-prep/ff-javascript/debouncing-and-throttling) · [Custom Hooks & Composition](/learn/react/custom-hooks-composition) (Learn concept)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Airbnb", "Uber"],
     isFf75: true,
     orderIndex: 12,
@@ -592,6 +603,7 @@ Using the array index as a key is a very common real bug — it works fine for a
 
 **Related:** [What is reconciliation in React?](/interview-prep/ff-react/what-is-reconciliation-in-react) · [Explain the difference between \`Array.map\`, \`Array.filter\`, and \`Array.reduce\`.](/interview-prep/ff-javascript/array-map-filter-reduce-differences)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Amazon", "Bloomberg"],
     isFf75: true,
     orderIndex: 14,
@@ -622,6 +634,7 @@ Changing a component's *type* at the same position in the tree — even swapping
 
 **Related:** [What is React and how does the Virtual DOM work?](/interview-prep/ff-react/what-is-react-and-virtual-dom) · [What are keys in React and why are they important?](/interview-prep/ff-react/keys-in-react-explained) · [React Rendering & Reconciliation](/learn/react/react-rendering) (Learn concept)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Meta"],
     isFf75: true,
     orderIndex: 15,
@@ -710,6 +723,7 @@ Error Boundaries do **not** catch errors in event handlers, asynchronous code (\
 
 **Sources checked:** react.dev/reference/react/Component (error boundaries), react.dev/reference/eslint-plugin-react-hooks/lints/error-boundaries`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Netflix"],
     isFf75: true,
     orderIndex: 17,
@@ -738,6 +752,7 @@ function Dashboard() {
 
 **Related:** [What is Suspense in React?](/interview-prep/ff-react/what-is-suspense-in-react) · [Explain the concept of lazy loading.](/interview-prep/ff-javascript/lazy-loading-explained) · [Bundle Size & Code Splitting](/learn/performance/bundle-size-code-splitting) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Amazon", "Vercel"],
     isFf75: true,
     orderIndex: 18,
@@ -760,6 +775,7 @@ Suspense doesn't automatically make \`fetch()\` calls "suspend" — a component 
 
 **Related:** [What is code splitting and React.lazy?](/interview-prep/ff-react/code-splitting-and-react-lazy) · [Concurrent React & Suspense](/learn/react/concurrent-react-suspense) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Vercel"],
     isFf75: true,
     orderIndex: 19,
@@ -783,6 +799,7 @@ Context is often reached for as a general-purpose global-state solution, but its
 
 **Related:** [What is useContext and how does it solve prop drilling?](/interview-prep/ff-react/usecontext-and-prop-drilling) · [State Management Tradeoffs](/learn/react/state-management-tradeoffs) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Airbnb"],
     isFf75: true,
     orderIndex: 20,
@@ -970,6 +987,7 @@ Stacking several HOCs produces "wrapper hell" — a component tree like \`WithLo
 
 **Related:** [What is the render props pattern?](/interview-prep/ff-react/render-props-pattern-explained) · [What are custom hooks? Create a useDebounce hook.](/interview-prep/ff-react/custom-hooks-usedebounce-example) · [Component Composition Patterns](/learn/react/component-composition-patterns) (Learn concept)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Uber"],
     isFf75: true,
     orderIndex: 27,
@@ -1059,6 +1077,7 @@ A second, separate gotcha: calling a setter doesn't re-render synchronously, and
 
 **Related:** [How do you share state between sibling components?](/interview-prep/ff-react/sharing-state-between-siblings) · [What is lifting state up in React?](/interview-prep/ff-react/lifting-state-up-in-react) · [What is the difference between controlled and uncontrolled components?](/interview-prep/ff-react/controlled-vs-uncontrolled-components)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Google", "Amazon"],
     isFf75: true,
     orderIndex: 30,
@@ -1082,6 +1101,7 @@ Wrapping everything in \`React.memo\`/\`useMemo\`/\`useCallback\` "just in case"
 
 **Related:** [What is React.memo and how does it work?](/interview-prep/ff-react/react-memo-explained) · [What is useCallback and how does it prevent re-renders?](/interview-prep/ff-react/usecallback-and-re-renders) · [What is the Profiler API in React?](/interview-prep/ff-react/profiler-api-in-react) · [Render Performance: memo, useMemo, useCallback](/learn/react/render-performance-memoization) (Learn concept)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Netflix"],
     isFf75: true,
     orderIndex: 31,
@@ -1227,6 +1247,7 @@ Rendering splits into two phases: the render phase walks the tree unit of work b
 
 **Sources checked:** github.com/acdlite/react-fiber-architecture (React core team reference), react.dev docs on render and commit phases`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Google"],
     isFf75: true,
     orderIndex: 36,
@@ -1254,6 +1275,7 @@ SSR doesn't make an app strictly "faster" in every sense — it improves perceiv
 
 **Related:** [What is hydration in React?](/interview-prep/ff-react/hydration-in-react-explained) · [What is the difference between SSR, CSR, and SSG?](/interview-prep/ff-react/ssr-vs-csr-vs-ssg) · [What is Suspense in React?](/interview-prep/ff-react/what-is-suspense-in-react)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Airbnb"],
     isFf75: true,
     orderIndex: 37,
@@ -1281,6 +1303,7 @@ React 18 (not a later version) shipped **selective hydration**: with \`Suspense\
 
 **Sources checked:** react.dev/reference/react-dom/client/hydrateRoot, github.com/reactwg/react-18/discussions/130 (selective hydration, shipped in React 18)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Vercel"],
     isFf75: true,
     orderIndex: 38,
@@ -2392,6 +2415,7 @@ Incremental Static Regeneration exists specifically to blur SSG's "fixed at buil
 
 **Related:** [What is server-side rendering (SSR) in React?](/interview-prep/ff-react/server-side-rendering-in-react) · [What is hydration in React?](/interview-prep/ff-react/hydration-in-react-explained)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     isFf75: true,
     orderIndex: 78,
@@ -2429,6 +2453,7 @@ function AddToCartButton({ productId }) {
 
 **Sources checked:** react.dev Server Components documentation, Next.js App Router docs (RSC as the default, mainstream adoption by 2026)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     isFf75: true,
     orderIndex: 79,
@@ -2461,6 +2486,7 @@ The top-level rule exists because React tracks each hook by **call order**, not 
 
 **Related:** [What is the exhaustive-deps ESLint rule?](/interview-prep/ff-react/exhaustive-deps-eslint-rule)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Google"],
     isFf75: true,
     orderIndex: 80,
@@ -2624,6 +2650,7 @@ function Breadcrumbs() {
 
 Hand-maintaining a separate array of breadcrumb labels in component state is a common approach that reliably drifts out of sync with the actual URL the moment a route changes without someone remembering to update the array too. Deriving breadcrumbs from the route itself — the URL is already the single source of truth for "where am I" — eliminates that entire class of bug structurally, rather than relying on developer discipline to keep two representations in sync.`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Adobe", "Bloomberg"],
     orderIndex: 86,
   },
@@ -2648,6 +2675,7 @@ Using \`push\` for a navigation that should never be a distinct "back" destinati
 
 **Related:** [What is the protected routes pattern in React Router?](/interview-prep/ff-react/protected-routes-pattern-in-react-router)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Uber"],
     orderIndex: 87,
   },
@@ -2669,6 +2697,7 @@ Using \`push\` for a navigation that should never be a distinct "back" destinati
 
 The catch-all route's **position** in the route list matters — React Router matches routes in the order they're defined (within the same nesting level), so placing the wildcard route anywhere *before* a real route would shadow that real route entirely, matching the 404 page for a URL that actually has a legitimate destination.`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Meta", "Airbnb"],
     orderIndex: 88,
   },
@@ -2691,6 +2720,7 @@ Reaching for ARIA attributes as the *default* way to "add accessibility" is back
 
 **Related:** [What is ARIA in React?](/interview-prep/ff-react/aria-in-react)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Microsoft", "Adobe"],
     orderIndex: 89,
   },
@@ -2719,6 +2749,7 @@ ARIA attributes only *describe* state to assistive technology — setting \`aria
 
 **Related:** [What is Accessibility (a11y) in React?](/interview-prep/ff-react/accessibility-a11y-in-react)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Salesforce"],
     orderIndex: 90,
   },
@@ -2749,6 +2780,7 @@ Because dispatch follows the *component* tree rather than the DOM tree, a Portal
 
 **Sources checked:** bigbinary.com/blog (React 17 delegates events to root instead of document)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Netflix"],
     orderIndex: 91,
   },
@@ -2771,6 +2803,7 @@ Memoizing everything by default is a genuinely common mistake — every \`useMem
 
 **Related:** [What is useMemo and when should you use it?](/interview-prep/ff-react/usememo-when-to-use) · [What is the Profiler API in React?](/interview-prep/ff-react/profiler-api-in-react)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Bloomberg"],
     orderIndex: 92,
   },
@@ -2796,6 +2829,7 @@ A design system that lets consumers pass arbitrary \`className\`/\`style\` overr
 
 **Related:** [What is Storybook and why use it?](/interview-prep/ff-react/what-is-storybook-and-why-use-it)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Airbnb", "Shopify"],
     orderIndex: 93,
   },
@@ -2819,6 +2853,7 @@ Storybook's real, ongoing value is as a **regression-prevention** tool via visua
 
 **Related:** [How do you implement a design system in React?](/interview-prep/ff-react/implementing-a-design-system-in-react)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Vercel"],
     orderIndex: 94,
   },
@@ -2850,6 +2885,7 @@ const MyRenderer = ReactReconciler(hostConfig);
 
 **Sources checked:** npmjs.com/package/react-reconciler (explicit API-stability disclaimer), react-three-fiber and Ink as real production custom renderers`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Vercel"],
     orderIndex: 95,
   },
@@ -2870,6 +2906,7 @@ A common early confusion is not realizing these are two entirely separate packag
 
 **Related:** [How do you write a custom renderer in React?](/interview-prep/ff-react/writing-a-custom-renderer-in-react) · [What is ReactDOM.createRoot() in React 18?](/interview-prep/ff-react/reactdom-createroot-in-react-18)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Amazon"],
     orderIndex: 96,
   },
@@ -2895,6 +2932,7 @@ This is the concrete, practical reason "why isn't automatic batching / \`useTran
 
 **Related:** [How does batching work in React 18?](/interview-prep/ff-react/batching-in-react-18) · [What is React 18's concurrent mode?](/interview-prep/ff-react/react-18-concurrent-mode)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Netflix"],
     orderIndex: 97,
   },
@@ -2917,6 +2955,7 @@ A genuinely common mistake is assuming a slow interaction must be a React render
 
 **Related:** [What is the Profiler API in React?](/interview-prep/ff-react/profiler-api-in-react) · [How do you optimize React performance?](/interview-prep/ff-react/optimizing-react-performance)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Google"],
     orderIndex: 98,
   },
@@ -2942,6 +2981,7 @@ Wrapping a \`<Profiler>\` around part of a tree adds a small amount of overhead 
 
 **Related:** [How do you debug performance issues in React?](/interview-prep/ff-react/debugging-performance-issues-in-react) · [What is React DevTools and how do you use it?](/interview-prep/ff-react/react-devtools-explained) · [What causes unnecessary re-renders in React?](/interview-prep/ff-react/what-causes-unnecessary-re-renders)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Airbnb"],
     orderIndex: 99,
   },

@@ -226,6 +226,7 @@ type CollectionQuestionRow = {
   difficulty: ChallengeDifficulty;
   companies: string[];
   isFf75: boolean;
+  isPremium: boolean;
 };
 
 // All collection_questions rows, cached like getCollectionQuestionCounts above
@@ -244,6 +245,7 @@ const getCollectionQuestionCatalog = unstable_cache(
         difficulty: collectionQuestions.difficulty,
         companies: collectionQuestions.companies,
         isFf75: collectionQuestions.isFf75,
+        isPremium: collectionQuestions.isPremium,
       })
       .from(collectionQuestions)
       .orderBy(asc(collectionQuestions.orderIndex));
@@ -290,6 +292,7 @@ export type CollectionQuestionListItem = {
   question: string;
   difficulty: ChallengeDifficulty;
   companies: string[];
+  isPremium: boolean;
   // Real per-user state (user_collection_question_progress) — false for
   // logged-out users, same as every other personalization on this page.
   completed: boolean;
@@ -309,6 +312,7 @@ export const getCollectionQuestionList = cache(
       question: q.question,
       difficulty: q.difficulty,
       companies: q.companies,
+      isPremium: q.isPremium,
       completed: completedIds.has(q.id),
     }));
   },
@@ -320,6 +324,7 @@ export type CollectionQuestionDetail = {
   answer: string;
   difficulty: ChallengeDifficulty;
   companies: string[];
+  isPremium: boolean;
   // 1-based position within its route collection's ordered list — same
   // "questionNumber" convention as Practice's ChallengeDetail.
   questionNumber: number;
@@ -342,6 +347,7 @@ export const getCollectionQuestionBySlug = cache(
       answer: item.answer,
       difficulty: item.difficulty,
       companies: item.companies,
+      isPremium: item.isPremium,
       questionNumber: index + 1,
     };
   },

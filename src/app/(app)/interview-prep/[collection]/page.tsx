@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { getCachedSession } from "@/lib/auth/server";
 import { isInterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
 import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
-import { getCollectionQuestionList } from "@/features/interview-prep/lib/queries";
+import { getCollectionQuestionList, getIsPremiumUser } from "@/features/interview-prep/lib/queries";
 import { safeJsonLd } from "@/lib/seo";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
 import { CollectionQuestionListClient } from "@/features/interview-prep/components/CollectionQuestionListClient";
@@ -59,25 +59,33 @@ export default async function CollectionQuestionListPage({
   const meta = COLLECTION_META[collection];
   const session = await getCachedSession();
   const isLoggedIn = Boolean(session?.user);
-  const questions = await getCollectionQuestionList(collection, session?.user?.id ?? null);
+  const [questions, isPremiumUser] = await Promise.all([
+    getCollectionQuestionList(collection, session?.user?.id ?? null),
+    session?.user ? getIsPremiumUser(session.user.id) : Promise.resolve(false),
+  ]);
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/${collection}`;
 
-  // FAQPage JSON-LD (Feature 31's GEO/SEO spec) — every question on this list
-  // becomes a citable Q&A entry for AI answer engines and rich search results,
-  // not just a link. Answers are truncated to a clean plain-text summary; the
-  // full answer lives on each question's own page.
+  // FAQPage JSON-LD (Feature 31's GEO/SEO spec) — every free question on this
+  // list becomes a citable Q&A entry for AI answer engines and rich search
+  // results, not just a link. Answers are truncated to a clean plain-text
+  // summary; the full answer lives on each question's own page. Premium
+  // questions are excluded (Feature 38) — their own pages are robots:
+  // noindex, so listing them here as a citable "accepted answer" would point
+  // crawlers at a URL that says not to index it.
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: questions.map((q) => ({
-      "@type": "Question",
-      name: q.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: `${baseUrl}/interview-prep/${collection}/${q.slug}`,
-      },
-    })),
+    mainEntity: questions
+      .filter((q) => !q.isPremium)
+      .map((q) => ({
+        "@type": "Question",
+        name: q.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `${baseUrl}/interview-prep/${collection}/${q.slug}`,
+        },
+      })),
   };
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
@@ -107,6 +115,7 @@ export default async function CollectionQuestionListPage({
         routeCollection={collection}
         questions={questions}
         isLoggedIn={isLoggedIn}
+        isPremiumUser={isPremiumUser}
       />
     </div>
   );

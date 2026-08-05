@@ -62,6 +62,7 @@ Plenty of production codebases are still on the Pages Router, and interviewers u
 
 **Sources checked:** Next.js — Migrating to App Router docs, Next.js — getStaticProps docs`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel"],
     isFf75: true,
     orderIndex: 4,
@@ -108,6 +109,7 @@ ISR requires the Node.js runtime (the default) — it's not supported with \`out
 
 **Sources checked:** Next.js — ISR guide, Vercel — ISR docs`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Netflix"],
     isFf75: true,
     orderIndex: 7,
@@ -138,6 +140,7 @@ export default async function BlogPost({ params }) {
 
 **Sources checked:** nextjs.org/blog/next-16, nextjs.org/docs (Server Components as the App Router default)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     isFf75: true,
     orderIndex: 1,
@@ -163,6 +166,7 @@ This question is often answered as a neutral "here are the differences, pick whi
 
 **Related:** [What is Next.js and how does it differ from plain React?](/interview-prep/ff-nextjs/what-is-nextjs-and-how-it-differs-from-react) · [What is file-based routing in Next.js?](/interview-prep/ff-nextjs/file-based-routing-in-nextjs)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Airbnb"],
     isFf75: true,
     orderIndex: 2,
@@ -186,6 +190,7 @@ In the App Router, a folder alone does **not** create a route — a segment only
 
 **Related:** [What are dynamic routes in Next.js?](/interview-prep/ff-nextjs/dynamic-routes-in-nextjs) · [What are catch-all routes ([...slug])?](/interview-prep/ff-nextjs/catch-all-routes-in-nextjs)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Meta", "Shopify"],
     isFf75: true,
     orderIndex: 3,
@@ -216,6 +221,7 @@ Reaching for \`getServerSideProps\` (or its App Router \`fetch\` equivalent) for
 
 **Related:** [What is getStaticProps and when do you use it?](/interview-prep/ff-nextjs/getstaticprops-when-to-use) · [What is Incremental Static Regeneration (ISR)?](/interview-prep/ff-nextjs/incremental-static-regeneration)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Netflix"],
     isFf75: true,
     orderIndex: 5,
@@ -277,6 +283,7 @@ Because Server Components are the default, it's **Client Components** that requi
 
 **Sources checked:** nextjs.org/docs (Server Components as the App Router's default rendering model)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     isFf75: true,
     orderIndex: 8,
@@ -302,6 +309,7 @@ function LikeButton() {
 
 **Related:** [What are Server Components in Next.js App Router?](/interview-prep/ff-nextjs/server-components-in-nextjs-app-router) · [What is the difference between 'use client' and 'use server' directives?](/interview-prep/ff-nextjs/difference-between-use-client-and-use-server)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Netflix"],
     isFf75: true,
     orderIndex: 9,
@@ -358,6 +366,7 @@ A Server Action doesn't automatically refresh any UI that displayed the data it 
 
 **Sources checked:** nextjs.org/docs/app/guides/server-actions, nextjs.org/docs/app/guides/forms`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Stripe"],
     isFf75: true,
     orderIndex: 11,
@@ -414,6 +423,7 @@ export default function Loading() {
 
 **Sources checked:** nextjs.org/docs/app/api-reference/file-conventions/loading`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     isFf75: true,
     orderIndex: 13,
@@ -553,6 +563,7 @@ import Image from "next/image";
 
 **Related:** [How does Next.js optimize images automatically?](/interview-prep/ff-nextjs/how-nextjs-optimizes-images-automatically) · [What is the Vercel Image Optimization API?](/interview-prep/ff-nextjs/vercel-image-optimization-api)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Airbnb"],
     isFf75: true,
     orderIndex: 18,
@@ -797,6 +808,7 @@ Despite the rename hint, \`proxy.ts\` is explicitly **not** meant for authentica
 
 **Sources checked:** nextjs.org/blog/next-16 (middleware.ts → proxy.ts rename), nextjs.org/docs/messages/middleware-to-proxy, nextjs.org/docs/app/api-reference/file-conventions/proxy`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Cloudflare"],
     isFf75: true,
     orderIndex: 27,
@@ -878,6 +890,7 @@ A route doesn't need an explicit flag to become dynamic — using **any** reques
 
 **Sources checked:** nextjs.org/docs/app/getting-started/partial-prerendering, nextjs.org/learn/dashboard-app/static-and-dynamic-rendering`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     isFf75: true,
     orderIndex: 30,
@@ -2102,6 +2115,7 @@ The \`paths\` mapping only affects **type-checking and how the bundler resolves 
 
 **Related:** [How does Next.js handle TypeScript configuration?](/interview-prep/ff-nextjs/how-nextjs-handles-typescript-configuration)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Shopify"],
     orderIndex: 73,
   },
@@ -2128,6 +2142,7 @@ CSS Modules work identically in both Server and Client Components — the scopin
 
 **Related:** [What is the global CSS file in Next.js?](/interview-prep/ff-nextjs/global-css-file-in-nextjs)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     orderIndex: 74,
   },
@@ -2153,6 +2168,7 @@ Tailwind CSS v4 changed its own configuration model in a way that trips people u
 
 **Sources checked:** ui.shadcn.com/docs/dark-mode/next (Tailwind v4's CSS-based dark mode variant, replacing the v3 config option)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Vercel", "Netflix"],
     orderIndex: 75,
   },
@@ -2177,6 +2193,7 @@ A global stylesheet can only be imported in the **root layout** (or another top-
 
 **Related:** [How do you use CSS Modules in Next.js?](/interview-prep/ff-nextjs/using-css-modules-in-nextjs)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Vercel", "Adobe"],
     orderIndex: 76,
   },
@@ -2204,6 +2221,7 @@ Because \`sass\` is a **build-time-only** dependency (it compiles \`.scss\` to p
 
 **Related:** [How do you use CSS Modules in Next.js?](/interview-prep/ff-nextjs/using-css-modules-in-nextjs)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Vercel", "Shopify"],
     orderIndex: 77,
   },
@@ -2232,6 +2250,7 @@ Confusing the RSC payload with either "just the HTML" or "just a JSON API respon
 
 **Sources checked:** nextjs.org/docs/app/getting-started/server-and-client-components (RSC payload as a distinct serialized format)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     orderIndex: 78,
   },
@@ -2257,6 +2276,7 @@ Rule of thumb worth stating precisely: **start with \`revalidatePath\`** since i
 
 **Sources checked:** nextjs.org/docs/app/getting-started/mutating-data, nextjs.org (updateTag as the Next.js 16 Server-Action-only immediate-invalidation API)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Airbnb"],
     orderIndex: 79,
   },
@@ -2285,6 +2305,7 @@ function LoginForm() {
 
 **Related:** [What are the useRouter, usePathname, and useSearchParams hooks?](/interview-prep/ff-nextjs/userouter-usepathname-usesearchparams-hooks)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Netflix"],
     orderIndex: 80,
   },
@@ -2309,6 +2330,7 @@ const HeavyChart = dynamic(() => import("./HeavyChart"), {
 
 **Related:** [When would you use dynamic() over React.lazy()?](/interview-prep/ff-nextjs/dynamic-over-react-lazy)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Shopify"],
     orderIndex: 81,
   },
@@ -2334,6 +2356,7 @@ Outside of that one specific need, the two are largely interchangeable in the Ap
 
 **Sources checked:** nextjs.org/docs/app/guides/lazy-loading`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     orderIndex: 82,
   },
@@ -2361,6 +2384,7 @@ A skeleton that doesn't roughly match the real content's eventual size and shape
 
 **Related:** [What is loading.js and how does it enable streaming?](/interview-prep/ff-nextjs/loadingjs-and-streaming)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Airbnb"],
     orderIndex: 83,
   },
@@ -2393,6 +2417,7 @@ This config-level \`headers()\` is static, decided at build time — it cannot v
 
 **Related:** [How do you configure Content Security Policy in Next.js?](/interview-prep/ff-nextjs/configuring-content-security-policy-in-nextjs)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Stripe"],
     orderIndex: 84,
   },
@@ -2424,6 +2449,7 @@ A soft, client-side \`<Link>\` navigation only works **within** the same zone �
 
 **Sources checked:** nextjs.org/docs/app/guides/multi-zones`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Spotify"],
     orderIndex: 85,
   },
@@ -2455,6 +2481,7 @@ The root \`layout.tsx\` must render the actual \`<html>\` and \`<body>\` tags it
 
 **Related:** [What is a root layout in Next.js?](/interview-prep/ff-nextjs/root-layout-in-nextjs)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Netflix"],
     orderIndex: 86,
   },
@@ -2481,6 +2508,7 @@ Because it never remounts, the root layout is a poor place for anything that gen
 
 **Related:** [What is the _app.js equivalent in App Router?](/interview-prep/ff-nextjs/app-js-equivalent-in-app-router) · [What is a nested layout and how does it improve performance?](/interview-prep/ff-nextjs/nested-layout-and-performance)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Airbnb"],
     orderIndex: 87,
   },
@@ -2505,6 +2533,7 @@ This persistence is exactly why a component that genuinely needs to reset on eve
 
 **Related:** [What is the layout.js file in App Router?](/interview-prep/ff-nextjs/layoutjs-file-in-app-router) · [What is the template.js file?](/interview-prep/ff-nextjs/templatejs-file-explained)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     orderIndex: 88,
   },
@@ -2533,6 +2562,7 @@ export function WebVitals() {
 
 **Sources checked:** nextjs.org/docs/app/api-reference/functions/use-report-web-vitals`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Google"],
     orderIndex: 89,
   },
@@ -2555,6 +2585,7 @@ Confidently describing a specific, detailed API for a package that doesn't actua
 
 **Sources checked:** nextjs.org/docs/app/guides/analytics, vercel.com/docs/analytics/package (no official next/analytics package exists)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel"],
     orderIndex: 90,
   },
@@ -2578,6 +2609,7 @@ A common imprecise answer treats 13→14 as "the version that introduced the App
 
 **Sources checked:** nextjs.org/blog/next-14 (Server Actions stable, no config flag needed)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Airbnb"],
     orderIndex: 91,
   },
@@ -2603,6 +2635,7 @@ The \`fetch()\` default-caching flip is easy to get backwards in conversation �
 
 **Sources checked:** nextjs.org/blog/next-15, nextjs.org/docs/app/guides/upgrading/version-15 (async dynamic APIs, fetch default flipped to no-store)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     orderIndex: 92,
   },
@@ -2635,6 +2668,7 @@ Unlike \`getStaticPaths\`'s explicit three-way \`fallback\` option (\`false\`/\`
 
 **Sources checked:** nextjs.org/docs/app/api-reference/functions/generate-static-params (dynamicParams defaults to true)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Shopify"],
     orderIndex: 93,
   },
@@ -2664,6 +2698,7 @@ React's \`cache()\` alone is frequently mistaken for a real caching solution whe
 
 **Related:** [What are React cache() and use() in the Next.js context?](/interview-prep/ff-nextjs/react-cache-and-use-in-nextjs-context) · [What is unstable_cache in Next.js?](/interview-prep/ff-nextjs/unstable-cache-in-nextjs)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Netflix"],
     orderIndex: 94,
   },
@@ -2689,6 +2724,7 @@ Calling \`draftMode().enable()\`/\`.disable()\` **throws if the Route Handler ru
 
 **Sources checked:** nextjs.org/docs/app/guides/draft-mode, nextjs.org/docs/app/api-reference/functions/draft-mode (draftMode throws on the Edge Runtime)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Contentful"],
     orderIndex: 95,
   },
@@ -2718,6 +2754,7 @@ An in-memory counter (a plain JavaScript \`Map\`) does **not** work correctly fo
 
 **Related:** [What is middleware in Next.js?](/interview-prep/ff-nextjs/middleware-in-nextjs)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Cloudflare"],
     orderIndex: 96,
   },
@@ -2749,6 +2786,7 @@ These aren't stable APIs to build a production authorization system entirely aro
 
 **Sources checked:** nextjs.org/docs/app/api-reference/functions/forbidden, nextjs.org/docs/app/api-reference/config/next-config-js/authInterrupts (experimental as of Next.js 15.1)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Auth0"],
     orderIndex: 97,
   },
@@ -2784,6 +2822,7 @@ Attempting to unit-test an **async Server Component** directly with Vitest/RTL t
 
 **Sources checked:** nextjs.org/docs/app/guides/testing (Vitest does not currently support testing async Server Components directly)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Vercel", "Meta"],
     orderIndex: 98,
   },
@@ -2808,6 +2847,7 @@ The deciding factor for a Next.js project specifically is often **authentication
 
 **Sources checked:** playwright.dev, docs.cypress.io (Playwright's native multi-origin support vs. Cypress's single-origin model)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Vercel", "Airbnb"],
     orderIndex: 99,
   },

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
 import type { ChallengeDifficulty } from "@/lib/constants";
 import type { InterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
 
@@ -18,6 +19,9 @@ type Props = {
   question: string;
   difficulty: ChallengeDifficulty;
   companies: string[];
+  isPremium: boolean;
+  // Drives PremiumBadge's icon only — the real gate lives on the detail page.
+  isPremiumUser: boolean;
   completed: boolean;
   pending: boolean;
   onToggleComplete: (slug: string, completed: boolean) => void;
@@ -33,6 +37,8 @@ export function CollectionQuestionListRow({
   question,
   difficulty,
   companies,
+  isPremium,
+  isPremiumUser,
   completed,
   pending,
   onToggleComplete,
@@ -56,6 +62,8 @@ export function CollectionQuestionListRow({
           >
             {question}
           </span>
+
+          {isPremium && <PremiumBadge isPremiumUser={isPremiumUser} size="xs" />}
 
           {companies.length > 0 && (
             <span className="flex shrink-0 items-center gap-1.5">

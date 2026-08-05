@@ -26,12 +26,18 @@ type Props = {
   routeCollection: InterviewPrepRouteCollection;
   questions: CollectionQuestionListItem[];
   isLoggedIn: boolean;
+  isPremiumUser: boolean;
 };
 
 // Same filtering approach as Practice's ChallengeListClient (search + pill
 // filters, client-side over an already-fetched array — small enough dataset
 // per collection that this needs no pagination).
-export function CollectionQuestionListClient({ routeCollection, questions, isLoggedIn }: Props) {
+export function CollectionQuestionListClient({
+  routeCollection,
+  questions,
+  isLoggedIn,
+  isPremiumUser,
+}: Props) {
   const router = useRouter();
   const reduceMotion = useSafeReducedMotion();
   const [search, setSearch] = useState("");
@@ -183,6 +189,7 @@ export function CollectionQuestionListClient({ routeCollection, questions, isLog
                   routeCollection={routeCollection}
                   index={i + 1}
                   {...q}
+                  isPremiumUser={isPremiumUser}
                   pending={pendingSlugs.has(q.slug)}
                   onToggleComplete={handleToggleComplete}
                 />
