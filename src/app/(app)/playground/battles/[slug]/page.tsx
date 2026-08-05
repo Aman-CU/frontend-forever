@@ -41,6 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = `${challenge.title} | UI Battles | Frontend Forever`;
   const description = isChallengeLocked ? GENERIC_BATTLE_DESCRIPTION : challenge.description;
   const baseUrl = await getBaseUrl();
+  const pageUrl = `${baseUrl}/playground/battles/${slug}`;
   // The target screenshot is never gated (always-visible live comparison
   // pane), so it's safe as the share image regardless of lock state.
   const imageUrl = `${baseUrl}${challenge.targetImageUrl}`;
@@ -48,11 +49,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
+    alternates: { canonical: pageUrl },
     robots: isChallengeLocked ? { index: false, follow: false } : { index: true, follow: true },
     openGraph: {
       title,
       description,
-      url: `${baseUrl}/playground/battles/${slug}`,
+      url: pageUrl,
       type: "article",
       siteName: "Frontend Forever",
       images: [{ url: imageUrl }],
