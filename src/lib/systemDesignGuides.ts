@@ -26,6 +26,10 @@ export type SystemDesignGuideFrontmatter = {
   datePublished: string;
   dateModified: string;
   companies?: string[];
+  // Feature 38: 60/40 split, same company-tag-count proxy as Practice/FF
+  // Collections. Defaults to false for any guide authored before this field
+  // existed, matching every other content type's isPremium default.
+  isPremium?: boolean;
 };
 
 export type SystemDesignGuide = {

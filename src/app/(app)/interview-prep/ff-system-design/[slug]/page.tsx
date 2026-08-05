@@ -8,8 +8,11 @@ import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 import type { ChallengeDifficulty } from "@/lib/constants";
 import { safeJsonLd } from "@/lib/seo";
+import { getCachedSession } from "@/lib/auth/server";
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { mdxComponents } from "@/components/shared/mdxComponents";
 import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
+import { getIsPremiumUser } from "@/features/interview-prep/lib/queries";
 import {
   getAdjacentSystemDesignGuides,
   getAllSystemDesignGuides,
@@ -92,8 +95,34 @@ export async function generateMetadata({
   const guide = getSystemDesignGuide(slug);
   if (!guide) return {};
 
+  const session = await getCachedSession();
+  const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
+  const isLocked = Boolean(guide.frontmatter.isPremium) && !isPremiumUser;
+
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/ff-system-design/${slug}`;
+
+  // A locked guide's real summary never goes in metadata either — meta
+  // description/OG/Twitter tags are just as recoverable via view-source or a
+  // social-share preview as the rendered page (same rule as Practice's and
+  // FF Collections' generateMetadata). robots: noindex too — the body
+  // renders a generic wall with nothing real for a crawler to index. The
+  // title stays real (see the list page's BLURRED_SUMMARY_PLACEHOLDER
+  // comment — a system design prompt name is a generic, evergreen topic on
+  // its own, same reasoning as Practice's always-visible challenge titles).
+  if (isLocked) {
+    const title = `${guide.frontmatter.title} | Frontend Forever`;
+    const description = "Upgrade to Premium to unlock this system design guide.";
+    return {
+      title,
+      description,
+      alternates: { canonical: pageUrl },
+      robots: { index: false, follow: false },
+      openGraph: { title, description, url: pageUrl, type: "article", siteName: "Frontend Forever" },
+      twitter: { card: "summary_large_image", title, description },
+    };
+  }
+
   const title = `${guide.frontmatter.title} | Frontend Forever`;
 
   return {
@@ -123,10 +152,50 @@ export default async function SystemDesignGuidePage({
     notFound();
   }
 
+  const session = await getCachedSession();
+  const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
+  const isGuideLocked = Boolean(guide.frontmatter.isPremium) && !isPremiumUser;
+
   const { prev, next } = getAdjacentSystemDesignGuides(slug);
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/ff-system-design/${slug}`;
   const { frontmatter } = guide;
+
+  // Full wall, not a "summary visible, body locked" teaser — same reasoning
+  // as every other Feature 38 detail page (Learn's Interview tab, Practice,
+  // FF Collections): render nothing from the real MDX body, no diagrams, no
+  // JSON-LD (matches generateMetadata's robots: noindex above — there's
+  // nothing real here for a crawler to cite). The guide's own `content`
+  // string is simply never passed to MDXRemote in this branch, so it never
+  // crosses the server->client boundary either.
+  if (isGuideLocked) {
+    return (
+      <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <InterviewPrepBreadcrumb
+              backHref="/interview-prep/ff-system-design"
+              crumbs={[
+                { label: "Interview Prep", href: "/interview-prep" },
+                { label: META.label, href: "/interview-prep/ff-system-design" },
+                { label: "Premium Guide" },
+              ]}
+            />
+          </div>
+          <SystemDesignGuidePrevNextNav prev={prev} next={next} />
+        </div>
+
+        <div className="mt-6">
+          <PremiumLocked
+            title="Premium system design guide"
+            description="Upgrade to Premium to unlock this guide."
+            isLoggedIn={!!session?.user}
+          />
+        </div>
+      </div>
+    );
+  }
+
   const ArchitectureDiagram = getArchitectureDiagramComponent(slug);
   const SequenceDiagramForGuide = getSequenceDiagramComponent(slug);
 
