@@ -22,6 +22,10 @@ type Props = {
   isPremium: boolean;
   // Drives PremiumBadge's icon only — the real gate lives on the detail page.
   isPremiumUser: boolean;
+  // True for any premium question shown to a non-premium viewer — the
+  // `question` prop is already a fake placeholder in that case (page.tsx),
+  // this just adds the visual blur.
+  isBlurred: boolean;
   completed: boolean;
   pending: boolean;
   onToggleComplete: (slug: string, completed: boolean) => void;
@@ -39,6 +43,7 @@ export function CollectionQuestionListRow({
   companies,
   isPremium,
   isPremiumUser,
+  isBlurred,
   completed,
   pending,
   onToggleComplete,
@@ -58,6 +63,7 @@ export function CollectionQuestionListRow({
             className={cn(
               "truncate text-sm font-medium",
               completed ? "text-text-muted" : "text-text-primary",
+              isBlurred && "select-none blur-[3px]",
             )}
           >
             {question}

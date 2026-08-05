@@ -22,9 +22,15 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "not-started", label: "Not started" },
 ];
 
+// isBlurred isn't part of the raw query shape — it's a display decision the
+// page computes (real text / blurred placeholder / FF75 hidden label) based
+// on the viewer's own premium status, same layer QuestionCard's isLocked
+// used to live at.
+type ClientQuestionItem = CollectionQuestionListItem & { isBlurred: boolean };
+
 type Props = {
   routeCollection: InterviewPrepRouteCollection;
-  questions: CollectionQuestionListItem[];
+  questions: ClientQuestionItem[];
   isLoggedIn: boolean;
   isPremiumUser: boolean;
 };
