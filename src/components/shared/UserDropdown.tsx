@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CreditCard,
   FileText,
   LayoutDashboard,
   Loader2,
@@ -49,7 +50,9 @@ type UserDropdownProps = {
   // Feature 38 Stage 9. Display-only, never a gate — the real premium checks
   // all live server-side on the routes that own the content. Optional and
   // defaulting to false so the marketing Navbar, which has no profile read,
-  // simply doesn't show the item rather than showing a wrong one.
+  // simply doesn't show the item rather than showing a wrong one. Swaps the
+  // item's label/icon rather than hiding it once premium — /pricing supports
+  // switching plans, so an existing subscriber has a real reason to go there.
   isPremiumUser?: boolean;
 };
 
@@ -108,20 +111,24 @@ export function UserDropdown({ user, isPremiumUser = false }: UserDropdownProps)
           <p className="truncate text-xs text-text-muted">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
-        {/* The one upgrade entry point that exists at every viewport width.
+        {/* The one plan entry point that exists at every viewport width.
             AppNavbar's pill can only appear from 1366px up without pushing
             the avatar off-screen, and the mobile menu stops at 1024px — which
             left 1024–1365px with no navbar route to pricing at all. This
-            dropdown is present at every width, so it closes that gap. */}
-        {!isPremiumUser && (
-          <DropdownMenuItem
-            onClick={() => router.push("/pricing")}
-            className="text-premium focus:bg-premium-light focus:text-premium [&_svg]:!text-premium"
-          >
+            dropdown is present at every width, so it closes that gap. Stays
+            visible once premium too (relabeled "Manage plan") — /pricing's
+            CTAs support switching plans, not just first-time upgrade. */}
+        <DropdownMenuItem
+          onClick={() => router.push("/pricing")}
+          className="text-premium focus:bg-premium-light focus:text-premium [&_svg]:!text-premium"
+        >
+          {isPremiumUser ? (
+            <CreditCard className="mr-2 size-4" />
+          ) : (
             <Sparkles className="mr-2 size-4" />
-            Upgrade to Premium
-          </DropdownMenuItem>
-        )}
+          )}
+          {isPremiumUser ? "Manage plan" : "Upgrade to Premium"}
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => router.push("/dashboard")}>
           <LayoutDashboard className="mr-2 size-4" />
           Dashboard
