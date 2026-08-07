@@ -39,17 +39,30 @@ export async function generateMetadata({
   const challenge = await getChallengeBySlug(category, slug);
   if (!challenge) return {};
 
+  // Same gate as the page body below — generateMetadata is a separate
+  // invocation with its own scope, so it never inherits isChallengeLocked and
+  // must recompute it, or the real description ships in <meta>/OG/Twitter
+  // tags for an anonymous request regardless of what the rendered page shows
+  // (security.md).
+  const session = await getCachedSession();
+  const userId = session?.user?.id ?? null;
+  const isPremiumUser = userId ? await getIsPremiumUser(userId) : false;
+  const isChallengeLocked = challenge.isPremium && !isPremiumUser;
+
   const label = PRACTICE_CATEGORY_LABELS[category];
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/practice/${category}/${slug}`;
   const title = `${label} #${challenge.questionNumber}: ${challenge.title} | Frontend Forever`;
-  const description = toPlainTextSummary(challenge.description) || `${label} · ${challenge.difficulty} — solve it live in the Frontend Forever editor.`;
+  const genericDescription = `${label} · ${challenge.difficulty} — solve it live in the Frontend Forever editor.`;
+  const description = isChallengeLocked
+    ? genericDescription
+    : toPlainTextSummary(challenge.description) || genericDescription;
 
   return {
     title,
     description,
     alternates: { canonical: pageUrl },
-    robots: { index: true, follow: true },
+    robots: isChallengeLocked ? { index: false, follow: false } : { index: true, follow: true },
     openGraph: {
       title,
       description,
@@ -126,7 +139,10 @@ export default async function ChallengeEditorPage({ params }: { params: Promise<
     learningResourceType: "Coding Challenge",
     about: label,
     inLanguage: "en",
-    isAccessibleForFree: !isChallengeLocked,
+    // The challenge's own price, not the current viewer's entitlement — a
+    // premium challenge isn't "accessible for free" just because this
+    // particular visitor happens to have premium access.
+    isAccessibleForFree: !challenge.isPremium,
     url: pageUrl,
     provider: { "@type": "Organization", name: "Frontend Forever", url: baseUrl },
   };
