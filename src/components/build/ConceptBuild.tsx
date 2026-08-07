@@ -9,7 +9,8 @@ import { CodeEditor } from "@/components/shared/CodeEditor";
 import { Markdown } from "@/components/shared/Markdown";
 import { SolutionPanel } from "@/components/shared/SolutionPanel";
 import { TestResultsPanel } from "@/components/shared/TestResultsPanel";
-import { BuildEmptyState, BuildPremiumLocked } from "@/features/build/components/BuildStates";
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
+import { BuildEmptyState } from "@/features/build/components/BuildStates";
 import { MarkBuildCompleteButton } from "@/features/build/components/MarkBuildCompleteButton";
 import { getBuildTestSpec } from "@/features/build/data/testSpecs";
 import { useSandbox } from "@/hooks/useSandbox";
@@ -37,7 +38,14 @@ export function ConceptBuild({
   isPremiumLocked,
 }: Props) {
   if (!projectBrief) return <BuildEmptyState />;
-  if (isPremiumLocked) return <BuildPremiumLocked isLoggedIn={isLoggedIn} />;
+  if (isPremiumLocked)
+    return (
+      <PremiumLocked
+        title="Premium build project"
+        description="Upgrade to Premium to unlock this build project."
+        isLoggedIn={isLoggedIn}
+      />
+    );
   return (
     <BuildWorkspace
       projectBrief={projectBrief}

@@ -95,6 +95,17 @@ export const challenges = pgTable(
     // Nullable — most challenges have no video yet; no user-submission path.
     videoUrl: text("video_url"),
     isPremium: boolean("is_premium").notNull().default(false),
+    // Feature 38: links a premium "harder follow-up" challenge (e.g. GFE's
+    // "Accordion II") back to its free base challenge, so the list page can
+    // render the pair adjacently and the premium-selection pass can query
+    // variants directly instead of relying on title/ordering convention.
+    // Self-reference (callback form sidesteps the temporal-dead-zone issue,
+    // same pattern as roadmapNodes.parentId), nullable — most challenges have
+    // no variant. A base challenge is never itself a variant of anything.
+    parentChallengeId: uuid("parent_challenge_id").references(
+      (): AnyPgColumn => challenges.id,
+      { onDelete: "set null" },
+    ),
     orderIndex: integer("order_index").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -102,6 +113,7 @@ export const challenges = pgTable(
     index("challenges_concept_id_idx").on(table.conceptId),
     index("challenges_difficulty_idx").on(table.difficulty),
     index("challenges_category_idx").on(table.category),
+    index("challenges_parent_challenge_id_idx").on(table.parentChallengeId),
     check(
       "challenges_difficulty_check",
       sql`${table.difficulty} IN (${sql.join(
@@ -464,11 +476,17 @@ export const conceptsRelations = relations(concepts, ({ many }) => ({
   roadmapNodeLinks: many(roadmapNodeLinks),
 }));
 
-export const challengesRelations = relations(challenges, ({ one }) => ({
+export const challengesRelations = relations(challenges, ({ one, many }) => ({
   concept: one(concepts, {
     fields: [challenges.conceptId],
     references: [concepts.id],
   }),
+  parentChallenge: one(challenges, {
+    fields: [challenges.parentChallengeId],
+    references: [challenges.id],
+    relationName: "challengeVariants",
+  }),
+  variants: many(challenges, { relationName: "challengeVariants" }),
 }));
 
 export const projectBriefsRelations = relations(projectBriefs, ({ one }) => ({
