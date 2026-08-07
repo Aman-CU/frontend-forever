@@ -63,34 +63,42 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
     userId ? getIsPremiumUser(userId) : Promise.resolve(false),
   ]);
 
-  // Server-side premium gate seam (Feature 38 fleshes this out). Always false
-  // today for challenges (no challenge is premium yet); real for Build tab as
-  // of Feature 26 — 3 of the 4 seeded project briefs are premium.
-  const isPremiumLocked = (challenge?.isPremium ?? false) && !isPremiumUser;
-  const isBuildPremiumLocked = (projectBrief?.isPremium ?? false) && !isPremiumUser;
+  // Feature 38: one concept-level gate drives Simulate/Challenge/Interview/
+  // Build together — replaces the old per-item isPremium checks on
+  // challenge/projectBrief/interviewQuestions (those columns are now dead for
+  // concept-linked rows; challenges.isPremium still matters for Practice's
+  // standalone rows). Understand is never gated — see progress-tracker.md's
+  // Feature 38 entry: the SEO/GEO crawl story and the product's stated
+  // differentiator (the simulator) both depend on every concept staying
+  // browsable, so only the other 4 tabs lock.
+  const isPremiumLocked = concept.isPremium && !isPremiumUser;
 
-  // Never serialize the reference solution into the client payload for a locked
-  // challenge — premium content is gated server-side (security.md), the client
-  // UI is cosmetic only.
+  // Never serialize the description, starter code, tests, hints, or reference
+  // solution into the client payload for a locked concept — ConceptChallenge's
+  // locked branch never reads these fields, but React still serializes every
+  // prop that crosses the server->client boundary regardless of what actually
+  // renders. Mirrors clientProjectBrief's redaction below.
   const clientChallenge =
-    challenge && isPremiumLocked ? { ...challenge, solutionCode: "" } : challenge;
+    challenge && isPremiumLocked
+      ? { ...challenge, description: "", starterCode: "", solutionCode: "", testCases: [], hints: [] }
+      : challenge;
 
-  // Same server-side gate, per question: strip the answer (never send it to a
-  // non-premium client) and flag isLocked so the tab can render a teaser instead
-  // of silently omitting the question. Currently unreachable — no concept-linked
-  // question is premium yet — but every future one is gated the moment it's added.
-  const clientInterviewQuestions = interviewQuestions.map((q) => {
-    const isLocked = q.isPremium && !isPremiumUser;
-    return isLocked ? { ...q, answer: "", isLocked } : { ...q, isLocked };
-  });
+  // Interview shows a full PremiumLocked wall when the concept is locked, not
+  // a per-question teaser — even the question text (not just the answer) has
+  // to stay off the client for a locked concept, since a visible question is
+  // enough for someone to Google the answer elsewhere. An empty array is the
+  // simplest way to guarantee that: ConceptInterview never receives real row
+  // data to accidentally serialize when locked, rather than trusting every
+  // future code path inside it to keep redacting individual fields correctly.
+  const clientInterviewQuestions = isPremiumLocked ? [] : interviewQuestions;
 
   // Same server-side gate for the Build tab: never serialize the brief,
   // starter code, solution, or tests into the client payload for a locked
-  // project — ConceptBuild renders BuildPremiumLocked instead and ignores this
+  // concept — ConceptBuild renders PremiumLocked instead and ignores this
   // data, but it must never reach the client bundle in the first place
   // (security.md).
   const clientProjectBrief =
-    projectBrief && isBuildPremiumLocked
+    projectBrief && isPremiumLocked
       ? { ...projectBrief, description: "", starterCode: "", solutionCode: "", testCases: [] }
       : projectBrief;
 
@@ -111,6 +119,7 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
       conceptId={concept.id}
       isLoggedIn={userId !== null}
       initialCompleted={initialSimulated}
+      isPremiumLocked={isPremiumLocked}
     />
   );
 
@@ -131,6 +140,7 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
       isLoggedIn={userId !== null}
       initialCompleted={initialInterviewed}
       initialRatings={initialInterviewRatings}
+      isPremiumLocked={isPremiumLocked}
     />
   );
 
@@ -140,7 +150,7 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
       conceptId={concept.id}
       isLoggedIn={userId !== null}
       initialCompleted={initialBuilt}
-      isPremiumLocked={isBuildPremiumLocked}
+      isPremiumLocked={isPremiumLocked}
     />
   );
 

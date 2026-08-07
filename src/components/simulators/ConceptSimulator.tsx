@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Code2 } from "lucide-react";
 
 import type { SimulatorRootProps } from "@/components/shared/simulator-chrome/types";
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { BrowserPipelineSimulator } from "@/features/simulators/browser-pipeline/components/BrowserPipelineSimulator";
 import { CssSpecificitySimulator } from "@/features/simulators/css-specificity/components/CssSpecificitySimulator";
 import { EventLoopSimulator } from "@/features/simulators/event-loop/components/EventLoopSimulator";
@@ -30,6 +31,11 @@ type Props = {
   conceptId: string;
   isLoggedIn: boolean;
   initialCompleted: boolean;
+  // Server-side premium gate — true when the concept is premium and the user
+  // isn't (page.tsx, mirrors ConceptChallenge/ConceptBuild's isPremiumLocked).
+  // Concept-level, not simulator-specific: Feature 38 locks Simulate/Challenge/
+  // Interview/Build together per concept, Understand never locks.
+  isPremiumLocked: boolean;
 };
 
 export function ConceptSimulator({
@@ -37,6 +43,7 @@ export function ConceptSimulator({
   conceptId,
   isLoggedIn,
   initialCompleted,
+  isPremiumLocked,
 }: Props) {
   const router = useRouter();
   const Simulator = SIMULATOR_BY_SLUG[conceptSlug];
@@ -44,6 +51,20 @@ export function ConceptSimulator({
   // Guards the POST so a single play-through (and every replay after) only writes
   // once. Starts true when already complete, so a returning user never re-posts.
   const hasPostedRef = useRef(initialCompleted);
+
+  // Checked before the "no simulator" empty state (deliberately the reverse of
+  // Build/Challenge's existing order) — only 4 concepts have a real simulator
+  // today, so a locked concept is far more likely to hit "no simulator yet"
+  // than a real one; "premium" is the more honest message either way.
+  if (isPremiumLocked) {
+    return (
+      <PremiumLocked
+        title="Premium simulator"
+        description="Upgrade to Premium to unlock this concept's interactive simulator."
+        isLoggedIn={isLoggedIn}
+      />
+    );
+  }
 
   if (!Simulator) {
     return (

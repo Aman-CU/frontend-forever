@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Users } from "lucide-react";
 
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { MoreInterviewPrepCta } from "@/features/interview-prep/components/MoreInterviewPrepCta";
 import {
   QuestionCard,
@@ -12,16 +13,20 @@ import {
 } from "@/features/interview-prep/components/QuestionCard";
 import type { InterviewQuestionData } from "@/features/learn/lib/queries";
 
-// isLocked is computed server-side (page.tsx) from isPremium + the viewer's
-// premium status — see security.md, premium gating is never client-side only.
-type ClientInterviewQuestion = InterviewQuestionData & { isLocked: boolean };
-
 type Props = {
-  questions: ClientInterviewQuestion[];
+  questions: InterviewQuestionData[];
   conceptId: string;
   isLoggedIn: boolean;
   initialCompleted: boolean;
   initialRatings: Record<string, QuestionRating>;
+  // Server-side premium gate (page.tsx, mirrors ConceptChallenge/ConceptBuild/
+  // ConceptSimulator's isPremiumLocked). A full wall, not the per-question
+  // "question visible, answer locked" teaser this tab used to have — showing
+  // even the question text would let someone Google it and find the answer
+  // elsewhere, defeating the gate. page.tsx sends an empty questions array
+  // whenever this is true, so there's no real question text in the payload
+  // to leak via view-source either.
+  isPremiumLocked: boolean;
 };
 
 // components/-layer host for a concept's Interview tab — lives here (not
@@ -37,6 +42,7 @@ export function ConceptInterview({
   isLoggedIn,
   initialCompleted,
   initialRatings,
+  isPremiumLocked,
 }: Props) {
   const router = useRouter();
   const [ratings, setRatings] = useState<Record<string, QuestionRating>>(initialRatings);
@@ -47,13 +53,22 @@ export function ConceptInterview({
   // Fire-once guard for the completion POST, mirroring ConceptChallenge.
   const hasPostedRef = useRef(initialCompleted);
 
+  // Checked before the empty state, same reasoning as ConceptSimulator: a
+  // locked concept always says "premium," regardless of whether it happens
+  // to have real questions — page.tsx sends an empty array when locked, so
+  // hasQuestions alone can't tell the two cases apart.
+  if (isPremiumLocked) {
+    return (
+      <PremiumLocked
+        title="Premium interview questions"
+        description="Upgrade to Premium to unlock this concept's interview questions."
+        isLoggedIn={isLoggedIn}
+      />
+    );
+  }
+
   const hasQuestions = questions.length > 0;
-  // Premium-locked questions can't be rated (no visible answer to assess), so
-  // they're excluded from the denominator — completion means "answered every
-  // question you can actually see." Currently always equal to questions.length
-  // (no concept-linked question is premium yet), but this keeps the count
-  // correct the moment one is.
-  const total = questions.filter((q) => !q.isLocked).length;
+  const total = questions.length;
   const answeredCount = Object.keys(ratings).length;
   // A returning user normally has ratings restored via initialRatings, so this
   // is rare — but a legacy completion from before ratings were persisted (or a
@@ -160,9 +175,10 @@ export function ConceptInterview({
           <div>
             <h2 className="text-lg font-bold text-text-primary">Interview Questions</h2>
             <p className="mt-0.5 text-sm text-text-secondary">
-              {total > 0
-                ? `Reveal each answer, then mark how you did. Answer all ${total} to complete this tab.`
-                : "These questions are part of Premium. Upgrade to unlock them."}
+              {/* total is always > 0 here — the isPremiumLocked branch above
+                  already returned, and !hasQuestions already returned too. */}
+              Reveal each answer, then mark how you did. Answer all {total} to complete this
+              tab.
             </p>
           </div>
           {showCompletedPill && (
@@ -206,7 +222,12 @@ export function ConceptInterview({
           <QuestionCard
             key={question.id}
             index={i + 1}
-            question={question}
+            // isLocked is always false here — a locked concept never reaches
+            // this render at all (the isPremiumLocked branch above returns
+            // first), so QuestionCard's own per-question lock UI is unused
+            // by this tab now. Still required by QuestionCard's props since
+            // FF Collections (Feature 38 Stage 5) uses real per-item locking.
+            question={{ ...question, isLocked: false }}
             rating={ratings[question.id]}
             onRate={(rating) => handleRate(question.id, rating)}
             saveFailed={failedRatingIds.has(question.id)}
