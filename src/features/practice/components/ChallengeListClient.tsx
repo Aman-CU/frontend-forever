@@ -1,8 +1,9 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Building2, ChevronDown, Search } from "lucide-react";
+import { Building2, ChevronDown, Lock, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,13 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useSafeReducedMotion } from "@/hooks/useSafeReducedMotion";
 import { CHALLENGE_DIFFICULTIES, type ChallengeDifficulty } from "@/lib/constants";
 import { ChallengeListRow } from "@/features/practice/components/ChallengeListRow";
@@ -28,13 +36,19 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
 
 type Props = {
   challenges: PracticeChallengeSummary[];
+  // Feature 38 — company filtering is a premium feature. When false, every
+  // challenge's `companies` array has already been redacted to [] by the
+  // page (security.md — never client-side only), so the filter dropdown
+  // below would just be empty; isPremiumUser instead swaps in a locked
+  // trigger that opens an upgrade prompt.
+  isPremiumUser: boolean;
 };
 
 // Filters the (mock, for now) challenge list client-side — this is still a
 // UI-first pass per Rule 1: pure local array filtering, no data-fetching
 // logic. A follow-up pass swaps MockChallenge[] for a real query result and
 // this component's filtering logic carries over unchanged.
-export function ChallengeListClient({ challenges }: Props) {
+export function ChallengeListClient({ challenges, isPremiumUser }: Props) {
   const reduceMotion = useSafeReducedMotion();
   const [search, setSearch] = useState("");
   // Deferred, not the raw keystroke value: with a category running into the
@@ -112,11 +126,15 @@ export function ChallengeListClient({ challenges }: Props) {
         <div className="h-4 w-px bg-border" aria-hidden />
         <FilterPillGroup value={status} onChange={setStatus} options={STATUS_FILTERS} />
         <div className="h-4 w-px bg-border" aria-hidden />
-        <CompanyFilterDropdown
-          availableCompanies={availableCompanies}
-          selected={companies}
-          onToggle={toggleCompany}
-        />
+        {isPremiumUser ? (
+          <CompanyFilterDropdown
+            availableCompanies={availableCompanies}
+            selected={companies}
+            onToggle={toggleCompany}
+          />
+        ) : (
+          <CompanyFilterUpsell />
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -140,7 +158,7 @@ export function ChallengeListClient({ challenges }: Props) {
                 exit={{ opacity: 0 }}
                 transition={{ duration: reduceMotion ? 0 : 0.15 }}
               >
-                <ChallengeListRow index={i + 1} {...challenge} />
+                <ChallengeListRow index={i + 1} {...challenge} isPremiumUser={isPremiumUser} />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -185,6 +203,46 @@ function CompanyFilterDropdown({
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+// Feature 38: company filtering is premium. Rather than a real dropdown with
+// nothing in it (every challenge's companies array is already [] for a
+// non-premium viewer — security.md, redacted server-side before this ever
+// renders), this is a locked trigger that opens a short upgrade prompt on
+// click. No pricing details embedded here — every upgrade surface in this
+// app routes to the one real /pricing page instead of duplicating plan/price
+// UI in N different modals.
+function CompanyFilterUpsell() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1.5 rounded-lg border border-dashed border-premium/50 px-2.5 py-1.5 text-xs font-medium text-premium transition-colors hover:border-premium"
+      >
+        <Lock className="h-3 w-3" aria-hidden />
+        Company
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Filter by company</DialogTitle>
+            <DialogDescription>
+              Upgrade to Premium to filter challenges by the companies known to ask them, and
+              unlock every challenge&apos;s company tags.
+            </DialogDescription>
+          </DialogHeader>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center justify-center rounded-lg bg-premium px-4 py-2.5 text-sm font-semibold text-premium-foreground transition-colors hover:bg-premium/90"
+          >
+            Upgrade to Premium
+          </Link>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

@@ -8,7 +8,7 @@ import {
   PRACTICE_CATEGORY_LABELS,
   isPracticeCategory,
 } from "@/features/practice/lib/practiceCategories";
-import { getPracticeChallengesByCategory } from "@/features/practice/lib/queries";
+import { getIsPremiumUser, getPracticeChallengesByCategory } from "@/features/practice/lib/queries";
 
 type Params = { category: string };
 
@@ -24,7 +24,17 @@ export default async function PracticeCategoryPage({ params }: { params: Promise
 
   const meta = CATEGORY_META[category];
   const label = PRACTICE_CATEGORY_LABELS[category];
-  const challenges = await getPracticeChallengesByCategory(category, userId);
+  const [challenges, isPremiumUser] = await Promise.all([
+    getPracticeChallengesByCategory(category, userId),
+    userId ? getIsPremiumUser(userId) : Promise.resolve(false),
+  ]);
+
+  // Company tags are invisible until premium, on every challenge regardless
+  // of that challenge's own isPremium status (Feature 38) — never serialize
+  // the real companies array to a non-premium client (security.md).
+  const clientChallenges = isPremiumUser
+    ? challenges
+    : challenges.map((c) => ({ ...c, companies: [] }));
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
@@ -38,7 +48,7 @@ export default async function PracticeCategoryPage({ params }: { params: Promise
         <p className="mt-1.5 text-sm text-text-secondary">{meta.description}</p>
       </div>
 
-      <ChallengeListClient challenges={challenges} />
+      <ChallengeListClient challenges={clientChallenges} isPremiumUser={isPremiumUser} />
     </div>
   );
 }

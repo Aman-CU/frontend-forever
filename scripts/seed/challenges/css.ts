@@ -21,6 +21,7 @@ applyBoxSizing(el, "border-box");
 // now renders at exactly 200px wide — padding and border no longer add to it
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function applyBoxSizing(el, mode) {
 }`,
     solutionCode: `function applyBoxSizing(el, mode) {
@@ -517,6 +518,7 @@ applyGridLayoutTwo(container, 150);
 // in a 500px-wide container, column 1 renders 150px, column 2 renders 350px
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function applyGridLayoutTwo(container, sidebarWidth) {
 }`,
     solutionCode: `function applyGridLayoutTwo(container, sidebarWidth) {
@@ -586,6 +588,7 @@ applyMultiColumnText(el, 3);
 // el's text now flows across 3 newspaper-style columns, reflowed automatically
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function applyMultiColumnText(el, columnCount) {
 }`,
     solutionCode: `function applyMultiColumnText(el, columnCount) {
@@ -619,6 +622,7 @@ applyThreeColumnFeedLayout(container, 250, 300, 600);
 // (flex: 0 1 600px + max-width: 600px), sidebar renders 300px
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function applyThreeColumnFeedLayout(container, navWidth, sidebarWidth, mainMaxWidth) {
 }`,
     solutionCode: `function applyThreeColumnFeedLayout(container, navWidth, sidebarWidth, mainMaxWidth) {
@@ -740,6 +744,7 @@ applyGoldenRatioRectangle(el, 300);
 // el.style.height === "185.4...px" (300 / 1.618, ≈185.4px)
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function applyGoldenRatioRectangle(el, width) {
 }`,
     solutionCode: `function applyGoldenRatioRectangle(el, width) {
@@ -775,6 +780,7 @@ applyCssTriangle(el, 20, "red");
 // renders as an upward-pointing red triangle, 40px wide at its base
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function applyCssTriangle(el, size, color) {
 }`,
     solutionCode: `function applyCssTriangle(el, size, color) {
@@ -852,6 +858,7 @@ applyToggleSwitch(rootEl);
 // once the checkbox is checked, the slider slides 20px to the right automatically
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function applyToggleSwitch(rootEl) {
 }`,
     solutionCode: `function applyToggleSwitch(rootEl) {
@@ -891,6 +898,7 @@ applyCloseButtonX(el);
 // the two bars cross at the center, forming an "X" with zero extra markup
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function applyCloseButtonX(el) {
 }`,
     solutionCode: `function applyCloseButtonX(el) {
@@ -941,6 +949,7 @@ applyDoughnutChart(el, [{ color: "red", percent: 40 }, { color: "blue", percent:
 // punching a hole through the middle to form the doughnut ring
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function applyDoughnutChart(el, segments) {
 }`,
     solutionCode: `function applyDoughnutChart(el, segments) {
@@ -1029,6 +1038,7 @@ applyAspectRatio(el, 16, 9);
 // inside a 400px-wide container, el renders 400px × 225px (400 × 9/16)
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function applyAspectRatio(el, ratioWidth, ratioHeight) {
 }`,
     solutionCode: `function applyAspectRatio(el, ratioWidth, ratioHeight) {
@@ -1064,6 +1074,7 @@ applyBackgroundSize(el, "contain");
 // el.style.backgroundSize === "contain" — scales down to fit inside, may letterbox
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function applyBackgroundSize(el, mode) {
 }`,
     solutionCode: `function applyBackgroundSize(el, mode) {
@@ -1099,6 +1110,7 @@ applyAccentColor(inputEl, "red");
 // while its native focus ring and keyboard behavior stay untouched
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function applyAccentColor(inputEl, color) {
 }`,
     solutionCode: `function applyAccentColor(inputEl, color) {
@@ -1132,6 +1144,7 @@ applyCustomCounter(listEl, "item");
 // — children now render numbered "1. ", "2. ", "3. " automatically
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function applyCustomCounter(listEl, counterName) {
 }`,
     solutionCode: `function applyCustomCounter(listEl, counterName) {
@@ -1206,6 +1219,7 @@ applySelectionStyle(el, "rgb(255, 200, 0)");
 // selecting el's text now highlights it in that color instead of the browser default
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function applySelectionStyle(el, bgColor) {
 }`,
     solutionCode: `function applySelectionStyle(el, bgColor) {
@@ -1335,6 +1349,7 @@ applyHalfPixelBorder(el, "red");
 // the border renders visually at half width, without a literal 0.5px value
 \`\`\``,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `function applyHalfPixelBorder(el, color) {
 }`,
     solutionCode: `function applyHalfPixelBorder(el, color) {

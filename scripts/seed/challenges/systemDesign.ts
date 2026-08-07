@@ -89,6 +89,7 @@ rating.select(7)
 rating.getValue() // 5 (clamped to max)
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function createStarRating(max, initial) {
 }`,
     solutionCode: `function createStarRating(max, initial) {
@@ -144,6 +145,7 @@ game.play(4); game.play(1); game.play(5); game.play(2)
 game.getWinner() // "X"
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createTicTacToe() {
 }`,
     solutionCode: `function createTicTacToe() {
@@ -841,6 +843,7 @@ history.redo()
 history.getState() // still "c" — "b" is gone for good
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createUndoRedoStack(initialState) {
 }`,
     solutionCode: `function createUndoRedoStack(initialState) {
@@ -935,6 +938,7 @@ const state = {
 getVisibleTodos(state) // [{ id: 1, text: "Buy milk", done: false }]
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function getVisibleTodos(state) {
 }`,
     solutionCode: `function getVisibleTodos(state) {
@@ -972,6 +976,7 @@ calculateCourseProgress([
 calculateCourseProgress([]) // 0, not NaN
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function calculateCourseProgress(concepts) {
 }`,
     solutionCode: `function calculateCourseProgress(concepts) {
@@ -1200,6 +1205,7 @@ like.getLiked() // false — rolled back to the exact prior value
 like.getCount() // 0
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createLikeToggler(sendToServer) {
 }`,
     solutionCode: `function createLikeToggler(sendToServer) {
@@ -1253,6 +1259,7 @@ groupNotifications([
 // ]
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function groupNotifications(notifications) {
 }`,
     solutionCode: `function groupNotifications(notifications) {
@@ -1296,6 +1303,7 @@ tracker.hasUnseenStories("user1", ["s1", "s2", "s3"]) // false
 tracker.hasUnseenStories("user2", ["s1"]) // true — a different user's own history
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function createStoriesTracker() {
 }`,
     solutionCode: `function createStoriesTracker() {
@@ -1342,6 +1350,7 @@ selectBitrate(500, [{ label: "240p", requiredKbps: 400 }])
 // "240p" — the lowest available level, even though it's a tight fit
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function selectBitrate(bandwidthKbps, qualityLevels) {
 }`,
     solutionCode: `function selectBitrate(bandwidthKbps, qualityLevels) {
@@ -1382,6 +1391,7 @@ fs.deleteFile("index.js")
 // getTree() now has src/app.js, but no top-level index.js
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createFileTree() {
 }`,
     solutionCode: `function createFileTree() {
@@ -1435,6 +1445,7 @@ getRecalculationOrder({ A: [], B: ["A"], C: ["A"] })
 // A appears exactly once, before both B and C
 \`\`\``,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `function getRecalculationOrder(dependencies) {
 }`,
     solutionCode: `function getRecalculationOrder(dependencies) {
@@ -1483,6 +1494,7 @@ bucketDataPoints(
 // [{ timestamp: 0, average: 15 }, { timestamp: 1000, average: 30 }]
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function bucketDataPoints(points, bucketSizeMs) {
 }`,
     solutionCode: `function bucketDataPoints(points, bucketSizeMs) {

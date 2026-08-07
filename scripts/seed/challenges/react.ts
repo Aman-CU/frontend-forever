@@ -22,6 +22,7 @@ counter.reset();
 counter.getValue(); // 10 — back to initial, not 0
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function createCounterStore(initial = 0) {
 }`,
     solutionCode: `function createCounterStore(initial = 0) {
@@ -123,6 +124,7 @@ state = todoReducer(state, { type: "delete", id: 1 });
 // []
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function todoReducer(state, action) {
 }`,
     solutionCode: `function todoReducer(state, action) {
@@ -304,6 +306,7 @@ run();
 calls; // 1 — effectFn only ever ran once
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function createEffectOnce(effectFn) {
 }`,
     solutionCode: `function createEffectOnce(effectFn) {
@@ -388,6 +391,7 @@ counter.getValue(); // 5 — clamped, not 6
 createCounter({ initial: 10, max: 5 }).getValue(); // 5 — initial is clamped too
 \`\`\``,
     difficulty: "easy",
+    isPremium: true,
     starterCode: `function createCounter({ initial = 0, min = -Infinity, max = Infinity } = {}) {
 }`,
     solutionCode: `function createCounter({ initial = 0, min = -Infinity, max = Infinity } = {}) {
@@ -585,6 +589,7 @@ focus.isFocused(); // true
 focus.isFocused(); // false
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createFocusWatcher(el) {
 }`,
     solutionCode: `function createFocusWatcher(el) {
@@ -872,6 +877,7 @@ interval.updateCallback(callbackB);
 interval.stop(); // no further ticks
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createInterval(callback, delayMs) {
 }`,
     solutionCode: `function createInterval(callback, delayMs) {
@@ -919,6 +925,7 @@ run(); // effectFn runs
 calls; // 2
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createUpdateEffectRunner(effectFn) {
 }`,
     solutionCode: `function createUpdateEffectRunner(effectFn) {
@@ -1015,6 +1022,7 @@ list.clear();
 list.getValue(); // []
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createArrayState(initial = []) {
 }`,
     solutionCode: `function createArrayState(initial = []) {
@@ -1394,6 +1402,7 @@ store.count = 5; // logs "changed, count is now: 5"
 store.count; // 5 — store is directly mutable, no setter needed
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createValtioStore(initialState) {
 }`,
     solutionCode: `function createValtioStore(initialState) {
@@ -1520,6 +1529,7 @@ runtime.render(() => {
 });
 \`\`\``,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `function createStateRuntime() {
 }`,
     solutionCode: `function createStateRuntime() {
@@ -1586,6 +1596,7 @@ dispatch({ type: "increment" });
 // the next render reads state: 2
 \`\`\``,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `function createReducerRuntime() {
 }`,
     solutionCode: `function createReducerRuntime() {
@@ -1650,6 +1661,7 @@ render(1, 2); // deps unchanged — calls stays 1, memoized value reused
 render(1, 3); // a dep changed — calls factory again, calls === 2
 \`\`\``,
     difficulty: "hard",
+    isPremium: true,
     starterCode: `function createMemoRuntime() {
 }`,
     solutionCode: `function createMemoRuntime() {
@@ -1747,6 +1759,7 @@ tabs.isActive(idB); // true
 tabs.isActive(idA); // false
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createTabsController() {
 }`,
     solutionCode: `function createTabsController() {
@@ -1800,6 +1813,7 @@ boundary.reset();
 boundary.run(); // renderFn runs again from a clean state
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function createErrorBoundary(renderFn, fallbackFn) {
 }`,
     solutionCode: `function createErrorBoundary(renderFn, fallbackFn) {
@@ -1853,6 +1867,7 @@ attachImperativeHandle(ref, () => ({ focus }));
 ref.current.focus === focus; // true — exactly the curated methods, nothing extra
 \`\`\``,
     difficulty: "medium",
+    isPremium: true,
     starterCode: `function attachImperativeHandle(ref, createHandle) {
 }`,
     solutionCode: `function attachImperativeHandle(ref, createHandle) {

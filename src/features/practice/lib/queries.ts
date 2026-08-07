@@ -28,6 +28,7 @@ export type PracticeChallengeSummary = {
   difficulty: ChallengeDifficulty;
   category: PracticeCategory;
   companies: string[];
+  isPremium: boolean;
   completed: boolean;
 };
 
@@ -54,6 +55,7 @@ const getPracticeCatalog = unstable_cache(
         difficulty: challenges.difficulty,
         companies: challenges.companies,
         category: challenges.category,
+        isPremium: challenges.isPremium,
         orderIndex: challenges.orderIndex,
       })
       .from(challenges)
@@ -73,6 +75,7 @@ const getPracticeCatalog = unstable_cache(
         difficulty: row.difficulty as ChallengeDifficulty,
         category,
         companies: row.companies,
+        isPremium: row.isPremium,
       });
     }
 
@@ -151,6 +154,7 @@ export type ChallengeDetail = {
   testCases: { input: string; expected: string; label: string }[];
   hints: string[];
   companies: string[];
+  isPremium: boolean;
   videoUrl: string | null;
   // 1-based position within its category's orderIndex-sorted list — the same
   // number ChallengeListRow already renders (01, 02, ...), reused here for
@@ -177,6 +181,7 @@ const getChallengeDetailBySlug = unstable_cache(
         testCases: challenges.testCases,
         hints: challenges.hints,
         companies: challenges.companies,
+        isPremium: challenges.isPremium,
         videoUrl: challenges.videoUrl,
       })
       .from(challenges)

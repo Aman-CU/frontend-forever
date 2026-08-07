@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
 import type { ChallengeDifficulty, ConceptCategory } from "@/lib/constants";
 
 const DIFFICULTY_STYLES: Record<ChallengeDifficulty, string> = {
@@ -18,6 +19,10 @@ type Props = {
   category: ConceptCategory;
   completed: boolean;
   companies: string[];
+  isPremium: boolean;
+  // Drives PremiumBadge's icon only (open lock vs closed) — the real gate
+  // lives on the detail page, this is cosmetic.
+  isPremiumUser: boolean;
 };
 
 // Each row is its own bordered card (the list container is a gap-2 stack,
@@ -37,6 +42,8 @@ export function ChallengeListRow({
   category,
   completed,
   companies,
+  isPremium,
+  isPremiumUser,
 }: Props) {
   return (
     <Link
@@ -57,6 +64,8 @@ export function ChallengeListRow({
 
       <span className="flex min-w-0 items-center gap-2">
         <span className="truncate text-sm font-medium text-text-primary">{title}</span>
+
+        {isPremium && <PremiumBadge isPremiumUser={isPremiumUser} size="xs" />}
 
         {companies.length > 0 && (
           <span className="flex shrink-0 items-center gap-1.5">
