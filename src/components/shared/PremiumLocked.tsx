@@ -24,9 +24,9 @@ type PremiumLockedProps = {
   icon?: LucideIcon;
 };
 
-// CTA target: `/pricing` is a real page as of this feature (Stage 9) — until
-// then it's the same deliberate forward-link every other section of this
-// codebase already used ahead of its own dependency landing.
+// CTA target: `/pricing` does not exist yet — it lands in a follow-up PR of
+// Feature 38 (Stage 9). Until then this is a deliberate forward-link, the same
+// pattern other sections used ahead of their own dependency landing.
 const PRICING_PATH = "/pricing";
 
 export function PremiumLocked({ title, description, isLoggedIn, icon: Icon = Lock }: PremiumLockedProps) {
