@@ -73,11 +73,15 @@ export default async function ConceptPage({ params }: { params: Promise<Params> 
   // browsable, so only the other 4 tabs lock.
   const isPremiumLocked = concept.isPremium && !isPremiumUser;
 
-  // Never serialize the reference solution into the client payload for a locked
-  // concept — premium content is gated server-side (security.md), the client
-  // UI is cosmetic only.
+  // Never serialize the description, starter code, tests, hints, or reference
+  // solution into the client payload for a locked concept — ConceptChallenge's
+  // locked branch never reads these fields, but React still serializes every
+  // prop that crosses the server->client boundary regardless of what actually
+  // renders. Mirrors clientProjectBrief's redaction below.
   const clientChallenge =
-    challenge && isPremiumLocked ? { ...challenge, solutionCode: "" } : challenge;
+    challenge && isPremiumLocked
+      ? { ...challenge, description: "", starterCode: "", solutionCode: "", testCases: [], hints: [] }
+      : challenge;
 
   // Interview shows a full PremiumLocked wall when the concept is locked, not
   // a per-question teaser — even the question text (not just the answer) has

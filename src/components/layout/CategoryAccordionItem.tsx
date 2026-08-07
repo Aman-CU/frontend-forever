@@ -126,7 +126,6 @@ export function CategoryAccordionItem({ category, meta, pathname, isPremiumUser 
                       <span className="flex-1 truncate">{concept.title}</span>
 
                       {concept.isPremium &&
-                        !isActive &&
                         (isPremiumUser ? (
                           <LockOpen className="h-3 w-3 shrink-0 text-premium" aria-label="Premium (unlocked)" />
                         ) : (
