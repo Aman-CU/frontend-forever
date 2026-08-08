@@ -7,6 +7,9 @@ import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { getUiBattleBySlug, getIsPremiumUser } from "@/features/playground/lib/queries";
 import { BattleEditorWorkspace } from "@/features/playground/components/battle-editor/BattleEditorWorkspace";
 
+const GENERIC_BATTLE_DESCRIPTION =
+  "Recreate a target UI pixel-for-pixel using vanilla HTML, CSS, and JavaScript in the Frontend Forever editor.";
+
 type Props = {
   params: Promise<{ slug: string }>;
 };
@@ -25,19 +28,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const challenge = await getUiBattleBySlug(slug);
   if (!challenge) return { title: "UI Battles | Frontend Forever" };
 
+  // Same gate as the page body below — generateMetadata is a separate
+  // invocation with its own scope (and runs for anonymous/crawler requests
+  // that never reach the page body's redirect), so it must recompute
+  // isChallengeLocked itself, or the real description ships in <meta>/OG/
+  // Twitter tags regardless of what the rendered page shows (security.md).
+  const session = await getCachedSession();
+  const userId = session?.user?.id ?? null;
+  const isPremiumUser = userId ? await getIsPremiumUser(userId) : false;
+  const isChallengeLocked = challenge.isPremium && !isPremiumUser;
+
   const title = `${challenge.title} | UI Battles | Frontend Forever`;
+  const description = isChallengeLocked ? GENERIC_BATTLE_DESCRIPTION : challenge.description;
   const baseUrl = await getBaseUrl();
-  // The real, already-existing target screenshot (built for the list-page
-  // thumbnail) doubles as the share image here — no separate opengraph-
-  // image.tsx generation route needed, this is a real static asset already.
+  // The target screenshot is never gated (always-visible live comparison
+  // pane), so it's safe as the share image regardless of lock state.
   const imageUrl = `${baseUrl}${challenge.targetImageUrl}`;
 
   return {
     title,
-    description: challenge.description,
+    description,
+    robots: isChallengeLocked ? { index: false, follow: false } : { index: true, follow: true },
     openGraph: {
       title,
-      description: challenge.description,
+      description,
       url: `${baseUrl}/playground/battles/${slug}`,
       type: "article",
       siteName: "Frontend Forever",
@@ -46,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     twitter: {
       card: "summary_large_image",
       title,
-      description: challenge.description,
+      description,
       images: [imageUrl],
     },
   };
