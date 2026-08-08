@@ -478,6 +478,7 @@ async function seed() {
         solutionCss: b.solutionCss ?? "",
         solutionJs: b.solutionJs ?? "",
         isPremium: b.isPremium ?? false,
+        isSolutionFree: b.isSolutionFree ?? false,
       })),
     )
     .onConflictDoUpdate({
@@ -499,6 +500,7 @@ async function seed() {
         solutionCss: sql`excluded.solution_css`,
         solutionJs: sql`excluded.solution_js`,
         isPremium: sql`excluded.is_premium`,
+        isSolutionFree: sql`excluded.is_solution_free`,
         orderIndex: sql`excluded.order_index`,
       },
     })

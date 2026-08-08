@@ -114,6 +114,11 @@ export type UiBattleChallengeSeed = {
   solutionCss?: string;
   solutionJs?: string;
   isPremium?: boolean;
+  // Feature 38: a small hand-picked flagship set of free (non-premium)
+  // challenges also gets a free solution. Meaningless on a premium
+  // challenge — the whole thing is locked before solution visibility is
+  // ever considered.
+  isSolutionFree?: boolean;
   orderIndex: number;
 };
 
