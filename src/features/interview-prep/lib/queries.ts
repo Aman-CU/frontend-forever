@@ -226,6 +226,7 @@ type CollectionQuestionRow = {
   difficulty: ChallengeDifficulty;
   companies: string[];
   isFf75: boolean;
+  isPremium: boolean;
 };
 
 // All collection_questions rows, cached like getCollectionQuestionCounts above
@@ -244,6 +245,7 @@ const getCollectionQuestionCatalog = unstable_cache(
         difficulty: collectionQuestions.difficulty,
         companies: collectionQuestions.companies,
         isFf75: collectionQuestions.isFf75,
+        isPremium: collectionQuestions.isPremium,
       })
       .from(collectionQuestions)
       .orderBy(asc(collectionQuestions.orderIndex));
@@ -290,6 +292,7 @@ export type CollectionQuestionListItem = {
   question: string;
   difficulty: ChallengeDifficulty;
   companies: string[];
+  isPremium: boolean;
   // Real per-user state (user_collection_question_progress) — false for
   // logged-out users, same as every other personalization on this page.
   completed: boolean;
@@ -309,7 +312,29 @@ export const getCollectionQuestionList = cache(
       question: q.question,
       difficulty: q.difficulty,
       companies: q.companies,
+      isPremium: q.isPremium,
       completed: completedIds.has(q.id),
+    }));
+  },
+);
+
+export type CollectionQuestionFaqItem = { slug: string; question: string; answer: string; isPremium: boolean };
+
+// Deliberately a separate shape from CollectionQuestionListItem/ClientQuestionItem
+// above — those are serialized into CollectionQuestionListClient's props, so
+// they must never carry a real `answer` field (spreading it there would leak
+// every premium question's real answer to a non-premium client's page props,
+// same class of bug the isBlurred/question-placeholder handling above exists
+// to prevent). This one is for building the list page's server-only FAQPage
+// JSON-LD, which already filters to free questions before it's used.
+export const getCollectionQuestionFaqItems = cache(
+  async (routeCollection: InterviewPrepRouteCollection): Promise<CollectionQuestionFaqItem[]> => {
+    const catalog = await getCollectionQuestionCatalog();
+    return filterByRouteCollection(catalog, routeCollection).map((q) => ({
+      slug: q.slug,
+      question: q.question,
+      answer: q.answer,
+      isPremium: q.isPremium,
     }));
   },
 );
@@ -320,6 +345,7 @@ export type CollectionQuestionDetail = {
   answer: string;
   difficulty: ChallengeDifficulty;
   companies: string[];
+  isPremium: boolean;
   // 1-based position within its route collection's ordered list — same
   // "questionNumber" convention as Practice's ChallengeDetail.
   questionNumber: number;
@@ -342,12 +368,18 @@ export const getCollectionQuestionBySlug = cache(
       answer: item.answer,
       difficulty: item.difficulty,
       companies: item.companies,
+      isPremium: item.isPremium,
       questionNumber: index + 1,
     };
   },
 );
 
-export type CollectionQuestionNavItem = { slug: string; question: string; questionNumber: number };
+export type CollectionQuestionNavItem = {
+  slug: string;
+  question: string;
+  questionNumber: number;
+  isPremium: boolean;
+};
 
 export const getAdjacentCollectionQuestions = cache(
   async (
@@ -363,13 +395,40 @@ export const getAdjacentCollectionQuestions = cache(
     const nextItem = index < items.length - 1 ? items[index + 1] : null;
 
     return {
-      prev: prevItem ? { slug: prevItem.slug, question: prevItem.question, questionNumber: index } : null,
+      prev: prevItem
+        ? {
+            slug: prevItem.slug,
+            question: prevItem.question,
+            questionNumber: index,
+            isPremium: prevItem.isPremium,
+          }
+        : null,
       next: nextItem
-        ? { slug: nextItem.slug, question: nextItem.question, questionNumber: index + 2 }
+        ? {
+            slug: nextItem.slug,
+            question: nextItem.question,
+            questionNumber: index + 2,
+            isPremium: nextItem.isPremium,
+          }
         : null,
     };
   },
 );
+
+// Not the real question — a fixed-length placeholder that gets a CSS blur
+// applied to it in the list, so a locked row looks like a real blurred
+// question without ever putting real question text in the payload
+// (security.md — a blurred <span> is still real text in the DOM, trivially
+// recoverable via view-source or disabling the blur class; only a fake
+// placeholder is actually safe to send to a non-premium client). Applied
+// uniformly to every premium question — FF75 included, per user request
+// (2026-08-05: "I liked the blur one for all premium question" — dropping
+// the earlier FF75-only plain-label treatment in favor of one consistent
+// blur teaser for the whole 40%). Shared here (rather than declared per
+// call site) so the list page and the prev/next nav's tooltip/aria-label
+// never drift apart on a locked question's stand-in text.
+export const BLURRED_QUESTION_PLACEHOLDER =
+  "This is a premium interview question covering an advanced topic in depth.";
 
 // ── Feature 51: Company Guides ───────────────────────────────────────────────
 // Sourced from collection_questions (Feature 31's real 299-question FF

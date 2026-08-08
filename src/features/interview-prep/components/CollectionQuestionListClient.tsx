@@ -22,16 +22,28 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "not-started", label: "Not started" },
 ];
 
+// isBlurred isn't part of the raw query shape — it's a display decision the
+// page computes (real text / blurred placeholder / FF75 hidden label) based
+// on the viewer's own premium status, same layer QuestionCard's isLocked
+// used to live at.
+type ClientQuestionItem = CollectionQuestionListItem & { isBlurred: boolean };
+
 type Props = {
   routeCollection: InterviewPrepRouteCollection;
-  questions: CollectionQuestionListItem[];
+  questions: ClientQuestionItem[];
   isLoggedIn: boolean;
+  isPremiumUser: boolean;
 };
 
 // Same filtering approach as Practice's ChallengeListClient (search + pill
 // filters, client-side over an already-fetched array — small enough dataset
 // per collection that this needs no pagination).
-export function CollectionQuestionListClient({ routeCollection, questions, isLoggedIn }: Props) {
+export function CollectionQuestionListClient({
+  routeCollection,
+  questions,
+  isLoggedIn,
+  isPremiumUser,
+}: Props) {
   const router = useRouter();
   const reduceMotion = useSafeReducedMotion();
   const [search, setSearch] = useState("");
@@ -183,6 +195,7 @@ export function CollectionQuestionListClient({ routeCollection, questions, isLog
                   routeCollection={routeCollection}
                   index={i + 1}
                   {...q}
+                  isPremiumUser={isPremiumUser}
                   pending={pendingSlugs.has(q.slug)}
                   onToggleComplete={handleToggleComplete}
                 />

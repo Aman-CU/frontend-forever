@@ -5,8 +5,13 @@ import { notFound } from "next/navigation";
 import { getCachedSession } from "@/lib/auth/server";
 import { isInterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
 import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
-import { getCollectionQuestionList } from "@/features/interview-prep/lib/queries";
-import { safeJsonLd } from "@/lib/seo";
+import {
+  BLURRED_QUESTION_PLACEHOLDER,
+  getCollectionQuestionFaqItems,
+  getCollectionQuestionList,
+  getIsPremiumUser,
+} from "@/features/interview-prep/lib/queries";
+import { safeJsonLd, toPlainTextSummary } from "@/lib/seo";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
 import { CollectionQuestionListClient } from "@/features/interview-prep/components/CollectionQuestionListClient";
 
@@ -59,25 +64,43 @@ export default async function CollectionQuestionListPage({
   const meta = COLLECTION_META[collection];
   const session = await getCachedSession();
   const isLoggedIn = Boolean(session?.user);
-  const questions = await getCollectionQuestionList(collection, session?.user?.id ?? null);
+  const [questions, faqItems, isPremiumUser] = await Promise.all([
+    getCollectionQuestionList(collection, session?.user?.id ?? null),
+    getCollectionQuestionFaqItems(collection),
+    session?.user ? getIsPremiumUser(session.user.id) : Promise.resolve(false),
+  ]);
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/${collection}`;
 
-  // FAQPage JSON-LD (Feature 31's GEO/SEO spec) — every question on this list
-  // becomes a citable Q&A entry for AI answer engines and rich search results,
-  // not just a link. Answers are truncated to a clean plain-text summary; the
-  // full answer lives on each question's own page.
+  // Never send the real question text for a locked item — the blur the list
+  // row shows is styling on a fake placeholder, not a CSS effect on the real
+  // text (see the constant above).
+  const clientQuestions = questions.map((q) =>
+    isPremiumUser || !q.isPremium
+      ? { ...q, isBlurred: false }
+      : { ...q, question: BLURRED_QUESTION_PLACEHOLDER, isBlurred: true },
+  );
+
+  // FAQPage JSON-LD (Feature 31's GEO/SEO spec) — every free question on this
+  // list becomes a citable Q&A entry for AI answer engines and rich search
+  // results, not just a link. Answers are truncated to a clean plain-text
+  // summary; the full answer lives on each question's own page. Premium
+  // questions are excluded (Feature 38) — their own pages are robots:
+  // noindex, so listing them here as a citable "accepted answer" would point
+  // crawlers at a URL that says not to index it.
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: questions.map((q) => ({
-      "@type": "Question",
-      name: q.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: `${baseUrl}/interview-prep/${collection}/${q.slug}`,
-      },
-    })),
+    mainEntity: faqItems
+      .filter((q) => !q.isPremium)
+      .map((q) => ({
+        "@type": "Question",
+        name: q.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: toPlainTextSummary(q.answer),
+        },
+      })),
   };
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
@@ -105,8 +128,9 @@ export default async function CollectionQuestionListPage({
 
       <CollectionQuestionListClient
         routeCollection={collection}
-        questions={questions}
+        questions={clientQuestions}
         isLoggedIn={isLoggedIn}
+        isPremiumUser={isPremiumUser}
       />
     </div>
   );

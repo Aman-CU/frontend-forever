@@ -7,11 +7,14 @@ import { cn } from "@/lib/utils";
 import type { ChallengeDifficulty } from "@/lib/constants";
 import { toPlainTextSummary, safeJsonLd } from "@/lib/seo";
 import { Markdown } from "@/components/shared/Markdown";
+import { getCachedSession } from "@/lib/auth/server";
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { isInterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
 import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
 import {
   getAdjacentCollectionQuestions,
   getCollectionQuestionBySlug,
+  getIsPremiumUser,
 } from "@/features/interview-prep/lib/queries";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
 import { CollectionQuestionPrevNextNav } from "@/features/interview-prep/components/CollectionQuestionPrevNextNav";
@@ -145,8 +148,31 @@ export async function generateMetadata({
   const detail = await getCollectionQuestionBySlug(collection, slug);
   if (!detail) return {};
 
+  const session = await getCachedSession();
+  const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
+  const isLocked = detail.isPremium && !isPremiumUser;
+
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/${collection}/${slug}`;
+
+  // A locked question's real text never goes in metadata either — meta
+  // description/OG tags are just as Google-able as the rendered page (see
+  // progress-tracker.md's Feature 38 Interview-tab lesson: a visible question
+  // is enough to find the answer elsewhere). robots: noindex too — there's
+  // nothing real here for a crawler to index.
+  if (isLocked) {
+    const title = `Premium Question | Frontend Forever`;
+    const description = "Upgrade to Premium to unlock this interview question.";
+    return {
+      title,
+      description,
+      alternates: { canonical: pageUrl },
+      robots: { index: false, follow: false },
+      openGraph: { title, description, url: pageUrl, type: "article", siteName: "Frontend Forever" },
+      twitter: { card: "summary_large_image", title, description },
+    };
+  }
+
   const title = `${detail.question} | Frontend Forever`;
   const description = toPlainTextSummary(detail.answer);
 
@@ -176,15 +202,57 @@ export default async function CollectionQuestionPage({
     notFound();
   }
 
+  const session = await getCachedSession();
+  const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
+  const isQuestionLocked = detail.isPremium && !isPremiumUser;
+
   const [{ prev, next }, baseUrl] = await Promise.all([
     getAdjacentCollectionQuestions(collection, slug),
     getBaseUrl(),
   ]);
 
-  const DiagramComponent = DIAGRAM_BY_SLUG[slug];
-
   const meta = COLLECTION_META[collection];
   const pageUrl = `${baseUrl}/interview-prep/${collection}/${slug}`;
+
+  // Full wall, not a "question visible, answer locked" teaser — same
+  // reasoning as Learn's Interview tab (progress-tracker.md's Feature 38
+  // entry): the question text alone is enough to find the answer elsewhere.
+  // No JSON-LD either — matches generateMetadata's robots: noindex above,
+  // there's nothing real here for a crawler to cite.
+  if (isQuestionLocked) {
+    return (
+      <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <InterviewPrepBreadcrumb
+              backHref={`/interview-prep/${collection}`}
+              crumbs={[
+                { label: "Interview Prep", href: "/interview-prep" },
+                { label: meta.label, href: `/interview-prep/${collection}` },
+                { label: "Premium Question" },
+              ]}
+            />
+          </div>
+          <CollectionQuestionPrevNextNav
+            routeCollection={collection}
+            prev={prev}
+            next={next}
+            isPremiumUser={isPremiumUser}
+          />
+        </div>
+
+        <div className="mt-6">
+          <PremiumLocked
+            title="Premium question"
+            description="Upgrade to Premium to unlock this interview question."
+            isLoggedIn={!!session?.user}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const DiagramComponent = DIAGRAM_BY_SLUG[slug];
 
   // Article + mainEntity Q&A JSON-LD (Feature 31's GEO/SEO spec) — a deeper
   // structured-data shape than Feature 29's LearningResource, since this page
@@ -236,7 +304,12 @@ export default async function CollectionQuestionPage({
             ]}
           />
         </div>
-        <CollectionQuestionPrevNextNav routeCollection={collection} prev={prev} next={next} />
+        <CollectionQuestionPrevNextNav
+          routeCollection={collection}
+          prev={prev}
+          next={next}
+          isPremiumUser={isPremiumUser}
+        />
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">

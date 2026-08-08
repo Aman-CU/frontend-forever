@@ -62,6 +62,7 @@ Default to \`const\`. Use \`let\` only when a variable genuinely needs reassignm
 
 **Related:** [Hoisting & the Temporal Dead Zone](/learn/javascript-runtime/hoisting-temporal-dead-zone) (Learn concept) · [What are closures and how do they work?](/learn/javascript-runtime/closures) · What is the Temporal Dead Zone (TDZ)?`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Google", "Meta", "Amazon"],
     isFf75: true,
     orderIndex: 1,
@@ -96,6 +97,7 @@ Blocking the call stack for even a few hundred milliseconds freezes the entire p
 
 **Related:** [Promises & Async/Await](/learn/javascript-runtime/promises-async-await) · What is microtask queue vs macrotask queue? · [Event Loop](/learn/javascript-runtime/event-loop) (Learn concept + full simulator) · [Debouncing & Throttling](/learn/javascript-runtime/debouncing-throttling)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Amazon", "Netflix"],
     isFf75: true,
     orderIndex: 4,
@@ -141,6 +143,7 @@ JavaScript compiles each scope in a pass before executing it, registering every 
 
 **Related:** [Hoisting & the Temporal Dead Zone](/learn/javascript-runtime/hoisting-temporal-dead-zone) (Learn concept) · [What is the difference between \`var\`, \`let\`, and \`const\`?](/interview-prep/ff-javascript/var-let-const-differences)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Amazon", "Microsoft"],
     isFf75: true,
     orderIndex: 2,
@@ -192,6 +195,7 @@ for (let j = 0; j < 3; j++) {
 
 **Related:** [Closures](/learn/javascript-runtime/closures) (Learn concept) · [What is memoization? Implement a simple memoize function.](/interview-prep/ff-javascript/what-is-memoization)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Amazon", "Stripe", "Airbnb"],
     isFf75: true,
     orderIndex: 3,
@@ -248,6 +252,7 @@ It explains why methods defined on a prototype are shared by every instance (one
 
 **Related:** [Prototypal Inheritance](/learn/javascript-runtime/prototypal-inheritance) (Learn concept)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Meta"],
     isFf75: true,
     orderIndex: 5,
@@ -274,6 +279,7 @@ Default to \`===\` everywhere — it's predictable and doesn't require memorizin
 
 **Related:** [Equality & Type Coercion](/learn/javascript-runtime/equality-type-coercion) (Learn concept)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Google", "Amazon"],
     isFf75: true,
     orderIndex: 6,
@@ -313,6 +319,7 @@ A single \`.catch()\` handles errors from anywhere earlier in the chain (no need
 
 **Related:** [Promises & Async/Await](/learn/javascript-runtime/promises-async-await) (Learn concept) · [Explain async/await and how it relates to Promises.](/interview-prep/ff-javascript/async-await-explained)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Netflix"],
     isFf75: true,
     orderIndex: 7,
@@ -372,6 +379,7 @@ Awaiting one call at a time inside a loop or in sequence needlessly serializes i
 
 **Related:** [Promises & Async/Await](/learn/javascript-runtime/promises-async-await) (Learn concept) · [What are Promises and how do they work?](/interview-prep/ff-javascript/what-are-promises)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Stripe"],
     isFf75: true,
     orderIndex: 8,
@@ -419,6 +427,7 @@ Let \`undefined\` mean "not set" and reserve \`null\` for a value you're deliber
 
 **Related:** [What is the difference between \`==\` and \`===\`?](/interview-prep/ff-javascript/double-equals-vs-triple-equals)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Meta", "Amazon"],
     isFf75: true,
     orderIndex: 9,
@@ -460,6 +469,7 @@ Higher-order functions are what make composition possible — building complex b
 
 **Related:** [Callbacks & Higher-Order Functions](/learn/javascript-runtime/callbacks-higher-order-functions) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Airbnb"],
     isFf75: true,
     orderIndex: 10,
@@ -499,6 +509,7 @@ boundGreet("Hi"); // "Hi, Rex" — callable any time later, this is locked to us
 
 **Related:** [\`this\` Binding & Execution Context](/learn/javascript-runtime/this-binding-execution-context) (Learn concept) · [What is the \`this\` keyword and how does it behave?](/interview-prep/ff-javascript/how-does-this-behave)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Bloomberg"],
     isFf75: true,
     orderIndex: 11,
@@ -549,6 +560,7 @@ Arrow functions have no \`this\` of their own — they capture \`this\` from the
 
 **Related:** [\`this\` Binding & Execution Context](/learn/javascript-runtime/this-binding-execution-context) (Learn concept) · [Explain the difference between \`call\`, \`apply\`, and \`bind\`.](/interview-prep/ff-javascript/call-apply-bind-differences)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Meta", "Amazon"],
     isFf75: true,
     orderIndex: 12,
@@ -586,6 +598,7 @@ Delegation relies on bubbling, so it doesn't work for events that don't bubble (
 
 **Related:** [Event Delegation, Bubbling & Capturing](/learn/browser-internals/event-delegation-bubbling-capturing) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Amazon", "Uber"],
     isFf75: true,
     orderIndex: 13,
@@ -630,6 +643,7 @@ Arrow functions are the natural default for short callbacks and anything that sh
 
 **Related:** [\`this\` Binding & Execution Context](/learn/javascript-runtime/this-binding-execution-context) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Netflix"],
     isFf75: true,
     orderIndex: 14,
@@ -678,6 +692,7 @@ Tight scoping (preferring block scope, keeping variables as local as possible) r
 
 **Related:** [What are closures and how do they work?](/interview-prep/ff-javascript/what-are-closures)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Adobe"],
     isFf75: true,
     orderIndex: 15,
@@ -718,6 +733,7 @@ The TDZ applies to function parameter defaults too, evaluated left to right — 
 
 **Related:** [Hoisting & the Temporal Dead Zone](/learn/javascript-runtime/hoisting-temporal-dead-zone) (Learn concept) · [Explain hoisting in JavaScript.](/interview-prep/ff-javascript/hoisting-in-javascript)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Stripe"],
     isFf75: true,
     orderIndex: 16,
@@ -772,6 +788,7 @@ Generators make lazy, on-demand sequences straightforward — values are compute
 
 **Related:** [Generators & Iterators](/learn/javascript-runtime/generators-iterators) (Learn concept)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Airbnb"],
     isFf75: true,
     orderIndex: 17,
@@ -814,6 +831,7 @@ If you could list a \`WeakMap\`'s entries, the *act of iterating* would itself r
 
 **Related:** [Memory Management & Leaks](/learn/javascript-runtime/memory-management-leaks) (Learn concept)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Google"],
     isFf75: true,
     orderIndex: 18,
@@ -860,6 +878,7 @@ The returned function is a closure over \`cache\` — exactly the "closures for 
 
 **Related:** [What are closures and how do they work?](/interview-prep/ff-javascript/what-are-closures)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Amazon", "Uber"],
     isFf75: true,
     orderIndex: 19,
@@ -913,6 +932,7 @@ They're not meant for "hiding" data as a security measure — \`Object.getOwnPro
 
 **Related:** [Generators & Iterators](/learn/javascript-runtime/generators-iterators) (Learn concept)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Bloomberg"],
     isFf75: true,
     orderIndex: 20,
@@ -966,6 +986,7 @@ A rapid, *unending* stream of calls (someone typing continuously for 10 seconds)
 
 **Related:** [Debouncing & Throttling](/learn/javascript-runtime/debouncing-throttling) (Learn concept) · [What is the difference between \`setTimeout\` and \`setInterval\`?](/interview-prep/ff-javascript/settimeout-vs-setinterval)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Uber", "Airbnb"],
     isFf75: true,
     orderIndex: 21,
@@ -1008,6 +1029,7 @@ The most common real-world bug: reaching for \`{...state}\` in a React reducer o
 
 **Related:** [Array & Object Methods, Immutability](/learn/javascript-runtime/array-object-methods-immutability) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Amazon"],
     isFf75: true,
     orderIndex: 22,
@@ -1091,6 +1113,7 @@ setTimeout(poll, 1000);
 
 **Related:** [What is the event loop in JavaScript?](/interview-prep/ff-javascript/what-is-the-event-loop) · [Explain debouncing and throttling with examples.](/interview-prep/ff-javascript/debouncing-and-throttling)`,
     difficulty: "easy",
+    isPremium: true,
     companies: ["Amazon", "Microsoft"],
     isFf75: true,
     orderIndex: 24,
@@ -1124,6 +1147,7 @@ A related trap: \`for...in\` iterates *inherited* enumerable properties too, not
 
 **Related:** [Prototypal Inheritance](/learn/javascript-runtime/prototypal-inheritance) (Learn concept) · [Explain the concept of prototypal inheritance.](/interview-prep/ff-javascript/prototypal-inheritance-explained)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Meta"],
     isFf75: true,
     orderIndex: 25,
@@ -1272,6 +1296,7 @@ Default values only apply when a value is literally \`undefined\` — never for 
 
 **Related:** [What is the difference between \`null\` and \`undefined\`?](/interview-prep/ff-javascript/null-vs-undefined)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Airbnb"],
     isFf75: true,
     orderIndex: 28,
@@ -1365,6 +1390,7 @@ A rest parameter must be the **last** parameter in a function signature — \`fu
 
 **Related:** [Array & Object Methods, Immutability](/learn/javascript-runtime/array-object-methods-immutability) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Netflix"],
     isFf75: true,
     orderIndex: 30,
@@ -1408,6 +1434,7 @@ greet();    // "Hi, stranger" — actually missing
 
 **Related:** [Equality & Type Coercion](/learn/javascript-runtime/equality-type-coercion) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Stripe"],
     isFf75: true,
     orderIndex: 31,
@@ -1526,6 +1553,7 @@ A \`set\` trap that doesn't return \`true\` doesn't throw immediately in non-str
 
 **Related:** none yet — no Learn concept currently covers this topic.`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Vercel"],
     isFf75: true,
     orderIndex: 34,
@@ -1713,6 +1741,7 @@ Interop between the two systems is a real, common pain point: a CommonJS module'
 
 **Related:** [Modules: ESM vs. CommonJS](/learn/javascript-runtime/esm-vs-commonjs) (Learn concept) · [What is tree shaking?](/interview-prep/ff-javascript/what-is-tree-shaking)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Amazon", "Vercel"],
     isFf75: true,
     orderIndex: 39,
@@ -1807,6 +1836,7 @@ Always pass an explicit initial value unless you're certain the array can never 
 
 **Related:** [Array & Object Methods, Immutability](/learn/javascript-runtime/array-object-methods-immutability) (Learn concept) · [What is \`Array.flat()\` and \`Array.flatMap()\`?](/interview-prep/ff-javascript/array-flat-and-flatmap)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Amazon"],
     isFf75: true,
     orderIndex: 41,
@@ -2323,6 +2353,7 @@ for (const value of obj) {
 
 **Related:** [Explain how the prototype chain works.](/interview-prep/ff-javascript/how-the-prototype-chain-works) · [Generators & Iterators](/learn/javascript-runtime/generators-iterators) (Learn concept)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Airbnb"],
     isFf75: true,
     orderIndex: 56,
@@ -2409,6 +2440,7 @@ const results = await Promise.allSettled([fetchA(), fetchB(), fetchC()]);
 
 **Related:** [What are Promises and how do they work?](/interview-prep/ff-javascript/what-are-promises) · [What is microtask queue vs macrotask queue?](/interview-prep/ff-javascript/microtask-vs-macrotask-queue)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Meta", "Netflix"],
     isFf75: true,
     orderIndex: 58,
@@ -2447,6 +2479,7 @@ A microtask that queues *another* microtask doesn't wait for some "next cycle" �
 
 **Related:** [What is the event loop in JavaScript?](/interview-prep/ff-javascript/what-is-the-event-loop) · [What is \`Promise.all\` vs \`Promise.race\` vs \`Promise.allSettled\` vs \`Promise.any\`?](/interview-prep/ff-javascript/promise-all-vs-race-vs-allsettled-vs-any)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Uber"],
     isFf75: true,
     orderIndex: 59,
@@ -2535,6 +2568,7 @@ A getter with no matching setter makes that property silently read-only in non-s
 
 **Related:** none yet — no Learn concept currently covers this topic.`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Google", "Airbnb"],
     isFf75: true,
     orderIndex: 61,
@@ -2580,6 +2614,7 @@ Calling a function constructor without \`new\` doesn't throw — it just runs wi
 
 **Related:** [What is the \`this\` keyword and how does it behave?](/interview-prep/ff-javascript/how-does-this-behave) · [Explain the concept of prototypal inheritance.](/interview-prep/ff-javascript/prototypal-inheritance-explained)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Amazon"],
     isFf75: true,
     orderIndex: 62,
@@ -3565,6 +3600,7 @@ This is exactly the underlying mechanism \`Object.freeze()\` and \`Object.seal()
 
 **Related:** [How does \`Object.freeze()\` differ from \`const\`?](/interview-prep/ff-javascript/object-freeze-vs-const) · [What is the difference between \`Object.seal()\` and \`Object.freeze()\`?](/interview-prep/ff-javascript/object-seal-vs-object-freeze) · [What is the difference between \`for...in\` and \`for...of\`?](/interview-prep/ff-javascript/for-in-vs-for-of)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Meta"],
     isFf75: true,
     orderIndex: 89,
@@ -3869,6 +3905,7 @@ A **named** function expression's name is only visible *inside* the function's o
 
 **Related:** [Explain hoisting in JavaScript.](/interview-prep/ff-javascript/hoisting-in-javascript) · [What are arrow functions and how are they different from regular functions?](/interview-prep/ff-javascript/arrow-functions-vs-regular-functions)`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Amazon", "Bloomberg"],
     orderIndex: 98,
   },
@@ -3900,6 +3937,7 @@ Consuming an async generator requires \`for await...of\`, not a plain \`for...of
 
 **Related:** [What are generators and iterators?](/interview-prep/ff-javascript/generators-and-iterators) · [What are \`Symbol.iterator\` and custom iterables?](/interview-prep/ff-javascript/symbol-iterator-and-custom-iterables) · [Explain async/await and how it relates to Promises.](/interview-prep/ff-javascript/async-await-explained)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Netflix"],
     orderIndex: 99,
   },
@@ -3925,6 +3963,7 @@ typeof 10n; // "bigint"
 
 **Related:** none yet — no Learn concept currently covers this topic.`,
     difficulty: "medium",
+    isPremium: true,
     companies: ["Meta", "Stripe"],
     orderIndex: 100,
   },
@@ -3957,6 +3996,7 @@ Both \`Object.seal()\` and \`Object.freeze()\` are **shallow**, exactly like the
 
 **Related:** [How does \`Object.freeze()\` differ from \`const\`?](/interview-prep/ff-javascript/object-freeze-vs-const) · [What are property descriptors in JavaScript?](/interview-prep/ff-javascript/property-descriptors-explained)`,
     difficulty: "hard",
+    isPremium: true,
     companies: ["Google", "Meta"],
     orderIndex: 101,
   },
