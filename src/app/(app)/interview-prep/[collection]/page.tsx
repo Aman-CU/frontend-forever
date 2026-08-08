@@ -5,24 +5,17 @@ import { notFound } from "next/navigation";
 import { getCachedSession } from "@/lib/auth/server";
 import { isInterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
 import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
-import { getCollectionQuestionList, getIsPremiumUser } from "@/features/interview-prep/lib/queries";
-import { safeJsonLd } from "@/lib/seo";
+import {
+  BLURRED_QUESTION_PLACEHOLDER,
+  getCollectionQuestionFaqItems,
+  getCollectionQuestionList,
+  getIsPremiumUser,
+} from "@/features/interview-prep/lib/queries";
+import { safeJsonLd, toPlainTextSummary } from "@/lib/seo";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
 import { CollectionQuestionListClient } from "@/features/interview-prep/components/CollectionQuestionListClient";
 
 type Params = { collection: string };
-
-// Not the real question — a fixed-length placeholder that gets a CSS blur
-// applied to it, so the list row looks like a real blurred question without
-// ever putting real question text in the payload (security.md — a blurred
-// <span> is still real text in the DOM, trivially recoverable via view-
-// source or disabling the blur class; only a fake placeholder is actually
-// safe to send to a non-premium client). Applied uniformly to every premium
-// question — FF75 included, per user request (2026-08-05: "I liked the blur
-// one for all premium question" — dropping the earlier FF75-only plain-label
-// treatment in favor of one consistent blur teaser for the whole 40%).
-const BLURRED_QUESTION_PLACEHOLDER =
-  "This is a premium interview question covering an advanced topic in depth.";
 
 // Same "derive from the incoming request" pattern as Practice's Editor page —
 // no NEXT_PUBLIC_SITE_URL exists in this project (AGENTS.md's env list).
@@ -71,8 +64,9 @@ export default async function CollectionQuestionListPage({
   const meta = COLLECTION_META[collection];
   const session = await getCachedSession();
   const isLoggedIn = Boolean(session?.user);
-  const [questions, isPremiumUser] = await Promise.all([
+  const [questions, faqItems, isPremiumUser] = await Promise.all([
     getCollectionQuestionList(collection, session?.user?.id ?? null),
+    getCollectionQuestionFaqItems(collection),
     session?.user ? getIsPremiumUser(session.user.id) : Promise.resolve(false),
   ]);
   const baseUrl = await getBaseUrl();
@@ -97,14 +91,14 @@ export default async function CollectionQuestionListPage({
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: clientQuestions
+    mainEntity: faqItems
       .filter((q) => !q.isPremium)
       .map((q) => ({
         "@type": "Question",
         name: q.question,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `${baseUrl}/interview-prep/${collection}/${q.slug}`,
+          text: toPlainTextSummary(q.answer),
         },
       })),
   };

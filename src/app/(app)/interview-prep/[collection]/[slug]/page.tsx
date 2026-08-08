@@ -233,7 +233,12 @@ export default async function CollectionQuestionPage({
               ]}
             />
           </div>
-          <CollectionQuestionPrevNextNav routeCollection={collection} prev={prev} next={next} />
+          <CollectionQuestionPrevNextNav
+            routeCollection={collection}
+            prev={prev}
+            next={next}
+            isPremiumUser={isPremiumUser}
+          />
         </div>
 
         <div className="mt-6">
@@ -299,7 +304,12 @@ export default async function CollectionQuestionPage({
             ]}
           />
         </div>
-        <CollectionQuestionPrevNextNav routeCollection={collection} prev={prev} next={next} />
+        <CollectionQuestionPrevNextNav
+          routeCollection={collection}
+          prev={prev}
+          next={next}
+          isPremiumUser={isPremiumUser}
+        />
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
