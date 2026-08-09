@@ -153,7 +153,7 @@ export default async function PlaybookChapterPage({
               ]}
             />
           </div>
-          <PlaybookChapterPrevNextNav playbookSlug={playbookSlug} prev={prev} next={next} />
+          <PlaybookChapterPrevNextNav playbookSlug={playbookSlug} prev={prev} next={next} hideTitles />
         </div>
 
         <div className="mt-6">
