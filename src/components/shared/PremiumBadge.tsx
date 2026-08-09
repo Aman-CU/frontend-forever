@@ -17,11 +17,32 @@ type Props = {
   // cards (BattleCard, ChallengeListRow, StudyPlanCard) use — "sm" (default)
   // matches those; "xs" matches QuestionCard's existing size.
   size?: "sm" | "xs";
+  // Icon only, no "Premium" text — for a card whose title is already fighting
+  // truncate for room (CompanyGuideCard's 32-card grid: a full-width "🔒
+  // Premium" pill next to every company name left barely any width for the
+  // name itself). Still the same open/closed lock, just without the label.
+  iconOnly?: boolean;
   className?: string;
 };
 
-export function PremiumBadge({ isPremiumUser, size = "sm", className }: Props) {
+export function PremiumBadge({ isPremiumUser, size = "sm", iconOnly, className }: Props) {
   const Icon = isPremiumUser ? LockOpen : Lock;
+
+  if (iconOnly) {
+    return (
+      <span
+        className={cn(
+          "flex shrink-0 items-center justify-center rounded-full bg-premium-light text-premium",
+          size === "sm" ? "size-5" : "size-4",
+          className,
+        )}
+      >
+        <Icon className={size === "sm" ? "size-3" : "h-2.5 w-2.5"} aria-hidden />
+        <span className="sr-only">Premium</span>
+      </span>
+    );
+  }
+
   return (
     <span
       className={cn(

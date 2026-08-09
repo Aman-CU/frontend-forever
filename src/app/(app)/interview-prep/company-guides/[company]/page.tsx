@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { getBaseUrl, safeJsonLd } from "@/lib/seo";
+import { getCachedSession } from "@/lib/auth/server";
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { COMPANIES, getCompanyBySlug, isCompanySlug } from "@/features/interview-prep/lib/companies";
-import { getCompanyGuideDetail } from "@/features/interview-prep/lib/queries";
+import { getCompanyGuideDetail, getIsPremiumUser } from "@/features/interview-prep/lib/queries";
 import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
 import { getPracticeCategoryDisplayLabel } from "@/features/interview-prep/lib/practiceCategoryLabels";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
@@ -49,9 +52,47 @@ export default async function CompanyGuideDetailPage({ params }: { params: Promi
     notFound();
   }
 
-  const detail = await getCompanyGuideDetail(company.name);
+  const session = await getCachedSession();
+  const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
+
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/company-guides/${companySlug}`;
+
+  // Every company guide is premium — no per-company split, so there's no
+  // "which ones are locked" question the way FF 75/Study Plans have to
+  // check an isPremium flag. Skip the query entirely for a non-premium
+  // viewer rather than fetch real questions/challenges just to not render
+  // them (same reasoning as Practice's discussion-posts skip).
+  if (!isPremiumUser) {
+    return (
+      <div className="mx-auto w-full max-w-4xl px-6 py-10 lg:px-8">
+        <InterviewPrepBreadcrumb
+          backHref="/interview-prep/company-guides"
+          crumbs={[
+            { label: "Interview Prep", href: "/interview-prep" },
+            { label: "Company Guides", href: "/interview-prep/company-guides" },
+            { label: company.name },
+          ]}
+        />
+
+        <div className="mb-8 flex items-center gap-4">
+          <CompanyBadge name={company.name} size="md" className="h-14 w-14 text-lg" />
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-text-primary">{company.name} Interview Guide</h1>
+            <PremiumBadge isPremiumUser={isPremiumUser} />
+          </div>
+        </div>
+
+        <PremiumLocked
+          title="This company guide is Premium"
+          description={`Upgrade to Premium to unlock ${company.name}'s real interview questions and challenges.`}
+          isLoggedIn={!!session?.user}
+        />
+      </div>
+    );
+  }
+
+  const detail = await getCompanyGuideDetail(company.name);
   const hasContent = detail.questions.length > 0 || detail.challenges.length > 0;
 
   const itemListJsonLd = {
@@ -105,7 +146,10 @@ export default async function CompanyGuideDetailPage({ params }: { params: Promi
       <div className="mb-8 flex items-center gap-4">
         <CompanyBadge name={company.name} size="md" className="h-14 w-14 text-lg" />
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">{company.name} Interview Guide</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-text-primary">{company.name} Interview Guide</h1>
+            <PremiumBadge isPremiumUser={isPremiumUser} />
+          </div>
           <p className="mt-1 text-sm text-text-secondary">
             {hasContent
               ? `${detail.questions.length + detail.challenges.length} real questions and challenges attributed to ${company.name}.`

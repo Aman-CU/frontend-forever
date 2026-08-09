@@ -4,10 +4,12 @@ import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { StudyPlanSlug } from "@/lib/constants";
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
 import type { StudyPlanSummary } from "@/features/interview-prep/lib/studyPlanQueries";
 
 type Props = {
   plan: StudyPlanSummary;
+  isPremiumUser: boolean;
 };
 
 // Per-plan icon + tint, keyed by slug — same "small inline meta map" pattern
@@ -35,12 +37,9 @@ const PLAN_ICON_TEXT: Record<StudyPlanSlug, string> = {
 };
 
 // List page card (/interview-prep/study-plans) — same card language as
-// CollectionRow/CompanyGuideCard. isPremium renders a PremiumBadge-style
-// pill (no shared PremiumBadge component exists in this codebase yet —
-// every premium indicator so far is an inline pill, see QuestionCard's
-// Lock-badged "Premium" pill) rather than blur/lock UI, since real
-// enforcement is deferred to Feature 38 (build-plan.md).
-export function StudyPlanCard({ plan }: Props) {
+// CollectionRow/CompanyGuideCard. Real enforcement (the detail page's wall)
+// and the shared PremiumBadge both landed in Feature 38.
+export function StudyPlanCard({ plan, isPremiumUser }: Props) {
   const Icon = PLAN_ICON[plan.slug];
 
   return (
@@ -57,11 +56,7 @@ export function StudyPlanCard({ plan }: Props) {
         >
           <Icon className={cn("h-5 w-5", PLAN_ICON_TEXT[plan.slug])} aria-hidden />
         </div>
-        {plan.isPremium && (
-          <span className="shrink-0 rounded-full bg-premium-light px-2.5 py-1 text-xs font-semibold text-premium">
-            Premium
-          </span>
-        )}
+        {plan.isPremium && <PremiumBadge isPremiumUser={isPremiumUser} />}
       </div>
 
       <h3 className="mt-3.5 text-lg font-semibold text-text-primary">{plan.title}</h3>
