@@ -45,9 +45,15 @@ export function ChallengeListRow({
   isPremium,
   isPremiumUser,
 }: Props) {
+  // A locked row's href is never the real slug — hovering would leak it in
+  // the status bar and clicking would put it in the address bar before the
+  // viewer ever proves they're premium. Locked rows go straight to /pricing
+  // instead (same fix as CollectionQuestionListRow, 2026-08-05 feedback).
+  const isLocked = isPremium && !isPremiumUser;
+
   return (
     <Link
-      href={`/practice/${category}/${slug}`}
+      href={isLocked ? "/pricing" : `/practice/${category}/${slug}`}
       // grid, not flex: a flex item's default min-width is its content's
       // natural width, not 0, so a plain flex row silently refuses to shrink
       // a long title below that width (truncate never engages, and the row

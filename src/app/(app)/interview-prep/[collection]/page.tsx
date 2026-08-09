@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 import { getCachedSession } from "@/lib/auth/server";
-import { isInterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
+import { FF_75_KEY, isInterviewPrepRouteCollection } from "@/features/interview-prep/lib/collectionRoutes";
 import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
 import {
   BLURRED_QUESTION_PLACEHOLDER,
@@ -12,6 +12,7 @@ import {
   getIsPremiumUser,
 } from "@/features/interview-prep/lib/queries";
 import { safeJsonLd, toPlainTextSummary } from "@/lib/seo";
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
 import { CollectionQuestionListClient } from "@/features/interview-prep/components/CollectionQuestionListClient";
 
@@ -64,21 +65,59 @@ export default async function CollectionQuestionListPage({
   const meta = COLLECTION_META[collection];
   const session = await getCachedSession();
   const isLoggedIn = Boolean(session?.user);
-  const [questions, faqItems, isPremiumUser] = await Promise.all([
-    getCollectionQuestionList(collection, session?.user?.id ?? null),
-    getCollectionQuestionFaqItems(collection),
-    session?.user ? getIsPremiumUser(session.user.id) : Promise.resolve(false),
-  ]);
+  const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/${collection}`;
 
-  // Never send the real question text for a locked item — the blur the list
-  // row shows is styling on a fake placeholder, not a CSS effect on the real
-  // text (see the constant above).
-  const clientQuestions = questions.map((q) =>
+  // FF 75 is a fully premium bundle (not a 60/40 split like the other 3
+  // collections) — a non-premium viewer gets a collection-level wall here,
+  // never the list itself. This also closes the hover/address-bar slug leak
+  // for FF 75 entirely: locked visitors never receive any row hrefs at all,
+  // so there's nothing to hover or click through to (2026-08-05 feedback).
+  if (collection === FF_75_KEY && !isPremiumUser) {
+    return (
+      <div className="mx-auto w-full max-w-6xl px-6 py-10 lg:px-8">
+        <InterviewPrepBreadcrumb
+          backHref="/interview-prep"
+          crumbs={[{ label: "Interview Prep", href: "/interview-prep" }, { label: meta.label }]}
+        />
+
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-text-primary">{meta.label}</h1>
+          <p className="mt-1.5 text-sm text-text-secondary">{meta.description}</p>
+        </div>
+
+        <PremiumLocked
+          title="FF 75 is a Premium collection"
+          description="Upgrade to Premium to unlock all 75 questions in this collection."
+          isLoggedIn={isLoggedIn}
+        />
+      </div>
+    );
+  }
+
+  const [questions, faqItems] = await Promise.all([
+    getCollectionQuestionList(collection, session?.user?.id ?? null),
+    getCollectionQuestionFaqItems(collection),
+  ]);
+
+  // Never send the real question text — or its slug — for a locked item.
+  // The blur the list row shows is styling on a fake placeholder, not a CSS
+  // effect on the real text (see the constant above), and the row no longer
+  // links anywhere using the real slug either (it goes to /pricing). But
+  // React Server Components serialize every prop that crosses the
+  // server->client boundary regardless of whether it's ever rendered, so
+  // leaving the real `slug` in this object would still ship it to a
+  // non-premium client inside the page's flight payload — recoverable via
+  // view-source even though nothing in the rendered DOM uses it (2026-08-05
+  // feedback: a locked question's URL/slug is itself Google-able). The
+  // per-row index stands in for slug where the client still needs a stable,
+  // unique, non-revealing key (React key, completed-state map, toggle
+  // payload) — none of those care what the string actually is.
+  const clientQuestions = questions.map((q, i) =>
     isPremiumUser || !q.isPremium
       ? { ...q, isBlurred: false }
-      : { ...q, question: BLURRED_QUESTION_PLACEHOLDER, isBlurred: true },
+      : { ...q, slug: `locked-${i}`, question: BLURRED_QUESTION_PLACEHOLDER, isBlurred: true },
   );
 
   // FAQPage JSON-LD (Feature 31's GEO/SEO spec) — every free question on this

@@ -26,6 +26,12 @@ export type SystemDesignGuideFrontmatter = {
   datePublished: string;
   dateModified: string;
   companies?: string[];
+  // Feature 38: guide-level premium classification, same company-tag-count
+  // proxy as Practice/FF Collections (25 of 28 guides are premium — not a
+  // 60/40 split, per direct request). Defaults to false for any guide
+  // authored before this field existed, matching every other content type's
+  // isPremium default.
+  isPremium?: boolean;
 };
 
 export type SystemDesignGuide = {

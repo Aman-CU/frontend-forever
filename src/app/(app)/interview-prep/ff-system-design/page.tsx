@@ -5,9 +5,25 @@ import { headers } from "next/headers";
 import { cn } from "@/lib/utils";
 import type { ChallengeDifficulty } from "@/lib/constants";
 import { safeJsonLd } from "@/lib/seo";
+import { getCachedSession } from "@/lib/auth/server";
+import { PremiumBadge } from "@/components/shared/PremiumBadge";
 import { COLLECTION_META } from "@/features/interview-prep/lib/collectionMeta";
+import { getIsPremiumUser } from "@/features/interview-prep/lib/queries";
 import { getAllSystemDesignGuides } from "@/lib/systemDesignGuides";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
+
+// Not the real summary — a fixed placeholder blurred on the list row, same
+// "fake sentence, not CSS-blurred real text" rule as FF Collections'
+// BLURRED_QUESTION_PLACEHOLDER (security.md: a blurred real string is still
+// real text in the DOM, trivially recoverable via view-source or disabling
+// the blur class). The guide title stays real and unblurred — unlike a FF
+// Collections question, a system design prompt like "Design a Chat App" is
+// a generic, evergreen interview topic name on its own (same reasoning that
+// already keeps Practice's challenge titles visible); the frontmatter
+// `summary` field is the actual value-bearing "answer-first" sentence, so
+// that's the part that gets redacted.
+const BLURRED_SUMMARY_PLACEHOLDER =
+  "This premium guide covers an advanced frontend system design topic in depth.";
 
 const META = COLLECTION_META["ff-system-design"];
 
@@ -41,6 +57,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function FfSystemDesignListPage() {
   const guides = getAllSystemDesignGuides();
+  const session = await getCachedSession();
+  const isPremiumUser = session?.user ? await getIsPremiumUser(session.user.id) : false;
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/ff-system-design`;
 
@@ -111,12 +129,24 @@ export default async function FfSystemDesignListPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {sectionGuides.map((guide) => (
+                    {sectionGuides.map((guide) => {
+                      const isLocked = Boolean(guide.frontmatter.isPremium) && !isPremiumUser;
+                      return (
                       <tr key={guide.frontmatter.slug} className="border-t border-border">
                         <td className="px-4 py-3">
-                          <div className="font-medium text-text-primary">{guide.frontmatter.title}</div>
-                          <div className="mt-0.5 line-clamp-1 text-xs text-text-muted">
-                            {guide.frontmatter.summary}
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-text-primary">{guide.frontmatter.title}</span>
+                            {guide.frontmatter.isPremium && (
+                              <PremiumBadge isPremiumUser={isPremiumUser} size="xs" />
+                            )}
+                          </div>
+                          <div
+                            className={cn(
+                              "mt-0.5 line-clamp-1 text-xs text-text-muted",
+                              isLocked && "select-none blur-[3px]",
+                            )}
+                          >
+                            {isLocked ? BLURRED_SUMMARY_PLACEHOLDER : guide.frontmatter.summary}
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -139,7 +169,8 @@ export default async function FfSystemDesignListPage() {
                           </Link>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -53,7 +53,15 @@ export function CollectionQuestionListRow({
       {/* display:contents — the row's grid children below stay direct grid
           items of the row above, while the link and the completion button
           remain DOM siblings, not nested interactive elements. */}
-      <Link href={`/interview-prep/${routeCollection}/${slug}`} className="contents">
+      {/* A locked row's href is never the real slug — the slug is often the
+          question itself in kebab-case (e.g. "settimeout-vs-setinterval"),
+          so even without opening the page, hovering would show it in the
+          status bar and clicking would put it in the address bar. Locked
+          rows go straight to /pricing instead (2026-08-05 feedback). */}
+      <Link
+        href={isBlurred ? "/pricing" : `/interview-prep/${routeCollection}/${slug}`}
+        className="contents"
+      >
         <span className="text-xs font-medium tabular-nums text-text-muted">
           {String(index).padStart(2, "0")}
         </span>
@@ -98,7 +106,7 @@ export function CollectionQuestionListRow({
       <button
         type="button"
         onClick={() => onToggleComplete(slug, !completed)}
-        disabled={pending}
+        disabled={pending || isBlurred}
         aria-pressed={completed}
         aria-label={completed ? "Mark as not completed" : "Mark as completed"}
         className={cn(
