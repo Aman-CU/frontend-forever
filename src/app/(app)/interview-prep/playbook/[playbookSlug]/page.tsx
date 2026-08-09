@@ -8,10 +8,19 @@ import { cn } from "@/lib/utils";
 import { safeJsonLd } from "@/lib/seo";
 import { getCachedSession } from "@/lib/auth/server";
 import { PLAYBOOK_SLUGS, type PlaybookSlug } from "@/lib/constants";
+import { PremiumLocked } from "@/components/shared/PremiumLocked";
 import { getAllChaptersForPlaybook } from "@/lib/playbookGuides";
 import { PLAYBOOK_META } from "@/features/interview-prep/lib/playbookMeta";
+import { getIsPremiumUser } from "@/features/interview-prep/lib/queries";
 import { getReadChapterSlugs } from "@/features/interview-prep/lib/playbookQueries";
 import { InterviewPrepBreadcrumb } from "@/features/interview-prep/components/InterviewPrepBreadcrumb";
+
+// The only playbook that's fully premium (Feature 38) — every other playbook
+// stays free. Not a per-chapter split like Practice/FF Collections/FF System
+// Design: the whole thing is one paid bundle, same shape as FF 75, so it
+// gets the same collection-level wall treatment rather than a partial
+// chapter list with some rows blurred.
+const PREMIUM_PLAYBOOK_SLUG: PlaybookSlug = "build-in-public-playbook";
 
 type Params = { playbookSlug: string };
 
@@ -60,15 +69,46 @@ export default async function PlaybookIndexPage({ params }: { params: Promise<Pa
   }
 
   const meta = PLAYBOOK_META[playbookSlug];
-  const chapters = getAllChaptersForPlaybook(playbookSlug);
   const session = await getCachedSession();
   const userId = session?.user?.id ?? null;
-  const readSlugs = await getReadChapterSlugs(userId, playbookSlug);
-  const readCount = chapters.filter((c) => readSlugs.has(c.frontmatter.slug)).length;
-  const progressPercent = chapters.length > 0 ? (readCount / chapters.length) * 100 : 0;
+  const isPremiumUser = userId ? await getIsPremiumUser(userId) : false;
+  const isPlaybookLocked = playbookSlug === PREMIUM_PLAYBOOK_SLUG && !isPremiumUser;
 
   const baseUrl = await getBaseUrl();
   const pageUrl = `${baseUrl}/interview-prep/playbook/${playbookSlug}`;
+
+  // Full wall, no partial chapter list — the whole playbook is the premium
+  // bundle here, so there's no "60% free, blur the rest" like FF System
+  // Design; a real chapter title is exactly the value being sold, so none
+  // are shown pre-purchase (same reasoning as FF 75's list wall). No JSON-LD
+  // either: an ItemList of the real chapter titles/URLs would be the same
+  // leak in structured-data form.
+  if (isPlaybookLocked) {
+    return (
+      <div className="mx-auto w-full max-w-4xl px-6 py-10 lg:px-8">
+        <InterviewPrepBreadcrumb
+          backHref="/interview-prep"
+          crumbs={[{ label: "Interview Prep", href: "/interview-prep" }, { label: meta.label }]}
+        />
+
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-text-primary">{meta.label}</h1>
+          <p className="mt-1.5 text-sm text-text-secondary">{meta.description}</p>
+        </div>
+
+        <PremiumLocked
+          title="This playbook is Premium"
+          description="Upgrade to Premium to unlock every chapter of this playbook."
+          isLoggedIn={!!userId}
+        />
+      </div>
+    );
+  }
+
+  const chapters = getAllChaptersForPlaybook(playbookSlug);
+  const readSlugs = await getReadChapterSlugs(userId, playbookSlug);
+  const readCount = chapters.filter((c) => readSlugs.has(c.frontmatter.slug)).length;
+  const progressPercent = chapters.length > 0 ? (readCount / chapters.length) * 100 : 0;
 
   const itemListJsonLd = {
     "@context": "https://schema.org",
