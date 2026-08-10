@@ -11,8 +11,10 @@ import {
   Gamepad2,
   LucideGraduationCap,
   Map,
+  CreditCard,
   Menu,
   Search,
+  Sparkles,
   Trophy,
   Users,
   X,
@@ -36,9 +38,17 @@ type AppNavbarProps = {
   initialUser?: SessionUser | null;
   initialStreak?: number;
   initialXp?: number;
+  // Display-only: swaps the pill between "Upgrade" and "Manage plan". Never
+  // a gate — every locked surface re-checks premium server-side for itself.
+  isPremiumUser?: boolean;
 };
 
-export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: AppNavbarProps = {}) {
+export function AppNavbar({
+  initialUser,
+  initialStreak = 0,
+  initialXp = 0,
+  isPremiumUser = false,
+}: AppNavbarProps = {}) {
   const pathname = usePathname();
   const { user, isLoading } = useUser(initialUser);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -90,6 +100,50 @@ export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: App
           </kbd>
         </button>
 
+        {/* Plan pill (Feature 38 Stage 9) — build-plan.md calls for an
+            "Upgrade to Premium" pill in the logged-in navbar routing to the
+            pricing page. Stays visible once the user is premium too, just
+            relabeled "Manage plan": /pricing supports switching plans
+            (PlanCtaButton), so a premium user has a real reason to be there,
+            and this was previously the only in-app route that hid itself
+            from exactly the people who might want it — the footer link was
+            the sole way in otherwise.
+
+            Breakpoint is min-[1400px], NOT xl: — measured, not chosen, and
+            NOT 1366px either (see below). This row already has no slack (see
+            the search trigger's note above); adding this pill at xl: pushed
+            the account avatar to x=1307–1339 in a 1280px viewport, i.e.
+            clean off-screen, for every non-premium user. That is the same
+            class of bug the ui-registry entry for this file warns about.
+            1366px was the first fix, verified for "Upgrade" alone — but once
+            premium stopped hiding the pill, "Manage plan" (wider than
+            "Upgrade") reproduced the exact same off-screen avatar at exactly
+            1366px (r=1374 in a 1366px viewport). 1380px technically clears
+            it, but by only 6px — the same margin-of-error class of gap
+            PremiumLocked's border-2 comment warns about (subpixel/display-
+            scaling rounding a headless browser doesn't reproduce). 1400px
+            gives 26px of real margin for the wider label, verified at
+            1370/1380/1390/1400/1410/1420. Both states share this one
+            breakpoint on purpose — a second, narrower one for "Upgrade"
+            alone would be one more number to keep in sync, and the exact
+            failure above is what happens when it silently drifts out of
+            sync. Full sweep re-verified 1024/1152/1280/1400/1440/1536/1920,
+            free and premium. If either label's text or the pill's padding
+            changes, re-run the sweep — don't assume the margin holds. */}
+        {!isLoading && user && (
+          <Link
+            href="/pricing"
+            className="hidden h-8 shrink-0 items-center gap-1.5 rounded-lg bg-premium-light px-2.5 text-xs font-semibold text-premium transition-colors hover:bg-premium hover:text-premium-foreground min-[1400px]:flex"
+          >
+            {isPremiumUser ? (
+              <CreditCard className="size-3.5" aria-hidden />
+            ) : (
+              <Sparkles className="size-3.5" aria-hidden />
+            )}
+            {isPremiumUser ? "Manage plan" : "Upgrade"}
+          </Link>
+        )}
+
         {/* Right cluster (desktop) — only once session resolves */}
         {!isLoading && user && (
           <div className="hidden shrink-0 items-center gap-5 lg:flex">
@@ -107,7 +161,7 @@ export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: App
               />
             </button>
 
-            <UserDropdown user={user} />
+            <UserDropdown user={user} isPremiumUser={isPremiumUser} />
           </div>
         )}
 
@@ -136,10 +190,30 @@ export function AppNavbar({ initialUser, initialStreak = 0, initialXp = 0 }: App
             ))}
           </nav>
 
+          {/* The desktop pill is min-[1400px]-only for width reasons, so the
+              mobile menu carries its own copy — otherwise everything below
+              that has no navbar route to pricing at all. Same relabel as the
+              desktop pill: visible and "Manage plan" once premium, not
+              hidden. */}
+          {!isLoading && user && (
+            <Link
+              href="/pricing"
+              onClick={() => setIsMenuOpen(false)}
+              className="mt-3 flex items-center gap-2 rounded-lg bg-premium-light px-2 py-3 text-sm font-semibold text-premium"
+            >
+              {isPremiumUser ? (
+                <CreditCard className="size-4" aria-hidden />
+              ) : (
+                <Sparkles className="size-4" aria-hidden />
+              )}
+              {isPremiumUser ? "Manage plan" : "Upgrade to Premium"}
+            </Link>
+          )}
+
           {!isLoading && user && (
             <div className="mt-3 flex items-center justify-between border-t border-border pt-4">
               <AppNavbarStats xp={initialXp} streak={initialStreak} />
-              <UserDropdown user={user} />
+              <UserDropdown user={user} isPremiumUser={isPremiumUser} />
             </div>
           )}
         </div>
