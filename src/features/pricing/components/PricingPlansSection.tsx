@@ -34,11 +34,14 @@ export function PricingPlansSection({ viewerState }: Props) {
         ))}
       </div>
 
-      {/* Existing subscribers see the switch-plan note; nobody else needs it. */}
+      {/* Existing subscribers see the switch-plan note; nobody else needs it.
+          Matches PlanCtaButton's own honest "not switched on yet" copy —
+          checkout is Feature 39, so picking a plan doesn't change anything
+          today, and this note shouldn't claim otherwise. */}
       {viewerState === "premium" && (
         <p className="mt-2 text-center text-sm text-text-secondary">
-          You&apos;re already on Premium — picking a plan above changes your billing term, not
-          what you can access. Your current access carries on either way.
+          You&apos;re already on Premium. Switching plans isn&apos;t available until checkout
+          ships — your current access carries on unaffected either way.
         </p>
       )}
 

@@ -44,7 +44,7 @@ export const PRICING_FAQ: FaqItem[] = [
     id: "renewal",
     question: "Do the subscription plans renew automatically?",
     answer:
-      "Monthly, Quarterly and Annual renew automatically at the end of each cycle so your access doesn't lapse mid-preparation. You can cancel at any time from your account, and you keep Premium until the cycle you've already paid for runs out. Lifetime never renews — there's nothing to cancel.",
+      "That's how Monthly, Quarterly and Annual are designed to work: renew automatically at the end of each cycle, with cancellation available any time from your account, keeping Premium until the cycle you've already paid for runs out. Checkout and billing aren't live yet, so nothing renews or charges today — this is the behavior once that ships. Lifetime never renews either way — there's nothing to cancel.",
   },
   {
     id: "after-expiry",
@@ -68,6 +68,6 @@ export const PRICING_FAQ: FaqItem[] = [
     id: "expensing",
     question: "Can I expense this through my employer?",
     answer:
-      "Many companies cover interview preparation and upskilling under a learning and development budget. Premium is a standard software purchase and you'll get a receipt for it, which is usually all an expense claim needs.",
+      "Many companies cover interview preparation and upskilling under a learning and development budget. Premium is a standard software purchase, and once checkout is live you'll get a receipt for it, which is usually all an expense claim needs.",
   },
 ];
